@@ -1,0 +1,310 @@
+import { useRef } from "react";
+import { Star, Sparkles, ChevronDown } from "lucide-react";
+import bravitaBottle from "@/assets/bravita-bottle.png";
+import { motion } from "framer-motion";
+import TextCursorProximity from "./ui/text-cursor-proximity";
+
+const Hero = () => {
+  const containerRef = useRef<HTMLElement>(null);
+  const ingredients = [
+    'Fosfotidilserin',
+    'Kolin',
+    'L-Karnitin',
+    'L-Arjinin',
+    'Multivitamin',
+    'Multimineral',
+  ];
+
+  // Coordinates scaled to 1000x1000 for better precision and text rendering
+  const stars = [
+    { name: 'Fosfotidilserin', start: [380, 180], delay: 0, size: 119, floatAmount: 50 },
+    { name: 'Kolin', start: [880, 120], delay: 0.5, size: 85, floatAmount: 40 },
+    { name: 'L-Karnitin', start: [420, 750], delay: 1, size: 102, floatAmount: 60 },
+    { name: 'L-Arjinin', start: [480, 450], delay: 1.5, size: 94, floatAmount: 35 },
+    { name: 'Multivitamin', start: [650, 880], delay: 2, size: 111, floatAmount: 55 },
+    { name: 'Multimineral', start: [920, 620], delay: 1.2, size: 106, floatAmount: 45 },
+  ];
+
+  const target = [820, 530]; // Bottle center relative to 1000x1000
+
+  return (
+    <section ref={containerRef} id="hero" className="relative min-h-screen gradient-hero overflow-hidden pt-12 pb-16 flex items-center">
+      {/* 1. Background SVG Layer for Ropes & Beams */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <svg
+          viewBox="0 0 1000 1000"
+          preserveAspectRatio="none"
+          className="w-full h-full"
+        >
+          <defs>
+            {stars.map((star, i) => (
+              <linearGradient
+                key={`comet-grad-${i}`}
+                id={`comet-grad-${i}`}
+                gradientUnits="userSpaceOnUse"
+                x1={star.start[0]} y1={star.start[1]}
+                x2={target[0]} y2={target[1]}
+              >
+                {/* Tail (Transparent - Fading Trace End) */}
+                <stop offset="0" stopColor="#f97316" stopOpacity="0">
+                  <animate attributeName="offset" values="-0.6; 0.9" dur="2.5s" begin={`${star.delay}s`} repeatCount="indefinite" />
+                </stop>
+                {/* Body (Semi-Transparent Trace) */}
+                <stop offset="0" stopColor="#f97316" stopOpacity="0.4">
+                  <animate attributeName="offset" values="-0.3; 1.1" dur="2.5s" begin={`${star.delay}s`} repeatCount="indefinite" />
+                </stop>
+                {/* Head (Bright Opaque Tip) */}
+                <stop offset="0" stopColor="#f97316" stopOpacity="1">
+                  <animate attributeName="offset" values="0; 1.3" dur="2.5s" begin={`${star.delay}s`} repeatCount="indefinite" />
+                </stop>
+                {/* Sharp Front Cutoff */}
+                <stop offset="0" stopColor="#f97316" stopOpacity="0">
+                  <animate attributeName="offset" values="0.01; 1.31" dur="2.5s" begin={`${star.delay}s`} repeatCount="indefinite" />
+                </stop>
+              </linearGradient>
+            ))}
+
+            <filter id="beam-glow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="1.5" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+          </defs>
+
+          {stars.map((star, i) => {
+            // Straighter lines for "Ray" effect
+            const controlX = (star.start[0] + target[0]) / 2;
+            const controlY = (star.start[1] + target[1]) / 2 + (star.start[1] > 500 ? -20 : 20);
+
+            return (
+              <g key={`group-${i}`}>
+                {/* Rope */}
+                <motion.path
+                  stroke="rgba(249, 115, 22, 0.1)"
+                  strokeWidth="0.5"
+                  fill="none"
+                  animate={{
+                    d: [
+                      `M ${star.start[0]} ${star.start[1]} Q ${controlX} ${controlY} ${target[0]} ${target[1]}`,
+                      `M ${star.start[0]} ${star.start[1] - star.floatAmount} Q ${controlX} ${controlY - star.floatAmount / 2} ${target[0]} ${target[1]}`,
+                      `M ${star.start[0]} ${star.start[1]} Q ${controlX} ${controlY} ${target[0]} ${target[1]}`
+                    ]
+                  }}
+                  transition={{
+                    duration: 10,
+                    repeat: Infinity,
+                    delay: star.delay,
+                    ease: "easeInOut"
+                  }}
+                />
+
+                {/* Beam - Animated Gradient "Comet" */}
+                <motion.path
+                  stroke={`url(#comet-grad-${i})`}
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  fill="none"
+                  filter="url(#beam-glow)"
+                  animate={{
+                    d: [
+                      `M ${star.start[0]} ${star.start[1]} Q ${controlX} ${controlY} ${target[0]} ${target[1]}`,
+                      `M ${star.start[0]} ${star.start[1] - star.floatAmount} Q ${controlX} ${controlY - star.floatAmount / 2} ${target[0]} ${target[1]}`,
+                      `M ${star.start[0]} ${star.start[1]} Q ${controlX} ${controlY} ${target[0]} ${target[1]}`
+                    ]
+                  }}
+                  transition={{
+                    duration: 10,
+                    repeat: Infinity,
+                    delay: star.delay,
+                    ease: "easeInOut"
+                  }}
+                />
+              </g>
+            );
+          })}
+        </svg>
+      </div>
+
+      {/* 2. Foreground Stars Layer (DOM Elements for perfect 1:1 Aspect Ratio) */}
+      <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden">
+        {stars.map((star, i) => (
+          <div
+            key={`star-dom-${i}`}
+            className="absolute flex items-center justify-center transform -translate-x-1/2 -translate-y-1/2"
+            style={{
+              left: `${star.start[0] / 10}%`,
+              top: `${star.start[1] / 10}%`,
+              width: `${star.size}px`,
+              height: `${star.size}px`,
+            }}
+          >
+            <motion.div
+              className="relative w-full h-full flex items-center justify-center pointer-events-auto group"
+              animate={{
+                y: [0, `-${star.floatAmount / 10}%`, 0]
+              }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                delay: star.delay,
+                ease: "easeInOut"
+              }}
+            >
+              {/* Star Icon - Solid Fill, Darker Border */}
+              <Star
+                className="absolute inset-0 text-orange-300 fill-orange-50 group-hover:scale-105 transition-transform duration-500"
+                style={{ width: '100%', height: '100%' }}
+                strokeWidth={1.5}
+              />
+              {/* Label - High Contrast */}
+              <span className="relative z-10 text-[8.5px] sm:text-[10px] font-bold text-orange-950 leading-tight text-center px-4 select-none">
+                {star.name}
+              </span>
+            </motion.div>
+          </div>
+        ))}
+      </div>
+
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-10 w-32 h-32 bg-yellow-300/5 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute top-40 right-20 w-48 h-48 bg-orange-300/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+      </div>
+
+      <div className="container mx-auto px-4 lg:px-12 relative z-20 w-full">
+        <div className="grid lg:grid-cols-2 gap-8 items-center">
+          <div className="order-2 lg:order-1 text-center lg:text-left pt-8 lg:pt-0">
+            <div className="inline-flex items-center gap-2 bg-white/90 px-3 py-1.5 rounded-full border border-orange-100 shadow-sm mb-8 animate-fade-in-up">
+              <Sparkles className="w-4 h-4 text-orange-500" />
+              <span className="text-[11px] font-bold text-gray-500 uppercase tracking-tight">Sıvı Takviye Edici Gıda</span>
+            </div>
+
+            <h1 className="text-4xl md:text-[84px] font-black text-[#2D334A] mb-8 leading-[1.05] tracking-tight animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+              <TextCursorProximity
+                label="Büyümenin"
+                containerRef={containerRef}
+                className="inline-block mr-4"
+                styles={{
+                  transform: { from: "scale(1) translateY(0px)", to: "scale(1.4) translateY(-20px)" },
+                  color: { from: "#2D334A", to: "#ea580c" }
+                }}
+                falloff="gaussian"
+                radius={100}
+              />
+              <br className="hidden md:block" />
+              <span className="inline-flex flex-wrap justify-center lg:justify-start">
+                {[
+                  { char: "F", color: "#e86e25" },
+                  { char: "o", color: "#dcb036" },
+                  { char: "r", color: "#c8c641" },
+                  { char: "m", color: "#a9d256" },
+                  { char: "ü", color: "#88d969" },
+                  { char: "l", color: "#88d969" },
+                  { char: "ü", color: "#88d969" },
+                ].map((item, index) => (
+                  <TextCursorProximity
+                    key={index}
+                    label={item.char}
+                    containerRef={containerRef}
+                    className="inline-block"
+                    styles={{
+                      transform: { from: "scale(1) translateY(0px)", to: "scale(1.4) translateY(-20px)" },
+                      color: { from: item.color, to: "#ea580c" }
+                    }}
+                    falloff="gaussian"
+                    radius={100}
+                  />
+                ))}
+              </span>
+              <br />
+              <TextCursorProximity
+                label="Burada!"
+                containerRef={containerRef}
+                className="inline-block"
+                styles={{
+                  transform: { from: "scale(1) translateY(0px)", to: "scale(1.4) translateY(-20px)" },
+                  color: { from: "#2D334A", to: "#ea580c" }
+                }}
+                falloff="gaussian"
+                radius={100}
+              />
+            </h1>
+
+            <p className="text-base md:text-lg text-gray-500/80 mb-10 max-w-lg mx-auto lg:mx-0 leading-relaxed animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+              Kolin ile birlikte zengin multivitamin ve mineral kompleksi içeren lezzetli sıvı takviye edici gıda.
+              Çocukların normal büyüme ve gelişimi için özel olarak formüle edildi.
+            </p>
+
+            <div className="flex flex-wrap justify-center lg:justify-start gap-2.5 mb-12 animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
+              {ingredients.map((item, index) => (
+                <span
+                  key={item}
+                  className="ingredient-badge shadow-sm"
+                  style={{ animationDelay: `${0.1 * index}s` }}
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
+
+            <div className="flex flex-row gap-4 justify-center lg:justify-start animate-fade-in-up" style={{ animationDelay: '0.8s' }}>
+              <a
+                href="#about"
+                onClick={(e) => {
+                  e.preventDefault();
+                  document.querySelector('#about')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="inline-flex items-center justify-center gap-2 bg-[#f97316] text-white px-8 py-4 rounded-full font-bold text-base shadow-xl shadow-orange-200/50 hover:bg-orange-600 transition-all duration-300"
+              >
+                Daha Fazla Bilgi
+                <ChevronDown className="w-4 h-4" />
+              </a>
+              <a
+                href="#benefits"
+                onClick={(e) => {
+                  e.preventDefault();
+                  document.querySelector('#benefits')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="inline-flex items-center justify-center bg-white text-orange-600 px-8 py-4 rounded-full font-bold text-base shadow-xl shadow-gray-100/50 hover:bg-gray-50 transition-all duration-300"
+              >
+                Faydaları Gör
+              </a>
+            </div>
+          </div>
+
+          <div className="order-1 lg:order-2 relative flex justify-center lg:justify-end lg:pr-12">
+            <div className="relative w-max">
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[110%] bg-orange-100/20 rounded-full blur-[80px]" />
+
+              <div className="relative animate-float">
+                <img
+                  src={bravitaBottle}
+                  alt="Bravita Sıvı Takviye"
+                  className="w-[180px] md:w-[260px] lg:w-[320px] h-auto max-h-[75vh] object-contain relative z-10 drop-shadow-2xl"
+                />
+
+                <div className="absolute top-12 -right-2 bg-[#FFC529] text-[#2D334A] px-3 py-1 rounded-full font-bold text-[10px] md:text-xs shadow-lg z-20">
+                  150ml
+                </div>
+
+                <div className="absolute -bottom-2 -left-4 bg-white/95 backdrop-blur-sm p-3 md:p-4 rounded-xl md:rounded-2xl shadow-xl z-20 border border-gray-50">
+                  <span className="text-[9px] md:text-[10px] font-bold text-gray-400 block mb-0.5">Portakal & Vanilya</span>
+                  <p className="font-extrabold text-orange-600 text-xs md:text-sm">Lezzetli!</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="absolute bottom-0 left-0 right-0 pointer-events-none">
+        <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto">
+          <path
+            d="M0 120L60 110C120 100 240 80 360 70C480 60 600 60 720 65C840 70 960 80 1080 85C1200 90 1320 90 1380 90L1440 90V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0Z"
+            fill="white"
+          />
+        </svg>
+      </div>
+    </section>
+  );
+};
+
+export default Hero;

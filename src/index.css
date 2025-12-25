@@ -1,0 +1,551 @@
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap');
+@import "tailwindcss";
+@plugin "tailwindcss-animate";
+
+@theme {
+  --font-sans: "Baloo 2", "Nunito", "sans-serif";
+
+  /* Bravita Design System - Warm, child-friendly colors */
+  --color-background: hsl(45 100% 98%);
+  --color-foreground: hsl(25 50% 15%);
+
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(25 50% 15%);
+
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(25 50% 15%);
+
+  --color-primary: hsl(25 95% 55%);
+  --color-primary-foreground: hsl(0 0% 100%);
+
+  --color-secondary: hsl(45 100% 70%);
+  --color-secondary-foreground: hsl(25 50% 15%);
+
+  --color-muted: hsl(45 30% 90%);
+  --color-muted-foreground: hsl(25 20% 40%);
+
+  --color-accent: hsl(120 60% 50%);
+  --color-accent-foreground: hsl(0 0% 100%);
+
+  --color-destructive: hsl(0 84% 60%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+
+  --color-border: hsl(45 40% 85%);
+  --color-input: hsl(45 40% 85%);
+  --color-ring: hsl(25 95% 55%);
+
+  --radius-lg: 1rem;
+  --radius-md: calc(1rem - 2px);
+  --radius-sm: calc(1rem - 4px);
+  --radius: 1rem;
+
+  /* Custom colors for Bravita */
+  --color-bravita-orange: hsl(25 95% 55%);
+  --color-bravita-yellow: hsl(45 100% 65%);
+  --color-bravita-red: hsl(0 80% 55%);
+  --color-bravita-green: hsl(120 60% 45%);
+  --color-bravita-blue: hsl(200 80% 55%);
+  --color-bravita-purple: hsl(280 60% 55%);
+  --color-bravita-cream: hsl(45 100% 96%);
+
+  --color-bravita-warm-gradient: linear-gradient(135deg, hsl(45 100% 65%) 0%, hsl(25 95% 55%) 50%, hsl(0 80% 55%) 100%);
+  --color-bravita-sunset-gradient: linear-gradient(180deg, hsl(45 100% 70%) 0%, hsl(25 95% 60%) 50%, hsl(350 80% 60%) 100%);
+
+  /* Shadows */
+  --shadow-soft: 0 4px 20px -4px hsl(25 95% 55% / 0.2);
+  --shadow-glow: 0 0 40px hsl(45 100% 65% / 0.4);
+  --shadow-card: 0 10px 40px -10px hsl(25 50% 15% / 0.1);
+
+  --color-sidebar-background: hsl(45 100% 98%);
+  --color-sidebar-foreground: hsl(25 50% 25%);
+  --color-sidebar-primary: hsl(25 95% 55%);
+  --color-sidebar-primary-foreground: hsl(0 0% 100%);
+  --color-sidebar-accent: hsl(45 80% 90%);
+  --color-sidebar-accent-foreground: hsl(25 50% 15%);
+  --color-sidebar-border: hsl(45 40% 85%);
+  --color-sidebar-ring: hsl(25 95% 55%);
+
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+  --animate-fade-in: fade-in 0.6s ease-out forwards;
+  --animate-slide-in-right: slide-in-right 0.6s ease-out forwards;
+  --animate-scale-in: scale-in 0.5s ease-out forwards;
+
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+
+    to {
+      height: 0;
+    }
+  }
+
+  @keyframes fade-in {
+    0% {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slide-in-right {
+    0% {
+      opacity: 0;
+      transform: translateX(50px);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes scale-in {
+    0% {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  --animate-first: moveVertical 30s ease infinite;
+  --animate-second: moveInCircle 20s reverse infinite;
+  --animate-third: moveInCircle 40s linear infinite;
+  --animate-fourth: moveHorizontal 40s ease infinite;
+  --animate-fifth: moveInCircle 20s ease infinite;
+
+  @keyframes moveHorizontal {
+    0% {
+      transform: translateX(-50%) translateY(-10%);
+    }
+
+    50% {
+      transform: translateX(50%) translateY(10%);
+    }
+
+    100% {
+      transform: translateX(-50%) translateY(-10%);
+    }
+  }
+
+  @keyframes moveInCircle {
+    0% {
+      transform: rotate(0deg);
+    }
+
+    50% {
+      transform: rotate(180deg);
+    }
+
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes moveVertical {
+    0% {
+      transform: translateY(-50%);
+    }
+
+    50% {
+      transform: translateY(50%);
+    }
+
+    100% {
+      transform: translateY(-50%);
+    }
+  }
+}
+
+@layer base {
+  .dark {
+    --color-background: hsl(25 30% 8%);
+    --color-foreground: hsl(45 100% 95%);
+
+    --color-card: hsl(25 30% 12%);
+    --color-card-foreground: hsl(45 100% 95%);
+
+    --color-popover: hsl(25 30% 12%);
+    --color-popover-foreground: hsl(45 100% 95%);
+
+    --color-secondary: hsl(45 60% 25%);
+    --color-secondary-foreground: hsl(45 100% 95%);
+
+    --color-muted: hsl(25 30% 18%);
+    --color-muted-foreground: hsl(45 30% 65%);
+
+    --color-accent: hsl(120 50% 35%);
+
+    --color-destructive: hsl(0 70% 45%);
+
+    --color-border: hsl(25 30% 20%);
+    --color-input: hsl(25 30% 20%);
+
+    --color-sidebar-background: hsl(25 30% 10%);
+    --color-sidebar-foreground: hsl(45 100% 95%);
+    --color-sidebar-accent: hsl(25 30% 18%);
+    --color-sidebar-accent-foreground: hsl(45 100% 95%);
+    --color-sidebar-border: hsl(25 30% 20%);
+  }
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    background-image: var(--color-bravita-warm-gradient);
+  }
+
+  .bg-warm-gradient {
+    background-image: var(--color-bravita-warm-gradient);
+  }
+
+  .bg-sunset-gradient {
+    background-image: var(--color-bravita-sunset-gradient);
+  }
+
+  .gradient-hero {
+    background: linear-gradient(135deg, #fff9f0 0%, #fff1e6 50%, #fef3c7 100%);
+  }
+
+  .gradient-text {
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    background-image: linear-gradient(to right, #f97316, #84cc16);
+  }
+
+  .ingredient-badge {
+    background: #ff8a4c;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    transition-property: transform;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 300ms;
+
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
+
+  .product-shadow {
+    filter: drop-shadow(0 20px 50px rgba(249, 115, 22, 0.2));
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-float-slow {
+    animation: float 8s ease-in-out infinite;
+  }
+
+  .animate-bounce-slow {
+    animation: bounce-slow 3s ease-in-out infinite;
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  .animate-wiggle {
+    animation: wiggle 2s ease-in-out infinite;
+  }
+
+  .animate-spin-slow {
+    animation: spin 8s linear infinite;
+  }
+
+  .animate-fade-in-up {
+    animation: fadeInUp 1s ease-out forwards;
+    opacity: 0;
+  }
+
+  .animate-star-twinkle {
+    animation: starTwinkle 3s ease-in-out infinite;
+  }
+
+  .animate-bounce-subtle {
+    animation: bounceSubtle 2s ease-in-out infinite;
+  }
+
+  .animate-float-reverse {
+    animation: floatReverse 5s ease-in-out infinite;
+  }
+
+  .star-decoration {
+    position: relative;
+
+    &::before,
+    &::after {
+      content: '★';
+      position: absolute;
+      color: hsl(45 100% 65%);
+      opacity: 0.6;
+      animation: float 4s ease-in-out infinite;
+    }
+
+    &::before {
+      top: 10%;
+      left: 5%;
+      font-size: 1.5rem;
+    }
+
+    &::after {
+      bottom: 15%;
+      right: 8%;
+      font-size: 1rem;
+      animation-delay: 2s;
+    }
+  }
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-20px) rotate(2deg);
+  }
+}
+
+@keyframes bounce-slow {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 20px hsl(45 100% 65% / 0.4);
+  }
+
+  50% {
+    box-shadow: 0 0 40px hsl(25 95% 55% / 0.6);
+  }
+}
+
+@keyframes wiggle {
+
+  0%,
+  100% {
+    transform: rotate(-3deg);
+  }
+
+  50% {
+    transform: rotate(3deg);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes starTwinkle {
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+
+  50% {
+    transform: scale(1.3);
+    opacity: 1;
+  }
+}
+
+@keyframes bounceSubtle {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes floatReverse {
+
+  0%,
+  100% {
+    transform: translateY(0) translateX(0);
+  }
+
+  50% {
+    transform: translateY(15px) translateX(-10px);
+  }
+}
+
+.beam-path {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: beam-flow 3s linear infinite;
+  opacity: 0;
+}
+
+@keyframes beam-flow {
+  0% {
+    stroke-dashoffset: 100;
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  90% {
+    opacity: 1;
+  }
+
+  100% {
+    stroke-dashoffset: -100;
+    opacity: 0;
+  }
+}
+
+.glow-particle {
+  filter: blur(2px);
+  animation: glow-pulse 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes glow-pulse {
+  from {
+    filter: blur(2px) brightness(1);
+    scale: 1;
+  }
+
+  to {
+    filter: blur(4px) brightness(1.5);
+    scale: 1.2;
+  }
+}
+
+.beam-light {
+  offset-anchor: 50% 50%;
+  animation: beam-animation-path 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  filter: drop-shadow(0 0 8px #f97316);
+}
+
+.beam-trail-1 {
+  animation-delay: 0.1s;
+  opacity: 0.7;
+  scale: 0.8;
+}
+
+.beam-trail-2 {
+  animation-delay: 0.2s;
+  opacity: 0.4;
+  scale: 0.6;
+}
+
+.beam-trail-3 {
+  animation-delay: 0.3s;
+  opacity: 0.2;
+  scale: 0.4;
+}
+
+@keyframes beam-animation-path {
+  0% {
+    offset-distance: 0%;
+    opacity: 0;
+    scale: 0.5;
+  }
+
+  10% {
+    opacity: 1;
+    scale: 1.2;
+  }
+
+  90% {
+    opacity: 1;
+    scale: 1;
+  }
+
+  100% {
+    offset-distance: 100%;
+    opacity: 0;
+    scale: 0.5;
+  }
+}
+
+@keyframes shine {
+  0% {
+    background-position: 0% 0%;
+  }
+
+  50% {
+    background-position: 100% 100%;
+  }
+
+  to {
+    background-position: 0% 0%;
+  }
+}
+
+.animate-shine {
+  animation: shine var(--duration) infinite linear;
+}
+
+.bg-shine-size {
+  background-size: 300% 300%;
+}
