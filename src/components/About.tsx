@@ -1,5 +1,8 @@
 import bravitaBottle from "@/assets/bravita-bottle.png";
 import { FeatureSteps } from "@/components/ui/feature-steps";
+import heroImage from "@/assets/Geleceğin Kahramanları İçin.jpeg";
+import globalImage from "@/assets/Türkiye'den Dünyaya.jpeg";
+import strengthImage from "@/assets/Gücün Kaynağı.jpeg";
 
 const About = () => {
   return (
@@ -47,19 +50,19 @@ const About = () => {
                 step: 'Misyon',
                 title: 'Geleceğin Kahramanları İçin',
                 content: 'Her çocuğun içinde keşfedilmeyi bekleyen bir kahraman yatar. Bravita, bu potansiyeli ortaya çıkarmanın sağlıklı bir temel atmaktan geçtiğine inanır.',
-                image: 'https://images.unsplash.com/photo-1606092195730-5d7b9af1ef4d?q=80&w=2070&auto=format&fit=crop'
+                image: heroImage
               },
               {
                 step: 'Vizyon',
                 title: "Türkiye'den Dünyaya",
                 content: "Bu topraklarda doğan bir marka olarak, gücümüzü insanımızın sağlık ihtiyaçlarından alıyoruz. Dünya genelinde ailelerin güvendiği bir marka olma vizyonuyla ilerliyoruz.",
-                image: 'https://images.unsplash.com/photo-1529321044792-949d1f03e61e?q=80&w=2070&auto=format&fit=crop'
+                image: globalImage
               },
               {
                 step: 'Motto',
                 title: 'Gücün Kaynağı',
                 content: 'Modern hayatın koşturmacasında zinde kalmak için "Büyümenin Formülü Burada" mottosuyla günlük beslenmenize pratik bir destek sunuyoruz.',
-                image: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=2070&auto=format&fit=crop'
+                image: strengthImage
               }
             ]}
             title="Değerlerimiz"
@@ -70,6 +73,10 @@ const About = () => {
         </div>
       </div>
     </section>
+  );
+};
+      </div >
+    </section >
   );
 };
 
