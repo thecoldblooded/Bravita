@@ -17,13 +17,13 @@ const ProductShowcase = () => {
 
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Product Images */}
-          <div className="relative flex justify-center items-center">
-            <div className="relative group z-20 -mr-12 md:-mr-24 translate-y-4 md:translate-y-18">
+          <div className="relative flex justify-center items-end">
+            <div className="relative group z-20 -mr-12 md:-mr-24">
               <div className="absolute inset-0 bg-gradient-to-br from-bravita-yellow/30 to-bravita-orange/30 rounded-3xl blur-2xl opacity-60 group-hover:opacity-80 transition-opacity" />
               <img
                 src={bravitaBottle}
                 alt="Bravita Şişe"
-                className="relative z-10 w-32 md:w-44 drop-shadow-xl group-hover:scale-105 transition-transform duration-500"
+                className="relative z-10 w-44 md:w-54 drop-shadow-xl group-hover:scale-105 transition-transform duration-500"
               />
             </div>
             <div className="relative group z-10">
@@ -31,7 +31,7 @@ const ProductShowcase = () => {
               <img
                 src={bravitaBox}
                 alt="Bravita Kutu"
-                className="relative z-10 w-60 md:w-80 rounded-2xl drop-shadow-xl group-hover:scale-105 transition-transform duration-500"
+                className="relative z-10 w-60 md:w-80 group-hover:scale-105 transition-transform duration-500"
               />
             </div>
           </div>
