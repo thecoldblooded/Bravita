@@ -98,7 +98,7 @@ export function FeatureSteps({
                                     index === currentFeature && (
                                         <motion.div
                                             key={index}
-                                            className="absolute inset-0 rainbow-border !absolute"
+                                            className="absolute inset-0 rainbow-border !absolute rounded-lg"
                                             initial={{ y: -100, opacity: 0, rotateX: 20 }}
                                             animate={{ y: 0, opacity: 1, rotateX: 0 }}
                                             exit={{ y: 100, opacity: 0, rotateX: -20 }}
