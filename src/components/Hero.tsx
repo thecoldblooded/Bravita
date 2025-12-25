@@ -191,7 +191,7 @@ const Hero = () => {
 
       <div className="container mx-auto px-4 lg:px-12 relative z-20 w-full">
         <div className="grid lg:grid-cols-2 gap-8 items-center">
-          <div className="order-2 lg:order-1 text-center lg:text-left pt-32 md:pt-40 lg:pt-0">
+          <div className="order-2 lg:order-1 text-center lg:text-left pt-32 md:pt-40 lg:pt-30">
             <div className="inline-flex items-center gap-2 bg-white/90 px-3 py-1.5 rounded-full border border-orange-100 shadow-sm mb-8 animate-fade-in-up">
               <Sparkles className="w-4 h-4 text-orange-500" />
               <span className="text-[11px] font-bold text-gray-500 uppercase tracking-tight">Sıvı Takviye Edici Gıda</span>
