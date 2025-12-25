@@ -11,7 +11,7 @@ const Header = () => {
   const [showBackToTop, setShowBackToTop] = useState(false);
 
   const navItems = [
-    { name: 'Merhaba', url: '#hero', icon: Home },
+    { name: 'Merhaba', url: '#hero', icon: Home, onClick: () => window.scrollTo({ top: 0, behavior: 'smooth' }) },
     { name: 'Faydaları', url: '#benefits', icon: Heart },
     { name: 'İçindekiler', url: '#ingredients', icon: List },
     { name: 'Kullanım', url: '#usage', icon: HelpCircle },

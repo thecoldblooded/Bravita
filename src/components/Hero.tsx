@@ -1,11 +1,22 @@
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Star, Sparkles, ChevronDown } from "lucide-react";
 import bravitaBottle from "@/assets/bravita-bottle.png";
 import { motion } from "framer-motion";
 import TextCursorProximity from "./ui/text-cursor-proximity";
 
+import { useIsMobile } from "@/hooks/use-mobile";
+
 const Hero = () => {
   const containerRef = useRef<HTMLElement>(null);
+  const [isLG, setIsLG] = useState(false);
+
+  useEffect(() => {
+    const checkIsLG = () => setIsLG(window.matchMedia("(max-width: 1024px)").matches);
+    checkIsLG();
+    window.addEventListener("resize", checkIsLG);
+    return () => window.removeEventListener("resize", checkIsLG);
+  }, []);
+
   const ingredients = [
     'Fosfotidilserin',
     'Kolin',
@@ -16,16 +27,22 @@ const Hero = () => {
   ];
 
   // Coordinates scaled to 1000x1000 for better precision and text rendering
-  const stars = [
-    { name: 'Fosfotidilserin', start: [380, 180], delay: 0, size: 119, floatAmount: 50 },
-    { name: 'Kolin', start: [880, 120], delay: 0.5, size: 85, floatAmount: 40 },
-    { name: 'L-Karnitin', start: [420, 750], delay: 1, size: 102, floatAmount: 60 },
-    { name: 'L-Arjinin', start: [480, 450], delay: 1.5, size: 94, floatAmount: 35 },
-    { name: 'Multivitamin', start: [650, 880], delay: 2, size: 111, floatAmount: 55 },
-    { name: 'Multimineral', start: [920, 620], delay: 1.2, size: 106, floatAmount: 45 },
+  const starsData = [
+    { name: 'Fosfotidilserin', start: [380, 180], mobileStart: [180, 150], delay: 0, duration: 6, size: 119, mobileSize: 55, floatAmount: 15 },
+    { name: 'Kolin', start: [880, 120], mobileStart: [820, 150], delay: 0.5, duration: 7, size: 85, mobileSize: 55, floatAmount: 20 },
+    { name: 'L-Karnitin', start: [420, 750], mobileStart: [120, 280], delay: 1, duration: 5.5, size: 102, mobileSize: 55, floatAmount: 12 },
+    { name: 'L-Arjinin', start: [480, 450], mobileStart: [880, 280], delay: 1.5, duration: 8, size: 94, mobileSize: 55, floatAmount: 18 },
+    { name: 'Multivitamin', start: [650, 880], mobileStart: [200, 410], delay: 2, duration: 6.5, size: 111, mobileSize: 55, floatAmount: 14 },
+    { name: 'Multimineral', start: [920, 620], mobileStart: [800, 410], delay: 1.2, duration: 7.5, size: 106, mobileSize: 55, floatAmount: 16 },
   ];
 
-  const target = [820, 530]; // Bottle center relative to 1000x1000
+  const stars = starsData.map(star => ({
+    ...star,
+    start: isLG ? star.mobileStart : star.start,
+    size: isLG ? star.mobileSize : star.size
+  }));
+
+  const target = isLG ? [500, 280] : [820, 530]; // Bottle center relative to 1000x1000
 
   return (
     <section ref={containerRef} id="hero" className="relative min-h-screen gradient-hero overflow-hidden pt-12 pb-16 flex items-center">
@@ -90,7 +107,7 @@ const Hero = () => {
                     ]
                   }}
                   transition={{
-                    duration: 10,
+                    duration: star.duration,
                     repeat: Infinity,
                     delay: star.delay,
                     ease: "easeInOut"
@@ -112,7 +129,7 @@ const Hero = () => {
                     ]
                   }}
                   transition={{
-                    duration: 10,
+                    duration: star.duration,
                     repeat: Infinity,
                     delay: star.delay,
                     ease: "easeInOut"
@@ -127,27 +144,30 @@ const Hero = () => {
       {/* 2. Foreground Stars Layer (DOM Elements for perfect 1:1 Aspect Ratio) */}
       <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden">
         {stars.map((star, i) => (
-          <div
+          <motion.div
             key={`star-dom-${i}`}
             className="absolute flex items-center justify-center transform -translate-x-1/2 -translate-y-1/2"
             style={{
               left: `${star.start[0] / 10}%`,
-              top: `${star.start[1] / 10}%`,
               width: `${star.size}px`,
               height: `${star.size}px`,
             }}
+            animate={{
+              top: [
+                `${star.start[1] / 10}%`,
+                `${(star.start[1] - star.floatAmount) / 10}%`,
+                `${star.start[1] / 10}%`
+              ]
+            }}
+            transition={{
+              duration: star.duration,
+              repeat: Infinity,
+              delay: star.delay,
+              ease: "easeInOut"
+            }}
           >
-            <motion.div
+            <div
               className="relative w-full h-full flex items-center justify-center pointer-events-auto group"
-              animate={{
-                y: [0, `-${star.floatAmount / 10}%`, 0]
-              }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-                delay: star.delay,
-                ease: "easeInOut"
-              }}
             >
               {/* Star Icon - Solid Fill, Darker Border */}
               <Star
@@ -159,8 +179,8 @@ const Hero = () => {
               <span className="relative z-10 text-[8.5px] sm:text-[10px] font-bold text-orange-950 leading-tight text-center px-4 select-none">
                 {star.name}
               </span>
-            </motion.div>
-          </div>
+            </div>
+          </motion.div>
         ))}
       </div>
 
@@ -171,7 +191,7 @@ const Hero = () => {
 
       <div className="container mx-auto px-4 lg:px-12 relative z-20 w-full">
         <div className="grid lg:grid-cols-2 gap-8 items-center">
-          <div className="order-2 lg:order-1 text-center lg:text-left pt-8 lg:pt-0">
+          <div className="order-2 lg:order-1 text-center lg:text-left pt-32 md:pt-40 lg:pt-0">
             <div className="inline-flex items-center gap-2 bg-white/90 px-3 py-1.5 rounded-full border border-orange-100 shadow-sm mb-8 animate-fade-in-up">
               <Sparkles className="w-4 h-4 text-orange-500" />
               <span className="text-[11px] font-bold text-gray-500 uppercase tracking-tight">Sıvı Takviye Edici Gıda</span>
@@ -245,14 +265,14 @@ const Hero = () => {
               ))}
             </div>
 
-            <div className="flex flex-row gap-4 justify-center lg:justify-start animate-fade-in-up" style={{ animationDelay: '0.8s' }}>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start w-full sm:w-auto animate-fade-in-up" style={{ animationDelay: '0.8s' }}>
               <a
                 href="#about"
                 onClick={(e) => {
                   e.preventDefault();
                   document.querySelector('#about')?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="inline-flex items-center justify-center gap-2 bg-[#f97316] text-white px-8 py-4 rounded-full font-bold text-base shadow-xl shadow-orange-200/50 hover:bg-orange-600 transition-all duration-300"
+                className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-[#f97316] text-white px-8 py-4 rounded-full font-bold text-base shadow-xl shadow-orange-200/50 hover:bg-orange-600 transition-all duration-300"
               >
                 Daha Fazla Bilgi
                 <ChevronDown className="w-4 h-4" />
@@ -263,14 +283,14 @@ const Hero = () => {
                   e.preventDefault();
                   document.querySelector('#benefits')?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="inline-flex items-center justify-center bg-white text-orange-600 px-8 py-4 rounded-full font-bold text-base shadow-xl shadow-gray-100/50 hover:bg-gray-50 transition-all duration-300"
+                className="inline-flex w-full sm:w-auto items-center justify-center bg-white text-orange-600 px-8 py-4 rounded-full font-bold text-base shadow-xl shadow-gray-100/50 hover:bg-gray-50 transition-all duration-300"
               >
                 Faydaları Gör
               </a>
             </div>
           </div>
 
-          <div className="order-1 lg:order-2 relative flex justify-center lg:justify-end lg:pr-12">
+          <div className="order-1 lg:order-2 relative flex justify-center lg:justify-end lg:pr-12 translate-y-[15%] lg:translate-y-0">
             <div className="relative w-max">
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[110%] bg-orange-100/20 rounded-full blur-[80px]" />
 

@@ -1,8 +1,11 @@
 import { Clock, Thermometer, AlertTriangle, Baby } from "lucide-react";
 import HeroScrollVideo from "@/components/ui/scroll-animated-video";
 import usageVideo from "@/assets/Generated video 1.mp4";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Usage = () => {
+  const isMobile = useIsMobile();
+
   return (
     <section className="bg-transparent pb-20 md:pb-32">
       <HeroScrollVideo
@@ -12,11 +15,11 @@ const Usage = () => {
         media={usageVideo}
         mediaType="video"
         targetSize="fullscreen"
-        scrollHeightVh={200}
+        scrollHeightVh={isMobile ? 120 : 200}
         overlay={{}}
       />
 
-      <div className="container mx-auto px-4 mt-[-70vh] md:mt-[-115vh] relative z-10 pointer-events-none">
+      <div className="container mx-auto px-4 mt-[-100vh] md:mt-[-115vh] relative z-10 pointer-events-none">
         {/* Spacer to push content below the scroll height */}
         <div style={{ height: "10vh" }}></div>
       </div>
@@ -31,6 +34,7 @@ const Usage = () => {
               Nasıl <span className="text-transparent bg-clip-text bg-gradient-to-r from-bravita-yellow via-bravita-orange to-bravita-red">Kullanılır?</span>
             </h2>
           </div>
+          {/* ... rest of component ... */}
 
           <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
             {/* Dosage Card */}

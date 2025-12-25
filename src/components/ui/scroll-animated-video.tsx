@@ -157,6 +157,8 @@ export const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
         let cancelled = false;
 
         (async () => {
+            const isMobile = window.matchMedia("(max-width: 768px)").matches;
+            const isSmallMobile = window.matchMedia("(max-width: 425px)").matches;
             const gsapPkg = await import("gsap");
             gsap = gsapPkg.gsap || gsapPkg.default || gsapPkg;
 
@@ -242,7 +244,13 @@ export const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
             // Target size
             const target = (() => {
                 if (targetSize === "fullscreen") {
-                    return { width: "100vw", height: "95vh", borderRadius: 0 };
+                    // Mobile: 16:9 aspect ratio (56.25vw) to fit video
+                    // Desktop: 95vh for immersive feel
+                    return {
+                        width: "100vw",
+                        height: "100vh",
+                        borderRadius: 0
+                    };
                 }
                 return {
                     width: `${targetSize.widthVw ?? 92}vw`,
@@ -253,9 +261,10 @@ export const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
 
             // Initial states
             gsap.set(container, {
-                width: initialBoxSize,
-                height: initialBoxSize,
-                borderRadius: 20,
+                width: target.width,
+                height: target.height,
+                borderRadius: target.borderRadius,
+                y: 0,
                 filter: "none",
                 clipPath: "inset(0 0 0 0)",
             });
@@ -266,15 +275,27 @@ export const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
             });
             gsap.set([overlayContent, overlayCaption], { y: 30 });
 
-            // Animate the container to expand
+            // Determine final (small) size
+            // On small mobile (<=425px), keep fullscreen 16:9 (no animation).
+            // On mobile (<=768px), shrink to 90vw but keep 16:9.
+            // On desktop, use square initialBoxSize.
+            const endWidth = isSmallMobile
+                ? window.innerWidth
+                : (isMobile ? window.innerWidth * 0.9 : initialBoxSize);
+
+            const endHeight = isMobile
+                ? endWidth * (9 / 16)
+                : initialBoxSize;
+
+            // Animate the container to shrink
             mainTl
                 .to(
                     container,
                     {
-                        width: target.width,
-                        height: target.height,
-                        borderRadius: target.borderRadius,
-                        y: "-7.5vh", // Reset vertical offset for fullscreen
+                        width: "90vw",
+                        height: "50.625vw", // Maintain 16:9 aspect ratio (90vw * 9/16)
+                        borderRadius: 0,
+                        y: 0,
                         ease: containerEase,
                     },
                     0
@@ -318,7 +339,7 @@ export const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
                 tryPlay();
                 ScrollTrigger.create({
                     trigger: triggerEl,
-                    start: "top 60%",
+                    start: "top 40%",
                     onEnter: tryPlay,
                 });
             }
@@ -511,13 +532,13 @@ export const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
           height: 100vh;
           display: grid;
           place-items: start center; /* Center horizontally, start vertically */
-          padding-top: 15vh;        /* Push it down slightly, but not 50vh */
+          padding-top: 7.5vh;        /* Push it down slightly, but not 50vh */
         }
 
         .hsv-media {
           position: relative;
-          width: var(--initial-size);
-          height: var(--initial-size);
+          width: 100vw;
+          height: 100vh;
           border-radius: 20px;
           overflow: hidden;
           background: #000;

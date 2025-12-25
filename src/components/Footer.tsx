@@ -66,7 +66,7 @@ function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 md:gap-8 lg:gap-16 pb-12">
 
           {/* Brand section */}
-          <div className="flex flex-col space-y-4">
+          <div className="flex flex-col space-y-4 items-center md:items-start text-center md:text-left">
             <div className="flex space-x-2">
               <img src={bravitaLogo} alt="Bravita" className="h-10 brightness-0 invert" />
             </div>
@@ -83,7 +83,7 @@ function Footer() {
 
           {/* Footer link sections */}
           {footerLinks.map((section) => (
-            <div key={section.title}>
+            <div key={section.title} className="text-center md:text-left">
               <h4 className="text-white text-lg font-semibold mb-6">
                 {section.title}
               </h4>
@@ -107,17 +107,17 @@ function Footer() {
           ))}
 
           {/* Contact section */}
-          <div>
+          <div className="text-center md:text-left">
             <h4 className="text-white text-lg font-semibold mb-6">
               İletişim
             </h4>
             <ul className="space-y-4 text-neutral-400">
-              <li className="flex items-start space-x-3">
+              <li className="flex items-start space-x-3 justify-center md:justify-start">
                 <span className="mt-1"><MapPin size={18} className="text-bravita-orange" /></span>
                 <span className="text-sm">Prof. Dr. Ahmet Taner Kışlalı Mah. Alacaatlı Cad. No:30/5A Çankaya - Ankara</span>
               </li>
               {contactInfo.slice(0, 2).map((item, i) => (
-                <li key={i} className="flex items-center space-x-3">
+                <li key={i} className="flex items-center space-x-3 justify-center md:justify-start">
                   {item.icon}
                   {item.href ? (
                     <a
@@ -166,7 +166,7 @@ function Footer() {
       </div>
 
       {/* Text hover effect - Using the EXACT positioning classes from the demo */}
-      <div className="lg:flex hidden h-[30rem] -mt-20 -mb-36 pointer-events-auto justify-center items-center">
+      <div className="md:flex hidden h-[30rem] -mt-20 -mb-36 pointer-events-auto justify-center items-center">
         <TextHoverEffect text="BRAVITA" className="z-50 translate-y-20 md:translate-y-0" />
       </div>
 
