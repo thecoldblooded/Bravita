@@ -1,7 +1,7 @@
 import bravitaBottle from "@/assets/bravita-bottle.png";
 import { FeatureSteps } from "@/components/ui/feature-steps";
 import heroImage from "@/assets/Geleceğin Kahramanları İçin.jpeg";
-import globalImage from "@/assets/Türkiye'den Dünyaya.jpeg";
+import globalImage from "@/assets/Türkiye'den Dünyaya.png";
 import strengthImage from "@/assets/Gücün Kaynağı.jpeg";
 
 const About = () => {
@@ -67,7 +67,7 @@ const About = () => {
             ]}
             title="Değerlerimiz"
             autoPlayInterval={5000}
-            imageHeight="h-[400px]"
+            imageHeight="aspect-square"
             className="bg-transparent"
           />
         </div>
@@ -75,9 +75,6 @@ const About = () => {
     </section>
   );
 };
-      </div >
-    </section >
-  );
-};
+
 
 export default About;

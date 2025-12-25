@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { FooterBackgroundGradient, TextHoverEffect } from "@/components/ui/hover-footer";
 import bravitaLogo from "@/assets/bravita-logo.png";
+import valcoLogo from "@/assets/valco-logo.png";
 
 function Footer() {
   // Footer link data
@@ -63,9 +64,10 @@ function Footer() {
     <footer className="bg-[#2e241e] relative h-fit rounded-[3rem] overflow-hidden m-4 md:m-8">
       <div className="max-w-7xl mx-auto p-8 md:p-14 z-40 relative">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 md:gap-8 lg:gap-16 pb-12">
+
           {/* Brand section */}
           <div className="flex flex-col space-y-4">
-            <div className="flex items-center space-x-2">
+            <div className="flex space-x-2">
               <img src={bravitaLogo} alt="Bravita" className="h-10 brightness-0 invert" />
             </div>
             <p className="text-sm leading-relaxed text-neutral-300 max-w-xs">
@@ -73,6 +75,9 @@ function Footer() {
             </p>
             <div className="text-xs text-neutral-500">
               Kayıt No: TR-06-K-094361
+            </div>
+            <div>
+              <img src={valcoLogo} alt="Valco İlaç" className="h-12 brightness-0 invert opacity-60 hover:opacity-100 transition-opacity" />
             </div>
           </div>
 
@@ -132,7 +137,7 @@ function Footer() {
           </div>
         </div>
 
-        <hr className="border-t border-white/10 my-8" />
+
 
         {/* Footer bottom */}
         <div className="flex flex-col md:flex-row justify-between items-center text-sm space-y-4 md:space-y-0 text-neutral-400">
@@ -161,7 +166,7 @@ function Footer() {
       </div>
 
       {/* Text hover effect - Using the EXACT positioning classes from the demo */}
-      <div className="lg:flex hidden h-[30rem] -mt-52 -mb-36 pointer-events-auto justify-center items-center">
+      <div className="lg:flex hidden h-[30rem] -mt-20 -mb-36 pointer-events-auto justify-center items-center">
         <TextHoverEffect text="BRAVITA" className="z-50 translate-y-20 md:translate-y-0" />
       </div>
 
