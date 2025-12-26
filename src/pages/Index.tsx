@@ -6,6 +6,7 @@ import Ingredients from "@/components/Ingredients";
 import Usage from "@/components/Usage";
 import About from "@/components/About";
 import Footer from "@/components/Footer";
+import ScrollReveal from "@/components/ui/scroll-reveal";
 
 const Index = () => {
   return (
@@ -13,11 +14,26 @@ const Index = () => {
       <Header />
       <main>
         <Hero />
-        <Benefits />
-        <ProductShowcase />
-        <Ingredients />
-        <Usage />
-        <About />
+
+        <ScrollReveal delay={0.1}>
+          <Benefits />
+        </ScrollReveal>
+
+        <ScrollReveal delay={0.2}>
+          <ProductShowcase />
+        </ScrollReveal>
+
+        <ScrollReveal delay={0.1}>
+          <Ingredients />
+        </ScrollReveal>
+
+        <ScrollReveal delay={0.1}>
+          <Usage />
+        </ScrollReveal>
+
+        <ScrollReveal delay={0.1}>
+          <About />
+        </ScrollReveal>
       </main>
       <Footer />
     </div>
