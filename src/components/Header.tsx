@@ -6,6 +6,61 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 
+const BravitaLogo = ({ isScrolled }: { isScrolled: boolean }) => {
+  const letters = [
+    { char: "B", color: "text-[#EE4036]", rotate: "-rotate-3" },
+    { char: "R", color: "text-[#F68B28]", rotate: "-rotate-1" },
+    { char: "A", color: "text-[#FDB813]", rotate: "rotate-1" },
+    { char: "V", color: "text-[#CDDC39]", rotate: "-rotate-2" },
+    { char: "i", color: "text-[#4CAF50]", rotate: "rotate-2" },
+    { char: "T", color: "text-[#00ADEF]", rotate: "rotate-1" },
+    { char: "A", color: "text-[#9E499B]", rotate: "rotate-3" },
+  ];
+
+  return (
+    <div
+      className={cn(
+        "flex items-center font-['Baloo_2'] font-black leading-none select-none tracking-tight text-4xl lg:text-5xl xl:text-[3.5rem] transition-all duration-500 ease-in-out origin-left",
+        isScrolled ? "scale-[0.85] lg:scale-[0.8]" : "scale-100"
+      )}
+    >
+      {letters.map((letter, index) => (
+        <motion.span
+          key={index}
+          className={cn(
+            letter.color,
+            letter.rotate,
+            "relative inline-block origin-bottom"
+          )}
+          style={{
+            WebkitTextStroke: '2px black',
+            paintOrder: 'stroke fill',
+            textShadow: '2px 2px 0px rgba(0,0,0,0.1)',
+          }}
+          animate={{
+            y: [0, -12, 0],
+            scale: [1, 1.05, 1]
+          }}
+          transition={{
+            duration: 1,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: index * 0.5,
+            repeatDelay: (letters.length - 1) * 0.5,
+          }}
+        >
+          {letter.char === "i" ? (
+            // 'i' needs special centering to look like the logo
+            <span className="relative inline-block">
+              i
+            </span>
+          ) : letter.char}
+        </motion.span>
+      ))}
+    </div>
+  );
+};
+
 const Header = () => {
   const { t, i18n } = useTranslation();
   const [isScrolled, setIsScrolled] = useState(false);
@@ -69,21 +124,14 @@ const Header = () => {
       <header
         className={cn(
           "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
-          isScrolled ? "bg-white/95 backdrop-blur-md shadow-lg py-2 border-b border-orange-100" : "bg-transparent py-4"
+          isScrolled ? "bg-white/40 backdrop-blur-lg shadow-xl py-2 border-b border-white/30" : "bg-transparent py-4"
         )}
       >
         <div className="container mx-auto px-4 flex items-center justify-between">
           {/* Logo Container */}
           <div className="shrink-0">
-            <a href="#" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="inline-block transition-transform duration-300 hover:scale-105">
-              <img
-                src={bravitaLogo}
-                alt="Bravita Logo"
-                className={cn(
-                  "transition-all duration-500 w-auto h-auto",
-                  isScrolled ? "max-h-10 md:max-h-12" : "max-h-14 md:max-h-16"
-                )}
-              />
+            <a href="#" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="inline-block">
+              <BravitaLogo isScrolled={isScrolled} />
             </a>
           </div>
 

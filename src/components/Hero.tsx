@@ -11,7 +11,7 @@ const Hero = () => {
   const [isLG, setIsLG] = useState(false);
 
   useEffect(() => {
-    const checkIsLG = () => setIsLG(window.matchMedia("(max-width: 1023px)").matches);
+    const checkIsLG = () => setIsLG(window.matchMedia("(max-width: 1024px)").matches);
     checkIsLG();
     window.addEventListener("resize", checkIsLG);
     return () => window.removeEventListener("resize", checkIsLG);
