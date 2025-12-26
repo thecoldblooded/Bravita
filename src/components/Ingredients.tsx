@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+
 const ingredients = [
   { name: "Citicoline", amount: "300 mg", percent: "-" },
   { name: "L-Arjinin", amount: "250 mg", percent: "-" },
@@ -24,24 +26,26 @@ const ingredients = [
 ];
 
 const Ingredients = () => {
+  const { t } = useTranslation();
+
   return (
     <section id="ingredients" className="py-20 md:py-32 bg-bravita-cream/50">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
-          <span className="text-primary font-bold text-sm uppercase tracking-wider">İçindekiler</span>
+          <span className="text-primary font-bold text-sm uppercase tracking-wider">{t('ingredients.badge')}</span>
           <h2 className="text-3xl md:text-5xl font-extrabold mt-2 mb-4">
-            Zengin <span className="text-gradient">Vitamin ve Mineral</span> İçeriği
+            {t('ingredients.title')} <span className="text-gradient">{t('ingredients.title_accent')}</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            5 ml (1 ölçek) için besin değerleri - Beslenme Referans Değeri yüzdeleri (% BRD)
+            {t('ingredients.description')}
           </p>
         </div>
 
         <div className="max-w-4xl mx-auto bg-card rounded-3xl shadow-card overflow-hidden border border-border">
           <div className="bg-primary/10 px-6 py-4 grid grid-cols-3 gap-4 font-bold text-xs md:text-base">
-            <span>İçindekiler</span>
-            <span className="text-center">5 ml (1 Ölçek)</span>
-            <span className="text-right">% BRD</span>
+            <span>{t('ingredients.header_name')}</span>
+            <span className="text-center">{t('ingredients.header_amount')}</span>
+            <span className="text-right">{t('ingredients.header_nrv')}</span>
           </div>
 
           <div className="divide-y divide-border">
@@ -60,7 +64,7 @@ const Ingredients = () => {
         </div>
 
         <p className="text-center text-muted-foreground text-sm mt-6 max-w-2xl mx-auto">
-          * BRD: Beslenme Referans Değeri. Türkiye (Takviye edici gıdanın ana bileşeninin menşei, ürünün menşe ülkesinden farklıdır.)
+          {t('ingredients.nrv_desc')}
         </p>
       </div>
     </section>

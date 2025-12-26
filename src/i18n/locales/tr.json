@@ -1,0 +1,153 @@
+{
+    "nav": {
+        "home": "Merhaba",
+        "benefits": "Faydaları",
+        "ingredients": "İçindekiler",
+        "usage": "Kullanım",
+        "about": "Hakkında",
+        "buy": "Satın Al"
+    },
+    "hero": {
+        "badge": "Sıvı Takviye Edici Gıda",
+        "title_part1": "Büyümenin",
+        "title_part2": "Formülü",
+        "title_part3": "Burada!",
+        "description": "Kolin ile birlikte zengin multivitamin ve mineral kompleksi içeren lezzetli sıvı takviye edici gıda. Çocukların normal büyüme ve gelişimi için özel olarak formüle edildi.",
+        "cta_more": "Daha Fazla Bilgi",
+        "cta_benefits": "Faydaları Gör",
+        "bottle_meta": "150ml",
+        "flavor": "Portakal & Vanilya",
+        "delicious": "Tadı Harika!",
+        "ingredients": {
+            "phospho": "Fosfotidilserin",
+            "choline": "Kolin",
+            "carnitine": "L-Karnitin",
+            "arginine": "L-Arjinin",
+            "multivitamin": "Multivitamin",
+            "multimineral": "Multimineral"
+        }
+    },
+    "benefits": {
+        "badge": "Faydaları",
+        "title": "Çocuğunuzun Sağlıklı",
+        "title_accent": "Gelişimi İçin",
+        "description": "Bravita'nın zengin vitamin ve mineral içeriği, çocukların normal büyüme ve gelişimini destekler",
+        "items": {
+            "immune": {
+                "title": "Bağışıklık Sistemi",
+                "desc": "C Vitamini, Çinko, B6, A Vitamini, Selenyum, D Vitamini, B12, Demir ve Folik Asit ile bağışıklık sisteminin normal fonksiyonuna yardımcı olur."
+            },
+            "nervous": {
+                "title": "Sinir Sistemi",
+                "desc": "Biyotin, Niyasin, C Vitamini, İyot, B1, B2, B6 ve B12 Vitaminleri sinir sisteminin normal işleyişine yardımcı olur."
+            },
+            "energy": {
+                "title": "Enerji Metabolizması",
+                "desc": "C Vitamini, Niyasin, Demir, B2, B6 ve B12 Vitaminleri normal enerji oluşum metabolizmasını destekler, yorgunluk ve bitkinliğin azalmasına katkıda bulunur."
+            },
+            "bone": {
+                "title": "Kemik Gelişimi",
+                "desc": "D Vitamini, çocuklarda normal büyüme ve kemik gelişimi için gereklidir. Çinko, K Vitamini ve Mangan normal kemiklerin korunmasını destekler."
+            },
+            "vision": {
+                "title": "Görme Yetisi",
+                "desc": "Çinko, B2 Vitamini ve A Vitamini normal görme yetisinin korunmasına yardımcı olur."
+            },
+            "heart": {
+                "title": "Karaciğer & Kalp",
+                "desc": "Kolin normal karaciğer fonksiyonunun korunmasına yardımcı olur. B1 Vitamini kalbin normal fonksiyonuna katkıda bulunur."
+            }
+        }
+    },
+    "product": {
+        "badge": "Ürün",
+        "title": "Lezzetli ve",
+        "title_accent": "Besleyici",
+        "description": "Çocukların severek tüketeceği, doğal portakal ve vanilya aromalı sıvı formül",
+        "features": {
+            "flavor": {
+                "title": "Doğal Aroma",
+                "desc": "Portakal ve vanilya aroması ile lezzetli formül"
+            },
+            "liquid": {
+                "title": "Sıvı Formül",
+                "desc": "Kolay yutulabilen, çocukların severek tüketeceği sıvı form"
+            },
+            "rich": {
+                "title": "Zengin İçerik",
+                "desc": "20'den fazla vitamin ve mineral ile kapsamlı destek"
+            },
+            "science": {
+                "title": "Bilimsel Formül",
+                "desc": "Türk Gıda Kodeksi'ne uygun, bilimsel araştırmalarla desteklenen içerik"
+            }
+        }
+    },
+    "ingredients": {
+        "badge": "İçindekiler",
+        "title": "Zengin",
+        "title_accent": "Vitamin ve Mineral",
+        "description": "5 ml (1 ölçek) için besin değerleri - Beslenme Referans Değeri yüzdeleri (% BRD)",
+        "header_name": "İçindekiler",
+        "header_amount": "5 ml (1 Ölçek)",
+        "header_nrv": "% BRD",
+        "nrv_desc": "* BRD: Beslenme Referans Değeri. Türkiye (Takviye edici gıdanın ana bileşeninin menşei, ürünün menşe ülkesinden farklıdır.)"
+    },
+    "usage": {
+        "badge": "KULLANIM",
+        "title": "Nasıl",
+        "title_accent": "Kullanılır?",
+        "video_subtitle": "Gelecek Odaklı Büyüme",
+        "dosage_title": "Günlük Kullanım Miktarı",
+        "dosage_child": "4-10 Yaş Çocuklar",
+        "dosage_child_amount": "Günde 1 ölçek (5 ml)",
+        "dosage_adult": "11 Yaş Üzeri ve Yetişkinler",
+        "dosage_adult_amount": "Günde 2 ölçek (10 ml)",
+        "shake": "Kullanmadan önce iyice çalkalayınız.",
+        "storage_title": "Muhafaza Koşulları",
+        "storage_1": "25°C'nin altındaki oda sıcaklığında saklayınız",
+        "storage_2": "Nemden ve güneş ışığından koruyunuz",
+        "storage_3": "Açıldıktan sonra 6 ay içinde tüketiniz",
+        "warnings_title": "Önemli Uyarılar",
+        "warning_1": "İlaç değildir. Hastalıkların önlenmesi veya tedavisi amacıyla kullanılmaz.",
+        "warning_2": "Takviye edici gıdalar normal beslenmenin yerine geçemez.",
+        "warning_3": "Tavsiye edilen günlük kullanım miktarını aşmayın.",
+        "warning_4": "Çocukların ulaşamayacağı yerde saklayın.",
+        "warning_5": "Hamilelik ve emzirme dönemi ile hastalık veya ilaç kullanılması durumlarında doktorunuza danışın."
+    },
+    "about": {
+        "badge": "Hakkımızda",
+        "title": "Geleceğe Sağlıkla",
+        "title_accent": "Büyüyen Nesiller",
+        "description": "Her ailenin en büyük hayalinin, çocuklarının sağlıkla ve mutlulukla büyüdüğünü görmek olduğuna inanıyoruz. Bu yolda, onların sağlıklı gelişimlerini destekleyecek ve potansiyellerini açığa çıkarmalarına yardımcı olacak en değerli desteği sunmak için var gücümüzle çalışıyoruz.",
+        "science_title": "Bilimle Desteklenen Gelişim",
+        "science_desc": "Uluslararası standartlarda yürütülen bilimsel araştırmalar",
+        "values_title": "Değerlerimiz",
+        "mission": {
+            "step": "Misyon",
+            "title": "Geleceğin Kahramanları İçin",
+            "content": "Her çocuğun içinde keşfedilmeyi bekleyen bir kahraman yatar. Bravita, bu potansiyeli ortaya çıkarmanın sağlıklı bir temel atmaktan geçtiğine inanır."
+        },
+        "vision": {
+            "step": "Vizyon",
+            "title": "Türkiye'den Dünyaya",
+            "content": "Bu topraklarda doğan bir marka olarak, gücümüzü insanımızın sağlık ihtiyaçlarından alıyoruz. Dünya genelinde ailelerin güvendiği bir marka olma vizyonuyla ilerliyoruz."
+        },
+        "motto": {
+            "step": "Motto",
+            "title": "Gücün Kaynağı",
+            "content": "Modern hayatın koşturmacasında zinde kalmak için \"Büyümenin Formülü Burada\" mottosuyla günlük beslenmenize pratik bir destek sunuyoruz."
+        }
+    },
+    "footer": {
+        "tagline": "Multivitamin, Multimineral ve Aminoasit İçeren Sıvı Takviye Edici Gıda.",
+        "reg_no": "Kayıt No: TR-06-K-094361",
+        "quick_links": "Hızlı Linkler",
+        "legal_support": "Yasal & Destek",
+        "contact": "İletişim",
+        "privacy": "Gizlilik Politikası",
+        "kvkk": "KVKK",
+        "copyright": "Tüm hakları saklıdır.",
+        "valco_desc": "Valco İlaç Arge Laboratuvar Hizmetleri"
+    }
+}

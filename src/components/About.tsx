@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import bravitaBottle from "@/assets/bravita-bottle.png";
 import { FeatureSteps } from "@/components/ui/feature-steps";
 import heroImage from "@/assets/Geleceğin Kahramanları İçin.jpeg";
@@ -5,27 +6,27 @@ import globalImage from "@/assets/Türkiye'den Dünyaya.png";
 import strengthImage from "@/assets/Gücün Kaynağı.jpeg";
 
 const About = () => {
+  const { t } = useTranslation();
+
   return (
     <section id="about" className="py-20 md:py-32 bg-gradient-to-b from-bravita-cream/30 to-background overflow-hidden">
       <div className="container mx-auto px-4">
         <div className="grid lg:grid-cols-2 gap-12 items-center mb-20">
           <div className="order-2 lg:order-1">
-            <span className="text-bravita-orange font-bold tracking-wider text-sm uppercase mb-2 block">Hakkımızda</span>
+            <span className="text-bravita-orange font-bold tracking-wider text-sm uppercase mb-2 block">{t('about.badge')}</span>
             <h2 className="text-3xl md:text-5xl font-extrabold text-foreground mt-2 mb-4">
-              Geleceğe Sağlıkla <span className="text-transparent bg-clip-text bg-gradient-to-r from-bravita-yellow via-bravita-orange to-bravita-red">Büyüyen Nesiller</span>
+              {t('about.title')} <span className="text-transparent bg-clip-text bg-gradient-to-r from-bravita-yellow via-bravita-orange to-bravita-red">{t('about.title_accent')}</span>
             </h2>
             <p className="text-muted-foreground text-lg leading-relaxed mb-6">
-              Her ailenin en büyük hayalinin, çocuklarının sağlıkla ve mutlulukla büyüdüğünü görmek olduğuna inanıyoruz.
-              Bu yolda, onların sağlıklı gelişimlerini destekleyecek ve potansiyellerini açığa çıkarmalarına
-              yardımcı olacak en değerli desteği sunmak için var gücümüzle çalışıyoruz.
+              {t('about.description')}
             </p>
             <div className="flex items-center gap-4 p-4 bg-card rounded-xl border border-border">
               <div className="w-12 h-12 rounded-full bg-bravita-green/10 flex items-center justify-center">
                 <span className="text-2xl">🔬</span>
               </div>
               <div>
-                <p className="font-bold">Bilimle Desteklenen Gelişim</p>
-                <p className="text-muted-foreground text-sm">Uluslararası standartlarda yürütülen bilimsel araştırmalar</p>
+                <p className="font-bold">{t('about.science_title')}</p>
+                <p className="text-muted-foreground text-sm">{t('about.science_desc')}</p>
               </div>
             </div>
           </div>
@@ -47,25 +48,25 @@ const About = () => {
           <FeatureSteps
             features={[
               {
-                step: 'Misyon',
-                title: 'Geleceğin Kahramanları İçin',
-                content: 'Her çocuğun içinde keşfedilmeyi bekleyen bir kahraman yatar. Bravita, bu potansiyeli ortaya çıkarmanın sağlıklı bir temel atmaktan geçtiğine inanır.',
+                step: t('about.mission.step'),
+                title: t('about.mission.title'),
+                content: t('about.mission.content'),
                 image: heroImage
               },
               {
-                step: 'Vizyon',
-                title: "Türkiye'den Dünyaya",
-                content: "Bu topraklarda doğan bir marka olarak, gücümüzü insanımızın sağlık ihtiyaçlarından alıyoruz. Dünya genelinde ailelerin güvendiği bir marka olma vizyonuyla ilerliyoruz.",
+                step: t('about.vision.step'),
+                title: t('about.vision.title'),
+                content: t('about.vision.content'),
                 image: globalImage
               },
               {
-                step: 'Motto',
-                title: 'Gücün Kaynağı',
-                content: 'Modern hayatın koşturmacasında zinde kalmak için "Büyümenin Formülü Burada" mottosuyla günlük beslenmenize pratik bir destek sunuyoruz.',
+                step: t('about.motto.step'),
+                title: t('about.motto.title'),
+                content: t('about.motto.content'),
                 image: strengthImage
               }
             ]}
-            title="Değerlerimiz"
+            title={t('about.values_title')}
             autoPlayInterval={5000}
             imageHeight="aspect-square"
             className="bg-transparent"
@@ -75,6 +76,5 @@ const About = () => {
     </section>
   );
 };
-
 
 export default About;

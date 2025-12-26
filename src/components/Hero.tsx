@@ -3,10 +3,10 @@ import { Star, Sparkles, ChevronDown } from "lucide-react";
 import bravitaBottle from "@/assets/bravita-bottle.png";
 import { motion } from "framer-motion";
 import TextCursorProximity from "./ui/text-cursor-proximity";
-
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useTranslation } from "react-i18next";
 
 const Hero = () => {
+  const { t } = useTranslation();
   const containerRef = useRef<HTMLElement>(null);
   const [isLG, setIsLG] = useState(false);
 
@@ -18,22 +18,22 @@ const Hero = () => {
   }, []);
 
   const ingredients = [
-    'Fosfotidilserin',
-    'Kolin',
-    'L-Karnitin',
-    'L-Arjinin',
-    'Multivitamin',
-    'Multimineral',
+    t('hero.ingredients.phospho'),
+    t('hero.ingredients.choline'),
+    t('hero.ingredients.carnitine'),
+    t('hero.ingredients.arginine'),
+    t('hero.ingredients.multivitamin'),
+    t('hero.ingredients.multimineral'),
   ];
 
   // Coordinates scaled to 1000x1000 for better precision and text rendering
   const starsData = [
-    { name: 'Fosfotidilserin', start: [380, 180], mobileStart: [180, 150], delay: 0, duration: 6, size: 119, mobileSize: 55, floatAmount: 15 },
-    { name: 'Kolin', start: [880, 120], mobileStart: [820, 150], delay: 0.5, duration: 7, size: 85, mobileSize: 55, floatAmount: 20 },
-    { name: 'L-Karnitin', start: [420, 750], mobileStart: [120, 280], delay: 1, duration: 5.5, size: 102, mobileSize: 55, floatAmount: 12 },
-    { name: 'L-Arjinin', start: [480, 450], mobileStart: [880, 280], delay: 1.5, duration: 8, size: 94, mobileSize: 55, floatAmount: 18 },
-    { name: 'Multivitamin', start: [650, 880], mobileStart: [200, 410], delay: 2, duration: 6.5, size: 111, mobileSize: 55, floatAmount: 14 },
-    { name: 'Multimineral', start: [920, 620], mobileStart: [800, 410], delay: 1.2, duration: 7.5, size: 106, mobileSize: 55, floatAmount: 16 },
+    { name: t('hero.ingredients.phospho'), start: [380, 180], mobileStart: [180, 150], delay: 0, duration: 6, size: 119, mobileSize: 55, floatAmount: 15 },
+    { name: t('hero.ingredients.choline'), start: [880, 120], mobileStart: [820, 150], delay: 0.5, duration: 7, size: 85, mobileSize: 55, floatAmount: 20 },
+    { name: t('hero.ingredients.carnitine'), start: [420, 750], mobileStart: [120, 280], delay: 1, duration: 5.5, size: 102, mobileSize: 55, floatAmount: 12 },
+    { name: t('hero.ingredients.arginine'), start: [480, 450], mobileStart: [880, 280], delay: 1.5, duration: 8, size: 94, mobileSize: 55, floatAmount: 18 },
+    { name: t('hero.ingredients.multivitamin'), start: [650, 880], mobileStart: [200, 410], delay: 2, duration: 6.5, size: 111, mobileSize: 55, floatAmount: 14 },
+    { name: t('hero.ingredients.multimineral'), start: [920, 620], mobileStart: [800, 410], delay: 1.2, duration: 7.5, size: 106, mobileSize: 55, floatAmount: 16 },
   ];
 
   const stars = starsData.map(star => ({
@@ -43,6 +43,14 @@ const Hero = () => {
   }));
 
   const target = isLG ? [500, 280] : [820, 530]; // Bottle center relative to 1000x1000
+
+  // Colors for the rainbow text part
+  const rainbowColors = ["#e86e25", "#dcb036", "#c8c641", "#a9d256", "#88d969", "#88d969", "#88d969"];
+  const accentWord = t('hero.title_part2') || '';
+  const accentChars = accentWord.split('').map((char, index) => ({
+    char,
+    color: rainbowColors[index % rainbowColors.length]
+  }));
 
   return (
     <section ref={containerRef} id="hero" className="relative min-h-screen gradient-hero overflow-hidden pt-12 pb-16 flex items-center">
@@ -194,12 +202,13 @@ const Hero = () => {
           <div className="order-2 lg:order-1 text-center lg:text-left pt-32 md:pt-40 lg:pt-30">
             <div className="inline-flex items-center gap-2 bg-white/90 px-3 py-1.5 rounded-full border border-orange-100 shadow-sm mb-8 animate-fade-in-up">
               <Sparkles className="w-4 h-4 text-orange-500" />
-              <span className="text-[11px] font-bold text-gray-500 uppercase tracking-tight">Sıvı Takviye Edici Gıda</span>
+              <span className="text-[11px] font-bold text-gray-500 uppercase tracking-tight">{t('hero.badge')}</span>
             </div>
 
             <h1 className="text-4xl md:text-[84px] font-black text-[#2D334A] mb-8 leading-[1.05] tracking-tight animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
               <TextCursorProximity
-                label="Büyümenin"
+                key={t('hero.title_part1')} // Force remount when text changes to prevent hook mismatches
+                label={t('hero.title_part1')}
                 containerRef={containerRef}
                 className="inline-block mr-4"
                 styles={{
@@ -211,17 +220,9 @@ const Hero = () => {
               />
               <br className="hidden md:block" />
               <span className="inline-flex flex-wrap justify-center lg:justify-start">
-                {[
-                  { char: "F", color: "#e86e25" },
-                  { char: "o", color: "#dcb036" },
-                  { char: "r", color: "#c8c641" },
-                  { char: "m", color: "#a9d256" },
-                  { char: "ü", color: "#88d969" },
-                  { char: "l", color: "#88d969" },
-                  { char: "ü", color: "#88d969" },
-                ].map((item, index) => (
+                {accentChars.map((item, index) => (
                   <TextCursorProximity
-                    key={index}
+                    key={`${index}-${item.char}`} // Compounded key for safety
                     label={item.char}
                     containerRef={containerRef}
                     className="inline-block"
@@ -236,7 +237,8 @@ const Hero = () => {
               </span>
               <br />
               <TextCursorProximity
-                label="Burada!"
+                key={t('hero.title_part3')} // Force remount when text changes
+                label={t('hero.title_part3')}
                 containerRef={containerRef}
                 className="inline-block"
                 styles={{
@@ -249,8 +251,7 @@ const Hero = () => {
             </h1>
 
             <p className="text-base md:text-lg text-gray-500/80 mb-10 max-w-lg mx-auto lg:mx-0 leading-relaxed animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
-              Kolin ile birlikte zengin multivitamin ve mineral kompleksi içeren lezzetli sıvı takviye edici gıda.
-              Çocukların normal büyüme ve gelişimi için özel olarak formüle edildi.
+              {t('hero.description')}
             </p>
 
             <div className="flex flex-wrap justify-center lg:justify-start gap-2.5 mb-12 animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
@@ -274,7 +275,7 @@ const Hero = () => {
                 }}
                 className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-[#f97316] text-white px-8 py-4 rounded-full font-bold text-base shadow-xl shadow-orange-200/50 hover:bg-orange-600 transition-all duration-300"
               >
-                Daha Fazla Bilgi
+                {t('hero.cta_more')}
                 <ChevronDown className="w-4 h-4" />
               </a>
               <a
@@ -285,7 +286,7 @@ const Hero = () => {
                 }}
                 className="inline-flex w-full sm:w-auto items-center justify-center bg-white text-orange-600 px-8 py-4 rounded-full font-bold text-base shadow-xl shadow-gray-100/50 hover:bg-gray-50 transition-all duration-300"
               >
-                Faydaları Gör
+                {t('hero.cta_benefits')}
               </a>
             </div>
           </div>
@@ -302,12 +303,12 @@ const Hero = () => {
                 />
 
                 <div className="absolute top-12 -right-2 bg-[#FFC529] text-[#2D334A] px-3 py-1 rounded-full font-bold text-[10px] md:text-xs shadow-lg z-20">
-                  150ml
+                  {t('hero.bottle_meta')}
                 </div>
 
                 <div className="absolute -bottom-2 -left-4 bg-white/95 backdrop-blur-sm p-3 md:p-4 rounded-xl md:rounded-2xl shadow-xl z-20 border border-gray-50">
-                  <span className="text-[9px] md:text-[10px] font-bold text-gray-400 block mb-0.5">Portakal & Vanilya</span>
-                  <p className="font-extrabold text-orange-600 text-xs md:text-sm">Lezzetli!</p>
+                  <span className="text-[9px] md:text-[10px] font-bold text-gray-400 block mb-0.5">{t('hero.flavor')}</span>
+                  <p className="font-extrabold text-orange-600 text-xs md:text-sm">{t('hero.delicious')}</p>
                 </div>
               </div>
             </div>

@@ -12,25 +12,28 @@ import {
 import { FooterBackgroundGradient, TextHoverEffect } from "@/components/ui/hover-footer";
 import bravitaLogo from "@/assets/bravita-logo.png";
 import valcoLogo from "@/assets/valco-logo.png";
+import { useTranslation } from "react-i18next";
 
 function Footer() {
+  const { t } = useTranslation();
+
   // Footer link data
   const footerLinks = [
     {
-      title: "Hızlı Linkler",
+      title: t('footer.quick_links'),
       links: [
-        { label: "Faydaları", href: "#benefits" },
-        { label: "İçindekiler", href: "#ingredients" },
-        { label: "Kullanım", href: "#usage" },
-        { label: "Hakkımızda", href: "#about" },
+        { label: t('nav.benefits'), href: "#benefits" },
+        { label: t('nav.ingredients'), href: "#ingredients" },
+        { label: t('nav.usage'), href: "#usage" },
+        { label: t('nav.about'), href: "#about" },
       ],
     },
     {
-      title: "Yasal & Destek",
+      title: t('footer.legal'),
       links: [
-        { label: "İletişim", href: "#contact" },
-        { label: "Gizlilik Politikası", href: "#" },
-        { label: "KVKK", href: "#" },
+        { label: t('footer.contact'), href: "#contact" },
+        { label: t('footer.privacy'), href: "#" },
+        { label: t('footer.kvkk'), href: "#" },
       ],
     },
   ];
@@ -46,10 +49,6 @@ function Footer() {
       icon: <Phone size={18} className="text-bravita-orange" />,
       text: "0312 238 18 68",
       href: "tel:+903122381868",
-    },
-    {
-      icon: <MapPin size={18} className="text-bravita-orange" />,
-      text: "Çankaya, Ankara",
     },
   ];
 
@@ -71,13 +70,15 @@ function Footer() {
               <img src={bravitaLogo} alt="Bravita" className="h-10 brightness-0 invert" />
             </div>
             <p className="text-sm leading-relaxed text-neutral-300 max-w-xs">
-              Multivitamin, Multimineral ve Aminoasit İçeren Sıvı Takviye Edici Gıda.
+              {t('footer.tagline')}
             </p>
             <div className="text-xs text-neutral-500">
-              Kayıt No: TR-06-K-094361
+              {t('footer.reg_no')}
             </div>
             <div>
-              <img src={valcoLogo} alt="Valco İlaç" className="h-12 brightness-0 invert opacity-60 hover:opacity-100 transition-opacity" />
+              <a href="https://www.valcoilac.com.tr/" target="_blank" rel="noopener noreferrer" className="inline-block">
+                <img src={valcoLogo} alt="Valco İlaç" className="h-12 brightness-0 invert opacity-60 hover:opacity-100 transition-opacity" />
+              </a>
             </div>
           </div>
 
@@ -93,8 +94,10 @@ function Footer() {
                     <a
                       href={link.href}
                       onClick={(e) => {
-                        e.preventDefault();
-                        document.querySelector(link.href)?.scrollIntoView({ behavior: 'smooth' });
+                        if (link.href.startsWith("#") && document.querySelector(link.href)) {
+                          e.preventDefault();
+                          document.querySelector(link.href)?.scrollIntoView({ behavior: 'smooth' });
+                        }
                       }}
                       className="text-neutral-400 hover:text-bravita-orange transition-colors"
                     >
@@ -109,14 +112,14 @@ function Footer() {
           {/* Contact section */}
           <div className="text-center md:text-left">
             <h4 className="text-white text-lg font-semibold mb-6">
-              İletişim
+              {t('footer.contact')}
             </h4>
             <ul className="space-y-4 text-neutral-400">
               <li className="flex items-start space-x-3 justify-center md:justify-start">
                 <span className="mt-1"><MapPin size={18} className="text-bravita-orange" /></span>
                 <span className="text-sm">Prof. Dr. Ahmet Taner Kışlalı Mah. Alacaatlı Cad. No:30/5A Çankaya - Ankara</span>
               </li>
-              {contactInfo.slice(0, 2).map((item, i) => (
+              {contactInfo.map((item, i) => (
                 <li key={i} className="flex items-center space-x-3 justify-center md:justify-start">
                   {item.icon}
                   {item.href ? (
@@ -159,19 +162,16 @@ function Footer() {
 
           {/* Copyright */}
           <div className="text-center md:text-right">
-            <p>&copy; {new Date().getFullYear()} Bravita. Tüm hakları saklıdır.</p>
+            <p>&copy; {new Date().getFullYear()} Bravita. {t('footer.rights')}</p>
             <p className="text-xs opacity-60 mt-1">Valco İlaç Arge Laboratuvar Hizmetleri</p>
           </div>
         </div>
       </div>
 
       {/* Text hover effect - Using the EXACT positioning classes from the demo */}
-      <div className="md:flex hidden h-[30rem] -mt-20 -mb-36 pointer-events-auto justify-center items-center">
+      <div className="md:flex hidden h-120 -mt-20 -mb-36 pointer-events-auto justify-center items-center">
         <TextHoverEffect text="BRAVITA" className="z-50 translate-y-20 md:translate-y-0" />
       </div>
-
-      {/* Scroll to top button - Re-added as requested implicitly by 'design I want' context if it was liked */}
-      {/* Scroll to top button removed as per user request */}
 
       <FooterBackgroundGradient />
     </footer>

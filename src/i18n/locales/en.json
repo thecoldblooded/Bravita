@@ -1,0 +1,153 @@
+{
+    "nav": {
+        "home": "Home",
+        "benefits": "Benefits",
+        "ingredients": "Ingredients",
+        "usage": "Usage",
+        "about": "About",
+        "buy": "Buy Now"
+    },
+    "hero": {
+        "badge": "Liquid Dietary Supplement",
+        "title_part1": "Growth",
+        "title_part2": "Formula",
+        "title_part3": "starts Here!",
+        "description": "Delicious liquid dietary supplement containing choline, rich multivitamin, and mineral complex. Specially formulated for children's healthy growth and development.",
+        "cta_more": "More Information",
+        "cta_benefits": "View Benefits",
+        "bottle_meta": "150ml",
+        "flavor": "Orange & Vanilla",
+        "delicious": "Delicious!",
+        "ingredients": {
+            "phospho": "Phosphatidilserine",
+            "choline": "Choline",
+            "carnitine": "L-Carnitine",
+            "arginine": "L-Arginine",
+            "multivitamin": "Multivitamin",
+            "multimineral": "Multimineral"
+        }
+    },
+    "benefits": {
+        "badge": "Benefits",
+        "title": "For Your Child's Healthy",
+        "title_accent": "Development",
+        "description": "Bravita's rich vitamin and mineral content supports children's normal growth and development.",
+        "items": {
+            "immune": {
+                "title": "Immune System",
+                "desc": "Helps the normal function of the immune system with Vitamin C, Zinc, B6, Vitamin A, Selenium, Vitamin D, B12, Iron, and Folic Acid."
+            },
+            "nervous": {
+                "title": "Nervous System",
+                "desc": "Biotin, Niacin, Vitamin C, Iodine, Vitamins B1, B2, B6, and B12 contribute to the normal functioning of the nervous system."
+            },
+            "energy": {
+                "title": "Energy Metabolism",
+                "desc": "Vitamin C, Niacin, Iron, Vitamins B2, B6, and B12 support normal energy-yielding metabolism and contribute to the reduction of tiredness and fatigue."
+            },
+            "bone": {
+                "title": "Bone Development",
+                "desc": "Vitamin D is needed for normal growth and development of bone in children. Zinc, Vitamin K, and Manganese contribute to the maintenance of normal bones."
+            },
+            "vision": {
+                "title": "Vision",
+                "desc": "Zinc, Vitamin B2, and Vitamin A contribute to the maintenance of normal vision."
+            },
+            "heart": {
+                "title": "Liver & Heart",
+                "desc": "Choline contributes to the maintenance of normal liver function. Vitamin B1 contributes to the normal function of the heart."
+            }
+        }
+    },
+    "product": {
+        "badge": "Product",
+        "title": "Delicious and",
+        "title_accent": "Nutritious",
+        "description": "Delicious liquid formula with natural orange and vanilla flavor that children will love.",
+        "features": {
+            "flavor": {
+                "title": "Natural Flavor",
+                "desc": "Delicious formula with orange and vanilla flavor."
+            },
+            "liquid": {
+                "title": "Liquid Formula",
+                "desc": "Easy-to-swallow liquid form that children will enjoy consuming."
+            },
+            "rich": {
+                "title": "Rich Content",
+                "desc": "Comprehensive support with more than 20 vitamins and minerals."
+            },
+            "science": {
+                "title": "Scientific Formula",
+                "desc": "Content supported by scientific research, complying with the Turkish Food Codex."
+            }
+        }
+    },
+    "ingredients": {
+        "badge": "Ingredients",
+        "title": "Rich",
+        "title_accent": "Vitamin and Mineral",
+        "description": "Nutritional values per 5 ml (1 scoop) - Nutrient Reference Value percentages (% NRV)",
+        "header_name": "Ingredients",
+        "header_amount": "5 ml (1 Scoop)",
+        "header_nrv": "% NRV",
+        "nrv_desc": "* NRV: Nutrient Reference Value. Turkey (The origin of the main component of the dietary supplement is different from the country of origin of the product.)"
+    },
+    "usage": {
+        "badge": "USAGE",
+        "title": "How to",
+        "title_accent": "Use?",
+        "video_subtitle": "Future-Focused Growth",
+        "dosage_title": "Daily Intake Amount",
+        "dosage_child": "Children 4-10 Years",
+        "dosage_child_amount": "1 scoop (5 ml) per day",
+        "dosage_adult": "Ages 11 and Over & Adults",
+        "dosage_adult_amount": "2 scoops (10 ml) per day",
+        "shake": "Shake well before use.",
+        "storage_title": "Storage Conditions",
+        "storage_1": "Store at room temperature below 25°C",
+        "storage_2": "Protect from light and moisture",
+        "storage_3": "Consume within 6 months after opening",
+        "warnings_title": "Important Warnings",
+        "warning_1": "It is not a medicine. It cannot be used for the prevention or treatment of diseases.",
+        "warning_2": "Dietary supplements cannot replace a normal diet.",
+        "warning_3": "Do not exceed the recommended daily intake.",
+        "warning_4": "Keep out of reach of children.",
+        "warning_5": "Consult your doctor in case of pregnancy and breastfeeding, illness or drug use."
+    },
+    "about": {
+        "badge": "About Us",
+        "title": "Generations Growing",
+        "title_accent": "Healthy into the Future",
+        "description": "We believe that every family's greatest dream is to see their children grow up healthy and happy. On this path, we work with all our strength to provide the most valuable support to support their healthy development and help them reach their potential.",
+        "science_title": "Science-Backed Development",
+        "science_desc": "Scientific research conducted according to international standards",
+        "values_title": "Our Values",
+        "mission": {
+            "step": "Mission",
+            "title": "For the Heroes of the Future",
+            "content": "A hero awaits discovery inside every child. Bravita believes that revealing this potential starts with laying a healthy foundation."
+        },
+        "vision": {
+            "step": "Vision",
+            "title": "From Turkey to the World",
+            "content": "As a brand born in these lands, we draw our strength from the health needs of our people. We advance with the vision of becoming a brand trusted by families worldwide."
+        },
+        "motto": {
+            "step": "Motto",
+            "title": "Source of Power",
+            "content": "We provide practical support to your daily diet with the motto \"Growth Formula is Here\" to stay fit in the hustle and bustle of modern life."
+        }
+    },
+    "footer": {
+        "tagline": "Liquid Dietary Supplement Containing Multivitamin, Multimineral and Amino Acid.",
+        "reg_no": "Registration No: TR-06-K-094361",
+        "quick_links": "Quick Links",
+        "legal_support": "Legal & Support",
+        "contact": "Contact",
+        "privacy": "Privacy Policy",
+        "kvkk": "KVKK",
+        "copyright": "All rights reserved.",
+        "valco_desc": "Valco Pharma R&D Laboratory Services"
+    }
+}
