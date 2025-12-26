@@ -36,7 +36,7 @@ const Header = () => {
 
         const element = document.getElementById(item.id);
         if (element) {
-          const top = element.offsetTop;
+          const top = element.getBoundingClientRect().top + window.scrollY;
           if (scrollPosition >= top) {
             currentSectionId = item.id;
           }

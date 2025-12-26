@@ -24,7 +24,7 @@ i18n.init({
         escapeValue: false,
     },
     detection: {
-        order: ['localStorage', 'navigator'],
+        order: ['localStorage'],
         lookupLocalStorage: 'i18nextLng',
         caches: ['localStorage'],
     },

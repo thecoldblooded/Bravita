@@ -29,7 +29,7 @@ function Footer() {
       ],
     },
     {
-      title: t('footer.legal'),
+      title: t('footer.legal_support'),
       links: [
         { label: t('footer.contact'), href: "#contact" },
         { label: t('footer.privacy'), href: "#" },
@@ -162,7 +162,7 @@ function Footer() {
 
           {/* Copyright */}
           <div className="text-center md:text-right">
-            <p>&copy; {new Date().getFullYear()} Bravita. {t('footer.rights')}</p>
+            <p>&copy; {new Date().getFullYear()} Bravita. {t('footer.copyright')}</p>
             <p className="text-xs opacity-60 mt-1">Valco İlaç Arge Laboratuvar Hizmetleri</p>
           </div>
         </div>
