@@ -180,7 +180,7 @@ const ScrollImageSequence = ({ className = "" }: ScrollImageSequenceProps) => {
   return (
     <div ref={containerRef} className={`relative ${className}`}>
       {/* Glow effect behind the bottle */}
-      <div className="absolute inset-0 bg-gradient-to-br from-bravita-yellow/40 to-bravita-orange/40 rounded-full blur-3xl scale-90" />
+      <div className="absolute inset-0 bg-linear-to-br from-bravita-yellow/40 to-bravita-orange/40 rounded-full blur-3xl scale-90" />
       
       {/* Canvas for image sequence */}
       <canvas
@@ -195,7 +195,7 @@ const ScrollImageSequence = ({ className = "" }: ScrollImageSequenceProps) => {
       {/* Loading placeholder */}
       {!isReady && (
         <div 
-          className="absolute inset-0 z-10 bg-gradient-to-br from-bravita-yellow/20 to-bravita-orange/20 rounded-3xl animate-pulse"
+          className="absolute inset-0 z-10 bg-linear-to-br from-bravita-yellow/20 to-bravita-orange/20 rounded-3xl animate-pulse"
           style={{ aspectRatio: "16/9" }}
         />
       )}
