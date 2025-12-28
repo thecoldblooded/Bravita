@@ -88,7 +88,7 @@ export function FeatureSteps({
 
                     <div
                         className={cn(
-                            "order-1 md:order-2 relative rounded-lg",
+                            "order-1 md:order-2 relative aspect-square rounded-lg",
                             imageHeight
                         )}
                     >

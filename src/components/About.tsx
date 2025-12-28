@@ -9,7 +9,7 @@ const About = () => {
   const { t } = useTranslation();
 
   return (
-    <section id="about" className="relative pt-32 md:pt-8 pb-20 md:pb-2 overflow-visible">
+    <section id="about" className="relative pt-32 md:pt-8 pb-20 md:pb-2 overflow-x-hidden overflow-y-visible">
       {/* Soft dissolved gradient background */}
       <div 
         className="absolute inset-0 -z-10"

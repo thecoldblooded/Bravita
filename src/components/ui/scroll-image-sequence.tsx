@@ -5,10 +5,10 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 // Register GSAP plugins
 gsap.registerPlugin(ScrollTrigger);
 
-// Generate frame URLs - 81 frames
+// Generate frame URLs - 81 frames (from public folder for production)
 const frameCount = 81;
 const frameUrls = Array.from({ length: frameCount }, (_, i) => 
-  `/src/assets/frames/ezgif-frame-${String(i + 1).padStart(3, '0')}.png`
+  `/frames/ezgif-frame-${String(i + 1).padStart(3, '0')}.png`
 );
 
 interface ScrollImageSequenceProps {
