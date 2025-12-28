@@ -8,13 +8,13 @@ import { useTranslation } from "react-i18next";
 
 const BravitaLogo = ({ isScrolled }: { isScrolled: boolean }) => {
   const letters = [
-    { char: "B", color: "text-[#EE4036]", rotate: "-rotate-3" },
-    { char: "R", color: "text-[#F68B28]", rotate: "-rotate-1" },
-    { char: "A", color: "text-[#FDB813]", rotate: "rotate-1" },
-    { char: "V", color: "text-[#CDDC39]", rotate: "-rotate-2" },
-    { char: "i", color: "text-[#4CAF50]", rotate: "rotate-2" },
-    { char: "T", color: "text-[#00ADEF]", rotate: "rotate-1" },
-    { char: "A", color: "text-[#9E499B]", rotate: "rotate-3" },
+    { char: "B", color: "text-[#EE4036]", rotate: "-rotate-3", spacing: 0 },
+    { char: "R", color: "text-[#F68B28]", rotate: "-rotate-1", spacing: -0.15 },
+    { char: "A", color: "text-[#FDB813]", rotate: "rotate-1", spacing: -0.13 },
+    { char: "V", color: "text-[#CDDC39]", rotate: "-rotate-2", spacing: -0.155 },
+    { char: "i", color: "text-[#4CAF50]", rotate: "rotate-2", spacing: -0.12 },
+    { char: "T", color: "text-[#00ADEF]", rotate: "rotate-1", spacing: -0.06 },
+    { char: "A", color: "text-[#9E499B]", rotate: "rotate-3", spacing: -0.17 },
   ];
 
   return (
@@ -36,6 +36,8 @@ const BravitaLogo = ({ isScrolled }: { isScrolled: boolean }) => {
             WebkitTextStroke: '2px black',
             paintOrder: 'stroke fill',
             textShadow: '2px 2px 0px rgba(0,0,0,0.1)',
+            scaleX: 0.75,
+            marginLeft: `${letter.spacing}em`,
           }}
           animate={{
             y: [0, -12, 0],

@@ -134,6 +134,23 @@ const Usage = () => {
           </div>
         </div>
       </div>
+      
+      {/* Bottom dissolved gradient for smooth transition - full width */}
+      <div 
+        className="absolute bottom-0 left-0 right-0 h-96 pointer-events-none z-0"
+        style={{
+          background: `linear-gradient(to bottom, 
+            transparent 0%, 
+            transparent 10%,
+            rgba(255, 251, 235, 0.15) 25%,
+            rgba(255, 249, 240, 0.3) 40%,
+            rgba(255, 241, 230, 0.5) 55%,
+            rgba(254, 243, 199, 0.7) 70%,
+            rgba(255, 251, 235, 0.85) 85%,
+            hsl(45 100% 98%) 100%
+          )`,
+        }}
+      />
     </section>
   );
 };

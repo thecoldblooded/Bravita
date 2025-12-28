@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
-import bravitaBottle from "@/assets/bravita-bottle.png";
 import { FeatureSteps } from "@/components/ui/feature-steps";
+import ScrollImageSequence from "@/components/ui/scroll-image-sequence";
 import heroImage from "@/assets/Geleceğin Kahramanları İçin.jpeg";
 import globalImage from "@/assets/Türkiye'den Dünyaya.png";
 import strengthImage from "@/assets/Gücün Kaynağı.jpeg";
@@ -9,10 +9,25 @@ const About = () => {
   const { t } = useTranslation();
 
   return (
-    <section id="about" className="py-20 md:py-32 bg-gradient-to-b from-bravita-cream/30 to-background overflow-hidden">
+    <section id="about" className="relative pt-32 md:pt-8 pb-20 md:pb-2 overflow-visible">
+      {/* Soft dissolved gradient background */}
+      <div 
+        className="absolute inset-0 -z-10"
+        style={{
+          background: `linear-gradient(180deg, 
+            transparent 0%, 
+            transparent 10%,
+            rgba(255, 249, 240, 0.2) 20%,
+            rgba(255, 241, 230, 0.4) 35%, 
+            rgba(254, 243, 199, 0.6) 50%,
+            rgba(255, 251, 235, 0.8) 70%,
+            var(--color-background) 100%
+          )`,
+        }}
+      />
       <div className="container mx-auto px-4">
-        <div className="grid lg:grid-cols-2 gap-12 items-center mb-20">
-          <div className="order-2 lg:order-1">
+        <div className="grid md:grid-cols-2 gap-12 items-center mb-22 md:mb-30">
+          <div className="order-2 md:order-1">
             <span className="text-bravita-orange font-bold tracking-wider text-sm uppercase mb-2 block">{t('about.badge')}</span>
             <h2 className="text-3xl md:text-5xl font-extrabold text-foreground mt-2 mb-4">
               {t('about.title')} <span className="text-transparent bg-clip-text bg-gradient-to-r from-bravita-yellow via-bravita-orange to-bravita-red">{t('about.title_accent')}</span>
@@ -31,20 +46,15 @@ const About = () => {
             </div>
           </div>
 
-          <div className="order-1 lg:order-2 flex justify-center">
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-bravita-yellow/40 to-bravita-orange/40 rounded-full blur-3xl scale-90" />
-              <img
-                src={bravitaBottle}
-                alt="Bravita"
-                className="relative z-10 w-64 md:w-80 animate-float-slow"
-              />
+          <div className="order-1 md:order-2 flex justify-center items-center w-full -z-10 md:z-0">
+            <div className="flex justify-center items-center scale-[3] md:scale-100 origin-center -translate-y-[15%] sm:-translate-y-[20%] md:translate-y-0">
+              <ScrollImageSequence />
             </div>
           </div>
         </div>
 
         {/* Values via FeatureSteps */}
-        <div className="mt-16">
+        <div className="mt-24 md:mt-32">
           <FeatureSteps
             features={[
               {

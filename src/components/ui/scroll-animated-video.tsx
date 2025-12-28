@@ -432,7 +432,7 @@ export const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
             className={["hsv-root relative", className].filter(Boolean).join(" ")}
             style={{ ...cssVars, ...style }}
         >
-            <div className="sticky top-0 h-screen w-full -z-10 mb-[-100vh] overflow-hidden pointer-events-none">
+            <div className="sticky top-0 h-[150vh] w-full -z-10 mb-[-150vh] overflow-hidden pointer-events-none">
                 <BackgroundGradientAnimation
                     containerClassName="!h-full !w-full !mt-0"
                     gradientBackgroundStart="rgb(255, 253, 250)"
@@ -443,6 +443,14 @@ export const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
                     fourthColor="34, 197, 94"
                     fifthColor="14, 165, 233"
                     pointerColor="249, 115, 22"
+                />
+                {/* Bottom dissolved fade overlay */}
+                <div 
+                    className="absolute bottom-0 left-0 right-0 pointer-events-none"
+                    style={{
+                        height: "40%",
+                        background: "linear-gradient(to bottom, transparent 0%, rgba(255, 251, 235, 0.3) 30%, rgba(255, 251, 235, 0.6) 50%, rgba(255, 251, 235, 0.85) 70%, hsl(45 100% 98%) 100%)",
+                    }}
                 />
             </div>
 
