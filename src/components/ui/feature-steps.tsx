@@ -1,8 +1,9 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
+import ShineBorder from "@/components/ui/shine-border"
 
 interface Feature {
     step: string
@@ -88,33 +89,23 @@ export function FeatureSteps({
 
                     <div
                         className={cn(
-                            "order-1 md:order-2 relative aspect-square rounded-lg",
+                            "order-1 md:order-2 relative aspect-square",
                             imageHeight
                         )}
                     >
-                        <AnimatePresence mode="wait">
-                            {features.map(
-                                (feature, index) =>
-                                    index === currentFeature && (
-                                        <motion.div
-                                            key={index}
-                                            className="absolute inset-0 rainbow-border !absolute rounded-lg"
-                                            initial={{ y: -100, opacity: 0, rotateX: 20 }}
-                                            animate={{ y: 0, opacity: 1, rotateX: 0 }}
-                                            exit={{ y: 100, opacity: 0, rotateX: -20 }}
-                                            transition={{ duration: 0.5, ease: "easeInOut" }}
-                                        >
-                                            <img
-                                                src={feature.image}
-                                                alt={feature.step}
-                                                className="w-full h-full object-cover transition-transform transform rounded-lg"
-                                                style={{ objectFit: 'cover' }}
-                                            />
-                                            <div className="absolute top-0 left-0 right-0 h-2/3 bg-gradient-to-b from-background via-background/50 to-transparent rounded-lg" />
-                                        </motion.div>
-                                    ),
-                            )}
-                        </AnimatePresence>
+                        <ShineBorder
+                            borderRadius={16}
+                            borderWidth={10}
+                            duration={4}
+                            color={["#FF6B35", "#FFD93D", "#6BCB77", "#FF6B35"]}
+                            className="w-full h-full"
+                        >
+                            <img
+                                src={features[currentFeature].image}
+                                alt={features[currentFeature].step}
+                                className="w-full h-full object-cover"
+                            />
+                        </ShineBorder>
                     </div>
                 </div>
             </div>

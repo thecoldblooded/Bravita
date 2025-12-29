@@ -25,37 +25,54 @@ interface ShineBorderProps {
  */
 export default function ShineBorder({
     borderRadius = 8,
-    borderWidth = 1,
+    borderWidth = 10,
     duration = 14,
     color = "#000000",
     className,
     children,
 }: ShineBorderProps) {
+    const colors = color instanceof Array ? color : [color]
+    const gradientColors = [...colors, ...colors].join(", ")
+
     return (
         <div
-            style={
-                {
-                    "--border-radius": `${borderRadius}px`,
-                } as React.CSSProperties
-            }
             className={cn(
-                "relative grid min-h-[60px] w-fit min-w-[300px] place-items-center rounded-[--border-radius] bg-white p-3 text-black dark:bg-black dark:text-white",
+                "relative",
                 className,
             )}
+            style={{
+                borderRadius: `${borderRadius}px`,
+                padding: `${borderWidth}px`,
+            }}
         >
+            {/* Animated rotating gradient with feathered outer edge */}
             <div
-                style={
-                    {
-                        "--border-width": `${borderWidth}px`,
-                        "--border-radius": `${borderRadius}px`,
-                        "--duration": `${duration}s`,
-                        "--mask-linear-gradient": `linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)`,
-                        "--background-radial-gradient": `radial-gradient(transparent,transparent, ${color instanceof Array ? color.join(",") : color},transparent,transparent)`,
-                    } as React.CSSProperties
-                }
-                className={`before:bg-shine-size before:absolute before:inset-0 before:rounded-[--border-radius] before:p-[--border-width] before:will-change-[background-position] before:content-[""] before:![-webkit-mask-composite:xor] before:![mask-composite:exclude] before:[background-image:var(--background-radial-gradient)] before:[background-size:300%_300%] before:[mask:var(--mask-linear-gradient)] motion-safe:before:animate-shine`}
-            ></div>
-            {children}
+                className="absolute inset-0 overflow-hidden"
+                style={{
+                    borderRadius: `${borderRadius}px`,
+                    maskImage: `radial-gradient(ellipse at center, black 60%, transparent 100%)`,
+                    WebkitMaskImage: `radial-gradient(ellipse at center, black 60%, transparent 100%)`,
+                }}
+            >
+                <div
+                    className="absolute"
+                    style={{
+                        inset: '-50%',
+                        background: `conic-gradient(from 0deg, ${gradientColors})`,
+                        animation: `spin ${duration}s linear infinite`,
+                        filter: 'blur(3px)',
+                    }}
+                />
+            </div>
+            {/* Content container - stays fixed */}
+            <div 
+                className="relative w-full h-full overflow-hidden bg-background"
+                style={{
+                    borderRadius: `${borderRadius - borderWidth}px`,
+                }}
+            >
+                {children}
+            </div>
         </div>
     )
 }
