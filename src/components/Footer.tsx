@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Mail,
   Phone,
@@ -10,12 +10,34 @@ import {
 
 } from "lucide-react";
 import { FooterBackgroundGradient, TextHoverEffect } from "@/components/ui/hover-footer";
-import bravitaLogo from "@/assets/bravita-logo.png";
-import valcoLogo from "@/assets/valco-logo.png";
 import { useTranslation } from "react-i18next";
+
+// Lazy load heavy logos
+const bravitaLogo = new URL("@/assets/bravita-logo.webp", import.meta.url).href;
+const valcoLogo = new URL("@/assets/valco-logo.webp", import.meta.url).href;
 
 function Footer() {
   const { t } = useTranslation();
+  const [isInView, setIsInView] = useState(false);
+  const footerRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const footer = footerRef.current;
+    if (!footer) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInView(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "100px" }
+    );
+
+    observer.observe(footer);
+    return () => observer.disconnect();
+  }, []);
 
   // Footer link data
   const footerLinks = [
@@ -60,14 +82,18 @@ function Footer() {
   ];
 
   return (
-    <footer className="bg-[#2e241e] relative h-fit rounded-[3rem] overflow-hidden m-4 md:m-8">
+    <footer ref={footerRef} className="bg-[#2e241e] relative h-fit rounded-[3rem] overflow-hidden m-4 md:m-8">
       <div className="max-w-7xl mx-auto p-8 md:p-14 z-40 relative">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 md:gap-8 lg:gap-16 pb-12">
 
           {/* Brand section */}
           <div className="flex flex-col space-y-4 items-center md:items-start text-center md:text-left">
             <div className="flex space-x-2">
-              <img src={bravitaLogo} alt="Bravita" className="h-10 brightness-0 invert" />
+              {isInView ? (
+                <img src={bravitaLogo} alt="Bravita" className="h-10 brightness-0 invert" loading="lazy" />
+              ) : (
+                <div className="h-10 w-32 bg-neutral-700/50 rounded animate-pulse" />
+              )}
             </div>
             <p className="text-sm leading-relaxed text-neutral-300 max-w-xs">
               {t('footer.tagline')}
@@ -77,7 +103,11 @@ function Footer() {
             </div>
             <div>
               <a href="https://www.valcoilac.com.tr/" target="_blank" rel="noopener noreferrer" className="inline-block">
-                <img src={valcoLogo} alt="Valco İlaç" className="h-12 brightness-0 invert opacity-60 hover:opacity-100 transition-opacity" />
+                {isInView ? (
+                  <img src={valcoLogo} alt="Valco İlaç" className="h-12 brightness-0 invert opacity-60 hover:opacity-100 transition-opacity" loading="lazy" />
+                ) : (
+                  <div className="h-12 w-24 bg-neutral-700/50 rounded animate-pulse" />
+                )}
               </a>
             </div>
           </div>

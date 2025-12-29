@@ -1,9 +1,34 @@
-import bravitaBottle from "@/assets/bravita-bottle.png";
-import bravitaBox from "@/assets/bravita-box.png";
 import { useTranslation } from "react-i18next";
+import { useState, useRef, useEffect } from "react";
+
+// Use dynamic imports for images to enable code splitting
+const bravitaBottle = new URL("@/assets/bravita-bottle.webp", import.meta.url).href;
+const bravitaBox = new URL("@/assets/bravita-box.webp", import.meta.url).href;
 
 const ProductShowcase = () => {
   const { t } = useTranslation();
+  const [isInView, setIsInView] = useState(false);
+  const [bottleLoaded, setBottleLoaded] = useState(false);
+  const [boxLoaded, setBoxLoaded] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInView(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "200px" }
+    );
+
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <section className="py-20 md:py-32 bg-linear-to-b from-background via-secondary/20 to-background overflow-hidden">
@@ -18,24 +43,36 @@ const ProductShowcase = () => {
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <div ref={containerRef} className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Product Images */}
-          <div className="relative flex justify-center items-end">
+          <div className="relative flex justify-center items-end min-h-[300px]">
             <div className="relative group z-20 -mr-12 md:-mr-24">
               <div className="absolute inset-0 bg-linear-to-br from-bravita-yellow/30 to-bravita-orange/30 rounded-3xl blur-2xl opacity-60 group-hover:opacity-80 transition-opacity" />
-              <img
-                src={bravitaBottle}
-                alt={t('hero.delicious')}
-                className="relative z-10 w-44 md:w-54 drop-shadow-xl group-hover:scale-105 transition-transform duration-500"
-              />
+              {!bottleLoaded && <div className="w-44 md:w-54 h-64 bg-gradient-to-br from-bravita-yellow/20 to-bravita-orange/20 rounded-2xl animate-pulse" />}
+              {isInView && (
+                <img
+                  src={bravitaBottle}
+                  alt={t('hero.delicious')}
+                  loading="lazy"
+                  decoding="async"
+                  onLoad={() => setBottleLoaded(true)}
+                  className={`relative z-10 w-44 md:w-54 drop-shadow-xl group-hover:scale-105 transition-all duration-500 ${bottleLoaded ? 'opacity-100' : 'opacity-0 absolute'}`}
+                />
+              )}
             </div>
             <div className="relative group z-10">
               <div className="absolute inset-0 bg-linear-to-br from-bravita-orange/30 to-bravita-red/30 rounded-3xl blur-2xl opacity-60 group-hover:opacity-80 transition-opacity" />
-              <img
-                src={bravitaBox}
-                alt="Bravita"
-                className="relative z-10 w-60 md:w-80 group-hover:scale-105 transition-transform duration-500"
-              />
+              {!boxLoaded && <div className="w-60 md:w-80 h-72 bg-gradient-to-br from-bravita-orange/20 to-bravita-red/20 rounded-2xl animate-pulse" />}
+              {isInView && (
+                <img
+                  src={bravitaBox}
+                  alt="Bravita"
+                  loading="lazy"
+                  decoding="async"
+                  onLoad={() => setBoxLoaded(true)}
+                  className={`relative z-10 w-60 md:w-80 group-hover:scale-105 transition-all duration-500 ${boxLoaded ? 'opacity-100' : 'opacity-0 absolute'}`}
+                />
+              )}
             </div>
           </div>
 

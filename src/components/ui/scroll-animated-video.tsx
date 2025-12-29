@@ -419,6 +419,7 @@ export const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
                 loop={loop}
                 playsInline={playsInline}
                 autoPlay={autoPlay || muted}
+                preload="metadata"
                 style={{ width: "100%", height: "100%", objectFit: "cover" }}
             >
                 {sources}

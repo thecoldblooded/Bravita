@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import bravitaLogo from "@/assets/bravita-logo.png";
+import bravitaLogo from "@/assets/bravita-logo.webp";
 import { NavBar } from "@/components/ui/tubelight-navbar";
 import { Home, Heart, List, HelpCircle, Info, ChevronUp, Languages } from "lucide-react";
 import { cn } from "@/lib/utils";

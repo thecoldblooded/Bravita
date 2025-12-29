@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 import ShineBorder from "@/components/ui/shine-border"
@@ -29,8 +29,33 @@ export function FeatureSteps({
 }: FeatureStepsProps) {
     const [currentFeature, setCurrentFeature] = useState(0)
     const [progress, setProgress] = useState(0)
+    const [isInView, setIsInView] = useState(false)
+    const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set())
+    const containerRef = useRef<HTMLDivElement>(null)
 
+    // Intersection Observer - start loading only when near viewport
     useEffect(() => {
+        const container = containerRef.current
+        if (!container) return
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setIsInView(true)
+                    observer.disconnect()
+                }
+            },
+            { rootMargin: "300px" }
+        )
+
+        observer.observe(container)
+        return () => observer.disconnect()
+    }, [])
+
+    // Only run autoplay when in view
+    useEffect(() => {
+        if (!isInView) return
+
         const timer = setInterval(() => {
             if (progress < 100) {
                 setProgress((prev) => prev + 100 / (autoPlayInterval / 100))
@@ -41,10 +66,15 @@ export function FeatureSteps({
         }, 100)
 
         return () => clearInterval(timer)
-    }, [progress, features.length, autoPlayInterval])
+    }, [progress, features.length, autoPlayInterval, isInView])
+
+    // Track loaded images
+    const handleImageLoad = (index: number) => {
+        setLoadedImages(prev => new Set(prev).add(index))
+    }
 
     return (
-        <div className={cn("p-8 md:p-12", className)}>
+        <div ref={containerRef} className={cn("p-8 md:p-12", className)}>
             <div className="max-w-7xl mx-auto w-full">
                 <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-10 text-center">
                     {title}
@@ -100,11 +130,24 @@ export function FeatureSteps({
                             color={["#FF6B35", "#FFD93D", "#6BCB77", "#FF6B35"]}
                             className="w-full h-full"
                         >
-                            <img
-                                src={features[currentFeature].image}
-                                alt={features[currentFeature].step}
-                                className="w-full h-full object-cover"
-                            />
+                            {/* Placeholder while loading */}
+                            {!loadedImages.has(currentFeature) && (
+                                <div className="absolute inset-0 bg-gradient-to-br from-bravita-yellow/20 to-bravita-orange/20 animate-pulse" />
+                            )}
+                            {/* Only load image when in view */}
+                            {isInView && (
+                                <img
+                                    src={features[currentFeature].image}
+                                    alt={features[currentFeature].step}
+                                    loading="lazy"
+                                    decoding="async"
+                                    onLoad={() => handleImageLoad(currentFeature)}
+                                    className={cn(
+                                        "w-full h-full object-cover transition-opacity duration-300",
+                                        loadedImages.has(currentFeature) ? "opacity-100" : "opacity-0"
+                                    )}
+                                />
+                            )}
                         </ShineBorder>
                     </div>
                 </div>

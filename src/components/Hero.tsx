@@ -1,9 +1,11 @@
 import { useRef, useState, useEffect } from "react";
 import { Star, Sparkles, ChevronDown } from "lucide-react";
-import bravitaBottle from "@/assets/bravita-bottle.png";
 import { motion } from "framer-motion";
 import TextCursorProximity from "./ui/text-cursor-proximity";
 import { useTranslation } from "react-i18next";
+
+// Preload critical hero image
+const bravitaBottle = new URL("@/assets/bravita-bottle.webp", import.meta.url).href;
 
 const Hero = () => {
   const { t } = useTranslation();
@@ -299,6 +301,9 @@ const Hero = () => {
                 <img
                   src={bravitaBottle}
                   alt="Bravita Sıvı Takviye"
+                  loading="eager"
+                  decoding="async"
+                  fetchPriority="high"
                   className="w-[180px] md:w-[260px] lg:w-[320px] h-auto max-h-[75vh] object-contain relative z-10 drop-shadow-2xl"
                 />
 

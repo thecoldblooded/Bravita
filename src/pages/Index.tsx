@@ -1,12 +1,22 @@
+import { lazy, Suspense } from "react";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
-import Benefits from "@/components/Benefits";
-import ProductShowcase from "@/components/ProductShowcase";
-import Ingredients from "@/components/Ingredients";
-import Usage from "@/components/Usage";
-import About from "@/components/About";
-import Footer from "@/components/Footer";
 import ScrollReveal from "@/components/ui/scroll-reveal";
+
+// Lazy load below-the-fold components for better initial load
+const Benefits = lazy(() => import("@/components/Benefits"));
+const ProductShowcase = lazy(() => import("@/components/ProductShowcase"));
+const Ingredients = lazy(() => import("@/components/Ingredients"));
+const Usage = lazy(() => import("@/components/Usage"));
+const About = lazy(() => import("@/components/About"));
+const Footer = lazy(() => import("@/components/Footer"));
+
+// Simple loading fallback
+const SectionLoader = () => (
+  <div className="min-h-[400px] flex items-center justify-center">
+    <div className="w-8 h-8 border-4 border-bravita-orange/30 border-t-bravita-orange rounded-full animate-spin" />
+  </div>
+);
 
 const Index = () => {
   return (
@@ -15,27 +25,39 @@ const Index = () => {
       <main>
         <Hero />
 
-        <ScrollReveal delay={0.1}>
-          <Benefits />
-        </ScrollReveal>
+        <Suspense fallback={<SectionLoader />}>
+          <ScrollReveal delay={0.1}>
+            <Benefits />
+          </ScrollReveal>
+        </Suspense>
 
-        <ScrollReveal delay={0.2}>
-          <ProductShowcase />
-        </ScrollReveal>
+        <Suspense fallback={<SectionLoader />}>
+          <ScrollReveal delay={0.2}>
+            <ProductShowcase />
+          </ScrollReveal>
+        </Suspense>
 
-        <ScrollReveal delay={0.1}>
-          <Ingredients />
-        </ScrollReveal>
+        <Suspense fallback={<SectionLoader />}>
+          <ScrollReveal delay={0.1}>
+            <Ingredients />
+          </ScrollReveal>
+        </Suspense>
 
-        <ScrollReveal delay={0.1}>
-          <Usage />
-        </ScrollReveal>
+        <Suspense fallback={<SectionLoader />}>
+          <ScrollReveal delay={0.1}>
+            <Usage />
+          </ScrollReveal>
+        </Suspense>
 
-        <ScrollReveal delay={0.1}>
-          <About />
-        </ScrollReveal>
+        <Suspense fallback={<SectionLoader />}>
+          <ScrollReveal delay={0.1}>
+            <About />
+          </ScrollReveal>
+        </Suspense>
       </main>
-      <Footer />
+      <Suspense fallback={<SectionLoader />}>
+        <Footer />
+      </Suspense>
     </div>
   );
 };
