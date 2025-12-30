@@ -9,8 +9,8 @@ import PeriodicGif from "@/components/PeriodicGif";
 import "@/i18n/config"; // Ensure i18n is initialized
 
 
-import alpacaGif from "@/assets/alpaca.gif";
-const GIF_URL = alpacaGif; // assets klasöründeki alpaca.gif
+import alpacaGif from "@/assets/alpaca.webp";
+const GIF_URL = alpacaGif; // assets klasöründeki alpaca.webp
 
 const queryClient = new QueryClient();
 
@@ -25,7 +25,7 @@ const App = () => (
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
-      
+
       {/* Her 1 dakikada bir sol altta görünen GIF */}
       <PeriodicGif
         gifSrc={GIF_URL}

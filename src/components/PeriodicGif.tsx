@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getGifDurationFromUrl } from "@/lib/getGifDuration";
+
 
 interface PeriodicGifProps {
   gifSrc: string;
@@ -13,20 +13,7 @@ const PeriodicGif = ({
   alt = "Periodic animation",
 }: PeriodicGifProps) => {
   const [isVisible, setIsVisible] = useState(false);
-  const [gifDuration, setGifDuration] = useState<number>(2000); // fallback: 2s
-  // Removed unused ref
-
-  useEffect(() => {
-    // Get GIF duration dynamically using gifuct-js
-    getGifDurationFromUrl(gifSrc)
-      .then(duration => {
-        // Clamp duration to max 8 seconds (8000ms) to avoid it staying too long
-        // Add a small buffer (e.g. 100ms) but cap at 8s
-        const safeDuration = Math.min(Math.max(duration, 2000), 8000);
-        setGifDuration(safeDuration);
-      })
-      .catch(() => setGifDuration(2000));
-  }, [gifSrc]);
+  const DISPLAY_DURATION = 8000; // Fixed 8 seconds
 
   useEffect(() => {
     let hideTimeout: NodeJS.Timeout | number | undefined;
@@ -34,12 +21,12 @@ const PeriodicGif = ({
 
     const showGif = () => {
       setIsVisible(true);
-      // Hide after duration
+      // Hide after fixed duration
       hideTimeout = setTimeout(() => {
         setIsVisible(false);
         // After GIF hides, wait interval then show again
         intervalTimeout = setTimeout(showGif, intervalMs);
-      }, gifDuration);
+      }, DISPLAY_DURATION);
     };
 
     // Show first GIF immediately
@@ -49,7 +36,7 @@ const PeriodicGif = ({
       if (hideTimeout) clearTimeout(hideTimeout);
       if (intervalTimeout) clearTimeout(intervalTimeout);
     };
-  }, [intervalMs, gifDuration]);
+  }, [intervalMs]);
 
   if (!isVisible) return null;
 
@@ -64,7 +51,6 @@ const PeriodicGif = ({
           md:w-36 md:h-36
           lg:w-40 lg:h-40
           object-contain
-          drop-shadow-2xl
           hover:scale-110 transition-transform duration-300
         "
       />
