@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import PeriodicGif from "@/components/PeriodicGif";
 import "@/i18n/config"; // Ensure i18n is initialized
+import CookieConsent from "@/components/CookieConsent";
 
 
 import alpacaGif from "@/assets/alpaca.webp";
@@ -32,6 +33,7 @@ const App = () => (
         intervalMs={60000} // 1 dakika = 60000ms
         alt="Periodic animation"
       />
+      <CookieConsent />
     </TooltipProvider>
   </QueryClientProvider>
 );

@@ -152,5 +152,11 @@
         "visitor_count": "visitors",
         "visitor_total": "Total:",
         "visitor_today": "Today:"
+    },
+    "cookie_consent": {
+        "title": "Cookie Usage",
+        "description": "We use cookies to provide you with a better experience and analyze site traffic.",
+        "accept": "Accept",
+        "reject": "Reject"
     }
 }

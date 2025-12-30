@@ -152,5 +152,11 @@
         "visitor_count": "ziyaretçi",
         "visitor_total": "Toplam:",
         "visitor_today": "Bugün:"
+    },
+    "cookie_consent": {
+        "title": "Çerez Kullanımı",
+        "description": "Size daha iyi bir deneyim sunmak ve site trafiğini analiz etmek için çerezleri kullanıyoruz.",
+        "accept": "Kabul Et",
+        "reject": "Reddet"
     }
 }
