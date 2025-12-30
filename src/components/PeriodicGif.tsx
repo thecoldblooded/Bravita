@@ -52,6 +52,7 @@ const PeriodicGif = ({
           lg:w-40 lg:h-40
           object-contain
           hover:scale-110 transition-transform duration-300
+          will-change-transform
         "
       />
     </div>

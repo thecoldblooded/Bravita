@@ -8,7 +8,7 @@ gsap.registerPlugin(ScrollTrigger);
 
 // Generate frame URLs - 81 frames (from public folder for production)
 const frameCount = 81;
-const frameUrls = Array.from({ length: frameCount }, (_, i) => 
+const frameUrls = Array.from({ length: frameCount }, (_, i) =>
   `/frames/ezgif-frame-${String(i + 1).padStart(3, '0')}.webp`
 );
 
@@ -27,7 +27,7 @@ const ScrollImageSequence = ({ className = "" }: ScrollImageSequenceProps) => {
   const [isFirstFrameReady, setIsFirstFrameReady] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [isInView, setIsInView] = useState(false);
-  
+
   // Keep images in a ref to avoid re-renders during loading
   const imagesRef = useRef<(HTMLImageElement | null)[]>(new Array(frameCount).fill(null));
   const loadedSetRef = useRef<Set<number>>(new Set());
@@ -49,7 +49,7 @@ const ScrollImageSequence = ({ className = "" }: ScrollImageSequenceProps) => {
           observer.disconnect();
         }
       },
-      { rootMargin: "500px" } // Start loading when 500px away from viewport
+      { rootMargin: "100px" } // Strict lazy loading: Only start when almost in view
     );
 
     observer.observe(container);
@@ -60,7 +60,7 @@ const ScrollImageSequence = ({ className = "" }: ScrollImageSequenceProps) => {
   const calculateDimensions = useCallback(() => {
     const viewportWidth = window.innerWidth;
     let displayWidth: number;
-    
+
     if (viewportWidth < 640) {
       displayWidth = Math.min(viewportWidth * 0.95, 400);
     } else if (viewportWidth < 768) {
@@ -70,7 +70,7 @@ const ScrollImageSequence = ({ className = "" }: ScrollImageSequenceProps) => {
     } else {
       displayWidth = 1800;
     }
-    
+
     const displayHeight = displayWidth * (9 / 16);
     dimensionsRef.current = { displayWidth, displayHeight };
     return { displayWidth, displayHeight };
@@ -83,12 +83,12 @@ const ScrollImageSequence = ({ className = "" }: ScrollImageSequenceProps) => {
 
     const { displayWidth, displayHeight } = calculateDimensions();
     const dpr = window.devicePixelRatio || 1;
-    
+
     canvas.width = displayWidth * dpr * 2;
     canvas.height = displayHeight * dpr * 2;
     canvas.style.width = `${displayWidth}px`;
     canvas.style.height = `${displayHeight}px`;
-    
+
     const ctx = canvas.getContext("2d");
     if (ctx) {
       ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -104,14 +104,14 @@ const ScrollImageSequence = ({ className = "" }: ScrollImageSequenceProps) => {
     if (!ctx || !img || !img.complete) return;
 
     const { displayWidth, displayHeight } = dimensionsRef.current;
-    
+
     ctx.clearRect(0, 0, displayWidth, displayHeight);
-    
+
     const imgAspect = img.width / img.height;
     const canvasAspect = displayWidth / displayHeight;
-    
+
     let drawWidth, drawHeight, drawX, drawY;
-    
+
     if (imgAspect > canvasAspect) {
       drawHeight = displayHeight;
       drawWidth = drawHeight * imgAspect;
@@ -123,14 +123,14 @@ const ScrollImageSequence = ({ className = "" }: ScrollImageSequenceProps) => {
       drawX = 0;
       drawY = (displayHeight - drawHeight) / 2;
     }
-    
+
     ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
   }, []);
 
   // Find nearest loaded frame for interpolation
   const findNearestLoadedFrame = useCallback((targetFrame: number): number => {
     if (loadedSetRef.current.has(targetFrame)) return targetFrame;
-    
+
     // Search both directions for nearest loaded frame
     for (let offset = 1; offset < frameCount; offset++) {
       if (targetFrame - offset >= 0 && loadedSetRef.current.has(targetFrame - offset)) {
@@ -140,7 +140,7 @@ const ScrollImageSequence = ({ className = "" }: ScrollImageSequenceProps) => {
         return targetFrame + offset;
       }
     }
-    
+
     return 0;
   }, []);
 
@@ -151,7 +151,7 @@ const ScrollImageSequence = ({ className = "" }: ScrollImageSequenceProps) => {
         resolve(imagesRef.current[index]!);
         return;
       }
-      
+
       const img = new Image();
       img.onload = () => {
         imagesRef.current[index] = img;
@@ -166,7 +166,7 @@ const ScrollImageSequence = ({ className = "" }: ScrollImageSequenceProps) => {
   // Combined setup and loading effect - only runs when in view
   useEffect(() => {
     if (!isInView) return; // Don't start until in view
-    
+
     const canvas = canvasRef.current;
     const container = containerRef.current;
     if (!canvas || !container) return;
@@ -179,7 +179,7 @@ const ScrollImageSequence = ({ className = "" }: ScrollImageSequenceProps) => {
     // Step 2: Setup GSAP scroll trigger
     const playhead = { frame: 0 };
     const viewportWidth = window.innerWidth;
-    
+
     let scrollConfig;
     if (viewportWidth < 640) {
       scrollConfig = { start: "top 50%", end: "top 0%" };
@@ -188,7 +188,7 @@ const ScrollImageSequence = ({ className = "" }: ScrollImageSequenceProps) => {
     } else {
       scrollConfig = { start: "top 50%", end: "bottom 0%" };
     }
-    
+
     const tween = gsap.to(playhead, {
       frame: frameCount - 1,
       ease: "none",
@@ -233,21 +233,25 @@ const ScrollImageSequence = ({ className = "" }: ScrollImageSequenceProps) => {
         }
       }
 
-      // Phase 3: Load remaining frames in batches
+      // Phase 3: Load remaining frames in batches with throttling
       const remainingFrames = frameUrls
         .map((_, i) => i)
         .filter(i => !PRIORITY_FRAMES.includes(i));
 
+      // Throttling: Wait 200ms between batches to let other requests breathe
+      const THROTTLE_DELAY = 200;
+
       for (let i = 0; i < remainingFrames.length; i += BATCH_SIZE) {
         if (!isMounted) break;
-        
+
         const batch = remainingFrames.slice(i, i + BATCH_SIZE);
         await Promise.all(batch.map(index => loadImage(index).catch(() => null)));
-        
+
         if (!isMounted) return;
         setLoadingProgress((loadedSetRef.current.size / frameCount) * 100);
-        
-        await new Promise(resolve => requestAnimationFrame(resolve));
+
+        // Artificial delay to prevent network congestion
+        await new Promise(resolve => setTimeout(resolve, THROTTLE_DELAY));
       }
 
       if (isMounted) {
@@ -279,7 +283,7 @@ const ScrollImageSequence = ({ className = "" }: ScrollImageSequenceProps) => {
     <div ref={containerRef} className={`relative ${className}`}>
       {/* Glow effect behind the bottle */}
       <div className="absolute inset-0 bg-linear-to-br from-bravita-yellow/40 to-bravita-orange/40 rounded-full blur-3xl scale-90" />
-      
+
       {/* Canvas for image sequence */}
       <canvas
         ref={canvasRef}
@@ -292,7 +296,7 @@ const ScrollImageSequence = ({ className = "" }: ScrollImageSequenceProps) => {
 
       {/* Loading skeleton with progress */}
       {!isFirstFrameReady && (
-        <LoadingSkeleton 
+        <LoadingSkeleton
           className="absolute inset-0 z-10"
           progress={loadingProgress}
           showProgress={true}
