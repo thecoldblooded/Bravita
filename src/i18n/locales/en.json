@@ -148,6 +148,9 @@
         "privacy": "Privacy Policy",
         "kvkk": "KVKK",
         "copyright": "All rights reserved.",
-        "valco_desc": "Valco Pharma R&D Laboratory Services"
+        "valco_desc": "Valco Pharma R&D Laboratory Services",
+        "visitor_count": "visitors",
+        "visitor_total": "Total:",
+        "visitor_today": "Today:"
     }
 }

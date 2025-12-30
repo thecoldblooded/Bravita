@@ -148,6 +148,9 @@
         "privacy": "Gizlilik Politikası",
         "kvkk": "KVKK",
         "copyright": "Tüm hakları saklıdır.",
-        "valco_desc": "Valco İlaç Arge Laboratuvar Hizmetleri"
+        "valco_desc": "Valco İlaç Arge Laboratuvar Hizmetleri",
+        "visitor_count": "ziyaretçi",
+        "visitor_total": "Toplam:",
+        "visitor_today": "Bugün:"
     }
 }

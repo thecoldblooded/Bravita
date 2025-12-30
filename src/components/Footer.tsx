@@ -7,14 +7,17 @@ import {
   Instagram,
   Facebook,
   Linkedin,
-
+  Users,
 } from "lucide-react";
 import { FooterBackgroundGradient, TextHoverEffect } from "@/components/ui/hover-footer";
 import { useTranslation } from "react-i18next";
+import { FreeVisitorCounter } from "@rundevelrun/free-visitor-counter";
 
 // Lazy load heavy logos
 const bravitaLogo = new URL("@/assets/bravita-logo.webp", import.meta.url).href;
 const valcoLogo = new URL("@/assets/valco-logo.webp", import.meta.url).href;
+
+const VISITOR_SESSION_KEY = "bravita_visitor_counted";
 
 function Footer() {
   const { t } = useTranslation();
@@ -188,6 +191,21 @@ function Footer() {
                 {icon}
               </a>
             ))}
+          </div>
+
+          {/* Ziyaretçi Sayacı */}
+          <div className="flex items-center space-x-2 bg-neutral-800/50 px-4 py-2 rounded-full">
+            <Users size={16} className="text-bravita-orange" />
+            <span className="text-neutral-300 text-sm">
+              <FreeVisitorCounter 
+                className="font-semibold text-white inline"
+                totalCountPrefix={`${t('footer.visitor_total')} `}
+                todayCountPrefix={`${t('footer.visitor_today')} `}
+                separator=" | "
+                showTotalFirst={true}
+              />
+              {" "}{t('footer.visitor_count')}
+            </span>
           </div>
 
           {/* Copyright */}
