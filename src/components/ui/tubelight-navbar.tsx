@@ -4,10 +4,12 @@ import React, { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 
+import { LucideIcon } from "lucide-react"
+
 interface NavItem {
     name: string
     url: string
-    icon: any
+    icon: LucideIcon
     onClick?: () => void
 }
 

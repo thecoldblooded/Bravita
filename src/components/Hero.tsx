@@ -303,7 +303,7 @@ const Hero = () => {
                   alt="Bravita Sıvı Takviye"
                   loading="eager"
                   decoding="async"
-                  fetchPriority="high"
+                  fetchpriority="high"
                   className="w-[180px] md:w-[260px] lg:w-[320px] h-auto max-h-[75vh] object-contain relative z-10 drop-shadow-2xl"
                 />
 

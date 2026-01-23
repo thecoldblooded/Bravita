@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import CompleteProfile from "./pages/CompleteProfile";
 import PeriodicGif from "@/components/PeriodicGif";
 import "@/i18n/config"; // Ensure i18n is initialized
 import CookieConsent from "@/components/CookieConsent";
@@ -23,6 +24,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/complete-profile" element={<CompleteProfile />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

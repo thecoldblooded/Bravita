@@ -1,10 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import bravitaLogo from "@/assets/bravita-logo.webp";
 import { NavBar } from "@/components/ui/tubelight-navbar";
 import { Home, Heart, List, HelpCircle, Info, ChevronUp, Languages } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "@/contexts/AuthContext";
+import { AuthModal } from "@/components/auth/AuthModal";
+import { UserMenu } from "@/components/auth/UserMenu";
+import { IncompleteProfileBanner } from "@/components/IncompleteProfileBanner";
+import { CartModal } from "@/components/ui/CartModal";
 
 const BravitaLogo = ({ isScrolled }: { isScrolled: boolean }) => {
   const letters = [
@@ -65,17 +70,43 @@ const BravitaLogo = ({ isScrolled }: { isScrolled: boolean }) => {
 
 const Header = () => {
   const { t, i18n } = useTranslation();
+  const { isAuthenticated, user, isLoading } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeTab, setActiveTab] = useState('home');
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
 
-  const navItems = [
+  // Show UI once user object exists (stub or real) and auth is initialized
+  const isUserReady = isAuthenticated && user;
+
+  // Get current language immediately from localStorage to avoid flash
+  const getCurrentLanguage = () => {
+    const storedLang = localStorage.getItem('i18nextLng');
+    return storedLang || i18n.language || 'tr';
+  };
+
+  const [currentLang, setCurrentLang] = useState(getCurrentLanguage());
+
+  // Update currentLang when i18n language changes
+  useEffect(() => {
+    const handleLanguageChange = () => {
+      setCurrentLang(i18n.language || 'tr');
+    };
+
+    i18n.on('languageChanged', handleLanguageChange);
+    return () => {
+      i18n.off('languageChanged', handleLanguageChange);
+    };
+  }, [i18n]);
+
+  const navItems = useMemo(() => [
     { name: t('nav.home'), id: 'home', url: '#hero', icon: Home, onClick: () => window.scrollTo({ top: 0, behavior: 'smooth' }) },
     { name: t('nav.benefits'), id: 'benefits', url: '#benefits', icon: Heart },
     { name: t('nav.ingredients'), id: 'ingredients', url: '#ingredients', icon: List },
     { name: t('nav.usage'), id: 'usage', url: '#usage', icon: HelpCircle },
     { name: t('nav.about'), id: 'about', url: '#about', icon: Info }
-  ]
+  ], [t]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -110,12 +141,13 @@ const Header = () => {
     window.addEventListener("scroll", handleScroll);
     handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [t]); // Re-run when translation changes to update activeTab names if needed, though we use ID now
+  }, [t, navItems]); // Re-run when translation changes to update activeTab names if needed, though we use ID now
 
   const toggleLanguage = () => {
-    const currentLang = i18n.language || 'tr';
-    const nextLang = currentLang.startsWith('tr') ? 'en' : 'tr';
+    const currentLanguage = currentLang || 'tr';
+    const nextLang = currentLanguage.startsWith('tr') ? 'en' : 'tr';
     i18n.changeLanguage(nextLang);
+    setCurrentLang(nextLang);
   };
 
   // Find active name for NavBar
@@ -164,33 +196,85 @@ const Header = () => {
                 transition={{ duration: 0.3, ease: "easeInOut" }}
                 className="overflow-hidden whitespace-nowrap text-xs font-bold"
               >
-                {i18n.language?.startsWith('tr') ? 'English' : 'Türkçe'}
+                {currentLang?.startsWith('tr') ? 'Türkçe' : 'English'}
               </motion.span>
 
-              {i18n.language?.startsWith('tr') ? (
-                <span className="fi fi-us fis rounded-full text-xl shrink-0" />
-              ) : (
+              {currentLang?.startsWith('tr') ? (
                 <span className="fi fi-tr fis rounded-full text-xl shrink-0" />
+              ) : (
+                <span className="fi fi-us fis rounded-full text-xl shrink-0" />
               )}
             </motion.button>
 
-            {/* Buy Button Container */}
-            <div className="w-24 md:w-32 flex justify-end">
-              <a
-                href="#contact"
-                className={cn(
-                  "px-4 md:px-6 py-2.5 rounded-full font-black text-sm transition-all duration-300 active:scale-95 shadow-lg whitespace-nowrap",
-                  isScrolled
-                    ? "bg-orange-600 text-white shadow-orange-200/50"
-                    : "bg-white text-orange-600 shadow-gray-200/30"
-                )}
-              >
-                {t('nav.buy')}
-              </a>
+            {/* Buy Button & User Menu Container */}
+            <div className="flex items-center gap-2 md:gap-4">
+              {/* Buy Button - Show when authenticated or not authenticated */}
+              {isUserReady || !isAuthenticated ? (
+                <a
+                  href={!isAuthenticated ? "#contact" : undefined}
+                  onClick={(e) => {
+                    // If authenticated but profile not complete, prevent navigation
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    if (isAuthenticated && user && !(user as any).isStub && !user?.profile_complete) {
+                      e.preventDefault();
+                    }
+                    // If authenticated and profile complete, open cart
+                    if (isAuthenticated && user?.profile_complete) {
+                      e.preventDefault();
+                      setCartOpen(true);
+                    }
+                    // If not authenticated, open signup modal instead
+                    if (!isAuthenticated) {
+                      e.preventDefault();
+                      setAuthModalOpen(true);
+                    }
+                  }}
+                  className={cn(
+                    "px-4 md:px-6 py-2.5 rounded-full font-black text-sm transition-all duration-300 active:scale-95 shadow-lg whitespace-nowrap",
+                    isUserReady && !user?.profile_complete
+                      ? // Profile incomplete - inactive state
+                      isScrolled
+                        ? "bg-gray-400 text-gray-600 shadow-gray-200/50 cursor-not-allowed opacity-60"
+                        : "bg-gray-200 text-gray-500 shadow-gray-200/30 cursor-not-allowed opacity-60"
+                      : // Profile complete or not authenticated - active state
+                      isScrolled
+                        ? "bg-orange-600 text-white shadow-orange-200/50 hover:bg-orange-700 cursor-pointer"
+                        : "bg-white text-orange-600 shadow-gray-200/30 hover:bg-gray-50 cursor-pointer"
+                  )}
+                  title={isUserReady && !user?.profile_complete ? t("auth.profile_completion_required") : ""}
+                >
+                  {t('nav.buy')}
+                </a>
+              ) : null}
+
+              {/* User Menu - Show when user is ready */}
+              {isUserReady && <UserMenu />}
+
+              {/* Login Button - Only show if not authenticated */}
+              {!isAuthenticated && (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setAuthModalOpen(true)}
+                  className={cn(
+                    "px-3 md:px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 active:scale-95 border cursor-pointer",
+                    isScrolled
+                      ? "bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100 shadow-sm"
+                      : "bg-orange-100/50 border-orange-200 text-orange-700 hover:bg-orange-100"
+                  )}
+                >
+                  {t('auth.login')}
+                </motion.button>
+              )}
             </div>
           </div>
         </div>
       </header>
+
+      {/* Incomplete Profile Banner - Right aligned */}
+      <div className="fixed top-16 md:top-20 right-4 z-40 max-w-sm">
+        <IncompleteProfileBanner />
+      </div>
 
       {/* Mobile NavBar (Fixed bottom) */}
       <div className="lg:hidden">
@@ -216,6 +300,18 @@ const Header = () => {
           </motion.button>
         )}
       </AnimatePresence>
+
+      {/* Auth Modal */}
+      <AuthModal
+        open={authModalOpen}
+        onOpenChange={setAuthModalOpen}
+        defaultTab="login"
+      />
+
+      <CartModal
+        open={cartOpen}
+        onOpenChange={setCartOpen}
+      />
     </>
   );
 };

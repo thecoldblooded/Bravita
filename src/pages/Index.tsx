@@ -1,4 +1,6 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import ScrollReveal from "@/components/ui/scroll-reveal";
@@ -19,6 +21,19 @@ const SectionLoader = () => (
 );
 
 const Index = () => {
+  const navigate = useNavigate();
+  const { session, user, isLoading } = useAuth();
+
+  // Redirect to profile completion if authenticated but profile incomplete
+  useEffect(() => {
+    // Avoid redirecting during initial stub user state
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const isStub = (user as any)?.isStub === true;
+    if (!isLoading && session?.user && user && !isStub && !user.profile_complete) {
+      navigate("/complete-profile", { replace: true });
+    }
+  }, [session, user, isLoading, navigate]);
+
   return (
     <div className="min-h-screen">
       <Header />

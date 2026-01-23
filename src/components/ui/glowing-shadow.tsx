@@ -11,7 +11,7 @@ export function GlowingShadow({ children }: GlowingShadowButtonProps) {
     return (
         <>
             {/* @ts-expect-error styled-jsx is not typed by default */}
-            <style jsx>{`
+            <style jsx="true">{`
         @property --hue {
           syntax: "<number>";
           inherits: true;

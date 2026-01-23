@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { CSSProperties, ReactNode, useEffect, useMemo, useRef } from "react";
 import { BackgroundGradientAnimation } from "./background-gradient-animation";
 
@@ -133,8 +135,8 @@ export const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
     // Inline CSS variables for tuning (non-theme)
     const cssVars: CSSProperties = useMemo(
         () => ({
-            ["--initial-size" as any]: `${initialBoxSize}px`,
-            ["--overlay-blur" as any]: `${overlayBlur}px`,
+            ["--initial-size" as string]: `${initialBoxSize}px`,
+            ["--overlay-blur" as string]: `${overlayBlur}px`,
         }),
         [initialBoxSize, overlayBlur]
     );
@@ -142,13 +144,20 @@ export const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
     // Scroll + GSAP wiring
     useEffect(() => {
         if (!isClient) return;
+        const currentRoot = rootRef.current;
 
+         
         let gsap: any;
+         
         let ScrollTrigger: any;
+         
         let CustomEase: any;
+         
         let LenisCtor: any;
+         
         let lenis: any;
 
+         
         let mainTl: any;
         let overlayDarkenEl: HTMLDivElement | null = null;
 
@@ -194,6 +203,11 @@ export const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
                         gestureOrientation: "vertical",
                         ...lenisOptions,
                     });
+
+                    // Expose lenis to window for global control
+                     
+                    (window as any).lenis = lenis;
+
                     rafCb = (time: number) => lenis?.raf(time * 1000);
                     gsap.ticker.add(rafCb);
                     gsap.ticker.lagSmoothing(0);
@@ -203,7 +217,7 @@ export const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
 
             const containerEase = eases.container ?? "expo.out";
             const overlayEase = eases.overlay ?? "expo.out";
-            const textEase = eases.text ?? "power3.inOut";
+            // const textEase = eases.text ?? "power3.inOut";
 
             const container = containerRef.current!;
             const overlayEl = overlayRef.current!;
@@ -226,7 +240,7 @@ export const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
 
 
             // Main sticky expansion timeline
-            const triggerEl = rootRef.current?.querySelector(
+            const triggerEl = currentRoot?.querySelector(
                 "[data-sticky-scroll]"
             ) as HTMLElement;
 
@@ -283,9 +297,9 @@ export const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
                 ? window.innerWidth
                 : (isMobile ? window.innerWidth * 0.9 : initialBoxSize);
 
-            const endHeight = isMobile
-                ? endWidth * (9 / 16)
-                : initialBoxSize;
+            // const endHeight = isMobile
+            //     ? endWidth * (9 / 16)
+            //     : initialBoxSize;
 
             // Animate the container to shrink
             mainTl
@@ -335,7 +349,7 @@ export const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
             // Try to play video
             const videoEl = container.querySelector("video") as HTMLVideoElement | null;
             if (videoEl) {
-                const tryPlay = () => videoEl.play().catch(() => { });
+                const tryPlay = () => videoEl.play().catch(() => { /* ignore */ });
                 tryPlay();
                 ScrollTrigger.create({
                     trigger: triggerEl,
@@ -349,31 +363,45 @@ export const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
             cancelled = true;
             try {
                 try {
+                     
                     (mainTl as any)?.kill?.();
-                } catch { }
-            } catch { }
+                } catch { /* ignore */ }
+            } catch { /* ignore */ }
             try {
-                if ((ScrollTrigger as any)?.getAll && rootRef.current) {
+                 
+                if ((ScrollTrigger as any)?.getAll && currentRoot) {
+                     
                     (ScrollTrigger as any)
                         .getAll()
-                        .forEach((t: any) => rootRef.current!.contains(t.trigger) && t.kill(true));
+                         
+                        .forEach((t: any) => currentRoot!.contains(t.trigger) && t.kill(true));
                 }
-            } catch { }
+            } catch { /* ignore */ }
             try {
                 if (overlayDarkenEl?.parentElement) {
                     overlayDarkenEl.parentElement.removeChild(overlayDarkenEl);
                 }
-            } catch { }
+            } catch { /* ignore */ }
             try {
+                 
                 if (rafCb && (gsap as any)?.ticker) {
+                     
                     (gsap as any).ticker.remove(rafCb);
+                     
                     (gsap as any).ticker.lagSmoothing(1000, 16);
                 }
-            } catch { }
+            } catch { /* ignore */ }
             try {
+                 
                 (lenis as any)?.off?.("scroll", (ScrollTrigger as any)?.update);
+                 
                 (lenis as any)?.destroy?.();
-            } catch { }
+                 
+                if ((window as any).lenis === lenis) {
+                     
+                    (window as any).lenis = undefined;
+                }
+            } catch { /* ignore */ }
         };
     }, [
         initialBoxSize,
@@ -446,7 +474,7 @@ export const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
                     pointerColor="249, 115, 22"
                 />
                 {/* Bottom dissolved fade overlay */}
-                <div 
+                <div
                     className="absolute bottom-0 left-0 right-0 pointer-events-none"
                     style={{
                         height: "40%",
@@ -630,4 +658,4 @@ export const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
     );
 };
 
-export default HeroScrollVideo
+export default HeroScrollVideo;
