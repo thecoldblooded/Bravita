@@ -1,11 +1,11 @@
 import { useTranslation } from "react-i18next";
-import { FeatureSteps } from "@/components/ui/feature-steps";
-import ScrollImageSequence from "@/components/ui/scroll-image-sequence";
+import { FeatureSteps } from "./ui/feature-steps";
+import ScrollImageSequence from "./ui/scroll-image-sequence";
 
 // Lazy load images with URL constructor for proper bundling
-const heroImage = new URL("@/assets/Geleceğin Kahramanları İçin.webp", import.meta.url).href;
-const globalImage = new URL("@/assets/Türkiye'den Dünyaya.webp", import.meta.url).href;
-const strengthImage = new URL("@/assets/Gücün Kaynağı.webp", import.meta.url).href;
+const heroImage = new URL("../assets/Geleceğin Kahramanları İçin.webp", import.meta.url).href;
+const globalImage = new URL("../assets/Türkiye'den Dünyaya.webp", import.meta.url).href;
+const strengthImage = new URL("../assets/Gücün Kaynağı.webp", import.meta.url).href;
 
 const About = () => {
   const { t } = useTranslation();

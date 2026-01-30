@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { FormItem, FormLabel, FormMessage } from "../ui/form";
 import { toast } from "sonner";
 
 interface TwoFactorVerificationProps {

@@ -1,10 +1,10 @@
 import { Clock, Thermometer, AlertTriangle, Baby } from "lucide-react";
-import HeroScrollVideo from "@/components/ui/scroll-animated-video";
-import { useIsMobile } from "@/hooks/use-mobile";
+import HeroScrollVideo from "./ui/scroll-animated-video";
+import { useIsMobile } from "../hooks/use-mobile";
 import { useTranslation } from "react-i18next";
 
 // Lazy load video URL
-const usageVideo = new URL("@/assets/Generated video 1.mp4", import.meta.url).href;
+const usageVideo = new URL("../assets/Generated video 1.mp4", import.meta.url).href;
 
 const Usage = () => {
   const { t } = useTranslation();

@@ -1,15 +1,15 @@
 import { useState, useEffect, useMemo } from "react";
-import bravitaLogo from "@/assets/bravita-logo.webp";
-import { NavBar } from "@/components/ui/tubelight-navbar";
+import bravitaLogo from "../assets/bravita-logo.webp";
+import { NavBar } from "./ui/tubelight-navbar";
 import { Home, Heart, List, HelpCircle, Info, ChevronUp, Languages } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "@/contexts/AuthContext";
-import { AuthModal } from "@/components/auth/AuthModal";
-import { UserMenu } from "@/components/auth/UserMenu";
-import { IncompleteProfileBanner } from "@/components/IncompleteProfileBanner";
-import { CartModal } from "@/components/ui/CartModal";
+import { useAuth } from "../contexts/AuthContext";
+import { AuthModal } from "./auth/AuthModal";
+import { UserMenu } from "./auth/UserMenu";
+import { IncompleteProfileBanner } from "./IncompleteProfileBanner";
+import { CartModal } from "./ui/CartModal";
 
 const BravitaLogo = ({ isScrolled }: { isScrolled: boolean }) => {
   const letters = [

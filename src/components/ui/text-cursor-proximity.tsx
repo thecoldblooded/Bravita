@@ -2,7 +2,7 @@
 
 import React, { CSSProperties, forwardRef, useEffect, useMemo, useRef } from "react"
 import { motion, useAnimationFrame, useMotionValue, transform, motionValue, MotionValue } from "framer-motion"
-import { useMousePositionRef } from "@/hooks/use-mouse-position-ref"
+import { useMousePositionRef } from "../../hooks/use-mouse-position-ref"
 
 // Helper type that makes all properties of CSSProperties accept number | string
 type CSSPropertiesWithValues = {

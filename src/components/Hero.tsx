@@ -5,7 +5,7 @@ import TextCursorProximity from "./ui/text-cursor-proximity";
 import { useTranslation } from "react-i18next";
 
 // Preload critical hero image
-const bravitaBottle = new URL("@/assets/bravita-bottle.webp", import.meta.url).href;
+const bravitaBottle = new URL("../assets/bravita-bottle.webp", import.meta.url).href;
 
 const Hero = () => {
   const { t } = useTranslation();

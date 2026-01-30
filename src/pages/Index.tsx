@@ -1,17 +1,17 @@
 import { lazy, Suspense, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import Header from "@/components/Header";
-import Hero from "@/components/Hero";
-import ScrollReveal from "@/components/ui/scroll-reveal";
+import { useAuth } from "../contexts/AuthContext";
+import Header from "../components/Header";
+import Hero from "../components/Hero";
+import ScrollReveal from "../components/ui/scroll-reveal";
 
 // Lazy load below-the-fold components for better initial load
-const Benefits = lazy(() => import("@/components/Benefits"));
-const ProductShowcase = lazy(() => import("@/components/ProductShowcase"));
-const Ingredients = lazy(() => import("@/components/Ingredients"));
-const Usage = lazy(() => import("@/components/Usage"));
-const About = lazy(() => import("@/components/About"));
-const Footer = lazy(() => import("@/components/Footer"));
+const Benefits = lazy(() => import("../components/Benefits"));
+const ProductShowcase = lazy(() => import("../components/ProductShowcase"));
+const Ingredients = lazy(() => import("../components/Ingredients"));
+const Usage = lazy(() => import("../components/Usage"));
+const About = lazy(() => import("../components/About"));
+const Footer = lazy(() => import("../components/Footer"));
 
 // Simple loading fallback
 const SectionLoader = () => (

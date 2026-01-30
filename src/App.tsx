@@ -1,17 +1,17 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "./components/ui/toaster";
+import { Toaster as Sonner } from "./components/ui/sonner";
+import { TooltipProvider } from "./components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import CompleteProfile from "./pages/CompleteProfile";
-import PeriodicGif from "@/components/PeriodicGif";
-import "@/i18n/config"; // Ensure i18n is initialized
-import CookieConsent from "@/components/CookieConsent";
+import PeriodicGif from "./components/PeriodicGif";
+import "./i18n/config"; // Ensure i18n is initialized
+import CookieConsent from "./components/CookieConsent";
 
 
-import alpacaGif from "@/assets/alpaca.webp";
+import alpacaGif from "./assets/alpaca.webp";
 const GIF_URL = alpacaGif; // assets klasöründeki alpaca.webp
 
 const queryClient = new QueryClient();

@@ -3,9 +3,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./dialog";
 import { useTranslation } from "react-i18next";
 import { ShoppingCart, Trash2, Ticket, Plus, Minus } from "lucide-react";
 import { Button } from "./button";
-import bravitaBottle from "@/assets/bravita-bottle.webp";
+import bravitaBottle from "../../assets/bravita-bottle.webp";
 import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils";
 
 interface CartModalProps {
     open: boolean;

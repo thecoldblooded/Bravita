@@ -4,10 +4,10 @@ import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useAuth } from "@/contexts/AuthContext";
-import { useAuthOperations } from "@/hooks/useAuth";
-import { supabase } from "@/lib/supabase";
-import { Button } from "@/components/ui/button";
+import { useAuth } from "../contexts/AuthContext";
+import { useAuthOperations } from "../hooks/useAuth";
+import { supabase } from "../lib/supabase";
+import { Button } from "../components/ui/button";
 
 import { TFunction } from "i18next";
 
@@ -21,7 +21,7 @@ function getValidationMessages(t: TFunction) {
     phoneRequired: t("auth.phone_required"),
   };
 }
-import { Input } from "@/components/ui/input";
+import { Input } from "../components/ui/input";
 import {
   Form,
   FormControl,
@@ -29,13 +29,13 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+} from "../components/ui/form";
+import { Checkbox } from "../components/ui/checkbox";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { toast } from "sonner";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
-import { TwoFactorVerification } from "@/components/auth/TwoFactorVerification";
+import { TwoFactorVerification } from "../components/auth/TwoFactorVerification";
 
 export function CompleteProfile() {
   const { t } = useTranslation();

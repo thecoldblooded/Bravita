@@ -9,10 +9,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
-import { useAuthOperations } from "@/hooks/useAuth";
+} from "../ui/dropdown-menu";
+import { Button } from "../ui/button";
+import { useAuth } from "../../contexts/AuthContext";
+import { useAuthOperations } from "../../hooks/useAuth";
 import { toast } from "sonner";
 import { User, LogOut, MapPin, ShoppingBag, Settings } from "lucide-react";
 

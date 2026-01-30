@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, useRef } from "react"
 import { motion } from "framer-motion"
-import { cn } from "@/lib/utils"
-import ShineBorder from "@/components/ui/shine-border"
+import { cn } from "../../lib/utils"
+import ShineBorder from "./shine-border"
 
 interface Feature {
     step: string

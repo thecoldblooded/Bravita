@@ -1,5 +1,5 @@
 import { Shield, Brain, Heart, Eye, Zap, Bone } from "lucide-react";
-import { GlowingShadow } from "@/components/ui/glowing-shadow";
+import { GlowingShadow } from "./ui/glowing-shadow";
 import { useTranslation } from "react-i18next";
 
 const Benefits = () => {

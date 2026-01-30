@@ -9,13 +9,13 @@ import {
   Linkedin,
   Users,
 } from "lucide-react";
-import { FooterBackgroundGradient, TextHoverEffect } from "@/components/ui/hover-footer";
+import { FooterBackgroundGradient, TextHoverEffect } from "./ui/hover-footer";
 import { useTranslation } from "react-i18next";
 import { FreeVisitorCounter } from "@rundevelrun/free-visitor-counter";
 
 // Lazy load heavy logos
-const bravitaLogo = new URL("@/assets/bravita-logo.webp", import.meta.url).href;
-const valcoLogo = new URL("@/assets/valco-logo.webp", import.meta.url).href;
+const bravitaLogo = new URL("../assets/bravita-logo.webp", import.meta.url).href;
+const valcoLogo = new URL("../assets/valco-logo.webp", import.meta.url).href;
 
 const VISITOR_SESSION_KEY = "bravita_visitor_counted";
 
