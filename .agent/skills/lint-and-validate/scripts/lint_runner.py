@@ -76,9 +76,16 @@ def run_linter(linter: dict, cwd: Path) -> dict:
         "error": ""
     }
     
+    cmd = linter["cmd"]
+    
+    # Handle Windows command resolution
+    if sys.platform == "win32":
+        if cmd[0] in ["npm", "npx"]:
+            cmd[0] = f"{cmd[0]}.cmd"
+            
     try:
         proc = subprocess.run(
-            linter["cmd"],
+            cmd,
             cwd=str(cwd),
             capture_output=True,
             text=True,

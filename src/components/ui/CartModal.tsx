@@ -2,10 +2,15 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./dialog";
 import { useTranslation } from "react-i18next";
 import { ShoppingCart, Trash2, Ticket, Plus, Minus } from "lucide-react";
+import bravitaGif from "@/assets/bravita.gif";
 import { Button } from "./button";
 import bravitaBottle from "@/assets/bravita-bottle.webp";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { processCheckout, getProductPrice, checkStock } from "@/lib/checkout";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 interface CartModalProps {
     open: boolean;
@@ -14,20 +19,112 @@ interface CartModalProps {
 
 export function CartModal({ open, onOpenChange }: CartModalProps) {
     const { t } = useTranslation();
+    const navigate = useNavigate();
+    const { user, isAuthenticated } = useAuth();
     const [quantity, setQuantity] = useState(1);
     const [promoCode, setPromoCode] = useState("");
+    const [isCheckingOut, setIsCheckingOut] = useState(false);
+    const [serverPrice, setServerPrice] = useState<number | null>(null);
+    const [maxQuantity, setMaxQuantity] = useState(99);
+    const [currentStock, setCurrentStock] = useState(1000);
 
-    // Updated values based on user request
-    const unitPrice = 600;
-    const vatRate = 0.20;
+    // SECURITY: Fiyatları SUNUCUDAN al
+    useEffect(() => {
+        async function fetchPrice() {
+            const product = await getProductPrice("bravita-multivitamin");
+            if (product) {
+                setServerPrice(product.price);
+                setMaxQuantity(product.maxQuantity);
+                setCurrentStock(product.stock);
+            }
+        }
+        if (open) {
+            fetchPrice();
+        }
+    }, [open]);
 
-    const subtotal = unitPrice * quantity;
-    const vatAmount = subtotal * vatRate;
+    // Fallback değerler (sunucudan gelmezse)
+    const PRICING = Object.freeze({
+        UNIT_PRICE: serverPrice ?? 600,
+        VAT_RATE: 0.20,
+        MAX_QUANTITY: maxQuantity,
+        MIN_QUANTITY: 1,
+    });
+
+    const subtotal = PRICING.UNIT_PRICE * quantity;
+    const vatAmount = subtotal * PRICING.VAT_RATE;
     const total = subtotal + vatAmount;
 
     const handleRemove = () => setQuantity(0);
-    const increment = () => setQuantity(prev => prev + 1);
-    const decrement = () => setQuantity(prev => Math.max(1, prev - 1));
+    const increment = () => setQuantity(prev => Math.min(Math.min(PRICING.MAX_QUANTITY, currentStock), prev + 1));
+    const decrement = () => setQuantity(prev => Math.max(PRICING.MIN_QUANTITY, prev - 1));
+
+    // SECURITY: Sanitize promo code input to prevent injection
+    const handlePromoCodeChange = (value: string) => {
+        const sanitized = value.replace(/[^a-zA-Z0-9_-]/g, '').toUpperCase().slice(0, 20);
+        setPromoCode(sanitized);
+    };
+
+    // SECURITY: Server-side validated checkout
+    const handleCheckout = async () => {
+        if (!isAuthenticated) {
+            toast.error(t("cart.login_required") || "Lütfen giriş yapın");
+            onOpenChange(false);
+            return;
+        }
+
+        // Profile completion check (frontend hint, server will verify too)
+        if (user && !user.profile_complete) {
+            toast.error(t("cart.profile_incomplete") || "Lütfen önce profilinizi tamamlayın");
+            onOpenChange(false);
+            navigate("/complete-profile");
+            return;
+        }
+
+        setIsCheckingOut(true);
+
+        try {
+            // Stok kontrolü
+            const stockCheck = await checkStock("bravita-multivitamin", quantity);
+            if (!stockCheck.available) {
+                toast.error(stockCheck.message || "Stok yetersiz");
+                setIsCheckingOut(false);
+                return;
+            }
+
+            // Sunucu tarafında doğrulanmış checkout
+            const result = await processCheckout({
+                productSlug: "bravita-multivitamin",
+                quantity,
+                promoCode: promoCode || undefined,
+            });
+
+            if (result.success) {
+                toast.success(result.message);
+                setQuantity(1);
+                setPromoCode("");
+                onOpenChange(false);
+                // Opsiyonel: Sipariş sayfasına yönlendir
+                // navigate(`/orders/${result.order_id}`);
+            } else {
+                // Sunucu tarafından dönen hata mesajları
+                switch (result.error) {
+                    case "PROFILE_INCOMPLETE":
+                        navigate("/complete-profile");
+                        break;
+                    case "INSUFFICIENT_STOCK":
+                        setCurrentStock(0); // Stok güncelle
+                        break;
+                }
+                toast.error(result.message);
+            }
+        } catch (error) {
+            console.error("Checkout error:", error);
+            toast.error("Bir hata oluştu, lütfen tekrar deneyin");
+        } finally {
+            setIsCheckingOut(false);
+        }
+    };
 
     // Ultra-strict scroll lock for mobile and desktop including Lenis
     useEffect(() => {
@@ -161,7 +258,7 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
                                         </div>
-                                        <span className="font-black text-neutral-900 text-lg">₺{unitPrice * quantity}</span>
+                                        <span className="font-black text-neutral-900 text-lg">₺{PRICING.UNIT_PRICE * quantity}</span>
                                     </div>
                                 </div>
                             </motion.div>
@@ -207,7 +304,7 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
                             <input
                                 type="text"
                                 value={promoCode}
-                                onChange={(e) => setPromoCode(e.target.value)}
+                                onChange={(e) => handlePromoCodeChange(e.target.value)}
                                 placeholder={t("cart.promo_code")}
                                 className="w-full pl-11 pr-4 h-12 bg-neutral-50 border border-neutral-200 rounded-2xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
                             />
@@ -241,16 +338,17 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
                         </AnimatePresence>
 
                         <Button
-                            disabled={quantity === 0}
+                            disabled={quantity === 0 || isCheckingOut}
+                            onClick={handleCheckout}
                             className={cn(
                                 "relative w-full h-16 rounded-[1.25rem] font-black text-lg transition-all duration-500 border-none active:scale-[0.98] flex items-center justify-center gap-3 overflow-hidden z-10",
-                                quantity > 0
+                                quantity > 0 && !isCheckingOut
                                     ? "bg-orange-600 hover:bg-orange-700 text-white shadow-[0_10px_30px_rgba(238,64,54,0.25)]"
                                     : "bg-neutral-100 text-neutral-400 cursor-not-allowed"
                             )}
                         >
                             {/* Shine Effect */}
-                            {quantity > 0 && (
+                            {quantity > 0 && !isCheckingOut && (
                                 <motion.div
                                     initial={{ x: "-100%" }}
                                     animate={{ x: "200%" }}
@@ -264,13 +362,22 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
                                 />
                             )}
 
-                            <span className="relative z-20">{t("cart.checkout")}</span>
-                            <div className={cn(
-                                "relative z-20 w-8 h-8 rounded-lg flex items-center justify-center transition-transform",
-                                quantity > 0 ? "bg-orange-500/50 group-hover/btn-container:translate-x-1" : "bg-neutral-200"
-                            )}>
-                                <ShoppingCart className="w-4 h-4 text-white" />
-                            </div>
+                            {isCheckingOut ? (
+                                <>
+                                    <img src={bravitaGif} alt="Loading" className="w-6 h-6" />
+                                    <span className="relative z-20">İşleniyor...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <span className="relative z-20">{t("cart.checkout")}</span>
+                                    <div className={cn(
+                                        "relative z-20 w-8 h-8 rounded-lg flex items-center justify-center transition-transform",
+                                        quantity > 0 ? "bg-orange-500/50 group-hover/btn-container:translate-x-1" : "bg-neutral-200"
+                                    )}>
+                                        <ShoppingCart className="w-4 h-4 text-white" />
+                                    </div>
+                                </>
+                            )}
                         </Button>
                     </div>
                 </div>

@@ -20,29 +20,15 @@ export function IncompleteProfileBanner() {
 
     // Show banner if:
     // 1. User is authenticated (has session)
-    // 2. Profile is not complete (user doesn't exist OR profile_complete is false)
+    // 2. Profile is not complete
     // 3. Not a stub user (transient placeholder during load)
-    // 4. localStorage indicates profile_in_progress
-    const profileInProgress = localStorage.getItem("profile_in_progress");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const isStub = (user as any)?.isStub === true;
 
-    console.log("IncompleteProfileBanner check:", {
-      pathname: location.pathname,
-      hasSession: !!session?.user,
-      hasUser: !!user,
-      profileComplete: user?.profile_complete,
-      isStub,
-      profileInProgress,
-      shouldShow: !isLoading && !!session?.user && !!user && !user.profile_complete && !isStub && profileInProgress === "true"
-    });
-
-    // Show only after auth done and real user exists
-    if (!isLoading && session?.user && user && !user.profile_complete && !isStub && profileInProgress === "true") {
-      console.log("Banner should be VISIBLE");
+    // Show for any authenticated user with incomplete profile
+    if (!isLoading && session?.user && user && !user.profile_complete && !isStub) {
       setIsVisible(true);
     } else {
-      console.log("Banner should be HIDDEN");
       setIsVisible(false);
     }
   }, [isLoading, session?.user, user, user?.profile_complete, location.pathname]);
@@ -56,10 +42,10 @@ export function IncompleteProfileBanner() {
   };
 
   return (
-    <div className="relative overflow-hidden bg-gradient-to-br from-orange-500/90 via-red-500/90 to-pink-500/90 backdrop-blur-md text-white shadow-2xl rounded-3xl border border-white/20">
+    <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:max-w-md z-50 overflow-hidden bg-linear-to-br from-orange-500/95 via-red-500/95 to-pink-500/95 backdrop-blur-md text-white shadow-2xl rounded-3xl border border-white/20">
       <div className="absolute inset-0 bg-black/5 backdrop-blur-sm pointer-events-none"></div>
       <div className="relative flex items-center gap-4 px-6 py-4 z-10">
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           <div className="relative">
             <div className="absolute inset-0 bg-white/20 blur-xl rounded-full animate-pulse pointer-events-none"></div>
             <AlertCircle className="relative h-8 w-8 text-white drop-shadow-lg animate-bounce" />

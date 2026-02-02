@@ -91,10 +91,7 @@ const Hero = () => {
               </linearGradient>
             ))}
 
-            <filter id="beam-glow" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur stdDeviation="1.5" result="blur" />
-              <feComposite in="SourceGraphic" in2="blur" operator="over" />
-            </filter>
+            {/* Removed heavy blur filter for performance */}
           </defs>
 
           {stars.map((star, i) => {
@@ -124,13 +121,15 @@ const Hero = () => {
                   }}
                 />
 
-                {/* Beam - Animated Gradient "Comet" */}
+                {/* Beam - Simplified for performance */}
                 <motion.path
                   stroke={`url(#comet-grad-${i})`}
-                  strokeWidth="2"
+                  strokeWidth="1.5"
                   strokeLinecap="round"
                   fill="none"
-                  filter="url(#beam-glow)"
+                  initial={{
+                    d: `M ${star.start[0]} ${star.start[1]} Q ${controlX} ${controlY} ${target[0]} ${target[1]}`
+                  }}
                   animate={{
                     d: [
                       `M ${star.start[0]} ${star.start[1]} Q ${controlX} ${controlY} ${target[0]} ${target[1]}`,
@@ -303,8 +302,9 @@ const Hero = () => {
                   alt="Bravita Sıvı Takviye"
                   loading="eager"
                   decoding="async"
+                  // @ts-expect-error - React doesn't recognize fetchpriority but it's a valid HTML attribute
                   fetchpriority="high"
-                  className="w-[180px] md:w-[260px] lg:w-[320px] h-auto max-h-[75vh] object-contain relative z-10 drop-shadow-2xl"
+                  className="w-45 md:w-65 lg:w-[320px] h-auto max-h-[75vh] object-contain relative z-10 drop-shadow-2xl"
                 />
 
                 <div className="absolute top-12 -right-2 bg-[#FFC529] text-[#2D334A] px-3 py-1 rounded-full font-bold text-[10px] md:text-xs shadow-lg z-20">

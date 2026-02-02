@@ -17,9 +17,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { useAuthOperations } from "@/hooks/useAuth";
-import { TwoFactorVerification } from "./TwoFactorVerification";
+import Loader from "@/components/ui/Loader";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
+import { Mail, RefreshCw } from "lucide-react";
 
 interface SignupFormProps {
   onSuccess?: () => void;
@@ -75,8 +76,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
   const {
     signupWithEmail,
     signupWithGoogle,
-    sendPhoneVerificationCode,
-    verifyPhoneCode,
+    resendEmailConfirmation,
     isLoading,
     error,
   } = useAuthOperations();
@@ -84,10 +84,9 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
   const [userType, setUserType] = useState<"individual" | "company">(
     "individual"
   );
-  const [activeStep, setActiveStep] = useState<"form" | "2fa">("form");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [pendingData, setPendingData] = useState<any>(null);
-  const [phoneForVerification, setPhoneForVerification] = useState<string>("");
+  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState<string>("");
+  const [isResending, setIsResending] = useState(false);
 
   // Individual signup form
   const individualForm = useForm<IndividualSignupForm>({
@@ -121,106 +120,117 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
 
   const handleIndividualSignupSubmit = async (data: IndividualSignupForm) => {
     try {
-      // Step 1: Send 2FA code
-      await sendPhoneVerificationCode(data.phone);
-      setPendingData(data);
-      setPhoneForVerification(data.phone);
-      setActiveStep("2fa");
-      toast.success(t("auth.sms_sent"));
+      // Create account directly - Supabase will send confirmation email
+      await signupWithEmail({
+        email: data.email,
+        password: data.password,
+        phone: data.phone,
+        userType: "individual",
+        fullName: data.fullName,
+      });
+
+      // Set flag so IncompleteProfileBanner shows after email confirmation
+      localStorage.setItem("profile_in_progress", "true");
+
+      setRegisteredEmail(data.email);
+      setShowEmailConfirmation(true);
+      toast.success(t("auth.email_confirmation_sent"));
     } catch (err) {
-      toast.error(
-        error || t("auth.sms_failed")
-      );
+      toast.error(error || t("auth.signup_failed"));
     }
   };
 
   const handleCompanySignupSubmit = async (data: CompanySignupForm) => {
     try {
-      // Company signup doesn't require 2FA during signup
       await signupWithEmail({
         email: data.email,
         password: data.password,
-        phone: "", // Not required for company
+        phone: "",
         userType: "company",
         companyName: data.companyName,
       });
-      toast.success(t("auth.signup_successful"));
-      onSuccess?.();
+
+      setRegisteredEmail(data.email);
+      setShowEmailConfirmation(true);
+      toast.success(t("auth.email_confirmation_sent"));
     } catch (err) {
-      toast.error(
-        error || t("auth.signup_failed")
-      );
+      toast.error(error || t("auth.signup_failed"));
     }
   };
 
-  const handle2FAVerified = async (token: string) => {
-    if (!pendingData) return;
-
+  const handleResendEmail = async () => {
+    if (!registeredEmail) return;
+    setIsResending(true);
     try {
-      // Verify the OTP code
-      await verifyPhoneCode(phoneForVerification, token);
-
-      // Create account after 2FA verification
-      await signupWithEmail({
-        email: pendingData.email,
-        password: pendingData.password,
-        phone: pendingData.phone,
-        userType: "individual",
-        fullName: pendingData.fullName,
-      });
-
-      toast.success(t("auth.signup_successful"));
-      onSuccess?.();
+      await resendEmailConfirmation(registeredEmail);
+      toast.success(t("auth.email_sent"));
     } catch (err) {
-      toast.error(
-        error || t("auth.signup_failed")
-      );
-    }
-  };
-
-  const handleResendCode = async () => {
-    if (!phoneForVerification) return;
-    try {
-      await sendPhoneVerificationCode(phoneForVerification);
-      toast.success(t("auth.code_sent"));
-    } catch (err) {
-      toast.error(error || t("auth.resend_failed"));
+      toast.error(error || t("auth.email_failed"));
+    } finally {
+      setIsResending(false);
     }
   };
 
   const handleGoogleSignup = async () => {
     try {
-      // Save to localStorage that user is in Google signup process
       localStorage.setItem("profile_in_progress", "true");
       localStorage.setItem("oauth_provider", "google");
 
       await signupWithGoogle({ userType: "individual", phone: "" });
-      // Redirect will be handled by Supabase OAuth
     } catch (err) {
       toast.error(error || t("auth.google_signup_failed"));
     }
   };
 
-  if (activeStep === "2fa") {
+  // Email confirmation screen
+  if (showEmailConfirmation) {
     return (
-      <div className="space-y-4">
-        <button
-          type="button"
-          onClick={() => {
-            setActiveStep("form");
-            setPendingData(null);
-          }}
-          className="text-sm text-orange-600 hover:underline"
-        >
-          ← {t("auth.back")}
-        </button>
+      <div className="space-y-6 py-8 text-center">
+        <div className="mx-auto w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center">
+          <Mail className="w-8 h-8 text-orange-600" />
+        </div>
 
-        <TwoFactorVerification
-          phone={phoneForVerification}
-          onVerified={handle2FAVerified}
-          onResend={handleResendCode}
-          isLoading={isLoading}
-        />
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            {t("auth.check_email")}
+          </h2>
+          <p className="text-gray-600">
+            {t("auth.email_sent_to")} <strong>{registeredEmail}</strong>
+          </p>
+          <p className="text-sm text-gray-500 mt-2">
+            {t("auth.email_confirmation_note")}
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            onClick={handleResendEmail}
+            disabled={isResending}
+          >
+            {isResending ? (
+              <Loader size="1.25rem" noMargin />
+            ) : (
+              <>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                {t("auth.resend_email")}
+              </>
+            )}
+          </Button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setShowEmailConfirmation(false);
+              setRegisteredEmail("");
+            }}
+            className="text-sm text-orange-600 hover:underline"
+          >
+            ← {t("auth.back")}
+          </button>
+        </div>
       </div>
     );
   }
@@ -431,7 +441,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
             </div>
 
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? t("auth.signing_up") : t("auth.signup")}
+              {isLoading ? <Loader size="1.25rem" noMargin /> : t("auth.signup")}
             </Button>
           </form>
         </Form>
@@ -692,7 +702,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
             </div>
 
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? t("auth.signing_up") : t("auth.signup")}
+              {isLoading ? <Loader size="1.25rem" noMargin /> : t("auth.signup")}
             </Button>
           </form>
         </Form>

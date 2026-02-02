@@ -1,4 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import { Session } from "@supabase/supabase-js";
 import { supabase, UserProfile } from "@/lib/supabase";
@@ -7,6 +8,7 @@ interface AuthContextType {
   session: Session | null;
   user: UserProfile | null;
   isLoading: boolean;
+  isSplashScreenActive: boolean;
   isAuthenticated: boolean;
   profileComplete: boolean;
   refreshSession: () => Promise<void>;
@@ -37,7 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return parsed as Session | null;
       }
     } catch (e) {
-      console.log("Could not parse stored session", e);
+
     }
     return null;
   };
@@ -49,29 +51,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const knownComplete = localStorage.getItem("profile_known_complete") === "true";
 
     // Create a minimal user immediately so UI shows user info right away
-     
+
     return {
       id: session.user.id,
       email: session.user.email || "",
+      full_name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || null,
+      phone: session.user.user_metadata?.phone || session.user.phone || null,
       profile_complete: knownComplete,
       phone_verified: false,
       user_type: "individual",
-      isStub: true, // Mark as stub so we know it needs to be replaced
-    } as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+      isStub: true,
+    } as any;
   };
 
   const initialSession = getInitialSession();
   const [session, setSession] = useState<Session | null>(initialSession);
   const [user, setUser] = useState<UserProfile | null>(getInitialUser(initialSession));
   const [isLoading, setIsLoading] = useState(true);
+  const [isSplashScreenActive, setIsSplashScreenActive] = useState(() => {
+    // Only active on first load of the session
+    return !sessionStorage.getItem("bravita_splash_shown");
+  });
 
-  // Add wrapper to log all setUser calls and persist profile_complete status
+  // Wrapper to persist profile_complete status
   const setUserDebug = useCallback((newUser: UserProfile | null) => {
-    console.log("=== setUser called with:", {
-      newUser: newUser ? `{id: ${newUser.id}, complete: ${newUser.profile_complete}}` : "null",
-      stack: new Error().stack?.split('\n')[2]
-    });
-
     // Persist profile_complete status to localStorage for immediate visibility on refresh
     if (newUser?.profile_complete !== undefined) {
       localStorage.setItem("profile_known_complete", String(newUser.profile_complete));
@@ -83,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refreshUserProfile = useCallback(async () => {
-    if (!session?.user) return;
+    if (!session?.user?.id) return;
 
     try {
       const { data: profile } = await supabase
@@ -96,9 +99,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUserDebug(profile);
       }
     } catch (error) {
-      console.error("Error refreshing profile:", error);
+      // Silently fail
     }
-  }, [session?.user, setUserDebug]);
+  }, [session?.user?.id, setUserDebug]);
 
   const refreshSession = useCallback(async () => {
     try {
@@ -107,13 +110,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } = await supabase.auth.refreshSession();
       setSession(newSession);
     } catch (error) {
-      console.error("Error refreshing session:", error);
+
     }
   }, []);
 
-  const syncPendingProfile = useCallback(async (userId: string, profileData: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+  const syncPendingProfile = useCallback(async (userId: string, profileData: any) => {
+    // Singleton guard to prevent duplicate syncs
+    if (Object.prototype.hasOwnProperty.call(window, '__isSyncingProfile')) return;
+    (window as any).__isSyncingProfile = true;
+
     try {
-      console.log("Syncing pending profile to database...", profileData);
+
+
+      // Clear localStorage immediately to prevent other triggers
+      localStorage.removeItem("pending_profile");
+      localStorage.removeItem("profile_complete_pending");
 
       // Ensure a profile row exists and mark complete
       const profilePayload = {
@@ -130,27 +141,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .upsert(profilePayload, { onConflict: "id" });
 
       if (upsertError) {
-        console.error("Sync error:", upsertError);
+
         return;
       }
 
-      console.log("Profile synced successfully");
 
-      // Replace any previous address for this user
+
+      // Replace any previous address for this user to avoid duplicates
       const { error: deleteError } = await supabase
         .from("addresses")
         .delete()
         .eq("user_id", userId);
 
       if (deleteError) {
-        console.error("Address delete error:", deleteError);
+
       }
 
       const addressPayload = {
         user_id: userId,
-        street: profileData.street,
-        city: profileData.city,
-        postal_code: profileData.postal_code,
+        street: profileData.street || "",
+        city: profileData.city || "",
+        postal_code: profileData.postal_code || "",
         is_default: true,
       };
 
@@ -159,28 +170,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .insert(addressPayload);
 
       if (addressError) {
-        console.error("Address insert error:", addressError);
-      } else {
-        console.log("Address synced successfully");
-      }
 
-      // Clear localStorage after successful sync
-      localStorage.removeItem("pending_profile");
-      localStorage.removeItem("profile_complete_pending");
+      } else {
+
+      }
 
       // Refresh profile to update context
       await refreshUserProfile();
     } catch (error) {
-      console.error("Sync pending profile error:", error);
+
+    } finally {
+      delete (window as any).__isSyncingProfile;
     }
   }, [refreshUserProfile]);
 
   // Initialize session on mount
   useEffect(() => {
-    console.log("=== AuthContext: initializeAuth starting ===");
+
     const initializeAuth = async () => {
       try {
-        console.log("Getting initial session...");
+
 
         // Add timeout to prevent infinite hang
         const sessionPromise = supabase.auth.getSession();
@@ -188,14 +197,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setTimeout(() => reject(new Error("getSession timeout")), 5000)
         );
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: { session: initialSession } } = await Promise.race([sessionPromise, timeoutPromise]) as any;
 
-        console.log("Initial session:", initialSession?.user?.id || "none");
+
         setSession(initialSession);
 
         if (initialSession?.user) {
-          console.log("Fetching profile for initial session user...");
+
 
           const profilePromise = supabase
             .from("profiles")
@@ -208,34 +216,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           );
 
           try {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const { data: profile, error } = await Promise.race([profilePromise, profileTimeout]) as any;
 
-            console.log("Initial profile fetch result:", { hasProfile: !!profile, error: error?.code });
+
 
             if (error && error.code !== "PGRST116") {
-              console.error("Error fetching profile:", error);
+
             }
 
             if (profile) {
-              console.log("Setting initial user from profile");
+
               setUserDebug(profile);
             } else {
-              throw new Error("No profile found");
+              // Profile doesn't exist - create it from user_metadata
+              const metadata = initialSession.user.user_metadata || {};
+              const newProfile = {
+                id: initialSession.user.id,
+                email: initialSession.user.email || "",
+                full_name: metadata.full_name || metadata.name || null,
+                phone: metadata.phone || initialSession.user.phone || null,
+                user_type: metadata.user_type || "individual",
+                company_name: metadata.company_name || null,
+                profile_complete: false,
+                phone_verified: false,
+              };
+
+              // Try to create profile in database
+              const { error: insertError } = await supabase
+                .from("profiles")
+                .insert(newProfile);
+
+              if (!insertError) {
+                setUserDebug(newProfile as any);
+              } else {
+                // Fallback to stub if insert fails
+                setUserDebug({ ...newProfile, isStub: true } as any);
+              }
             }
           } catch (error) {
-            console.log("Profile fetch failed, creating stub user immediately");
+
             const knownComplete = localStorage.getItem("profile_known_complete") === "true";
             const minimalUser = {
               id: initialSession.user.id,
               email: initialSession.user.email || "",
+              full_name: initialSession.user.user_metadata?.full_name || initialSession.user.user_metadata?.name || null,
+              phone: initialSession.user.user_metadata?.phone || initialSession.user.phone || null,
               profile_complete: knownComplete,
               phone_verified: false,
               user_type: "individual",
               isStub: true,
-               
-            } as any; // eslint-disable-line @typescript-eslint/no-explicit-any
-            console.log("Minimal user created:", minimalUser);
+            } as any;
+
             setUserDebug(minimalUser);
           }
         }
@@ -243,16 +274,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Check localStorage for pending profile
         const pendingProfile = localStorage.getItem("pending_profile");
         if (pendingProfile && initialSession?.user) {
-          console.log("Found pending profile in localStorage, syncing...");
+
           const profileData = JSON.parse(pendingProfile);
           // Keep loading true until sync completes so routing guards wait
           setIsLoading(true);
           await syncPendingProfile(initialSession.user.id, profileData);
         }
       } catch (error) {
-        console.error("Error initializing auth:", error);
+
       } finally {
-        console.log("=== AuthContext: Setting isLoading to FALSE ===");
+        // If this is the first load of the session, wait for the splash screen
+        if (isSplashScreenActive) {
+          // Minimum loading time (gif duration + buffer)
+          await new Promise(resolve => setTimeout(resolve, 6000));
+          sessionStorage.setItem("bravita_splash_shown", "true");
+          setIsSplashScreenActive(false);
+        }
+
         setIsLoading(false);
       }
     };
@@ -263,14 +301,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-      console.log(">>> AUTH STATE CHANGE CALLBACK START <<<", event, newSession?.user?.id);
+
       setSession(newSession);
 
       if (newSession?.user) {
-        console.log(">>> HAS NEW SESSION, FETCHING PROFILE <<<");
+
         try {
           // Fetch updated profile with timeout
-          console.log(">>> About to fetch profile for user:", newSession.user.id);
+
 
           const profilePromise = supabase
             .from("profiles")
@@ -282,7 +320,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setTimeout(() => reject(new Error("profile fetch timeout in onAuthStateChange")), 5000)
           );
 
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const { data: profile, error } = await Promise.race([profilePromise, profileTimeout]) as any;
 
           console.log(">>> PROFILE FETCH COMPLETE <<<", {
@@ -301,50 +338,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
 
           if (profile) {
-            console.log(">>> SETTING USER FROM PROFILE <<<", profile.id);
             setUserDebug(profile);
-          } else if (error && error.code === "PGRST116") {
-            console.log(">>> PGRST116 ERROR - CREATING MINIMAL USER <<<");
-            const knownComplete = localStorage.getItem("profile_known_complete") === "true";
-            const minimalUser = {
-              id: newSession.user.id,
-              email: newSession.user.email || "",
-              profile_complete: knownComplete,
-              phone_verified: false,
-              user_type: "individual",
-              isStub: true,
-               
-            } as any; // eslint-disable-line @typescript-eslint/no-explicit-any
-            setUserDebug(minimalUser);
           } else {
-            console.log(">>> OTHER ERROR - CREATING MINIMAL USER <<<");
-            const knownComplete = localStorage.getItem("profile_known_complete") === "true";
-            const minimalUser = {
+            // Profile doesn't exist - create it from user_metadata
+            const metadata = newSession.user.user_metadata || {};
+            const newProfile = {
               id: newSession.user.id,
               email: newSession.user.email || "",
-              profile_complete: knownComplete,
+              full_name: metadata.full_name || metadata.name || null,
+              phone: metadata.phone || newSession.user.phone || null,
+              user_type: metadata.user_type || "individual",
+              company_name: metadata.company_name || null,
+              profile_complete: false,
               phone_verified: false,
-              user_type: "individual",
-              isStub: true,
-               
-            } as any; // eslint-disable-line @typescript-eslint/no-explicit-any
-            setUserDebug(minimalUser);
+            };
+
+            // Try to create profile in database
+            const { error: insertError } = await supabase
+              .from("profiles")
+              .insert(newProfile);
+
+            if (!insertError) {
+              setUserDebug(newProfile as any);
+            } else {
+              // Fallback to stub if insert fails (might already exist)
+              setUserDebug({ ...newProfile, isStub: true } as any);
+            }
           }
         } catch (err) {
-          console.error(">>> EXCEPTION IN PROFILE FETCH <<<", err);
+
           const knownComplete = localStorage.getItem("profile_known_complete") === "true";
           const minimalUser = {
             id: newSession.user.id,
             email: newSession.user.email || "",
+            full_name: newSession.user.user_metadata?.full_name || newSession.user.user_metadata?.name || null,
+            phone: newSession.user.user_metadata?.phone || newSession.user.phone || null,
             profile_complete: knownComplete,
             phone_verified: false,
             user_type: "individual",
             isStub: true,
-             
-          } as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+          } as any;
           setUserDebug(minimalUser);
         } finally {
-          console.log(">>> FINALLY BLOCK <<<");
+
           // Check if there's pending profile data to sync
           const pendingProfile = localStorage.getItem("pending_profile");
           if (pendingProfile && newSession?.user?.id) {
@@ -353,30 +389,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               const profileData = JSON.parse(pendingProfile);
               await syncPendingProfile(newSession.user.id, profileData);
             } catch (error) {
-              console.error("Error parsing pending profile:", error);
+
             }
           }
 
-          console.log(">>> SETTING isLoading to FALSE in onAuthStateChange <<<");
+
           setIsLoading(false);
         }
       } else {
-        console.log(">>> NO SESSION <<<");
+
         setUserDebug(null);
         setIsLoading(false);
       }
-      console.log(">>> AUTH STATE CHANGE CALLBACK END <<<");
+
     });
 
     return () => {
       subscription?.unsubscribe();
     };
-  }, [syncPendingProfile, setUserDebug]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty deps - runs only on mount
 
   const value: AuthContextType = {
     session,
     user,
     isLoading,
+    isSplashScreenActive,
     isAuthenticated: !!session?.user,
     profileComplete: user?.profile_complete ?? false,
     refreshSession,

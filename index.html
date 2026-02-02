@@ -3,13 +3,14 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
   <title>Bravita - Çocuklar İçin Multivitamin Sıvı Takviye | Büyümenin Formülü</title>
   <meta name="description"
     content="Bravita, Fosfotidilserin, Kolin, L-Karnitin, L-Arjinin, Multivitamin ve Multimineral içeren lezzetli sıvı takviye edici gıda. Çocukların sağlıklı büyümesi için bilimsel formül." />
   <meta name="keywords"
     content="bravita, çocuk vitamini, multivitamin, sıvı vitamin, takviye edici gıda, çocuk gelişimi, vitamin D, çinko" />
   <meta name="author" content="Bravita" />
+  <link rel="canonical" href="https://bravita.com.tr" />
 
   <meta property="og:title" content="Bravita - Büyümenin Formülü Burada!" />
   <meta property="og:description"
@@ -41,14 +42,31 @@
   <!-- Preload first frame of scroll animation for faster perceived load -->
   <!-- Preload removed for strict lazy loading -->
 
-  <link rel="icon" type="image/x-icon" href="/src/assets/favicon.ico" />
-  <link rel="apple-touch-icon" href="/src/assets/favicon.ico" />
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
-  <!-- LordIcon for animated icons -->
-  <script src="https://cdn.lordicon.com/lordicon.js"></script>
+  <!-- Security Headers (Note: Some headers must be set via HTTP response headers for full protection) -->
+  <!-- Production CSP: Remove 'unsafe-inline' by using nonces in build process -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' 'unsafe-inline' https://*.contentsquare.net https://cdn.lordicon.com;
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.contentsquare.net;
+    img-src 'self' data: https: blob:;
+    font-src 'self' https://fonts.gstatic.com;
+    connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cdn.lordicon.com https://*.contentsquare.net;
+    worker-src 'self' blob:;
+    frame-ancestors 'none';
+    form-action 'self';
+    base-uri 'self';
+    upgrade-insecure-requests;">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
 
   <!-- Contentsquare Analytics -->
   <script src="https://t.contentsquare.net/uxa/294f4fa696437.js" async></script>
+
+  <!-- LordIcon -->
+  <script src="https://cdn.lordicon.com/lordicon.js"></script>
 </head>
 
 <body>

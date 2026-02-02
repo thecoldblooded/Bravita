@@ -28,48 +28,33 @@ export function useAuthOperations() {
     setError(null);
 
     try {
-      // Sign up with email and password
+      // Sign up with email and password - store user data in user_metadata
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
-        phone: data.phone,
+        options: {
+          data: {
+            phone: data.phone,
+            full_name: data.fullName || null,
+            user_type: data.userType,
+            company_name: data.userType === "company" ? data.companyName : null,
+          },
+        },
       });
 
       if (authError) {
         // Check if user already exists
-        if (authError.message.includes("already registered") || 
-            authError.message.includes("already exists") ||
-            authError.message.includes("User already registered")) {
+        if (authError.message.includes("already registered") ||
+          authError.message.includes("already exists") ||
+          authError.message.includes("User already registered")) {
           throw new Error("Bu e-posta adresi ile kayıtlı bir hesap zaten var");
         }
         throw authError;
       }
       if (!authData.user) throw new Error("No user returned from signup");
 
-      // Create profile in database
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .insert([
-          {
-            id: authData.user.id,
-            email: data.email,
-            phone: data.phone,
-            user_type: data.userType,
-            full_name: data.fullName || null,
-            company_name: data.userType === "company" ? data.companyName : null,
-            profile_complete: false,
-            phone_verified: false,
-            oauth_provider: null,
-          },
-        ]);
-
-      if (profileError) {
-        // Check for duplicate email in profiles
-        if (profileError.code === "23505") {
-          throw new Error("Bu kullanıcı zaten kayıtlı");
-        }
-        throw profileError;
-      }
+      // Profile will be created by database trigger or after email confirmation
+      // The user_metadata contains all necessary info for profile creation
 
       return { user: authData.user, session: authData.session };
     } catch (err) {
@@ -174,11 +159,51 @@ export function useAuthOperations() {
     setError(null);
 
     try {
-      const { error } = await supabase.auth.signOut();
+      // Clear our custom localStorage items first
+      localStorage.removeItem("profile_known_complete");
+      localStorage.removeItem("pending_profile");
+      localStorage.removeItem("profile_complete_pending");
+      localStorage.removeItem("profile_in_progress");
+      localStorage.removeItem("oauth_provider");
+
+      // Attempt global sign out
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
+
+      if (error) {
+        // If it's a "session not found" error, we can ignore it as we're logging out anyway
+        if (error.message.includes("session_not_found") || error.status === 401 || error.status === 403) {
+          console.warn("Logout: Session already gone or invalid, proceeding with local cleanup");
+        } else {
+          throw error;
+        }
+      }
+    } catch (err) {
+      console.error("Logout error details:", err);
+      const message = err instanceof Error ? err.message : "Logout failed";
+      setError(message);
+      // Even if the network request fails, we want the user to feel logged out
+      // Error is still thrown to be handled by the UI if needed
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resendEmailConfirmation = async (email: string) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+      });
+
       if (error) throw error;
+      return { success: true };
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Logout failed";
+        err instanceof Error ? err.message : "E-posta gönderilemedi";
       setError(message);
       throw err;
     } finally {
@@ -186,46 +211,34 @@ export function useAuthOperations() {
     }
   };
 
-  const sendPhoneVerificationCode = async (phone: string) => {
+  const changePassword = async (oldPassword: string, newPassword: string) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const { data, error } = await supabase.auth.signInWithOtp({
-        phone: phone,
-        options: {
-          shouldCreateUser: false, // Only for existing users
-        },
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || !user.email) throw new Error("Kullanıcı bulunamadı");
+
+      // Verify old password by attempting a sign in
+      const { error: verifyError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: oldPassword,
       });
 
-      if (error) throw error;
-      return data;
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to send verification code";
-      setError(message);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      if (verifyError) {
+        throw new Error("Mevcut şifreniz hatalı. Lütfen tekrar deneyin.");
+      }
 
-  const verifyPhoneCode = async (phone: string, token: string) => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const { data, error } = await supabase.auth.verifyOtp({
-        phone: phone,
-        token: token,
-        type: "sms",
+      // Update password
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword,
       });
 
-      if (error) throw error;
-      return data;
+      if (updateError) throw updateError;
+
+      return { success: true };
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Invalid verification code";
+      const message = err instanceof Error ? err.message : "Şifre değiştirilemedi";
       setError(message);
       throw err;
     } finally {
@@ -241,7 +254,7 @@ export function useAuthOperations() {
     loginWithEmail,
     loginWithCompany,
     logout,
-    sendPhoneVerificationCode,
-    verifyPhoneCode,
+    resendEmailConfirmation,
+    changePassword,
   };
 }

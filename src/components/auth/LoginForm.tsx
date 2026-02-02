@@ -16,6 +16,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { useAuthOperations } from "@/hooks/useAuth";
+import Loader from "@/components/ui/Loader";
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -167,7 +168,7 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
             />
 
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? t("auth.logging_in") : t("auth.login")}
+              {isLoading ? <Loader size="1.25rem" noMargin /> : t("auth.login")}
             </Button>
           </form>
         </Form>
@@ -268,7 +269,7 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
             />
 
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? t("auth.logging_in") : t("auth.login")}
+              {isLoading ? <Loader size="1.25rem" noMargin /> : t("auth.login")}
             </Button>
           </form>
         </Form>

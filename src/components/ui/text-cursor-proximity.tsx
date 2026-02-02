@@ -1,8 +1,7 @@
 "use client"
 
-import React, { CSSProperties, forwardRef, useEffect, useMemo, useRef } from "react"
-import { motion, useAnimationFrame, useMotionValue, transform, motionValue, MotionValue } from "framer-motion"
-import { useMousePositionRef } from "@/hooks/use-mouse-position-ref"
+import React, { CSSProperties, forwardRef, useEffect, useMemo, useRef, useCallback } from "react"
+import { motion, useMotionValue, transform, motionValue, MotionValue } from "framer-motion"
 
 // Helper type that makes all properties of CSSProperties accept number | string
 type CSSPropertiesWithValues = {
@@ -24,25 +23,29 @@ interface TextProps extends React.HTMLAttributes<HTMLSpanElement> {
     falloff?: "linear" | "exponential" | "gaussian"
 }
 
+interface LetterProps {
+    char: string
+    styles: Partial<{ [K in keyof CSSPropertiesWithValues]: StyleValue<K> }>
+    radius: number
+    falloff: "linear" | "exponential" | "gaussian"
+    containerRef: React.RefObject<HTMLElement>
+    mouseX: MotionValue<number>
+    mouseY: MotionValue<number>
+}
+
 const Letter = ({
     char,
     styles,
-    radius = 50,
-    falloff = "linear",
-    mousePositionRef,
-    containerRef
-}: {
-    char: string
-    styles: Partial<{ [K in keyof CSSPropertiesWithValues]: StyleValue<K> }>
-    radius?: number
-    falloff?: "linear" | "exponential" | "gaussian"
-    mousePositionRef: React.MutableRefObject<{ x: number, y: number }>
-    containerRef: React.RefObject<HTMLElement>
-}) => {
+    radius,
+    falloff,
+    containerRef,
+    mouseX,
+    mouseY
+}: LetterProps) => {
     const ref = useRef<HTMLSpanElement>(null)
     const proximity = useMotionValue(0)
 
-    // Create MotionValues for each style property manually
+    // Create MotionValues for each style property
     const styleMVs = useMemo(() => {
         const mvs: Record<string, MotionValue<string | number>> = {}
         Object.keys(styles).forEach((key) => {
@@ -54,7 +57,7 @@ const Letter = ({
         return mvs
     }, [styles])
 
-    // Update style MotionValues when proximity changes
+    // Update styles when proximity changes
     useEffect(() => {
         const unsubscribe = proximity.on("change", (latestProximity) => {
             Object.keys(styles).forEach((key) => {
@@ -69,18 +72,12 @@ const Letter = ({
         return () => unsubscribe()
     }, [proximity, styles, styleMVs])
 
-    const calculateDistance = (
-        x1: number,
-        y1: number,
-        x2: number,
-        y2: number
-    ): number => {
+    const calculateDistance = (x1: number, y1: number, x2: number, y2: number): number => {
         return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2))
     }
 
-    const calculateFalloff = (distance: number): number => {
+    const calculateFalloff = useCallback((distance: number): number => {
         const normalizedDistance = Math.min(Math.max(1 - distance / radius, 0), 1)
-
         switch (falloff) {
             case "exponential":
                 return Math.pow(normalizedDistance, 2)
@@ -90,13 +87,11 @@ const Letter = ({
             default:
                 return normalizedDistance
         }
-    }
+    }, [radius, falloff])
 
-    useAnimationFrame(() => {
+    const updateProximity = useCallback(() => {
         if (!containerRef.current || !ref.current) return
 
-        // Note: For high performance with many letters, caching containerRect in parent is better.
-        // But for typical usage (short text), this is acceptable.
         const containerRect = containerRef.current.getBoundingClientRect()
         const rect = ref.current.getBoundingClientRect()
 
@@ -104,15 +99,26 @@ const Letter = ({
         const letterCenterY = rect.top + rect.height / 2 - containerRect.top
 
         const distance = calculateDistance(
-            mousePositionRef.current.x,
-            mousePositionRef.current.y,
+            mouseX.get(),
+            mouseY.get(),
             letterCenterX,
             letterCenterY
         )
 
         const newProximity = calculateFalloff(distance)
         proximity.set(newProximity)
-    })
+    }, [containerRef, mouseX, mouseY, proximity, calculateFalloff])
+
+    // Subscribe to mouse position changes instead of using useAnimationFrame
+    useEffect(() => {
+        const unsubX = mouseX.on("change", updateProximity)
+        const unsubY = mouseY.on("change", updateProximity)
+
+        return () => {
+            unsubX()
+            unsubY()
+        }
+    }, [mouseX, mouseY, updateProximity])
 
     return (
         <motion.span
@@ -140,8 +146,51 @@ const TextCursorProximity = forwardRef<HTMLSpanElement, TextProps>(
         },
         ref
     ) => {
-        const mousePositionRef = useMousePositionRef(containerRef)
+        const mouseX = useMotionValue(0)
+        const mouseY = useMotionValue(0)
         const words = label.split(" ")
+
+        // Track mouse position relative to container using MotionValues with throttle
+        useEffect(() => {
+            let rafId: number | null = null
+            let lastX = 0
+            let lastY = 0
+
+            const updatePosition = () => {
+                if (containerRef?.current) {
+                    const rect = containerRef.current.getBoundingClientRect()
+                    mouseX.set(lastX - rect.left)
+                    mouseY.set(lastY - rect.top)
+                }
+                rafId = null
+            }
+
+            const scheduleUpdate = (x: number, y: number) => {
+                lastX = x
+                lastY = y
+                if (!rafId) {
+                    rafId = requestAnimationFrame(updatePosition)
+                }
+            }
+
+            const handleMouseMove = (ev: MouseEvent) => {
+                scheduleUpdate(ev.clientX, ev.clientY)
+            }
+
+            const handleTouchMove = (ev: TouchEvent) => {
+                const touch = ev.touches[0]
+                scheduleUpdate(touch.clientX, touch.clientY)
+            }
+
+            window.addEventListener("mousemove", handleMouseMove, { passive: true })
+            window.addEventListener("touchmove", handleTouchMove, { passive: true })
+
+            return () => {
+                window.removeEventListener("mousemove", handleMouseMove)
+                window.removeEventListener("touchmove", handleTouchMove)
+                if (rafId) cancelAnimationFrame(rafId)
+            }
+        }, [containerRef, mouseX, mouseY])
 
         return (
             <span
@@ -160,7 +209,8 @@ const TextCursorProximity = forwardRef<HTMLSpanElement, TextProps>(
                                 radius={radius}
                                 falloff={falloff}
                                 containerRef={containerRef}
-                                mousePositionRef={mousePositionRef}
+                                mouseX={mouseX}
+                                mouseY={mouseY}
                             />
                         ))}
                         {wordIndex < words.length - 1 && (

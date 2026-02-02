@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import bravitaLogo from "@/assets/bravita-logo.webp";
 import { NavBar } from "@/components/ui/tubelight-navbar";
 import { Home, Heart, List, HelpCircle, Info, ChevronUp, Languages } from "lucide-react";
@@ -10,6 +11,7 @@ import { AuthModal } from "@/components/auth/AuthModal";
 import { UserMenu } from "@/components/auth/UserMenu";
 import { IncompleteProfileBanner } from "@/components/IncompleteProfileBanner";
 import { CartModal } from "@/components/ui/CartModal";
+import { useCart } from "@/contexts/CartContext";
 
 const BravitaLogo = ({ isScrolled }: { isScrolled: boolean }) => {
   const letters = [
@@ -70,12 +72,16 @@ const BravitaLogo = ({ isScrolled }: { isScrolled: boolean }) => {
 
 const Header = () => {
   const { t, i18n } = useTranslation();
+  const location = useLocation();
+  const navigate = useNavigate();
   const { isAuthenticated, user, isLoading } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeTab, setActiveTab] = useState('home');
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [cartOpen, setCartOpen] = useState(false);
+  const { isCartOpen, openCart, setIsCartOpen } = useCart();
+
+  const isProfilePage = location.pathname === "/profile";
 
   // Show UI once user object exists (stub or real) and auth is initialized
   const isUserReady = isAuthenticated && user;
@@ -164,14 +170,14 @@ const Header = () => {
         <div className="container mx-auto px-4 flex items-center justify-between">
           {/* Logo Container */}
           <div className="shrink-0">
-            <a href="#" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="inline-block">
+            <Link to="/" className="inline-block">
               <BravitaLogo isScrolled={isScrolled} />
-            </a>
+            </Link>
           </div>
 
           {/* Center NavBar (Desktop) */}
           <div className="hidden lg:flex absolute left-1/2 -translate-x-1/2">
-            <NavBar items={navItems} activeTab={activeName} layoutId="desktop-nav" />
+            {!isProfilePage && <NavBar items={navItems} activeTab={activeName} layoutId="desktop-nav" />}
           </div>
 
           {/* Controls Container */}
@@ -221,7 +227,7 @@ const Header = () => {
                     // If authenticated and profile complete, open cart
                     if (isAuthenticated && user?.profile_complete) {
                       e.preventDefault();
-                      setCartOpen(true);
+                      openCart();
                     }
                     // If not authenticated, open signup modal instead
                     if (!isAuthenticated) {
@@ -277,14 +283,16 @@ const Header = () => {
       </div>
 
       {/* Mobile NavBar (Fixed bottom) */}
-      <div className="lg:hidden">
-        <NavBar
-          items={navItems}
-          activeTab={activeName}
-          layoutId="mobile-nav"
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50"
-        />
-      </div>
+      {!isProfilePage && (
+        <div className="lg:hidden">
+          <NavBar
+            items={navItems}
+            activeTab={activeName}
+            layoutId="mobile-nav"
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50"
+          />
+        </div>
+      )}
 
       {/* Back to Top Button */}
       <AnimatePresence>
@@ -309,8 +317,8 @@ const Header = () => {
       />
 
       <CartModal
-        open={cartOpen}
-        onOpenChange={setCartOpen}
+        open={isCartOpen}
+        onOpenChange={setIsCartOpen}
       />
     </>
   );
