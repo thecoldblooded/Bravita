@@ -21,7 +21,7 @@ import UnderConstruction from "@/components/UnderConstruction";
  * 
  * TEMPORARY: Remove this when the site is ready for production
  */
-const MAINTENANCE_MODE = true;
+const MAINTENANCE_MODE = false;
 
 import alpacaGif from "@/assets/alpaca.webp";
 const GIF_URL = alpacaGif; // assets klasöründeki alpaca.webp
