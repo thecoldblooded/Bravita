@@ -66,15 +66,20 @@ export function UserMenu() {
   }
 
   const handleLogout = async () => {
+    // Close menu immediately for instant feedback
+    setIsOpen(false);
+
     try {
+      // Start logout process (now optimized to be fast)
       await logout();
       toast.success(t("auth.logout_successful"));
-      navigate("/", { replace: true });
     } catch (error) {
       console.error("Logout flow error:", error);
-      navigate("/", { replace: true });
       toast.error(t("auth.logout_failed") || "Oturum kapatılırken bir sorun oluştu.");
     }
+
+    // Always navigate to home
+    navigate("/", { replace: true });
   };
 
   const displayName =

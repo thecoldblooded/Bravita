@@ -8,10 +8,20 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import CompleteProfile from "./pages/CompleteProfile";
 import Profile from "./pages/Profile";
+import Checkout from "./pages/Checkout";
+import OrderConfirmation from "./pages/OrderConfirmation";
 import PeriodicGif from "@/components/PeriodicGif";
 import "@/i18n/config"; // Ensure i18n is initialized
 import CookieConsent from "@/components/CookieConsent";
 import UnderConstruction from "@/components/UnderConstruction";
+
+// Admin pages
+import AdminDashboard from "@/pages/admin/AdminDashboard";
+import AdminOrders from "@/pages/admin/AdminOrders";
+import AdminOrderDetail from "@/pages/admin/AdminOrderDetail";
+import AdminUsers from "@/pages/admin/AdminUsers";
+import AdminProducts from "@/pages/admin/AdminProducts";
+import AdminPromoCodes from "@/pages/admin/AdminPromoCodes";
 
 /**
  * 🚧 MAINTENANCE MODE FLAG
@@ -62,9 +72,21 @@ const App = () => {
         <Sonner />
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <Routes>
+            {/* Main site routes */}
             <Route path="/" element={<Index />} />
             <Route path="/complete-profile" element={<CompleteProfile />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
+
+            {/* Admin routes */}
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/orders" element={<AdminOrders />} />
+            <Route path="/admin/orders/:orderId" element={<AdminOrderDetail />} />
+            <Route path="/admin/products" element={<AdminProducts />} />
+            <Route path="/admin/promotions" element={<AdminPromoCodes />} />
+            <Route path="/admin/admins" element={<AdminUsers />} />
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
@@ -82,3 +104,4 @@ const App = () => {
 };
 
 export default App;
+

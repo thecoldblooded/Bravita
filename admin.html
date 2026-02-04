@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="tr">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <title>Bravita Admin - Yönetim Paneli</title>
+  <meta name="description" content="Bravita Admin Panel - Sipariş yönetimi ve takip" />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="canonical" href="https://admin.bravita.com.tr" />
+
+  <!-- Preconnect to external resources -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+  <!-- Preload critical fonts -->
+  <link rel="preload" as="style"
+    href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" />
+
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+  <!-- Security Headers -->
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cdn.jsdelivr.net https://unpkg.com; worker-src 'self' blob:; form-action 'self'; base-uri 'self'; upgrade-insecure-requests;">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/admin.tsx"></script>
+</body>
+
+</html>

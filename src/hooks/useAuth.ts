@@ -111,6 +111,7 @@ export function useAuthOperations() {
             full_name: "Test Kullanıcı",
             phone: "+905551234567",
             user_type: "individual",
+            is_admin: true, // Mock admin access
           },
           app_metadata: {},
           aud: "authenticated",
@@ -213,23 +214,25 @@ export function useAuthOperations() {
       localStorage.removeItem("profile_in_progress");
       localStorage.removeItem("oauth_provider");
 
-      // Attempt global sign out
-      const { error } = await supabase.auth.signOut({ scope: 'global' });
-
-      if (error) {
-        // If it's a "session not found" error, we can ignore it as we're logging out anyway
-        if (error.message.includes("session_not_found") || error.status === 401 || error.status === 403) {
-          console.warn("Logout: Session already gone or invalid, proceeding with local cleanup");
-        } else {
-          throw error;
-        }
+      // Clear Supabase session from localStorage immediately for instant UI feedback
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const urlMatch = supabaseUrl?.match(/https:\/\/([^.]+)\.supabase\.co/);
+      if (urlMatch) {
+        const projectRef = urlMatch[1];
+        const storageKey = `sb-${projectRef}-auth-token`;
+        localStorage.removeItem(storageKey);
       }
+
+      // Sign out from server (don't await to make logout faster)
+      // Use local scope to avoid slow network request
+      supabase.auth.signOut({ scope: 'local' }).catch((err) => {
+        console.warn("Background signOut error (ignorable):", err);
+      });
+
     } catch (err) {
       console.error("Logout error details:", err);
       const message = err instanceof Error ? err.message : "Logout failed";
       setError(message);
-      // Even if the network request fails, we want the user to feel logged out
-      // Error is still thrown to be handled by the UI if needed
       throw err;
     } finally {
       setIsLoading(false);

@@ -10,6 +10,7 @@ interface AuthContextType {
   isLoading: boolean;
   isSplashScreenActive: boolean;
   isAuthenticated: boolean;
+  isAdmin: boolean;
   profileComplete: boolean;
   refreshSession: () => Promise<void>;
   refreshUserProfile: () => Promise<void>;
@@ -99,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         company_name: null,
         profile_complete: true,
         phone_verified: true,
+        is_admin: true, // Admin for testing
       };
       setUserDebug(mockProfile as any);
       return;
@@ -232,6 +234,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               company_name: null,
               profile_complete: true,
               phone_verified: true,
+              is_admin: true, // Admin for testing
             };
             setUserDebug(mockProfile as any);
           } else {
@@ -271,6 +274,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   company_name: metadata.company_name || null,
                   profile_complete: false,
                   phone_verified: false,
+                  is_admin: false, // Default: not admin
                 };
 
                 // Try to create profile in database
@@ -350,6 +354,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             company_name: null,
             profile_complete: true,
             phone_verified: true,
+            is_admin: true, // Admin for testing
           };
           setUserDebug(mockProfile as any);
           setIsLoading(false);
@@ -375,7 +380,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             console.log(">>> PROFILE FETCH COMPLETE <<<", {
               hasProfile: !!profile,
               errorCode: error?.code,
-              errorMessage: error?.message
+              errorMessage: error?.message,
+              isAdmin: profile?.is_admin
             });
 
             if (error) {
@@ -412,23 +418,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setUserDebug(newProfile as any);
               } else {
                 // Fallback to stub if insert fails (might already exist)
+                // Fallback to stub if fails (might already exist)
                 setUserDebug({ ...newProfile, isStub: true } as any);
               }
             }
           } catch (err) {
 
-            const knownComplete = localStorage.getItem("profile_known_complete") === "true";
-            const minimalUser = {
-              id: newSession.user.id,
-              email: newSession.user.email || "",
-              full_name: newSession.user.user_metadata?.full_name || newSession.user.user_metadata?.name || null,
-              phone: newSession.user.user_metadata?.phone || newSession.user.phone || null,
-              profile_complete: knownComplete,
-              phone_verified: false,
-              user_type: "individual",
-              isStub: true,
-            } as any;
-            setUserDebug(minimalUser);
+            setUserDebug(((current: UserProfile | null) => {
+              if (current?.id === newSession.user.id && !current.isStub) {
+                return current;
+              }
+
+              const knownComplete = localStorage.getItem("profile_known_complete") === "true";
+              const minimalUser = {
+                id: newSession.user.id,
+                email: newSession.user.email || "",
+                full_name: newSession.user.user_metadata?.full_name || newSession.user.user_metadata?.name || null,
+                phone: newSession.user.user_metadata?.phone || newSession.user.phone || null,
+                profile_complete: knownComplete,
+                phone_verified: false,
+                user_type: "individual",
+                isStub: true,
+                is_admin: false,
+                company_name: null,
+                phone_verified_at: null,
+                oauth_provider: null,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              } as UserProfile;
+              return minimalUser;
+            }) as any);
           } finally {
 
             // Check if there's pending profile data to sync
@@ -467,6 +486,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isLoading,
     isSplashScreenActive,
     isAuthenticated: !!session?.user,
+    isAdmin: user?.is_admin ?? false,
     profileComplete: user?.profile_complete ?? false,
     refreshSession,
     refreshUserProfile,

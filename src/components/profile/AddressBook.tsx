@@ -4,17 +4,21 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Plus, Trash2, Home } from "lucide-react";
+import { MapPin, Plus, Trash2, Home, Star, Building2 } from "lucide-react";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { toast } from "sonner";
 import Loader from "@/components/ui/Loader";
+
+type AddressType = 'home' | 'work';
 
 interface Address {
     id: string;
     street: string;
     city: string;
+    district?: string;
     postal_code: string;
     is_default: boolean;
+    address_type: AddressType;
 }
 
 export function AddressBook() {
@@ -25,10 +29,13 @@ export function AddressBook() {
     const [isAdding, setIsAdding] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [deletingId, setDeletingId] = useState<string | null>(null);
+    const [settingDefaultId, setSettingDefaultId] = useState<string | null>(null);
     const [newAddress, setNewAddress] = useState({
         street: "",
         city: "",
+        district: "",
         postal_code: "",
+        address_type: "home" as AddressType,
     });
 
     const fetchLock = useRef(false);
@@ -76,14 +83,16 @@ export function AddressBook() {
                 user_id: user.id,
                 street: newAddress.street,
                 city: newAddress.city,
+                district: newAddress.district,
                 postal_code: newAddress.postal_code,
+                address_type: newAddress.address_type,
                 is_default: addresses.length === 0,
             });
 
             if (insertError) throw insertError;
 
             toast.success("Adres eklendi");
-            setNewAddress({ street: "", city: "", postal_code: "" });
+            setNewAddress({ street: "", city: "", district: "", postal_code: "", address_type: "home" });
             setIsAdding(false);
             fetchAddresses();
         } catch (err) {
@@ -105,6 +114,42 @@ export function AddressBook() {
             toast.error(err instanceof Error ? err.message : "Adres silinemedi");
         } finally {
             setDeletingId(null);
+        }
+    };
+
+    const handleSetDefault = async (id: string) => {
+        if (settingDefaultId || !user) return;
+        setSettingDefaultId(id);
+        try {
+            // First, set all addresses to non-default
+            const { error: resetError } = await supabase
+                .from("addresses")
+                .update({ is_default: false })
+                .eq("user_id", user.id);
+
+            if (resetError) throw resetError;
+
+            // Then set the selected address as default
+            const { error: updateError } = await supabase
+                .from("addresses")
+                .update({ is_default: true })
+                .eq("id", id);
+
+            if (updateError) throw updateError;
+
+            toast.success("Varsayılan adres güncellendi");
+
+            // Update local state
+            setAddresses(prev =>
+                prev.map(addr => ({
+                    ...addr,
+                    is_default: addr.id === id
+                })).sort((a, b) => (b.is_default ? 1 : 0) - (a.is_default ? 1 : 0))
+            );
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Varsayılan adres güncellenemedi");
+        } finally {
+            setSettingDefaultId(null);
         }
     };
 
@@ -139,19 +184,37 @@ export function AddressBook() {
                         onSubmit={handleAddAddress}
                     >
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            {/* Address Type Selector */}
                             <div className="space-y-2 md:col-span-2">
-                                <Label htmlFor="street">Adres Başlığı ve Açık Adres</Label>
-                                <Input
-                                    id="street"
-                                    value={newAddress.street}
-                                    onChange={(e) => setNewAddress({ ...newAddress, street: e.target.value })}
-                                    placeholder="Örn: Evim - Çiçek Mah. Gül Sok. No:1"
-                                    required
-                                    className="bg-white"
-                                />
+                                <Label>Adres Tipi</Label>
+                                <div className="flex gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setNewAddress({ ...newAddress, address_type: "home" })}
+                                        className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 transition-all ${newAddress.address_type === "home"
+                                            ? "border-orange-500 bg-orange-50 text-orange-700"
+                                            : "border-gray-200 bg-white text-gray-600 hover:border-orange-200"
+                                            }`}
+                                    >
+                                        <Home className="w-4 h-4" />
+                                        <span className="font-medium">Ev</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setNewAddress({ ...newAddress, address_type: "work" })}
+                                        className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 transition-all ${newAddress.address_type === "work"
+                                            ? "border-orange-500 bg-orange-50 text-orange-700"
+                                            : "border-gray-200 bg-white text-gray-600 hover:border-orange-200"
+                                            }`}
+                                    >
+                                        <Building2 className="w-4 h-4" />
+                                        <span className="font-medium">İşyeri</span>
+                                    </button>
+                                </div>
                             </div>
+
                             <div className="space-y-2">
-                                <Label htmlFor="city">Şehir</Label>
+                                <Label htmlFor="city">İl (Şehir)</Label>
                                 <Input
                                     id="city"
                                     value={newAddress.city}
@@ -162,6 +225,29 @@ export function AddressBook() {
                                 />
                             </div>
                             <div className="space-y-2">
+                                <Label htmlFor="district">İlçe</Label>
+                                <Input
+                                    id="district"
+                                    value={newAddress.district}
+                                    onChange={(e) => setNewAddress({ ...newAddress, district: e.target.value })}
+                                    placeholder="Kadıköy"
+                                    required
+                                    className="bg-white"
+                                />
+                            </div>
+
+                            <div className="space-y-2 md:col-span-2">
+                                <Label htmlFor="street">Adres Başlığı ve Açık Adres</Label>
+                                <Input
+                                    id="street"
+                                    value={newAddress.street}
+                                    onChange={(e) => setNewAddress({ ...newAddress, street: e.target.value })}
+                                    placeholder={newAddress.address_type === "home" ? "Örn: Evim - Çiçek Mah. Gül Sok. No:1" : "Örn: Ofisim - Levent Plaza Kat:5"}
+                                    required
+                                    className="bg-white"
+                                />
+                            </div>
+                            <div className="space-y-2 md:col-span-2">
                                 <Label htmlFor="postal_code">Posta Kodu</Label>
                                 <Input
                                     id="postal_code"
@@ -226,11 +312,17 @@ export function AddressBook() {
                         >
                             <div className="flex items-start gap-3">
                                 <div className={`p-2 rounded-full ${address.is_default ? "bg-orange-100 text-orange-600" : "bg-gray-100 text-gray-500"}`}>
-                                    <Home className="w-5 h-5" />
+                                    {address.address_type === "work" ? (
+                                        <Building2 className="w-5 h-5" />
+                                    ) : (
+                                        <Home className="w-5 h-5" />
+                                    )}
                                 </div>
                                 <div className="flex-1">
                                     <div className="flex items-center gap-2">
-                                        <h3 className="font-medium text-gray-900">{address.city}</h3>
+                                        <h3 className="font-medium text-gray-900">
+                                            {address.city}{address.district ? ` / ${address.district}` : ""}
+                                        </h3>
                                         {address.is_default && (
                                             <span className="text-[10px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-medium">Varsayılan</span>
                                         )}
@@ -239,19 +331,39 @@ export function AddressBook() {
                                     <p className="text-xs text-gray-400">{address.postal_code}</p>
                                 </div>
                             </div>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDelete(address.id)}
-                                disabled={!!deletingId}
-                                className={`group-hover:opacity-100 text-red-400 hover:text-red-500 hover:bg-red-50 transition-opacity ${deletingId === address.id ? 'opacity-100' : 'opacity-0'}`}
-                            >
-                                {deletingId === address.id ? (
-                                    <Loader size="1rem" noMargin />
-                                ) : (
-                                    <Trash2 className="w-4 h-4" />
+                            <div className="flex items-center gap-1">
+                                {!address.is_default && (
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleSetDefault(address.id)}
+                                        disabled={!!settingDefaultId || !!deletingId}
+                                        className={`group-hover:opacity-100 text-orange-500 hover:text-orange-600 hover:bg-orange-50 transition-opacity text-xs gap-1 ${settingDefaultId === address.id ? 'opacity-100' : 'opacity-0'}`}
+                                    >
+                                        {settingDefaultId === address.id ? (
+                                            <Loader size="0.875rem" noMargin />
+                                        ) : (
+                                            <>
+                                                <Star className="w-3.5 h-3.5" />
+                                                Varsayılan Yap
+                                            </>
+                                        )}
+                                    </Button>
                                 )}
-                            </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleDelete(address.id)}
+                                    disabled={!!deletingId || !!settingDefaultId}
+                                    className={`group-hover:opacity-100 text-red-400 hover:text-red-500 hover:bg-red-50 transition-opacity ${deletingId === address.id ? 'opacity-100' : 'opacity-0'}`}
+                                >
+                                    {deletingId === address.id ? (
+                                        <Loader size="1rem" noMargin />
+                                    ) : (
+                                        <Trash2 className="w-4 h-4" />
+                                    )}
+                                </Button>
+                            </div>
                         </motion.div>
                     ))
                 )}

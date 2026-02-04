@@ -1,9 +1,13 @@
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
-import { useTranslation } from "react-i18next";
+
+import { motion } from "framer-motion";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import notFoundAnimation from "@/assets/404-not-found.lottie";
+import bravitaLogo from "@/assets/bravita-logo.webp";
 
 const NotFound = () => {
-  const { t } = useTranslation();
+
   const location = useLocation();
 
   useEffect(() => {
@@ -11,33 +15,56 @@ const NotFound = () => {
   }, [location.pathname]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#FFFBF4] p-4 text-center">
-      <div className="max-w-md w-full">
-        {/* Animated illustration area */}
-        <div className="mb-8 relative flex justify-center">
-          <div className="w-48 h-48 bg-orange-100 rounded-full flex items-center justify-center animate-bounce-subtle">
-            <span className="text-8xl select-none">🔍</span>
-          </div>
-          <div className="absolute -top-4 -right-4 w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center animate-wiggle">
-            <span className="text-2xl">✨</span>
+    <div className="flex min-h-screen items-start justify-center bg-[#FFFBF4] p-4 pt-8 text-center">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="max-w-lg w-full"
+      >
+        {/* Lottie Animation */}
+        <div className="flex justify-center overflow-hidden">
+          <div className="-my-12">
+            <DotLottieReact
+              src={notFoundAnimation}
+              loop
+              autoplay
+              style={{ width: "600px", height: "600px" }}
+            />
           </div>
         </div>
 
-        <h1 className="text-6xl font-black text-neutral-900 mb-4 tracking-tight">404</h1>
-        <h2 className="text-2xl font-bold text-neutral-800 mb-4">{t("errors.page_not_found") || "Sayfa Bulunamadı"}</h2>
-        <p className="text-neutral-500 mb-8 leading-relaxed">
-          Aradığınız sayfa taşınmış, silinmiş veya hiç var olmamış olabilir. Ama merak etmeyin, büyüme formülümüz hala burada!
-        </p>
+        <motion.img
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+          src={bravitaLogo}
+          alt="Bravita"
+          className="w-48 h-auto mx-auto mb-4"
+        />
 
-        <a
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="text-neutral-500 mb-8 leading-relaxed"
+        >
+          Aradığınız sayfa taşınmış, silinmiş veya hiç var olmamış olabilir.
+          Ama merak etmeyin, büyüme formülümüz hala burada!
+        </motion.p>
+
+        <motion.a
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
           href="/"
           aria-label="Ana Sayfaya Dön"
-          className="inline-flex items-center justify-center px-8 py-4 bg-orange-600 hover:bg-orange-700 text-white font-black rounded-full shadow-[0_10px_30px_rgba(238,64,54,0.3)] transition-all active:scale-95 group"
+          className="inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold rounded-2xl shadow-lg shadow-orange-200 transition-all active:scale-95 group"
         >
           Ana Sayfaya Dön
-          <span className="ml-2 group-hover:translate-x-1 transition-transform">➜</span>
-        </a>
-      </div>
+          <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
+        </motion.a>
+      </motion.div>
     </div>
   );
 };

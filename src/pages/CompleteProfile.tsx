@@ -26,6 +26,7 @@ function getValidationMessages(t: TFunction) {
     nameTooShort: t("auth.name_too_short"),
     streetRequired: t("auth.street_address_required"),
     cityRequired: t("auth.city_required"),
+    districtRequired: "İlçe zorunludur", // TODO: Add translation key
     postalCodeRequired: t("auth.postal_code_required"),
   };
 }
@@ -44,6 +45,7 @@ export function CompleteProfile() {
     fullName: z.string().min(2, messages.nameTooShort),
     street: z.string().min(5, messages.streetRequired),
     city: z.string().min(2, messages.cityRequired),
+    district: z.string().min(2, messages.districtRequired),
     postalCode: z.string().min(3, messages.postalCodeRequired),
   });
 
@@ -56,6 +58,7 @@ export function CompleteProfile() {
       fullName: user?.full_name || "",
       street: "",
       city: "",
+      district: "",
       postalCode: "",
     },
   });
@@ -85,10 +88,6 @@ export function CompleteProfile() {
   }, [session, user, authLoading, navigate]);
 
   console.log("CompleteProfile render:", { authLoading, hasSession: !!session?.user });
-
-  // ... (existing helper functions)
-
-  // ... (existing component setup)
 
   // Show loading only during initial auth check
   if (authLoading) {
@@ -154,6 +153,7 @@ export function CompleteProfile() {
           user_id: session.user.id,
           street: data.street,
           city: data.city,
+          district: data.district,
           postal_code: data.postalCode,
           is_default: true,
         });
@@ -222,34 +222,16 @@ export function CompleteProfile() {
                 )}
               />
 
-              <FormField
-                control={profileForm.control}
-                name="street"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("auth.street")}</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="* (Zorunlu)"
-                        {...field}
-                        disabled={isLoading}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={profileForm.control}
                   name="city"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Şehir</FormLabel>
+                      <FormLabel>İl (Şehir)</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="* (Zorunlu)"
+                          placeholder="Örn: İstanbul"
                           {...field}
                           disabled={isLoading}
                         />
@@ -261,13 +243,13 @@ export function CompleteProfile() {
 
                 <FormField
                   control={profileForm.control}
-                  name="postalCode"
+                  name="district"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Posta Kodu</FormLabel>
+                      <FormLabel>İlçe</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="* (Zorunlu)"
+                          placeholder="Örn: Kadıköy"
                           {...field}
                           disabled={isLoading}
                         />
@@ -277,6 +259,42 @@ export function CompleteProfile() {
                   )}
                 />
               </div>
+
+              <FormField
+                control={profileForm.control}
+                name="street"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("auth.street")}</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Mahalle, Sokak, Kapı No..."
+                        {...field}
+                        disabled={isLoading}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={profileForm.control}
+                name="postalCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Posta Kodu</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Örn: 34000"
+                        {...field}
+                        disabled={isLoading}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <Button
                 type="submit"
