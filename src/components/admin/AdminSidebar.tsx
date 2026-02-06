@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { LayoutDashboard, Package, Users, LogOut, ChevronRight, Tags, Ticket } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,6 +16,49 @@ export function AdminSidebar() {
     const location = useLocation();
     const navigate = useNavigate();
     const { user } = useAuth();
+    const [unreadCount, setUnreadCount] = useState(0);
+
+    // Mark as read when entering orders page
+    useEffect(() => {
+        if (location.pathname.startsWith('/admin/orders')) {
+            const now = new Date().toISOString();
+            localStorage.setItem('bravita_admin_last_view', now);
+            setUnreadCount(0);
+        }
+    }, [location.pathname]);
+
+    // Fetch unread count
+    useEffect(() => {
+        const fetchUnread = async () => {
+            // If currently on orders page, unread is 0
+            if (location.pathname.startsWith('/admin/orders')) {
+                setUnreadCount(0);
+                return;
+            }
+
+            const lastView = localStorage.getItem('bravita_admin_last_view') || new Date(0).toISOString();
+
+            const { count } = await supabase
+                .from('orders')
+                .select('*', { count: 'exact', head: true })
+                .gt('created_at', lastView);
+
+            setUnreadCount(count || 0);
+        };
+
+        fetchUnread();
+
+        const channel = supabase
+            .channel('admin-sidebar-badges')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, () => {
+                if (!location.pathname.startsWith('/admin/orders')) {
+                    fetchUnread();
+                }
+            })
+            .subscribe();
+
+        return () => { supabase.removeChannel(channel); };
+    }, [location.pathname]);
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
@@ -64,7 +108,14 @@ export function AdminSidebar() {
                         >
                             <item.icon className={`w-5 h-5 ${isActive ? "text-orange-500" : "text-gray-400 group-hover:text-gray-600"}`} />
                             <span className="font-medium">{item.label}</span>
-                            {isActive && (
+
+                            {item.path === "/admin/orders" && unreadCount > 0 && (
+                                <span className="ml-auto bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+                                    {unreadCount}
+                                </span>
+                            )}
+
+                            {isActive && item.path !== "/admin/orders" && (
                                 <motion.div
                                     layoutId="activeIndicator"
                                     className="ml-auto"

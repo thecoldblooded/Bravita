@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, Session } from "@supabase/supabase-js";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -9,7 +9,70 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    flowType: 'pkce',
+    storage: window.localStorage,
+    storageKey: 'bravita-stable-token',
+  }
+});
+
+// Singleton session promise to avoid parallel lock acquisition attempts
+let initialSessionPromise: Promise<{ data: { session: Session | null }; error: unknown }> | null = null;
+export async function getSessionSafe() {
+  if (initialSessionPromise) return initialSessionPromise;
+
+  initialSessionPromise = (async () => {
+    try {
+      return await supabase.auth.getSession();
+    } catch (err: unknown) {
+      if (err instanceof Error && (err.name === 'AbortError' || err.message?.includes('AbortError'))) {
+        console.warn("getSessionSafe: Auth lock aborted, returning null session.");
+        return { data: { session: null }, error: null };
+      }
+      throw err;
+    }
+  })().finally(() => {
+    setTimeout(() => { initialSessionPromise = null }, 500);
+  });
+
+  return initialSessionPromise;
+}
+
+/**
+ * Wrapper for queries to handle AbortError gracefully
+ */
+export async function safeQuery<T>(promise: PromiseLike<{ data: T | null; error: unknown; count?: number | null }>): Promise<{ data: T | null; error: { message: string; isAborted?: boolean } | null; count: number }> {
+  try {
+    const { data, error, count } = await promise;
+    if (error) {
+      const errorStr = String(error).toLowerCase();
+      const errorMessage = (error as { message?: string })?.message?.toLowerCase() || '';
+      const isAborted = errorStr.includes('aborterror') ||
+        errorStr.includes('aborted') ||
+        errorMessage.includes('aborterror') ||
+        errorMessage.includes('aborted');
+      if (isAborted) {
+        return { data: null, error: { message: 'Aborted', isAborted: true }, count: 0 };
+      }
+      return { data, error: error as { message: string; isAborted?: boolean } | null, count: count || 0 };
+    }
+    return { data, error: null, count: count || 0 };
+  } catch (err: unknown) {
+    const errStr = String(err).toLowerCase();
+    const errMessage = (err as { message?: string })?.message?.toLowerCase() || '';
+    if (errStr.includes('aborterror') ||
+      errStr.includes('aborted') ||
+      errMessage.includes('aborterror') ||
+      errMessage.includes('aborted')) {
+      return { data: null, error: { message: 'Aborted', isAborted: true }, count: 0 };
+    }
+    throw err;
+  }
+}
 
 // Auth helper types
 export type UserType = "individual" | "company";

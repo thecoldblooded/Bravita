@@ -1,4 +1,5 @@
-import { supabase } from "./supabase";
+import { supabase, safeQuery } from "./supabase";
+import { Order } from "./admin";
 
 // Checkout response tipi
 export interface CheckoutResponse {
@@ -245,34 +246,17 @@ export async function createOrder(params: CreateOrderParams): Promise<CreateOrde
                 : "Havale/EFT bekleniyor",
         });
 
-        // Reserve stock for each item
-        // Reserve stock for each item
+        // Reserve stock logic is handled by 'manage_inventory' database trigger on INSERT.
+        // We do NOT need to call it manually here, otherwise it doubles the reservation.
+        /*
         for (const item of items) {
-            const targetId = item.product_id || item.id;
-            const { error: stockError } = await supabase.rpc('reserve_stock', {
-                p_id: targetId,
-                quantity: item.quantity
-            });
-
-            if (stockError) {
-                console.error(`Failed to reserve stock for item ${targetId}:`, stockError);
-                // Consider whether to fail the order or just log. 
-                // For now, logging is safer than rolling back a paid order, 
-                // but strictly speaking we should have checked stock before payment.
-            }
+             const targetId = item.product_id || item.id;
+             // ...
         }
+        */
 
-        // Increment promo code usage if applied
-        if (promoCode) {
-            const { error: promoError } = await supabase.rpc('increment_promo_usage', {
-                p_code: promoCode
-            });
-
-            if (promoError) {
-                console.error("Failed to increment promo usage:", promoError);
-                // Don't fail the order for this, getting the order is more important
-            }
-        }
+        // Usage increment and logging is handled by 'handle_new_order_promo' trigger.
+        // if (promoCode) { ... }
 
         // Send email (fire and forget)
         supabase.functions.invoke('send-order-email', {
@@ -318,24 +302,63 @@ export async function getOrderById(orderId: string) {
     return data;
 }
 
+
+
 /**
  * Get user's orders
  */
-export async function getUserOrders(userId: string) {
-
-
-    const { data, error } = await supabase
+export async function getUserOrders(userId: string, filters?: {
+    startDate?: string;
+    endDate?: string;
+    minAmount?: number;
+    maxAmount?: number;
+    sortBy?: "created_at" | "total";
+    sortOrder?: "asc" | "desc";
+}) {
+    let query = supabase
         .from("orders")
         .select("*")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false });
+        .eq("user_id", userId);
+
+    // ... (rest of filters)
+    // Date filters
+    if (filters?.startDate) {
+        query = query.gte("created_at", filters.startDate);
+    }
+    if (filters?.endDate) {
+        query = query.lte("created_at", filters.endDate);
+    }
+
+    // Amount filters
+    if (filters?.minAmount) {
+        query = query.gte("order_details->total", filters.minAmount);
+    }
+    if (filters?.maxAmount) {
+        query = query.lte("order_details->total", filters.maxAmount);
+    }
+
+    // Sorting
+    const sortBy = filters?.sortBy || "created_at";
+    const sortOrder = filters?.sortOrder || "desc";
+
+    if (sortBy === "total") {
+        query = query.order("order_details->total", { ascending: sortOrder === "asc" });
+    } else {
+        query = query.order(sortBy, { ascending: sortOrder === "asc" });
+    }
+
+    const { data, error } = await safeQuery<Order[]>(query);
 
     if (error) {
-        console.error("Get user orders error:", error);
+        if (!error.isAborted) {
+            console.error("Get user orders error:", error);
+        } else {
+            console.debug("User orders fetch was aborted (expected on navigation)");
+        }
         return [];
     }
 
-    return data;
+    return data as Order[];
 }
 
 /**

@@ -1,11 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Package, Clock, ChevronRight, Truck, CheckCircle, CreditCard, Building2, ClipboardList, XCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { getUserOrders } from "@/lib/checkout";
+import { safeQuery } from "@/lib/supabase";
 import Loader from "@/components/ui/Loader";
 import { Link } from "react-router-dom";
+import { formatDateTime } from "@/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Search, Filter, SortAsc, SortDesc, ArrowUpDown } from "lucide-react";
 
 interface OrderItem {
     product_id: string;
@@ -51,17 +57,61 @@ export function OrderHistory() {
     const [orders, setOrders] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+    const [sortBy, setSortBy] = useState<"created_at" | "total">("created_at");
+    const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+    
+    // Input states (for typing)
+    const [minAmountInput, setMinAmountInput] = useState<string>("");
+    const [maxAmountInput, setMaxAmountInput] = useState<string>("");
+    
+    // Actual filter states (applied on button click)
+    const [minAmount, setMinAmount] = useState<string>("");
+    const [maxAmount, setMaxAmount] = useState<string>("");
+    const retryCountRef = useRef(0);
 
-    useEffect(() => {
-        async function fetchOrders() {
-            if (!user) return;
-            setIsLoading(true);
-            const data = await getUserOrders(user.id);
+
+    const fetchOrders = useCallback(async () => {
+        if (!user) return;
+        setIsLoading(true);
+        try {
+            // Using the actual query logic from checkout, but we could wrap checkout's internal queries too
+            const data = await getUserOrders(user.id, {
+                sortBy,
+                sortOrder,
+                minAmount: minAmount ? parseFloat(minAmount) : undefined,
+                maxAmount: maxAmount ? parseFloat(maxAmount) : undefined
+            });
+            retryCountRef.current = 0; // Reset on success
             setOrders(data as Order[]);
+        } catch (err: unknown) {
+            if (err instanceof Error && (err.name === 'AbortError' || err.message?.includes('AbortError') || err.message?.includes('Aborted'))) {
+                console.debug("Order fetch was aborted (expected on navigation)");
+                return;
+            }
+            console.error("Fetch orders error:", err);
+        } finally {
             setIsLoading(false);
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user?.id, sortBy, sortOrder, minAmount, maxAmount]); // Stable dependency
+
+    useEffect(() => {
         fetchOrders();
-    }, [user]);
+    }, [fetchOrders]);
+
+    const handleFilterSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        // Apply the input values to actual filters
+        setMinAmount(minAmountInput);
+        setMaxAmount(maxAmountInput);
+    };
+
+    const handleClearFilters = () => {
+        setMinAmountInput("");
+        setMaxAmountInput("");
+        setMinAmount("");
+        setMaxAmount("");
+    };
 
     if (isLoading) {
         return (
@@ -84,9 +134,65 @@ export function OrderHistory() {
             animate={{ opacity: 1, y: 0 }}
             className="max-w-3xl"
         >
-            <div className="mb-6">
-                <h2 className="text-xl font-bold text-gray-900">Siparişlerim</h2>
-                <p className="text-gray-500 text-sm">Geçmiş siparişlerinizi ve durumlarını görüntüleyin.</p>
+            <div className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                    <h2 className="text-xl font-bold text-gray-900">Siparişlerim</h2>
+                    <p className="text-gray-500 text-sm">Geçmiş siparişlerinizi ve durumlarını görüntüleyin.</p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                    <Select
+                        value={`${sortBy}-${sortOrder}`}
+                        onValueChange={(val) => {
+                            const [field, order] = val.split("-") as ["created_at" | "total", "asc" | "desc"];
+                            setSortBy(field);
+                            setSortOrder(order);
+                        }}
+                    >
+                        <SelectTrigger className="w-45 h-9 bg-white border-gray-200">
+                            <ArrowUpDown className="w-3 h-3 mr-2" />
+                            <SelectValue placeholder="Sıralama" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="created_at-desc">En Yeni</SelectItem>
+                            <SelectItem value="created_at-asc">En Eski</SelectItem>
+                            <SelectItem value="total-desc">Tutar: Azalan</SelectItem>
+                            <SelectItem value="total-asc">Tutar: Artan</SelectItem>
+                        </SelectContent>
+                    </Select>
+
+                    <form onSubmit={handleFilterSubmit} className="flex items-center gap-2">
+                        <Input
+                            type="number"
+                            placeholder="Min ₺"
+                            className="w-20 h-9 bg-white"
+                            value={minAmountInput}
+                            onChange={(e) => setMinAmountInput(e.target.value)}
+                        />
+                        <Input
+                            type="number"
+                            placeholder="Max ₺"
+                            className="w-20 h-9 bg-white"
+                            value={maxAmountInput}
+                            onChange={(e) => setMaxAmountInput(e.target.value)}
+                        />
+                        <Button type="submit" size="sm" variant="outline" className="h-9">
+                            <Filter className="w-3 h-3 mr-1" />
+                            Filtrele
+                        </Button>
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="h-9 text-gray-500 hover:text-red-500"
+                            onClick={handleClearFilters}
+                            disabled={!minAmountInput && !maxAmountInput}
+                        >
+                            <XCircle className="w-3 h-3 mr-1" />
+                            Temizle
+                        </Button>
+                    </form>
+                </div>
             </div>
 
             {orders.length === 0 ? (
@@ -134,7 +240,7 @@ export function OrderHistory() {
                                                 </span>
                                             </div>
                                             <p className="text-sm text-gray-500 mt-1">
-                                                {new Date(order.created_at).toLocaleDateString("tr-TR")} • {itemCount} ürün
+                                                {formatDateTime(order.created_at)} • {itemCount} ürün
                                             </p>
                                         </div>
                                     </div>

@@ -48,8 +48,9 @@ export function ChangePasswordModal({ children, open, onOpenChange }: ChangePass
             setOldPassword("");
             setNewPassword("");
             setConfirmPassword("");
-        } catch (err: any) {
-            toast.error(err.message || "Şifre değiştirilirken bir hata oluştu.");
+        } catch (err) {
+            const error = err as Error;
+            toast.error(error.message || "Şifre değiştirilirken bir hata oluştu.");
         }
     };
 

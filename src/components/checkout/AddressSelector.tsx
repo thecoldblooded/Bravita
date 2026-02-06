@@ -147,9 +147,10 @@ export function AddressSelector({ selectedAddressId, onSelect }: AddressSelector
             if (data) {
                 onSelect(data.id);
             }
-        } catch (err: any) {
-            console.error("Address add error details:", err);
-            const errorMessage = err?.message || err?.code || "Bilinmeyen hata";
+        } catch (err) {
+            const error = err as Error;
+            console.error("Address add error details:", error);
+            const errorMessage = error.message || "Bilinmeyen hata";
             toast.error(`Adres eklenirken hata: ${errorMessage}`);
         } finally {
             setIsSubmitting(false);

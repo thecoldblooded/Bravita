@@ -3,7 +3,7 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminGuard } from "@/components/admin/AdminGuard";
 import { getProducts, updateProductStock, updateProduct, addProduct, deleteProduct, Product } from "@/lib/admin";
 import { ProductGridSkeleton } from "@/components/admin/skeletons";
-import { Package, Search, Edit2, Save, X, Plus, AlertCircle, CheckCircle, Trash2 } from "lucide-react";
+import { Package, Search, Edit2, Save, X, Plus, AlertCircle, CheckCircle, Trash2, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -24,6 +24,7 @@ export default function AdminProducts() {
 
     useEffect(() => {
         loadProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     useEffect(() => {
@@ -37,12 +38,32 @@ export default function AdminProducts() {
         }
     }, [search, products]);
 
-    async function loadProducts() {
+    async function loadProducts(manual = false) {
+        if (manual) setIsLoading(true);
         try {
+            // Minimum loading time for visual feedback
+            const minLoadTime = manual ? 800 : 0;
+            const start = Date.now();
+
             const data = await getProducts();
+
+            const elapsed = Date.now() - start;
+            if (manual && elapsed < minLoadTime) {
+                await new Promise(resolve => setTimeout(resolve, minLoadTime - elapsed));
+            }
+
             setProducts(data);
             setFilteredProducts(data);
-        } catch (error) {
+
+            if (manual) {
+                toast.success("Ürün listesi güncellendi");
+            }
+        } catch (error: unknown) {
+            if (error instanceof Error && (error.name === 'AbortError' || error.message?.includes('AbortError'))) {
+                console.warn("Product fetch aborted. Retrying...");
+                setTimeout(() => loadProducts(manual), 1000);
+                return;
+            }
             console.error("Failed to load products:", error);
             toast.error("Ürünler yüklenemedi");
         } finally {
@@ -102,7 +123,7 @@ export default function AdminProducts() {
                 toast.success("Ürün güncellendi");
             } else {
                 // Add
-                await addProduct(productData as any);
+                await addProduct(productData as Omit<Product, "id" | "created_at" | "updated_at" | "reserved_stock">);
                 toast.success("Ürün eklendi");
             }
             await loadProducts(); // Reload to get fresh data
@@ -137,7 +158,7 @@ export default function AdminProducts() {
         setIsModalOpen(true);
     };
 
-    if (isLoading) {
+    if (isLoading && products.length === 0) {
         return (
             <AdminGuard>
                 <AdminLayout>
@@ -158,13 +179,23 @@ export default function AdminProducts() {
                             <h1 className="text-2xl font-bold text-gray-900">Ürün Yönetimi</h1>
                             <p className="text-gray-500">Stok durumunu takip edin, fiyatları ve promosyonları yönetin.</p>
                         </div>
-                        <Button
-                            onClick={openAddModal}
-                            className="bg-orange-500 hover:bg-orange-600 text-white"
-                        >
-                            <Plus className="w-4 h-4 mr-2" />
-                            Yeni Ürün Ekle
-                        </Button>
+                        <div className="flex items-center gap-3">
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => loadProducts(true)}
+                                title="Listeyi Yenile"
+                            >
+                                <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
+                            </Button>
+                            <Button
+                                onClick={openAddModal}
+                                className="bg-orange-500 hover:bg-orange-600 text-white"
+                            >
+                                <Plus className="w-4 h-4 mr-2" />
+                                Yeni Ürün Ekle
+                            </Button>
+                        </div>
                     </div>
 
                     {/* Search */}

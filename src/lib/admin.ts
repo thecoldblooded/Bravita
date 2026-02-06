@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { supabase, getSessionSafe, safeQuery } from "@/lib/supabase";
 
 // Order status types
 export type OrderStatus = "pending" | "processing" | "preparing" | "shipped" | "delivered" | "cancelled";
@@ -76,6 +76,17 @@ export const STATUS_CONFIG: Record<OrderStatus, { label: string; color: string; 
     cancelled: { label: "İptal Edildi", color: "text-red-700", bgColor: "bg-red-100" },
 };
 
+export interface DashboardStats {
+    total_revenue: number;
+    order_count: number;
+    cancelled_count: number;
+    daily_sales: {
+        date: string;
+        count: number;
+        revenue: number;
+    }[];
+}
+
 /**
  * Get all orders with customer info (admin only)
  */
@@ -91,11 +102,17 @@ function getLocalOrders() {
 export async function getAllOrders(filters?: {
     status?: OrderStatus;
     search?: string;
+    startDate?: string;
+    endDate?: string;
+    minAmount?: number;
+    maxAmount?: number;
+    sortBy?: "created_at" | "total";
+    sortOrder?: "asc" | "desc";
     limit?: number;
     offset?: number;
 }): Promise<{ orders: Order[]; count: number }> {
     // Check for test user session
-    const { data: sessionData } = await supabase.auth.getSession();
+    const { data: sessionData } = await getSessionSafe();
     const isTestUser = sessionData.session?.user?.id === "test-user-id-12345";
 
     if (isTestUser) {
@@ -103,18 +120,37 @@ export async function getAllOrders(filters?: {
 
         // Apply filters locally
         if (filters?.status) {
-            orders = orders.filter((o: any) => o.status === filters.status);
+            orders = orders.filter((o: Order) => o.status === filters.status);
         }
         if (filters?.search) {
             const search = filters.search.toLowerCase();
-            orders = orders.filter((o: any) =>
+            orders = orders.filter((o: Order) =>
                 o.id.toLowerCase().includes(search) ||
-                o.profiles?.full_name?.toLowerCase().includes(search)
+                (o.profiles?.full_name?.toLowerCase().includes(search))
             );
+        }
+        if (filters?.startDate) {
+            orders = orders.filter((o: Order) => new Date(o.created_at) >= new Date(filters.startDate!));
+        }
+        if (filters?.endDate) {
+            orders = orders.filter((o: Order) => new Date(o.created_at) <= new Date(filters.endDate!));
+        }
+        if (filters?.minAmount) {
+            orders = orders.filter((o: Order) => (o.order_details?.total || 0) >= filters.minAmount!);
+        }
+        if (filters?.maxAmount) {
+            orders = orders.filter((o: Order) => (o.order_details?.total || 0) <= filters.maxAmount!);
         }
 
         // Sort
-        orders.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        const sortBy = filters?.sortBy || "created_at";
+        const sortOrder = filters?.sortOrder || "desc";
+
+        orders.sort((a: Order, b: Order) => {
+            const valA = sortBy === "total" ? (a.order_details?.total || 0) : new Date(a.created_at).getTime();
+            const valB = sortBy === "total" ? (b.order_details?.total || 0) : new Date(b.created_at).getTime();
+            return sortOrder === "asc" ? valA - valB : valB - valA;
+        });
 
         const totalCount = orders.length;
 
@@ -125,7 +161,7 @@ export async function getAllOrders(filters?: {
         }
 
         // Add dummy profile/address info if missing
-        orders = orders.map((o: any) => ({
+        orders = orders.map((o: Order) => ({
             ...o,
             profiles: o.profiles || { full_name: "Test Müşteri", email: "test@musteri.com", phone: "+905550000000" },
             addresses: o.addresses || { street: "Test Mah. Test Sok.", city: "İstanbul", postal_code: "34000" }
@@ -148,29 +184,59 @@ export async function getAllOrders(filters?: {
                 city,
                 postal_code
             )
-        `, { count: "exact" })
-        .order("created_at", { ascending: false });
+        `, { count: "exact" });
 
+    // Status filter
     if (filters?.status) {
         query = query.eq("status", filters.status);
     }
 
+    // Search filter
     if (filters?.search) {
         query = query.or(`id.ilike.%${filters.search}%,profiles.full_name.ilike.%${filters.search}%`);
     }
 
+    // Date filters
+    if (filters?.startDate) {
+        query = query.gte("created_at", filters.startDate);
+    }
+    if (filters?.endDate) {
+        query = query.lte("created_at", filters.endDate);
+    }
+
+    // Amount filters (using jsonb operator)
+    if (filters?.minAmount) {
+        query = query.gte("order_details->total", filters.minAmount);
+    }
+    if (filters?.maxAmount) {
+        query = query.lte("order_details->total", filters.maxAmount);
+    }
+
+    // Sorting
+    const sortBy = filters?.sortBy || "created_at";
+    const sortOrder = filters?.sortOrder || "desc";
+
+    if (sortBy === "total") {
+        query = query.order("order_details->total", { ascending: sortOrder === "asc" });
+    } else {
+        query = query.order(sortBy, { ascending: sortOrder === "asc" });
+    }
+
+    // Pagination
     if (filters?.limit) {
         query = query.limit(filters.limit);
     }
-
     if (filters?.offset) {
         query = query.range(filters.offset, filters.offset + (filters.limit || 10) - 1);
     }
 
-    const { data, error, count } = await query;
+    const { data, error, count } = await safeQuery<Order[]>(query);
 
-    if (error) throw error;
-    return { orders: data || [], count: count || 0 };
+    if (error) {
+        if (error.isAborted) return { orders: [], count: 0 };
+        throw error;
+    }
+    return { orders: (data as Order[]) || [], count: count || 0 };
 }
 
 /**
@@ -183,7 +249,7 @@ export async function getOrderById(orderId: string): Promise<Order | null> {
 
     if (isTestUser) {
         const orders = getLocalOrders();
-        let order = orders.find((o: any) => o.id === orderId);
+        let order = orders.find((o: Order) => o.id === orderId);
         if (order) {
             order = {
                 ...order,
@@ -229,7 +295,7 @@ export async function updateOrderStatus(
     // Test user bypass
     if (user?.id === "test-user-id-12345") {
         const orders = getLocalOrders();
-        const index = orders.findIndex((o: any) => o.id === orderId);
+        const index = orders.findIndex((o: Order) => o.id === orderId);
         if (index !== -1) {
             if (orders[index].status === "cancelled") {
                 console.error("Cancelled order cannot be updated");
@@ -271,7 +337,7 @@ export async function updateOrderStatus(
     const isCancelling = status === "cancelled";
 
     // Prepare update data
-    const updateData: any = { status, updated_at: new Date().toISOString() };
+    const updateData: Partial<Order> = { status, updated_at: new Date().toISOString() };
 
     // If cancelling
     if (isCancelling) {
@@ -283,7 +349,7 @@ export async function updateOrderStatus(
         }
 
         // Restore stock logic
-        const details = currentOrderData.order_details as any;
+        const details = currentOrderData.order_details as unknown as OrderDetails;
         if (details && details.items && Array.isArray(details.items)) {
             for (const item of details.items) {
                 let targetId = item.product_id;
@@ -308,7 +374,7 @@ export async function updateOrderStatus(
 
     // If Delivered -> Finalize Reservation (Decrement reserved_stock)
     if (status === "delivered" && currentOrderData.status !== "delivered") {
-        const details = currentOrderData.order_details as any;
+        const details = currentOrderData.order_details as unknown as OrderDetails;
         if (details && details.items && Array.isArray(details.items)) {
             for (const item of details.items) {
                 let targetId = item.product_id;
@@ -364,7 +430,7 @@ export async function updateTrackingNumber(
     // Test user bypass
     if (user?.id === "test-user-id-12345") {
         const orders = getLocalOrders();
-        const index = orders.findIndex((o: any) => o.id === orderId);
+        const index = orders.findIndex((o: Order) => o.id === orderId);
         if (index !== -1) {
             orders[index].tracking_number = trackingNumber;
             orders[index].shipping_company = shippingCompany || null;
@@ -418,8 +484,9 @@ export async function getOrderStatusHistory(orderId: string): Promise<OrderStatu
 /**
  * Get dashboard statistics using secure RPC
  */
-export async function getDashboardStats(startDate: Date, endDate: Date): Promise<any> {
-    const { data: { user } } = await supabase.auth.getUser();
+export async function getDashboardStats(startDate: Date, endDate: Date): Promise<DashboardStats> {
+    const { data: { session } } = await getSessionSafe();
+    const user = session?.user;
 
     // Test User Bypass
     if (user?.id === "test-user-id-12345") {
@@ -446,7 +513,7 @@ export async function getDashboardStats(startDate: Date, endDate: Date): Promise
     // Fill missing dates in daily_sales
     if (data && Array.isArray(data.daily_sales)) {
         const salesMap = new Map();
-        data.daily_sales.forEach((item: any) => {
+        data.daily_sales.forEach((item: { date: string; count: number; revenue: number }) => {
             // item.date is expected to be ISO string from DB
             const dateStr = item.date.split('T')[0];
             salesMap.set(dateStr, item);
@@ -508,12 +575,15 @@ export async function getAdminUsers(): Promise<{ id: string; email: string; full
  * Set user as admin
  */
 export async function setUserAdmin(userId: string, isAdmin: boolean): Promise<void> {
-    const { error } = await supabase
-        .from("profiles")
-        .update({ is_admin: isAdmin })
-        .eq("id", userId);
+    const { error } = await supabase.rpc('sync_user_admin_status', {
+        p_user_id: userId,
+        p_is_admin: isAdmin
+    });
 
-    if (error) throw error;
+    if (error) {
+        console.error("RPC Error (sync_user_admin_status):", error);
+        throw error;
+    }
 }
 
 /**

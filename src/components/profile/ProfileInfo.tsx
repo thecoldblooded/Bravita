@@ -22,7 +22,7 @@ export function ProfileInfo() {
     // Initialize form data when user is loaded or changed from stub
     useEffect(() => {
         if (user) {
-            const isStub = (user as any).isStub;
+            const isStub = user.isStub;
 
             // If we're not initialized yet, OR if we're currently a stub and new data is NOT a stub
             // OR if the form is empty but the user object has data
@@ -77,9 +77,9 @@ export function ProfileInfo() {
 
             await refreshUserProfile();
             toast.success("Profil bilgileri güncellendi");
-        } catch (error: any) {
-
-            const errorMessage = error?.message || "Bilinmeyen hata";
+        } catch (error) {
+            const err = error as Error;
+            const errorMessage = err.message || "Bilinmeyen hata";
             toast.error(`Profil güncellenirken hata: ${errorMessage}`);
         } finally {
             setIsSaving(false);

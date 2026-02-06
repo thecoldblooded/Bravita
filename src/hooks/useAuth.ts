@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -30,18 +30,15 @@ export function useAuthOperations() {
     setError(null);
 
     try {
-      const options: any = {
+      const options = {
         data: {
           phone: data.phone,
           full_name: data.fullName || null,
           user_type: data.userType,
           company_name: data.userType === "company" ? data.companyName : null,
         },
+        ...(data.captchaToken ? { captchaToken: data.captchaToken } : {})
       };
-
-      if (data.captchaToken) {
-        options.captchaToken = data.captchaToken;
-      }
 
       // Sign up with email and password - store user data in user_metadata
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -83,7 +80,7 @@ export function useAuthOperations() {
       const { data: authData, error: authError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/complete-profile`,
+          redirectTo: `${window.location.origin}`,
         },
       });
 
@@ -164,7 +161,7 @@ export function useAuthOperations() {
     }
   };
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
@@ -199,7 +196,7 @@ export function useAuthOperations() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   const resendEmailConfirmation = async (email: string) => {
     setIsLoading(true);

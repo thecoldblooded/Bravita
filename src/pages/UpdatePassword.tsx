@@ -50,7 +50,7 @@ export default function UpdatePassword() {
                 logout();
             }
         };
-    }, []);
+    }, [logout]);
 
     const formSchema = z.object({
         password: z.string().min(6, t("auth.validation.password_min_length") || "Şifre en az 6 karakter olmalıdır"),

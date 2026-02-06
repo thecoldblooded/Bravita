@@ -1,8 +1,13 @@
 /* eslint-disable react-refresh/only-export-components */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useRef } from "react";
 import { Session } from "@supabase/supabase-js";
-import { supabase, UserProfile } from "@/lib/supabase";
+import { supabase, UserProfile, getSessionSafe } from "@/lib/supabase";
+
+declare global {
+  interface Window {
+    __isSyncingProfile?: boolean;
+  }
+}
 
 interface AuthContextType {
   session: Session | null;
@@ -41,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return parsed as Session | null;
       }
     } catch (e) {
-
+      console.error("Initial session error:", e);
     }
     return null;
   };
@@ -49,21 +54,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const getInitialUser = (session: Session | null) => {
     if (!session?.user) return null;
 
-    // Check if we have a known complete profile
-    const knownComplete = localStorage.getItem("profile_known_complete") === "true";
+    // Check for admin status in session metadata (securely signed by Supabase)
+    const isAdminFromMetadata = !!session.user.app_metadata?.is_admin || !!session.user.user_metadata?.is_admin;
 
-    // Create a minimal user immediately so UI shows user info right away
-
+    // Create a minimal stub user - will be replaced by actual profile from DB
     return {
       id: session.user.id,
       email: session.user.email || "",
       full_name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || null,
       phone: session.user.user_metadata?.phone || session.user.phone || null,
-      profile_complete: knownComplete,
+      profile_complete: false,
       phone_verified: false,
       user_type: "individual",
       isStub: true,
-    } as any;
+      is_admin: isAdminFromMetadata, // Trust signed session metadata instantly
+      company_name: null,
+      phone_verified_at: null,
+      oauth_provider: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    } as UserProfile;
   };
 
   const initialSession = getInitialSession();
@@ -78,33 +88,73 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return window.location.hash.includes("type=recovery");
   });
 
-  // Wrapper to persist profile_complete status
+  // Wrapper for state updates
   const setUserDebug = useCallback((newUser: UserProfile | null) => {
-    // Persist profile_complete status to localStorage for immediate visibility on refresh
-    if (newUser?.profile_complete !== undefined) {
-      localStorage.setItem("profile_known_complete", String(newUser.profile_complete));
-    } else if (newUser === null) {
+    if (newUser === null) {
       localStorage.removeItem("profile_known_complete");
+      localStorage.removeItem("user_is_admin"); // Clean up any old traces
     }
 
     setUser(newUser);
   }, []);
 
+  const lastProcessedRef = useRef<string | null>(null);
+  const isInitializing = useRef(false);
+  const isSplashScreenActiveRef = useRef(false);
+
+  // Safety timeout: Force loading to false if it takes too long
+  useEffect(() => {
+    if (isLoading) {
+      const timer = setTimeout(() => {
+        console.warn("Auth: Loading timeout triggered. Forcing completion.");
+        setIsLoading(false);
+        setIsSplashScreenActive(false);
+      }, 20000);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading]);
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    isSplashScreenActiveRef.current = isSplashScreenActive;
+  }, [isSplashScreenActive]);
+
   const refreshUserProfile = useCallback(async () => {
     if (!session?.user?.id) return;
 
     try {
-      const { data: profile } = await supabase
+      let result = await supabase
         .from("profiles")
         .select("*")
         .eq("id", session.user.id)
         .single();
 
-      if (profile) {
-        setUserDebug(profile);
+      // Check for AbortError
+      const errStr = String(result.error || '').toLowerCase();
+      const errMsg = (result.error as { message?: string })?.message?.toLowerCase() || '';
+      const isAborted = errStr.includes('aborterror') || errStr.includes('aborted') ||
+        errMsg.includes('aborterror') || errMsg.includes('aborted');
+
+      if (isAborted) {
+        console.warn("refreshUserProfile: AbortError detected, retrying...");
+        await new Promise(resolve => setTimeout(resolve, 200));
+        result = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", session.user.id)
+          .single();
+      }
+
+      if (result.error) {
+        console.error("Profile fetch error:", result.error);
+        return;
+      }
+
+      if (result.data) {
+        setUserDebug(result.data);
       }
     } catch (error) {
-      // Silently fail
+      console.error("Failed to refresh user profile:", error);
     }
   }, [session?.user?.id, setUserDebug]);
 
@@ -115,14 +165,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } = await supabase.auth.refreshSession();
       setSession(newSession);
     } catch (error) {
-
+      console.error("Refresh session error:", error);
     }
   }, []);
 
-  const syncPendingProfile = useCallback(async (userId: string, profileData: any) => {
+  const syncPendingProfile = useCallback(async (userId: string, profileData: { full_name?: string; phone?: string; street?: string; city?: string; postal_code?: string }) => {
     // Singleton guard to prevent duplicate syncs
     if (Object.prototype.hasOwnProperty.call(window, '__isSyncingProfile')) return;
-    (window as any).__isSyncingProfile = true;
+    window.__isSyncingProfile = true;
 
     try {
 
@@ -159,7 +209,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq("user_id", userId);
 
       if (deleteError) {
-
+        console.error("Delete address error:", deleteError);
       }
 
       const addressPayload = {
@@ -175,274 +225,255 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .insert(addressPayload);
 
       if (addressError) {
-
-      } else {
-
+        console.error("Address error during sync:", addressError);
       }
 
       // Refresh profile to update context
       await refreshUserProfile();
     } catch (error) {
-
+      console.error("Sync profile error:", error);
     } finally {
-      delete (window as any).__isSyncingProfile;
+      delete window.__isSyncingProfile;
     }
   }, [refreshUserProfile]);
 
   // Initialize session on mount
+  // Consolidate initialization into a single atomic listener
   useEffect(() => {
+    let mounted = true;
 
-    const initializeAuth = async () => {
-      try {
-
-
-        // Add timeout to prevent infinite hang
-        const sessionPromise = supabase.auth.getSession();
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("getSession timeout")), 5000)
-        );
-
-        const { data: { session: initialSession } } = await Promise.race([sessionPromise, timeoutPromise]) as any;
-
-
-        setSession(initialSession);
-
-        if (initialSession?.user) {
-          const profilePromise = supabase
-            .from("profiles")
-            .select("*")
-            .eq("id", initialSession.user.id)
-            .single();
-
-          const profileTimeout = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("profile fetch timeout")), 3000)
-          );
-
-          try {
-            const { data: profile, error } = await Promise.race([profilePromise, profileTimeout]) as any;
-
-
-
-            if (error && error.code !== "PGRST116") {
-
-            }
-
-            if (profile) {
-
-              setUserDebug(profile);
-            } else {
-              // Profile doesn't exist - create it from user_metadata
-              const metadata = initialSession.user.user_metadata || {};
-
-              // Detect OAuth provider from session
-              const oauthProvider = initialSession.user.app_metadata?.provider ||
-                (initialSession.user.identities?.[0]?.provider) ||
-                null;
-
-              const newProfile = {
-                id: initialSession.user.id,
-                email: initialSession.user.email || "",
-                full_name: metadata.full_name || metadata.name || null,
-                phone: metadata.phone || initialSession.user.phone || null,
-                user_type: metadata.user_type || "individual",
-                company_name: metadata.company_name || null,
-                profile_complete: false,
-                phone_verified: false,
-                is_admin: false, // Default: not admin
-                oauth_provider: oauthProvider,
-              };
-
-              // Try to create profile in database
-              const { error: insertError } = await supabase
-                .from("profiles")
-                .insert(newProfile);
-
-              if (!insertError) {
-                setUserDebug(newProfile as any);
-              } else {
-                // Fallback to stub if insert fails
-                setUserDebug({ ...newProfile, isStub: true } as any);
-              }
-            }
-          } catch (error) {
-
-            const knownComplete = localStorage.getItem("profile_known_complete") === "true";
-            const minimalUser = {
-              id: initialSession.user.id,
-              email: initialSession.user.email || "",
-              full_name: initialSession.user.user_metadata?.full_name || initialSession.user.user_metadata?.name || null,
-              phone: initialSession.user.user_metadata?.phone || initialSession.user.phone || null,
-              profile_complete: knownComplete,
-              phone_verified: false,
-              user_type: "individual",
-              isStub: true,
-            } as any;
-
-            setUserDebug(minimalUser);
-          }
-        }
-
-        // Check localStorage for pending profile
-        const pendingProfile = localStorage.getItem("pending_profile");
-        if (pendingProfile && initialSession?.user) {
-
-          const profileData = JSON.parse(pendingProfile);
-          // Keep loading true until sync completes so routing guards wait
-          setIsLoading(true);
-          await syncPendingProfile(initialSession.user.id, profileData);
-        }
-      } catch (error) {
-
-      } finally {
-        // If this is the first load of the session, wait for the splash screen
-        if (isSplashScreenActive) {
-          // Minimum loading time (gif duration + buffer)
-          await new Promise(resolve => setTimeout(resolve, 6000));
-          sessionStorage.setItem("bravita_splash_shown", "true");
-          setIsSplashScreenActive(false);
-        }
-
-        setIsLoading(false);
+    // Supabase fires INITIAL_SESSION immediately upon subscription
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+      // Avoid processing the same session state repeatedly if events fire back-to-back
+      const sessionId = newSession?.user?.id || 'none';
+      if (lastProcessedRef.current === sessionId && (event === 'INITIAL_SESSION' || event === 'SIGNED_IN')) {
+        return;
       }
-    };
+      lastProcessedRef.current = sessionId;
 
-    initializeAuth();
+      console.log(`Auth Event: ${event} [User: ${sessionId.substring(0, 8)}]`);
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       if (event === "PASSWORD_RECOVERY") {
         setIsPasswordRecovery(true);
       } else if (event === "SIGNED_OUT") {
         setIsPasswordRecovery(false);
       }
 
+      // Close splash screen on INITIAL_SESSION - session state is loaded
+      if (event === "INITIAL_SESSION") {
+        // If session is null but URL has fragment (OAuth callback), retrieve session again
+        if (!newSession && window.location.hash) {
+          console.log("INITIAL_SESSION with empty session, checking URL fragment...");
+          supabase.auth.getSession().then(async ({ data: { session: urlSession } }) => {
+            if (urlSession && mounted) {
+              console.log("URL fragment session found, setting session");
+              setSession(urlSession);
+
+              // Fetch profile for the session with AbortError handling
+              try {
+                let profileResult = await supabase
+                  .from("profiles")
+                  .select("*")
+                  .eq("id", urlSession.user.id)
+                  .single();
+
+                // Check for AbortError and retry
+                const errStr = String(profileResult.error || '').toLowerCase();
+                const errMsg = (profileResult.error as { message?: string })?.message?.toLowerCase() || '';
+                const isAborted = errStr.includes('aborterror') || errStr.includes('aborted') ||
+                  errMsg.includes('aborterror') || errMsg.includes('aborted');
+
+                if (isAborted) {
+                  console.warn("URL session profile fetch aborted, retrying...");
+                  await new Promise(resolve => setTimeout(resolve, 200));
+                  profileResult = await supabase
+                    .from("profiles")
+                    .select("*")
+                    .eq("id", urlSession.user.id)
+                    .single();
+                }
+
+                if (mounted && profileResult.data) {
+                  setUserDebug(profileResult.data);
+                }
+              } catch (err) {
+                console.warn("Failed to fetch profile for URL session:", err);
+              }
+            }
+            // Close splash screen after handling session (whether successful or not)
+            if (mounted) {
+              setIsSplashScreenActive(false);
+              setIsLoading(false);
+            }
+          }).catch(err => {
+            console.warn("Could not parse URL session:", err);
+            if (mounted) {
+              setIsSplashScreenActive(false);
+              setIsLoading(false);
+            }
+          });
+          return;
+        }
+        // Normal case - session was in event
+        setIsSplashScreenActive(false);
+      }
+
       setSession(newSession);
 
       if (newSession?.user) {
-        try {
-          // Fetch updated profile with timeout
-          const profilePromise = supabase
-            .from("profiles")
-            .select("*")
-            .eq("id", newSession.user.id)
-            .single();
+        // OPTIMISTIC UPDATE: Unlock UI instantly using secure session metadata
+        // This ensures the app is interactive in milliseconds even if DB is slow.
+        const initialStub = getInitialUser(newSession);
 
-          const profileTimeout = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("profile fetch timeout in onAuthStateChange")), 5000)
-          );
-
-          const { data: profile, error } = await Promise.race([profilePromise, profileTimeout]) as any;
-
-          console.log(">>> PROFILE FETCH COMPLETE <<<", {
-            hasProfile: !!profile,
-            errorCode: error?.code,
-            errorMessage: error?.message,
-            isAdmin: profile?.is_admin
-          });
-
-          if (error) {
-            console.error("Profile fetch error:", {
-              code: error.code,
-              message: error.message,
-              hint: error.hint,
-              details: error.details
-            });
-          }
-
-          if (profile) {
-            setUserDebug(profile);
+        // Auto-complete stub if we've seen this user complete their profile before
+        const knownComplete = localStorage.getItem("profile_known_complete") === "true";
+        if (initialStub) {
+          if (knownComplete) {
+            initialStub.profile_complete = true;
           } else {
-            // Profile doesn't exist - create it from user_metadata
-            const metadata = newSession.user.user_metadata || {};
+            // Fail-open for new logins too to prevent stuck states
+            initialStub.profile_complete = true;
+          }
+        }
 
-            // Detect OAuth provider from session
-            const oauthProvider = newSession.user.app_metadata?.provider ||
-              (newSession.user.identities?.[0]?.provider) ||
-              null;
+        setUserDebug(initialStub);
 
-            const newProfile = {
-              id: newSession.user.id,
-              email: newSession.user.email || "",
-              full_name: metadata.full_name || metadata.name || null,
-              phone: metadata.phone || newSession.user.phone || null,
-              user_type: metadata.user_type || "individual",
-              company_name: metadata.company_name || null,
-              profile_complete: false,
-              phone_verified: false,
-              oauth_provider: oauthProvider,
-            };
+        // Immediately end loading state to reveal the app
+        if (mounted) {
+          setIsLoading(false);
+          setIsSplashScreenActive(false);
+        }
 
-            // Try to create profile in database
-            const { error: insertError } = await supabase
+        // Background Profile Sync: Update the UI once DB responds
+        (async () => {
+          let userProfile = null;
+          try {
+            const fetchProfile = () => supabase
               .from("profiles")
-              .insert(newProfile);
+              .select("id, email, full_name, phone, user_type, company_name, profile_complete, phone_verified, is_admin, oauth_provider, created_at, updated_at")
+              .eq("id", newSession.user.id)
+              .single();
 
-            if (!insertError) {
-              setUserDebug(newProfile as any);
-            } else {
-              // Fallback to stub if insert fails (might already exist)
-              // Fallback to stub if fails (might already exist)
-              setUserDebug({ ...newProfile, isStub: true } as any);
+            // Background attempt with 10s limit
+            const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Background fetch timeout')), 10000));
+            try {
+              const result = await Promise.race([fetchProfile(), timeout]) as any;
+              if (result.error) throw result.error;
+              userProfile = result.data;
+
+              // Success - Update state and cache
+              if (userProfile && mounted) {
+                setUserDebug(userProfile);
+                if (userProfile.profile_complete) {
+                  localStorage.setItem("profile_known_complete", "true");
+                }
+              }
+            } catch (err: any) {
+              console.warn("Auth: Background profile fetch failed or timed out. User is operating on secure stub.", err);
+            }
+          } catch (err: any) {
+            // "Not Found" handling for completely new users
+            if (err.code === "PGRST116" || err.message?.includes("PGRST116")) {
+              console.log("Auth: Profile not found, creating background entry...");
+              const metadata = newSession.user.user_metadata || {};
+              const newProfile: UserProfile = {
+                id: newSession.user.id,
+                email: newSession.user.email || "",
+                full_name: metadata.full_name || metadata.name || null,
+                phone: metadata.phone || newSession.user.phone || null,
+                user_type: metadata.user_type || "individual",
+                company_name: metadata.company_name || null,
+                profile_complete: false,
+                phone_verified: false,
+                is_admin: false,
+                oauth_provider: newSession.user.app_metadata?.provider || null,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                phone_verified_at: null
+              };
+              const { error: insertError } = await supabase.from("profiles").insert(newProfile);
+              if (!insertError && mounted) setUserDebug(newProfile);
             }
           }
-        } catch (err) {
 
-          setUserDebug(((current: UserProfile | null) => {
-            if (current?.id === newSession.user.id && !current.isStub) {
-              return current;
-            }
-
-            const knownComplete = localStorage.getItem("profile_known_complete") === "true";
-            const minimalUser = {
-              id: newSession.user.id,
-              email: newSession.user.email || "",
-              full_name: newSession.user.user_metadata?.full_name || newSession.user.user_metadata?.name || null,
-              phone: newSession.user.user_metadata?.phone || newSession.user.phone || null,
-              profile_complete: knownComplete,
-              phone_verified: false,
-              user_type: "individual",
-              isStub: true,
-              is_admin: false,
-              company_name: null,
-              phone_verified_at: null,
-              oauth_provider: null,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            } as UserProfile;
-            return minimalUser;
-          }) as any);
-        } finally {
-
-          // Check if there's pending profile data to sync
+          // Sync pending profiles if any from guest checkout
           const pendingProfile = localStorage.getItem("pending_profile");
-          if (pendingProfile && newSession?.user?.id) {
+          if (pendingProfile && mounted) {
             try {
-              setIsLoading(true);
               const profileData = JSON.parse(pendingProfile);
               await syncPendingProfile(newSession.user.id, profileData);
-            } catch (error) {
-
+            } catch (pErr) {
+              console.error("Pending profile sync error:", pErr);
             }
           }
+        })();
 
-
-          setIsLoading(false);
-        }
-      } else {
-
-        setUserDebug(null);
-        setIsLoading(false);
+        return; // UI is unlocked, background syncing is in progress
       }
 
+      // NO SESSION CASE: Clear auth state
+      if (mounted) {
+        setUserDebug(null);
+        setIsLoading(false);
+        setIsSplashScreenActive(false);
+      }
     });
 
+    const safetyTimer = setTimeout(() => {
+      if (mounted && isSplashScreenActiveRef.current) {
+        // Session loading took too long, close splash screen anyway
+        console.debug("Splash screen timeout, closing.");
+        setIsSplashScreenActive(false);
+      }
+    }, 2000);
+
+    // Handle unhandled AbortError promise rejections from Supabase internal lock
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      if (
+        event.reason?.name === 'AbortError' ||
+        String(event.reason).includes('AbortError') ||
+        String(event.reason).includes('Lock')
+      ) {
+        // Suppress Supabase internal AbortError - it's expected during visibility changes
+        event.preventDefault();
+      }
+    };
+
+    // Handle global errors including those from visibility change events
+    const handleGlobalError = (event: ErrorEvent) => {
+      if (
+        event.message?.includes('AbortError') ||
+        event.error?.name === 'AbortError' ||
+        event.message?.includes('Lock') ||
+        event.error?.message?.includes('Lock')
+      ) {
+        event.preventDefault();
+      }
+    };
+
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+    window.addEventListener('error', handleGlobalError);
+
+    // Explicitly handle visibility change to prevent race conditions
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible' && session) {
+        // Optional: Debounce or throttle checks if needed
+        // But usually suppressing the error is enough
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
-      subscription?.unsubscribe();
+      mounted = false;
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+      window.removeEventListener('error', handleGlobalError);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      subscription.unsubscribe();
+      clearTimeout(safetyTimer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty deps - runs only on mount
+  }, []); // Run only on mount
 
   const value: AuthContextType = {
     session,

@@ -7,6 +7,7 @@ import { getOrderById } from "@/lib/checkout";
 import Loader from "@/components/ui/Loader";
 import bravitaBottle from "@/assets/bravita-bottle.webp";
 import { toast } from "sonner";
+import { formatDate } from "@/lib/utils";
 
 interface OrderDetails {
     items: Array<{
@@ -141,7 +142,7 @@ export default function OrderConfirmation() {
                         <div className="text-right">
                             <p className="text-sm text-gray-500">Tarih</p>
                             <p className="font-medium text-gray-900">
-                                {new Date(order.created_at).toLocaleDateString("tr-TR")}
+                                {formatDate(order.created_at)}
                             </p>
                         </div>
                     </div>

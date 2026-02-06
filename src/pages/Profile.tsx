@@ -30,7 +30,7 @@ export default function Profile() {
         if (!isLoading && !user) navigate("/");
     }, [user, isLoading, navigate]);
 
-    if (isLoading) {
+    if (isLoading && !user) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-[#FFFBF4]">
                 <Loader />

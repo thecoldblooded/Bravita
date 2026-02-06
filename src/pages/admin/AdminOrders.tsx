@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
-import { Package, Search, Filter, ChevronRight } from "lucide-react";
+import { Package, Search, Filter, ChevronRight, RefreshCw } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminGuard } from "@/components/admin/AdminGuard";
 import { getAllOrders, Order, OrderStatus, STATUS_CONFIG } from "@/lib/admin";
@@ -8,33 +8,73 @@ import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatDateTime } from "@/lib/utils";
+import { ArrowUpDown } from "lucide-react";
 
 export default function AdminOrders() {
     const [orders, setOrders] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState<OrderStatus | "">("");
     const [totalCount, setTotalCount] = useState(0);
+    const [sortBy, setSortBy] = useState<"created_at" | "total">("created_at");
+    const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
-    useEffect(() => {
-        async function loadOrders() {
-            setIsLoading(true);
-            try {
-                const filters: { status?: OrderStatus; search?: string } = {};
-                if (statusFilter) filters.status = statusFilter;
-                if (search) filters.search = search;
+    // Input Refs for manual filtering
+    const searchRef = useRef<HTMLInputElement>(null);
+    const startDateRef = useRef<HTMLInputElement>(null);
+    const endDateRef = useRef<HTMLInputElement>(null);
+    const minAmountRef = useRef<HTMLInputElement>(null);
+    const maxAmountRef = useRef<HTMLInputElement>(null);
 
-                const data = await getAllOrders(filters);
-                setOrders(data.orders);
-                setTotalCount(data.count);
-            } catch (error) {
-                console.error("Failed to load orders:", error);
-            } finally {
-                setIsLoading(false);
+    const loadOrders = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const searchVal = searchRef.current?.value || "";
+            const startVal = startDateRef.current?.value || "";
+            const endVal = endDateRef.current?.value || "";
+            const minVal = minAmountRef.current?.value || "";
+            const maxVal = maxAmountRef.current?.value || "";
+
+            const filters: Parameters<typeof getAllOrders>[0] = {
+                status: statusFilter || undefined,
+                search: searchVal || undefined,
+                startDate: startVal || undefined,
+                endDate: endVal || undefined,
+                minAmount: minVal ? parseFloat(minVal) : undefined,
+                maxAmount: maxVal ? parseFloat(maxVal) : undefined,
+                sortBy,
+                sortOrder
+            };
+
+            const data = await getAllOrders(filters);
+            setOrders(data.orders);
+            setTotalCount(data.count);
+        } catch (error: unknown) {
+            if (error instanceof Error && (error.name === 'AbortError' || error.message?.includes('AbortError'))) {
+                console.warn("Admin orders load aborted. Retrying...");
+                setTimeout(() => loadOrders(), 1000);
+                return;
             }
+            console.error("Failed to load orders:", error);
+        } finally {
+            setIsLoading(false);
         }
+    }, [statusFilter, sortBy, sortOrder]);
+
+    // Auto-load on status/sort change (Tabs usually expect immediate feedback)
+    useEffect(() => {
         loadOrders();
-    }, [search, statusFilter]);
+    }, [loadOrders]);
+
+    const handleClearFilters = () => {
+        if (searchRef.current) searchRef.current.value = "";
+        if (startDateRef.current) startDateRef.current.value = "";
+        if (endDateRef.current) endDateRef.current.value = "";
+        if (minAmountRef.current) minAmountRef.current.value = "";
+        if (maxAmountRef.current) maxAmountRef.current.value = "";
+        setStatusFilter("");
+        loadOrders();
+    };
 
     const statusOptions: { value: OrderStatus | ""; label: string }[] = [
         { value: "", label: "Tüm Durumlar" },
@@ -51,36 +91,102 @@ export default function AdminOrders() {
             <AdminLayout>
                 <div className="max-w-7xl mx-auto">
                     {/* Header */}
-                    <div className="mb-8">
-                        <h1 className="text-2xl font-bold text-gray-900">Siparişler</h1>
-                        <p className="text-gray-500">Tüm siparişleri görüntüleyin ve yönetin</p>
+                    <div className="flex items-center justify-between mb-8">
+                        <div>
+                            <h1 className="text-2xl font-bold text-gray-900">Siparişler</h1>
+                            <p className="text-gray-500">Tüm siparişleri görüntüleyin ve yönetin</p>
+                        </div>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={loadOrders}
+                            title="Listeyi Yenile"
+                        >
+                            <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
+                        </Button>
                     </div>
 
                     {/* Filters */}
-                    <div className="bg-white rounded-2xl border border-gray-100 p-4 mb-6 flex flex-wrap gap-4">
-                        <div className="flex-1 min-w-50">
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                <Input
-                                    placeholder="Sipariş ID veya müşteri ara..."
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
-                                    className="pl-10"
-                                />
+                    <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-6">
+                        <div className="flex flex-wrap gap-4 mb-4">
+                            <div className="flex-1 min-w-62.5">
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                    <Input
+                                        ref={searchRef}
+                                        placeholder="Sipariş ID veya müşteri ara..."
+                                        className="pl-10"
+                                        onKeyDown={(e) => e.key === 'Enter' && loadOrders()}
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {statusOptions.map((option) => (
+                                    <Button
+                                        key={option.value}
+                                        variant={statusFilter === option.value ? "default" : "outline"}
+                                        size="sm"
+                                        onClick={() => setStatusFilter(option.value)}
+                                        className={statusFilter === option.value ? "bg-orange-500 hover:bg-orange-600" : ""}
+                                    >
+                                        {option.label}
+                                    </Button>
+                                ))}
                             </div>
                         </div>
-                        <div className="flex gap-2">
-                            {statusOptions.map((option) => (
+
+                        <div className="flex flex-wrap items-center gap-4 pt-4 border-t border-gray-50">
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm text-gray-500">Tarih:</span>
+                                <Input
+                                    ref={startDateRef}
+                                    type="date"
+                                    className="w-36 h-9"
+                                />
+                                <span className="text-gray-400">-</span>
+                                <Input
+                                    ref={endDateRef}
+                                    type="date"
+                                    className="w-36 h-9"
+                                />
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm text-gray-500 ml-2">Tutar:</span>
+                                <Input
+                                    ref={minAmountRef}
+                                    type="number"
+                                    placeholder="Min"
+                                    className="w-24 h-9"
+                                    onKeyDown={(e: React.KeyboardEvent) => e.key === 'Enter' && loadOrders()}
+                                />
+                                <Input
+                                    ref={maxAmountRef}
+                                    type="number"
+                                    placeholder="Max"
+                                    className="w-24 h-9"
+                                    onKeyDown={(e: React.KeyboardEvent) => e.key === 'Enter' && loadOrders()}
+                                />
+                            </div>
+
+                            <div className="flex items-center gap-2 ml-auto">
                                 <Button
-                                    key={option.value}
-                                    variant={statusFilter === option.value ? "default" : "outline"}
+                                    variant="ghost"
                                     size="sm"
-                                    onClick={() => setStatusFilter(option.value)}
-                                    className={statusFilter === option.value ? "bg-orange-500 hover:bg-orange-600" : ""}
+                                    onClick={handleClearFilters}
+                                    className="text-gray-500 hover:text-red-600"
                                 >
-                                    {option.label}
+                                    Filtreleri Temizle
                                 </Button>
-                            ))}
+                                <Button
+                                    size="sm"
+                                    onClick={loadOrders}
+                                    className="bg-gray-900 hover:bg-gray-800 text-white"
+                                >
+                                    <Filter className="w-4 h-4 mr-2" />
+                                    Filtrele
+                                </Button>
+                            </div>
                         </div>
                     </div>
 
@@ -130,8 +236,26 @@ export default function AdminOrders() {
                                     <div className="col-span-3">Sipariş</div>
                                     <div className="col-span-3">Müşteri</div>
                                     <div className="col-span-2">Durum</div>
-                                    <div className="col-span-2">Tutar</div>
-                                    <div className="col-span-2">Tarih</div>
+                                    <div
+                                        className="col-span-2 flex items-center gap-1 cursor-pointer hover:text-gray-900"
+                                        onClick={() => {
+                                            if (sortBy === "total") setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                                            else { setSortBy("total"); setSortOrder("desc"); }
+                                        }}
+                                    >
+                                        Tutar {sortBy === "total" && (sortOrder === "asc" ? "↑" : "↓")}
+                                        <ArrowUpDown className="w-3 h-3" />
+                                    </div>
+                                    <div
+                                        className="col-span-2 flex items-center gap-1 cursor-pointer hover:text-gray-900"
+                                        onClick={() => {
+                                            if (sortBy === "created_at") setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                                            else { setSortBy("created_at"); setSortOrder("desc"); }
+                                        }}
+                                    >
+                                        Tarih {sortBy === "created_at" && (sortOrder === "asc" ? "↑" : "↓")}
+                                        <ArrowUpDown className="w-3 h-3" />
+                                    </div>
                                 </div>
 
                                 {/* Table Body */}
@@ -168,8 +292,8 @@ export default function AdminOrders() {
                                                     ₺{order.order_details?.total?.toLocaleString("tr-TR") || 0}
                                                 </div>
                                                 <div className="col-span-2 flex items-center justify-between">
-                                                    <span className="text-gray-500">
-                                                        {new Date(order.created_at).toLocaleDateString("tr-TR")}
+                                                    <span className="text-[10px] text-gray-500 leading-tight">
+                                                        {formatDateTime(order.created_at)}
                                                     </span>
                                                     <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-orange-500 transition-colors" />
                                                 </div>
@@ -189,6 +313,6 @@ export default function AdminOrders() {
                     )}
                 </div>
             </AdminLayout>
-        </AdminGuard>
+        </AdminGuard >
     );
 }

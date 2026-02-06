@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabase";
+import { supabase, safeQuery } from "@/lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, Plus, Trash2, Home, Star, Building2 } from "lucide-react";
 import { useEffect, useState, useCallback, useRef } from "react";
@@ -39,31 +39,54 @@ export function AddressBook() {
     });
 
     const fetchLock = useRef(false);
+    const retryCountRef = useRef(0);
+    const isMountedRef = useRef(true);
+
+    useEffect(() => {
+        return () => {
+            isMountedRef.current = false;
+        };
+    }, []);
 
     const fetchAddresses = useCallback(async () => {
-        if (!user || fetchLock.current) return;
+        if (!user || fetchLock.current || !isMountedRef.current) return;
         fetchLock.current = true;
         setIsLoading(true);
         setError(null);
         try {
-            const { data, error: fetchError } = await supabase
+            const { data, error: fetchError } = await safeQuery<Address[]>(supabase
                 .from("addresses")
                 .select("*")
                 .eq("user_id", user.id)
-                .order("is_default", { ascending: false });
+                .order("is_default", { ascending: false }));
 
             if (fetchError) {
-                console.error("Supabase fetch error:", fetchError);
-                throw new Error(`${fetchError.code}: ${fetchError.message}`);
+                if (fetchError.isAborted) {
+                    console.debug("Address fetch was aborted (expected on navigation)");
+                    return;
+                }
+                if (!isMountedRef.current) return;
+                console.error("Address fetch error:", fetchError);
+                const msg = fetchError.message || "Adresler yüklenemedi";
+                setError(msg);
+                toast.error(msg);
+                return;
             }
-            setAddresses(data || []);
-        } catch (err) {
-            console.error("Error fetching addresses:", err);
+            retryCountRef.current = 0; // Reset on success
+            if (isMountedRef.current) {
+                setAddresses(data || []);
+            }
+        } catch (err: unknown) {
+            if (!isMountedRef.current) return;
+            console.error("Unexpected error fetching addresses:", err);
             const msg = err instanceof Error ? err.message : "Adresler yüklenemedi";
             setError(msg);
             toast.error(msg);
         } finally {
-            setIsLoading(false);
+            if (isMountedRef.current) {
+                setIsLoading(false);
+            }
+            fetchLock.current = false;
             fetchLock.current = false;
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -91,34 +114,42 @@ export function AddressBook() {
 
             if (insertError) throw insertError;
 
+            if (!isMountedRef.current) return;
             toast.success("Adres eklendi");
             setNewAddress({ street: "", city: "", district: "", postal_code: "", address_type: "home" });
             setIsAdding(false);
             fetchAddresses();
         } catch (err) {
+            if (!isMountedRef.current) return;
             toast.error(err instanceof Error ? err.message : "Adres eklenirken hata oluştu");
         } finally {
-            setIsSubmitting(false);
+            if (isMountedRef.current) {
+                setIsSubmitting(false);
+            }
         }
     };
 
     const handleDelete = async (id: string) => {
-        if (deletingId) return;
+        if (deletingId || !isMountedRef.current) return;
         setDeletingId(id);
         try {
             const { error: deleteError } = await supabase.from("addresses").delete().eq("id", id);
             if (deleteError) throw deleteError;
+            if (!isMountedRef.current) return;
             toast.success("Adres silindi");
             setAddresses(prev => prev.filter((a) => a.id !== id));
         } catch (err) {
+            if (!isMountedRef.current) return;
             toast.error(err instanceof Error ? err.message : "Adres silinemedi");
         } finally {
-            setDeletingId(null);
+            if (isMountedRef.current) {
+                setDeletingId(null);
+            }
         }
     };
 
     const handleSetDefault = async (id: string) => {
-        if (settingDefaultId || !user) return;
+        if (settingDefaultId || !user || !isMountedRef.current) return;
         setSettingDefaultId(id);
         try {
             // First, set all addresses to non-default
@@ -137,6 +168,7 @@ export function AddressBook() {
 
             if (updateError) throw updateError;
 
+            if (!isMountedRef.current) return;
             toast.success("Varsayılan adres güncellendi");
 
             // Update local state
@@ -147,9 +179,12 @@ export function AddressBook() {
                 })).sort((a, b) => (b.is_default ? 1 : 0) - (a.is_default ? 1 : 0))
             );
         } catch (err) {
+            if (!isMountedRef.current) return;
             toast.error(err instanceof Error ? err.message : "Varsayılan adres güncellenemedi");
         } finally {
-            setSettingDefaultId(null);
+            if (isMountedRef.current) {
+                setSettingDefaultId(null);
+            }
         }
     };
 

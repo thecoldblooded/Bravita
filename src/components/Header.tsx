@@ -82,6 +82,7 @@ const Header = () => {
   const { isCartOpen, openCart, setIsCartOpen } = useCart();
 
   const isProfilePage = location.pathname === "/profile";
+  const isCheckoutPage = location.pathname === "/checkout";
 
   // Show UI once user object exists (stub or real) and auth is initialized
   const isUserReady = isAuthenticated && user;
@@ -177,7 +178,7 @@ const Header = () => {
 
           {/* Center NavBar (Desktop) */}
           <div className="hidden lg:flex absolute left-1/2 -translate-x-1/2">
-            {!isProfilePage && <NavBar items={navItems} activeTab={activeName} layoutId="desktop-nav" />}
+            {!isProfilePage && !isCheckoutPage && <NavBar items={navItems} activeTab={activeName} layoutId="desktop-nav" />}
           </div>
 
           {/* Controls Container */}
@@ -220,8 +221,7 @@ const Header = () => {
                   href={!isAuthenticated ? "#contact" : undefined}
                   onClick={(e) => {
                     // If authenticated but profile not complete, prevent navigation
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    if (isAuthenticated && user && !(user as any).isStub && !user?.profile_complete) {
+                    if (isAuthenticated && user && !user?.profile_complete) {
                       e.preventDefault();
                     }
                     // If authenticated and profile complete, open cart
@@ -283,7 +283,7 @@ const Header = () => {
       </div>
 
       {/* Mobile NavBar (Fixed bottom) */}
-      {!isProfilePage && (
+      {!isProfilePage && !isCheckoutPage && (
         <div className="lg:hidden">
           <NavBar
             items={navItems}

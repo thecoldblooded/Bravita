@@ -56,7 +56,7 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
         }
     }, [product, isOpen]);
 
-    const handleChange = (field: keyof Product, value: any) => {
+    const handleChange = <K extends keyof Product>(field: K, value: Product[K]) => {
         setFormData(prev => ({ ...prev, [field]: value }));
     };
 

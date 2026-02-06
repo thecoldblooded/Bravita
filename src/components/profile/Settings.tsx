@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Bell, Shield, Lock, Trash2, LogOut } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
@@ -11,11 +11,60 @@ import { useAuthOperations } from "@/hooks/useAuth";
 
 import { ChangePasswordModal } from "./ChangePasswordModal";
 
+import { supabase } from "@/lib/supabase";
+
+// ... [existing imports]
+
 export function Settings() {
     const { session } = useAuth();
     const { logout } = useAuthOperations();
     const navigate = useNavigate();
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+    const [preferences, setPreferences] = useState({ email: true, order: true });
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        async function loadPreferences() {
+            if (!session?.user?.id) return;
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('email_notifications, order_notifications')
+                .eq('id', session.user.id)
+                .single();
+
+            if (data && !error) {
+                setPreferences({
+                    email: data.email_notifications ?? true,
+                    order: data.order_notifications ?? true
+                });
+            }
+        }
+        loadPreferences();
+    }, [session?.user?.id]);
+
+    const handlePreferenceChange = async (key: 'email' | 'order', value: boolean) => {
+        if (!session?.user?.id) return;
+
+        // Optimistic update
+        setPreferences(prev => ({ ...prev, [key]: value }));
+
+        const updateData = key === 'email'
+            ? { email_notifications: value }
+            : { order_notifications: value };
+
+        const { error } = await supabase
+            .from('profiles')
+            .update(updateData)
+            .eq('id', session.user.id);
+
+        if (error) {
+            toast.error("Ayarlar güncellenemedi");
+            // Revert
+            setPreferences(prev => ({ ...prev, [key]: !value }));
+        } else {
+            toast.success("Tercihler kaydedildi");
+        }
+    };
 
     const isOAuthUser = session?.user?.app_metadata?.provider !== "email";
     const providerName = session?.user?.app_metadata?.provider === "google" ? "Google" : "Sosyal";
@@ -58,14 +107,20 @@ export function Settings() {
                                 <Label className="text-sm font-medium">E-posta Bildirimleri</Label>
                                 <p className="text-xs text-gray-500">Kampanyalar ve güncellemeler hakkında e-posta alın.</p>
                             </div>
-                            <Switch defaultChecked />
+                            <Switch
+                                checked={preferences.email}
+                                onCheckedChange={(val) => handlePreferenceChange('email', val)}
+                            />
                         </div>
                         <div className="flex items-center justify-between">
                             <div>
                                 <Label className="text-sm font-medium">Sipariş Durumu</Label>
                                 <p className="text-xs text-gray-500">Siparişiniz kargoya verildiğinde bildirim alın.</p>
                             </div>
-                            <Switch defaultChecked />
+                            <Switch
+                                checked={preferences.order}
+                                onCheckedChange={(val) => handlePreferenceChange('order', val)}
+                            />
                         </div>
                     </div>
                 </section>

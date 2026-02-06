@@ -1,40 +1,64 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminGuard } from "@/components/admin/AdminGuard";
-import { getDashboardStats } from "@/lib/admin";
+import { getDashboardStats, DashboardStats } from "@/lib/admin";
 import { DashboardSkeleton } from "@/components/admin/skeletons";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
-import { Calendar, DollarSign, ShoppingBag, TrendingUp } from "lucide-react";
+import { Calendar, DollarSign, ShoppingBag, TrendingUp, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { formatDate, formatDateTime } from "@/lib/utils";
 
 export default function AdminDashboard() {
-    const [stats, setStats] = useState<any>(null);
+    const [stats, setStats] = useState<DashboardStats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [dateRange, setDateRange] = useState("30"); // days
 
-    useEffect(() => {
-        async function loadStats() {
-            setIsLoading(true);
-            try {
-                const end = new Date();
-                end.setHours(23, 59, 59, 999);
+    const retryCount = useRef(0);
 
-                const start = new Date();
-                start.setDate(start.getDate() - parseInt(dateRange));
-                start.setHours(0, 0, 0, 0);
+    const loadStats = useCallback(async (manual = false) => {
+        setIsLoading(true);
+        try {
+            const minLoadTime = manual ? 800 : 0;
+            const startLoad = Date.now();
 
-                const data = await getDashboardStats(start, end);
-                setStats(data);
-            } catch (error) {
-                console.error("Failed to load dashboard stats:", error);
-            } finally {
-                setIsLoading(false);
+            const end = new Date();
+            end.setHours(23, 59, 59, 999);
+
+            const start = new Date();
+            start.setDate(start.getDate() - parseInt(dateRange));
+            start.setHours(0, 0, 0, 0);
+
+            const data = await getDashboardStats(start, end);
+
+            const elapsed = Date.now() - startLoad;
+            if (manual && elapsed < minLoadTime) {
+                await new Promise(r => setTimeout(r, minLoadTime - elapsed));
             }
+
+            setStats(data);
+            if (manual) toast.success("Veriler güncellendi");
+            retryCount.current = 0; // Success, reset retries
+        } catch (error: unknown) {
+            // Retry on AbortError (max 3 times)
+            if (error instanceof Error && (error.name === 'AbortError' || error.message?.includes('AbortError'))) {
+                console.debug("Dashboard stats load was aborted (expected on navigation)");
+                retryCount.current = 0;
+                // Stop retrying but don't show error to user if it's just an abort
+                return;
+            }
+            console.error("Failed to load dashboard stats:", error);
+            if (manual) toast.error("Veriler alınırken hata oluştu");
+        } finally {
+            setIsLoading(false);
         }
-        loadStats();
     }, [dateRange]);
 
-    if (isLoading) {
+    useEffect(() => {
+        loadStats();
+    }, [loadStats]);
+
+    if (isLoading && !stats) {
         return (
             <AdminGuard>
                 <AdminLayout>
@@ -83,6 +107,14 @@ export default function AdminDashboard() {
                                 size="sm"
                             >
                                 Son 2 Yıl
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => loadStats(true)}
+                                title="Verileri Yenile"
+                            >
+                                <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
                             </Button>
                         </div>
                     </div>
@@ -157,7 +189,7 @@ export default function AdminDashboard() {
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                                         <XAxis
                                             dataKey="date"
-                                            tickFormatter={(date) => new Date(date).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })}
+                                            tickFormatter={(date) => formatDate(date, { day: "numeric", month: "short", year: undefined })}
                                             stroke="#9ca3af"
                                             tick={{ fontSize: 12 }}
                                             axisLine={false}
@@ -172,7 +204,7 @@ export default function AdminDashboard() {
                                         />
                                         <Tooltip
                                             formatter={(value) => [`₺${Number(value).toLocaleString("tr-TR")}`, "Ciro"]}
-                                            labelFormatter={(date) => new Date(date).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}
+                                            labelFormatter={(date) => formatDate(date)}
                                             contentStyle={{ borderRadius: "12px", border: "none", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }}
                                         />
                                         <Area
@@ -199,7 +231,7 @@ export default function AdminDashboard() {
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                                         <XAxis
                                             dataKey="date"
-                                            tickFormatter={(date) => new Date(date).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })}
+                                            tickFormatter={(date) => formatDate(date, { day: "numeric", month: "short", year: undefined })}
                                             stroke="#9ca3af"
                                             tick={{ fontSize: 12 }}
                                             axisLine={false}
@@ -214,7 +246,7 @@ export default function AdminDashboard() {
                                         />
                                         <Tooltip
                                             contentStyle={{ borderRadius: "12px", border: "none", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }}
-                                            labelFormatter={(date) => new Date(date).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}
+                                            labelFormatter={(date) => formatDate(date)}
                                         />
                                         <Bar dataKey="count" name="Sipariş" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={30} />
                                     </BarChart>

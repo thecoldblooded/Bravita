@@ -1,7 +1,7 @@
-// @ts-nocheck
+// @ts-expect-error: Deno URL imports
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { ORDER_CONFIRMATION_HTML } from "./template.ts";
+import { ORDER_CONFIRMATION_HTML, SHIPPED_HTML, DELIVERED_HTML, CANCELLED_HTML } from "./template.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -14,6 +14,16 @@ const corsHeaders = {
 
 interface OrderEmailRequest {
     order_id: string;
+    type?: "order_confirmation" | "shipped" | "delivered" | "cancelled";
+    tracking_number?: string;
+    shipping_company?: string;
+    cancellation_reason?: string;
+}
+
+interface OrderItem {
+    product_name: string;
+    quantity: number;
+    unit_price: number;
 }
 
 serve(async (req: Request) => {
@@ -27,27 +37,36 @@ serve(async (req: Request) => {
         }
 
         const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-        const { order_id }: OrderEmailRequest = await req.json();
+        const { order_id, type = "order_confirmation", tracking_number, shipping_company, cancellation_reason }: OrderEmailRequest = await req.json();
 
         if (!order_id) {
             throw new Error("Order ID is required");
         }
 
         // 1. Fetch Order Details
-        // We need to fetch order details, related user (email), and address
-        // Since we use 'order_details' JSONB, items are inside it.
         const { data: order, error: orderError } = await supabase
             .from("orders")
             .select(`
         *,
         shipping_address:addresses(*),
-        user:profiles(email, full_name)
+        user:profiles(email, full_name, order_notifications)
       `)
             .eq("id", order_id)
             .single();
 
         if (orderError || !order) {
             throw new Error(`Order not found: ${orderError?.message}`);
+        }
+
+        // Check user preferences for notifications
+        // We always send 'order_confirmation' as it is a receipt.
+        // For other status updates, we check the user's preference.
+        if (type !== "order_confirmation" && order.user.order_notifications === false) {
+            console.log(`User ${order.user.email} has disabled order notifications. Skipping email for type: ${type}`);
+            return new Response(JSON.stringify({ message: "User disabled notifications", skipped: true }), {
+                headers: { ...corsHeaders, "Content-Type": "application/json" },
+                status: 200,
+            });
         }
 
         // 2. Prepare Data
@@ -59,7 +78,7 @@ serve(async (req: Request) => {
             minute: "2-digit",
         });
 
-        const items = order.order_details.items;
+        const items = order.order_details.items as OrderItem[];
         const totals = {
             subtotal: order.order_details.subtotal,
             discount: order.order_details.discount || 0,
@@ -74,16 +93,8 @@ serve(async (req: Request) => {
             order.payment_method === "credit_card" ? "Kredi Kartı" : "Havale / EFT";
 
         // 3. Generate Items HTML
-        // Note: We don't have product images in JSONB usually, unless we stored them. 
-        // Assuming 'product_image' might be missing, we use a placeholder or Bravita bottle if name matches.
-        // For now, we will just list text if image is missing.
-        // Ideally, pass image url in order_details or fetch from products table. 
-        // Let's fetch products to get images if needed? 
-        // Optimization: Just use a generic image or the logic from frontend.
-
         let itemsHtml = "";
         for (const item of items) {
-            // Allow generic image for now
             const imgUrl = "https://xpmbnznsmsujjuwumfiw.supabase.co/storage/v1/object/public/public-assets/bravita-bottle.webp";
 
             itemsHtml += `
@@ -103,39 +114,79 @@ serve(async (req: Request) => {
       </tr>`;
         }
 
-        // 4. Update Template
-        let html = ORDER_CONFIRMATION_HTML
-            .replace("{{ORDER_ID}}", order.id.substring(0, 8).toUpperCase())
-            .replace("{{ORDER_DATE}}", orderDate)
-            .replace("{{ITEMS_LIST}}", itemsHtml)
-            .replace("{{SUBTOTAL}}", totals.subtotal.toFixed(2))
-            .replace("{{DISCOUNT}}", totals.discount.toFixed(2))
-            .replace("{{TAX}}", totals.vat.toFixed(2))
-            .replace("{{TOTAL}}", totals.total.toFixed(2))
-            .replace("{{SHIPPING_ADDRESS}}", addressString)
-            .replace("{{PAYMENT_METHOD}}", paymentMethod);
+        // 4. Determine Template and Context
+        let html = "";
+        let subject = "";
+        let textContent = ""; // Basic text version
 
-        // 5. Send Email via Resend
-        // Generate Plain Text Version (for better deliverability)
-        const textContent = `
-Siparişiniz Onaylandı!
+        const commonTextInfo = `
 Sipariş No: #${order.id.substring(0, 8).toUpperCase()}
 Tarih: ${orderDate}
-
 Ürünler:
-${items.map(item => `- ${item.product_name} (${item.quantity} adet) : ₺${(item.unit_price * item.quantity).toFixed(2)}`).join('\n')}
+${items.map((item) => `- ${item.product_name} (${item.quantity} adet)`).join('\n')}
+Teslimat Adresi: ${addressString}
+        `;
 
-Ara Toplam: ₺${totals.subtotal.toFixed(2)}
-İndirim: -₺${totals.discount.toFixed(2)}
-KDV: ₺${totals.vat.toFixed(2)}
-TOPLAM: ₺${totals.total.toFixed(2)}
+        if (type === "shipped") {
+            // Use passed tracking info or fallback to order data
+            const validTrackingNumber = tracking_number || order.tracking_number;
+            const validShippingCompany = shipping_company || order.shipping_company || "Kargo Firması";
 
-Teslimat Adresi:
-${addressString}
+            if (!validTrackingNumber) {
+                // It's possible to mark as shipped without tracking momentarily, but for email we prefer having it.
+                // We will still send the email but might show "Bilgi Bekleniyor" if missing, though frontend should prevent this.
+            }
 
-Bravita Ekibi
-            `.trim();
+            subject = `Siparişiniz Kargoya Verildi 🚚 #${order.id.substring(0, 8).toUpperCase()}`;
+            html = SHIPPED_HTML
+                .replace("{{ORDER_ID}}", order.id.substring(0, 8).toUpperCase())
+                .replace("{{ORDER_DATE}}", orderDate)
+                .replace("{{ITEMS_LIST}}", itemsHtml)
+                .replace("{{SHIPPING_ADDRESS}}", addressString)
+                .replace("{{SHIPPING_COMPANY}}", validShippingCompany)
+                .replace("{{TRACKING_NUMBER}}", validTrackingNumber || "Takip numarası girilmedi");
 
+            textContent = `Siparişiniz Kargoya Verildi!\n\nKargo Firması: ${validShippingCompany}\nTakip Numarası: ${validTrackingNumber}\n\n${commonTextInfo}`;
+
+        } else if (type === "delivered") {
+            subject = `Siparişiniz Teslim Edildi ✅ #${order.id.substring(0, 8).toUpperCase()}`;
+            html = DELIVERED_HTML
+                .replace("{{ORDER_ID}}", order.id.substring(0, 8).toUpperCase())
+                .replace("{{ORDER_DATE}}", orderDate)
+                .replace("{{ITEMS_LIST}}", itemsHtml)
+                .replace("{{SHIPPING_ADDRESS}}", addressString);
+
+            textContent = `Siparişiniz Teslim Edildi!\n\nBizi tercih ettiğiniz için teşekkürler.\n\n${commonTextInfo}`;
+
+        } else if (type === "cancelled") {
+            subject = `Siparişiniz İptal Edildi ❌ #${order.id.substring(0, 8).toUpperCase()}`;
+            const reason = cancellation_reason || order.cancellation_reason || "Belirtilmedi";
+
+            html = CANCELLED_HTML
+                .replace("{{ORDER_ID}}", order.id.substring(0, 8).toUpperCase())
+                .replace("{{ORDER_DATE}}", orderDate)
+                .replace("{{CANCELLATION_REASON}}", reason);
+
+            textContent = `Siparişiniz İptal Edildi!\n\nİptal Nedeni: ${reason}\n\n${commonTextInfo}`;
+
+        } else {
+            // Default: order_confirmation
+            subject = `Siparişiniz Onaylandı #${order.id.substring(0, 8).toUpperCase()}`;
+            html = ORDER_CONFIRMATION_HTML
+                .replace("{{ORDER_ID}}", order.id.substring(0, 8).toUpperCase())
+                .replace("{{ORDER_DATE}}", orderDate)
+                .replace("{{ITEMS_LIST}}", itemsHtml)
+                .replace("{{SUBTOTAL}}", totals.subtotal.toFixed(2))
+                .replace("{{DISCOUNT}}", totals.discount.toFixed(2))
+                .replace("{{TAX}}", totals.vat.toFixed(2))
+                .replace("{{TOTAL}}", totals.total.toFixed(2))
+                .replace("{{SHIPPING_ADDRESS}}", addressString)
+                .replace("{{PAYMENT_METHOD}}", paymentMethod);
+
+            textContent = `Siparişiniz Onaylandı!\n\n${commonTextInfo}\n\nToplam Tutar: ₺${totals.total.toFixed(2)}`;
+        }
+
+        // 5. Send Email via Resend
         const res = await fetch("https://api.resend.com/emails", {
             method: "POST",
             headers: {
@@ -145,11 +196,11 @@ Bravita Ekibi
             body: JSON.stringify({
                 from: "Bravita <noreply@bravita.com.tr>",
                 to: [order.user.email],
-                subject: `Siparişiniz Onaylandı #${order.id.substring(0, 8).toUpperCase()}`,
+                subject: subject,
                 html: html,
-                text: textContent, // Needed to avoid MIME_HTML_ONLY penalty
+                text: textContent,
                 headers: {
-                    "List-Unsubscribe": "<mailto:destek@bravita.com.tr>", // Good practice
+                    "List-Unsubscribe": "<mailto:destek@bravita.com.tr>",
                     "X-Entity-Ref-ID": order.id
                 }
             }),
@@ -165,8 +216,9 @@ Bravita Ekibi
             headers: { ...corsHeaders, "Content-Type": "application/json" },
             status: 200,
         });
-    } catch (error: any) {
-        return new Response(JSON.stringify({ error: error.message }), {
+    } catch (error) {
+        const err = error as Error;
+        return new Response(JSON.stringify({ error: err.message }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
             status: 400,
         });

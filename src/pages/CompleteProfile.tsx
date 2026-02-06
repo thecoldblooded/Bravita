@@ -76,21 +76,25 @@ export function CompleteProfile() {
       authLoading,
       hasSession: !!session?.user,
       hasUser: !!user,
-      profileComplete: user?.profile_complete
+      profileComplete: user?.profile_complete,
+      isStub: user?.isStub
     });
 
     if (!authLoading) {
+      // No session - redirect to home
       if (!session?.user) {
         console.log("No session, redirecting to /");
         navigate("/");
         return;
       }
 
-      if (user?.profile_complete) {
-        console.log("Profile complete, redirecting to /");
+      if (user?.profile_complete === true) {
+        console.log("Profile complete, redirecting to /", user);
         navigate("/");
         return;
       }
+
+      // If still a stub after a brief wait, that's fine - show form
     }
   }, [session, user, authLoading, navigate]);
 

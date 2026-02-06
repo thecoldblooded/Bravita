@@ -3,11 +3,13 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminGuard } from "@/components/admin/AdminGuard";
 import { getPromoCodes, addPromoCode, updatePromoCode, deletePromoCode, PromoCode } from "@/lib/admin";
 import { TableSkeleton } from "@/components/admin/skeletons";
-import { Search, Edit2, Trash2, Plus, Percent, Coins, CheckCircle, AlertCircle } from "lucide-react";
+import { Search, Edit2, Trash2, Plus, Percent, Coins, CheckCircle, AlertCircle, History } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { PromoCodeModal } from "@/components/admin/PromoCodeModal";
+import { PromoLogsModal } from "@/components/admin/PromoLogsModal";
+import { formatDate } from "@/lib/utils";
 
 export default function AdminPromoCodes() {
     const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
@@ -18,6 +20,10 @@ export default function AdminPromoCodes() {
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingPromo, setEditingPromo] = useState<PromoCode | null>(null);
+
+    // Logs Modal State
+    const [isLogsModalOpen, setIsLogsModalOpen] = useState(false);
+    const [viewingLogsPromo, setViewingLogsPromo] = useState<PromoCode | null>(null);
 
     useEffect(() => {
         loadPromoCodes();
@@ -57,13 +63,18 @@ export default function AdminPromoCodes() {
         setIsModalOpen(true);
     };
 
+    const openLogsModal = (promo: PromoCode) => {
+        setViewingLogsPromo(promo);
+        setIsLogsModalOpen(true);
+    };
+
     const handleSavePromo = async (promoData: Partial<PromoCode>) => {
         try {
             if (editingPromo) {
                 await updatePromoCode(editingPromo.id, promoData);
                 toast.success("Promosyon kodu güncellendi");
             } else {
-                await addPromoCode(promoData as any);
+                await addPromoCode(promoData as Omit<PromoCode, 'id' | 'usage_count'>);
                 toast.success("Promosyon kodu eklendi");
             }
             await loadPromoCodes();
@@ -182,7 +193,7 @@ export default function AdminPromoCodes() {
                                         <td className="px-6 py-4 text-sm text-gray-600">
                                             <div>Min Sepet: {promo.min_order_amount ? `₺${promo.min_order_amount}` : '-'}</div>
                                             <div className="text-xs text-gray-400 mt-1">
-                                                {promo.start_date ? new Date(promo.start_date).toLocaleDateString() : 'Başlangıç Yok'} - {promo.end_date ? new Date(promo.end_date).toLocaleDateString() : 'Süresiz'}
+                                                {promo.start_date ? formatDate(promo.start_date) : 'Başlangıç Yok'} - {promo.end_date ? formatDate(promo.end_date) : 'Süresiz'}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
@@ -226,6 +237,15 @@ export default function AdminPromoCodes() {
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
+                                                    className="w-8 h-8 text-gray-400 hover:text-orange-600 hover:bg-orange-50"
+                                                    onClick={() => openLogsModal(promo)}
+                                                    title="Geçmiş"
+                                                >
+                                                    <History className="w-4 h-4" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
                                                     className="w-8 h-8 text-gray-400 hover:text-blue-600 hover:bg-blue-50"
                                                     onClick={() => openEditModal(promo)}
                                                     title="Düzenle"
@@ -255,6 +275,13 @@ export default function AdminPromoCodes() {
                     onClose={() => setIsModalOpen(false)}
                     onSave={handleSavePromo}
                     promoCode={editingPromo}
+                />
+
+                <PromoLogsModal
+                    isOpen={isLogsModalOpen}
+                    onClose={() => setIsLogsModalOpen(false)}
+                    promoId={viewingLogsPromo?.id || null}
+                    promoCode={viewingLogsPromo?.code || ""}
                 />
             </AdminLayout>
         </AdminGuard>

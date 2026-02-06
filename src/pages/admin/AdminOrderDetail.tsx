@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Package, User, MapPin, Clock, Truck, CheckCircle, Edit2, Save, X, ClipboardList } from "lucide-react";
+import { ArrowLeft, Package, User, MapPin, Clock, Truck, CheckCircle, Edit2, Save, X, ClipboardList, RefreshCw } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminGuard } from "@/components/admin/AdminGuard";
 import { getOrderById, updateOrderStatus, updateTrackingNumber, getOrderStatusHistory, Order, OrderStatus, STATUS_CONFIG, OrderStatusHistoryItem } from "@/lib/admin";
@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { OrderDetailSkeleton } from "@/components/admin/skeletons";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
+import { formatDateTime } from "@/lib/utils";
 
 export default function AdminOrderDetail() {
     const { orderId } = useParams<{ orderId: string }>();
@@ -25,30 +27,39 @@ export default function AdminOrderDetail() {
     const [showCancelDialog, setShowCancelDialog] = useState(false);
     const [cancelNote, setCancelNote] = useState("");
 
-    useEffect(() => {
-        async function loadOrder() {
-            if (!orderId) return;
-            try {
-                const [orderData, historyData] = await Promise.all([
-                    getOrderById(orderId),
-                    getOrderStatusHistory(orderId),
-                ]);
-                setOrder(orderData);
-                setHistory(historyData);
-                setTrackingInput(orderData?.tracking_number || "");
-                setShippingCompanyInput(orderData?.shipping_company || "Yurtiçi Kargo");
-            } catch (error) {
-                console.error("Failed to load order:", error);
-                toast.error("Sipariş yüklenemedi");
-            } finally {
-                setIsLoading(false);
-            }
+    const loadOrder = useCallback(async () => {
+        if (!orderId) return;
+        setIsLoading(true);
+        try {
+            const [orderData, historyData] = await Promise.all([
+                getOrderById(orderId),
+                getOrderStatusHistory(orderId),
+            ]);
+            setOrder(orderData);
+            setHistory(historyData);
+            setTrackingInput(orderData?.tracking_number || "");
+            setShippingCompanyInput(orderData?.shipping_company || "Yurtiçi Kargo");
+        } catch (error) {
+            console.error("Failed to load order:", error);
+            toast.error("Sipariş yüklenemedi");
+        } finally {
+            setIsLoading(false);
         }
-        loadOrder();
     }, [orderId]);
+
+    useEffect(() => {
+        loadOrder();
+    }, [loadOrder]);
 
     const handleStatusChange = async (newStatus: OrderStatus, note?: string) => {
         if (!orderId || !order) return;
+
+        // Validation: Cannot set to Shipped without tracking number
+        if (newStatus === "shipped" && !order.tracking_number) {
+            toast.error("Kargoya verildi durumuna geçmek için önce kargo takip numarası girmelisiniz.");
+            setEditingTracking(true);
+            return;
+        }
 
         // If trying to cancel via timeline button without flow
         if (newStatus === "cancelled" && !note) {
@@ -62,7 +73,40 @@ export default function AdminOrderDetail() {
             setOrder({ ...order, status: newStatus, cancellation_reason: note });
             const newHistory = await getOrderStatusHistory(orderId);
             setHistory(newHistory);
-            toast.success("Sipariş durumu güncellendi");
+
+            // Send Email Notification for Shipped, Delivered, or Cancelled
+            let emailSent = false;
+            if (newStatus === "shipped" || newStatus === "delivered" || newStatus === "cancelled") {
+                try {
+                    const { error: emailError } = await supabase.functions.invoke("send-order-email", {
+                        body: {
+                            order_id: orderId,
+                            type: newStatus,
+                            tracking_number: order.tracking_number,
+                            shipping_company: order.shipping_company,
+                            cancellation_reason: note // Include reason for cancellation
+                        }
+                    });
+
+                    if (emailError) throw emailError;
+                    emailSent = true;
+                } catch (emailErr) {
+                    console.error("Email sending failed:", emailErr);
+                    toast.warning("Durum güncellendi ancak e-posta gönderilemedi.");
+                }
+            }
+
+            if (!emailSent) {
+                toast.success("Sipariş durumu güncellendi");
+            } else {
+                let actionText = 'bildirim';
+                if (newStatus === 'shipped') actionText = 'kargo';
+                else if (newStatus === 'delivered') actionText = 'teslimat';
+                else if (newStatus === 'cancelled') actionText = 'iptal';
+
+                toast.success(`Sipariş durumu güncellendi ve ${actionText} bildirimi gönderildi.`);
+            }
+
             if (newStatus === "cancelled") {
                 setShowCancelDialog(false);
                 setCancelNote("");
@@ -104,7 +148,7 @@ export default function AdminOrderDetail() {
         }
     };
 
-    if (isLoading) {
+    if (isLoading && !order) {
         return (
             <AdminGuard>
                 <AdminLayout>
@@ -150,16 +194,18 @@ export default function AdminOrderDetail() {
                                     Sipariş #{order.id.slice(0, 8).toUpperCase()}
                                 </h1>
                                 <p className="text-gray-500">
-                                    {new Date(order.created_at).toLocaleDateString("tr-TR", {
-                                        year: "numeric",
-                                        month: "long",
-                                        day: "numeric",
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                    })}
+                                    {formatDateTime(order.created_at)}
                                 </p>
                             </div>
                             <div className="flex items-center gap-4">
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={loadOrder}
+                                    title="Bilgileri Yenile"
+                                >
+                                    <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
+                                </Button>
                                 <div className={`px-4 py-2 rounded-full text-sm font-medium ${STATUS_CONFIG[order.status as OrderStatus]?.bgColor || "bg-gray-100"} ${STATUS_CONFIG[order.status as OrderStatus]?.color || "text-gray-600"}`}>
                                     {STATUS_CONFIG[order.status as OrderStatus]?.label || order.status}
                                 </div>
@@ -449,7 +495,7 @@ export default function AdminOrderDetail() {
                                             </p>
                                             {item.note && <p className="text-sm text-gray-500">{item.note}</p>}
                                             <p className="text-xs text-gray-400 mt-1">
-                                                {new Date(item.created_at).toLocaleString("tr-TR")}
+                                                {formatDateTime(item.created_at)}
                                             </p>
                                         </div>
                                     </div>

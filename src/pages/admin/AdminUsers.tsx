@@ -169,8 +169,8 @@ export default function AdminUsers() {
                                             variant="ghost"
                                             size="sm"
                                             onClick={() => handleRemoveAdmin(admin.id)}
-                                            disabled={processingId === admin.id || admins.length <= 1}
-                                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                            disabled={processingId === admin.id || admins.length <= 1 || admin.email === 'umut.dog91@gmail.com'}
+                                            className="text-red-600 hover:text-red-700 hover:bg-red-50 disabled:opacity-30"
                                         >
                                             <ShieldOff className="w-4 h-4 mr-1" />
                                             Kaldır

@@ -219,10 +219,12 @@ export const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
             const overlayEase = eases.overlay ?? "expo.out";
             // const textEase = eases.text ?? "power3.inOut";
 
-            const container = containerRef.current!;
-            const overlayEl = overlayRef.current!;
-            const overlayCaption = overlayCaptionRef.current!;
-            const overlayContent = overlayContentRef.current!;
+            const container = containerRef.current;
+            const overlayEl = overlayRef.current;
+            const overlayCaption = overlayCaptionRef.current;
+            const overlayContent = overlayContentRef.current;
+
+            if (!container || !overlayEl || !overlayCaption || !overlayContent) return;
 
             // Darkening overlay inside the media box
             if (container) {
@@ -283,11 +285,15 @@ export const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
                 clipPath: "inset(0 0 0 0)",
             });
             gsap.set(overlayEl, { clipPath: "inset(100% 0 0 0)" });
-            gsap.set(overlayContent, {
-                filter: `blur(var(--overlay-blur))`,
-                scale: 1.05,
-            });
-            gsap.set([overlayContent, overlayCaption], { y: 30 });
+            if (overlayContent) {
+                gsap.set(overlayContent, {
+                    filter: `blur(var(--overlay-blur))`,
+                    scale: 1.05,
+                });
+                gsap.set([overlayContent, overlayCaption], { y: 30 });
+            } else if (overlayCaption) {
+                gsap.set(overlayCaption, { y: 30 });
+            }
 
             // Determine final (small) size
             // On small mobile (<=425px), keep fullscreen 16:9 (no animation).
@@ -316,11 +322,11 @@ export const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
                 )
                 // Darken as it expands
                 .to(
-                    overlayDarkenEl,
-                    {
+                    overlayDarkenEl || {},
+                    overlayDarkenEl ? {
                         backgroundColor: "rgba(0,0,0,0.4)",
                         ease: "power2.out",
-                    },
+                    } : {},
                     0
                 )
                 // Reveal overlay panel

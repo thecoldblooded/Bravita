@@ -1,0 +1,9 @@
+
+C:\Users\Umut\.gemini\antigravity\scratch\bravita-future-focused-growth-main\src\contexts\AuthContext.tsx
+  130:16   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  191:25   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  225:137  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  345:137  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 4 problems (4 errors, 0 warnings)
+

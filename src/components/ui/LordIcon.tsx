@@ -84,7 +84,7 @@ export const LordIcon = memo(function LordIcon({
         return () => {
             mountedRef.current = false;
         };
-    }, []); // Empty deps - only run once
+    }, [isReady]); // Re-run if isReady changes
 
     // Create lord-icon element when ready
     const createIcon = useCallback(() => {

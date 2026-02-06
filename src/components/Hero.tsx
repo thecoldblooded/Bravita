@@ -45,6 +45,12 @@ const Hero = () => {
   }));
 
   const target = isLG ? [500, 280] : [820, 530]; // Bottle center relative to 1000x1000
+  const safeStars = stars.filter((star) => (
+    Number.isFinite(star.start?.[0]) &&
+    Number.isFinite(star.start?.[1]) &&
+    Number.isFinite(target[0]) &&
+    Number.isFinite(target[1])
+  ));
 
   // Colors for the rainbow text part
   const rainbowColors = ["#e86e25", "#dcb036", "#c8c641", "#a9d256", "#88d969", "#88d969", "#88d969"];
@@ -64,7 +70,7 @@ const Hero = () => {
           className="w-full h-full"
         >
           <defs>
-            {stars.map((star, i) => (
+            {safeStars.map((star, i) => (
               <linearGradient
                 key={`comet-grad-${i}`}
                 id={`comet-grad-${i}`}
@@ -94,7 +100,7 @@ const Hero = () => {
             {/* Removed heavy blur filter for performance */}
           </defs>
 
-          {stars.map((star, i) => {
+          {safeStars.map((star, i) => {
             // Straighter lines for "Ray" effect
             const controlX = (star.start[0] + target[0]) / 2;
             const controlY = (star.start[1] + target[1]) / 2 + (star.start[1] > 500 ? -20 : 20);
@@ -106,6 +112,9 @@ const Hero = () => {
                   stroke="rgba(249, 115, 22, 0.1)"
                   strokeWidth="0.5"
                   fill="none"
+                  initial={{
+                    d: `M ${star.start[0]} ${star.start[1]} Q ${controlX} ${controlY} ${target[0]} ${target[1]}`
+                  }}
                   animate={{
                     d: [
                       `M ${star.start[0]} ${star.start[1]} Q ${controlX} ${controlY} ${target[0]} ${target[1]}`,

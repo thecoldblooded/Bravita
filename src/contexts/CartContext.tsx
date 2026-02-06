@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from "react";
 import { getProductPrice } from "@/lib/checkout";
 
@@ -62,13 +63,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
         localStorage.setItem("bravita_cart", JSON.stringify(cartItems));
     }, [cartItems]);
 
-    // Sync prices from server on load
+    // Sync prices from server whenever cart is opened
     useEffect(() => {
         async function syncPrices() {
             if (cartItems.length === 0) return;
 
             const updatedItems = await Promise.all(
                 cartItems.map(async (item) => {
+                    // Always fetch fresh price
                     const product = await getProductPrice(item.slug);
                     if (product) {
                         return { ...item, price: product.price };
@@ -77,7 +79,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 })
             );
 
-            // Only update if prices changed
+            // Only update if prices changed to avoid infinite loop
             const pricesChanged = updatedItems.some(
                 (item, i) => item.price !== cartItems[i].price
             );
@@ -86,9 +88,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 setCartItems(updatedItems);
             }
         }
-        syncPrices();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+
+        if (isCartOpen) {
+            syncPrices();
+        }
+    }, [isCartOpen, cartItems]); // Only runs when cart opens or items change
 
     const openCart = () => setIsCartOpen(true);
     const closeCart = () => setIsCartOpen(false);
