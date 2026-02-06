@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
+import HCaptcha from "@hcaptcha/react-hcaptcha";
 import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { useAuthOperations } from "@/hooks/useAuth";
 import Loader from "@/components/ui/Loader";
+import { translateError } from "@/lib/errorTranslator";
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -39,11 +41,16 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
   type IndividualLoginForm = z.infer<typeof individualLoginSchema>;
   type CompanyLoginForm = z.infer<typeof companyLoginSchema>;
 
-  const { loginWithEmail, loginWithCompany, signupWithGoogle, isLoading, error } =
+  const { loginWithEmail, loginWithCompany, signupWithGoogle, resetPassword, isLoading, error } =
     useAuthOperations();
   const [userType, setUserType] = useState<"individual" | "company">(
     "individual"
   );
+
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const captchaRef = useRef<HCaptcha>(null);
+  // Production Key: "203039b0-ee5c-48ba-aa2c-390a43ecaae0"
+  const HCAPTCHA_SITE_KEY = "203039b0-ee5c-48ba-aa2c-390a43ecaae0";
 
   // Individual login form
   const individualForm = useForm<IndividualLoginForm>({
@@ -65,29 +72,51 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
 
   const handleIndividualLogin = async (data: IndividualLoginForm) => {
     try {
+      if (!captchaToken) {
+        toast.error(t("auth.captcha_required"));
+        return;
+      }
+
       await loginWithEmail({
         email: data.email,
         password: data.password,
         userType: "individual",
+        captchaToken,
       });
       toast.success(t("auth.login_successful"));
+
+      captchaRef.current?.resetCaptcha();
+      setCaptchaToken(null);
       onSuccess?.();
     } catch (err) {
-      toast.error(error || t("auth.login_failed"));
+      captchaRef.current?.resetCaptcha();
+      setCaptchaToken(null);
+      toast.error(translateError(err, t));
     }
   };
 
   const handleCompanyLogin = async (data: CompanyLoginForm) => {
     try {
+      if (!captchaToken) {
+        toast.error(t("auth.captcha_required"));
+        return;
+      }
+
       await loginWithCompany({
         username: data.username,
         password: data.password,
         userType: "company",
+        captchaToken,
       });
       toast.success(t("auth.login_successful"));
+
+      captchaRef.current?.resetCaptcha();
+      setCaptchaToken(null);
       onSuccess?.();
     } catch (err) {
-      toast.error(error || t("auth.login_failed"));
+      captchaRef.current?.resetCaptcha();
+      setCaptchaToken(null);
+      toast.error(translateError(err, t));
     }
   };
 
@@ -98,7 +127,33 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
       localStorage.setItem("oauth_provider", "google");
       await signupWithGoogle({ userType: "individual", phone: "" });
     } catch (err) {
-      toast.error(error || t("auth.google_signup_failed"));
+      toast.error(translateError(err, t));
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    const email = individualForm.getValues("email");
+    if (!email) {
+      toast.error(t("auth.email_required_for_reset"));
+      individualForm.setFocus("email");
+      return;
+    }
+
+    if (!captchaToken) {
+      toast.error(t("auth.captcha_required"));
+      return;
+    }
+
+    try {
+      await resetPassword(email, captchaToken);
+      toast.success(t("auth.password_reset_sent"));
+
+      captchaRef.current?.resetCaptcha();
+      setCaptchaToken(null);
+    } catch (err) {
+      captchaRef.current?.resetCaptcha();
+      setCaptchaToken(null);
+      toast.error(translateError(err, t));
     }
   };
 
@@ -149,7 +204,8 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
                     <button
                       type="button"
                       className="text-xs text-orange-600 hover:text-orange-700 font-medium"
-                      onClick={() => toast.info(t("auth.forgot_password_info") || "Şifre sıfırlama özelliği yakında eklenecek.")}
+                      onClick={handleForgotPassword}
+                      disabled={isLoading}
                     >
                       {t("auth.forgot_password")}
                     </button>
@@ -167,6 +223,15 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
               )}
             />
 
+            <div className="flex justify-center py-4">
+              <HCaptcha
+                sitekey={HCAPTCHA_SITE_KEY}
+                onVerify={(token) => setCaptchaToken(token)}
+                onError={(err) => console.error("hCaptcha Error:", err)}
+                onExpire={() => setCaptchaToken(null)}
+                ref={captchaRef}
+              />
+            </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? <Loader size="1.25rem" noMargin /> : t("auth.login")}
             </Button>
@@ -268,6 +333,15 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
               )}
             />
 
+            <div className="flex justify-center py-4">
+              <HCaptcha
+                sitekey={HCAPTCHA_SITE_KEY}
+                onVerify={(token) => setCaptchaToken(token)}
+                onError={(err) => console.error("hCaptcha Error:", err)}
+                onExpire={() => setCaptchaToken(null)}
+                ref={captchaRef}
+              />
+            </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? <Loader size="1.25rem" noMargin /> : t("auth.login")}
             </Button>

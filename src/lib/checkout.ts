@@ -274,6 +274,11 @@ export async function createOrder(params: CreateOrderParams): Promise<CreateOrde
             }
         }
 
+        // Send email (fire and forget)
+        supabase.functions.invoke('send-order-email', {
+            body: { order_id: data.id }
+        }).catch(err => console.error("Failed to trigger email function:", err));
+
         return {
             success: true,
             orderId: data.id,
@@ -343,69 +348,41 @@ export async function validatePromoCode(code: string, subtotal: number): Promise
     type?: 'percentage' | 'fixed_amount';
     value?: number;
 }> {
-    const { data: promo, error } = await supabase
-        .from('promo_codes')
-        .select('*')
-        .ilike('code', code)
-        .eq('is_active', true)
-        .single();
+    // Use RPC to verify promo code (bypass RLS)
+    const { data: result, error } = await supabase.rpc('verify_promo_code', { p_code: code });
 
-    if (error || !promo) {
+    if (error || !result || !result.valid) {
         return {
             valid: false,
             discountAmount: 0,
-            message: 'Geçersiz promosyon kodu',
+            message: result?.message || 'Promosyon kodu geçerli değil',
         };
     }
 
-    const now = new Date();
-    if (promo.start_date && new Date(promo.start_date) > now) {
+    // Check min order amount locally with the data from RPC
+    if (result.min_order_amount && subtotal < result.min_order_amount) {
         return {
             valid: false,
             discountAmount: 0,
-            message: 'Bu promosyon kodu henüz aktif değil',
-        };
-    }
-
-    if (promo.end_date && new Date(promo.end_date) < now) {
-        return {
-            valid: false,
-            discountAmount: 0,
-            message: 'Bu promosyon kodunun süresi dolmuş',
-        };
-    }
-
-    if (promo.usage_limit && promo.usage_count >= promo.usage_limit) {
-        return {
-            valid: false,
-            discountAmount: 0,
-            message: 'Bu promosyon kodunun kullanım limiti dolmuş',
-        };
-    }
-
-    if (promo.min_order_amount && subtotal < promo.min_order_amount) {
-        return {
-            valid: false,
-            discountAmount: 0,
-            message: `Minimum sepet tutarı ₺${promo.min_order_amount} olmalıdır`,
+            message: `Minimum sepet tutarı ₺${result.min_order_amount} olmalıdır`,
         };
     }
 
     let discountAmount = 0;
-    if (promo.discount_type === 'percentage') {
-        discountAmount = (subtotal * promo.discount_value) / 100;
-        if (promo.max_discount_amount && discountAmount > promo.max_discount_amount) {
-            discountAmount = promo.max_discount_amount;
+    if (result.discount_type === 'percentage') {
+        discountAmount = (subtotal * result.discount_value) / 100;
+        if (result.max_discount_amount && discountAmount > result.max_discount_amount) {
+            discountAmount = result.max_discount_amount;
         }
     } else {
-        discountAmount = promo.discount_value;
+        discountAmount = result.discount_value;
     }
 
     return {
         valid: true,
         discountAmount,
         message: 'Promosyon kodu uygulandı',
-        type: promo.discount_type,
-        value: promo.discount_value
+        type: result.discount_type,
+        value: result.discount_value
     };
 }

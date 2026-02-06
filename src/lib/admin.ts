@@ -442,6 +442,52 @@ export async function getDashboardStats(startDate: Date, endDate: Date): Promise
         });
 
     if (error) throw error;
+
+    // Fill missing dates in daily_sales
+    if (data && Array.isArray(data.daily_sales)) {
+        const salesMap = new Map();
+        data.daily_sales.forEach((item: any) => {
+            // item.date is expected to be ISO string from DB
+            const dateStr = item.date.split('T')[0];
+            salesMap.set(dateStr, item);
+        });
+
+        const filledData = [];
+        const loopCurrent = new Date(startDate);
+
+        // Loop until loopCurrent is greater than endDate
+        // Comparison involves time, but since startDate is 00:00 and loop steps by day,
+        // it generates 00:00 for each day.
+        // endDate is 23:59 so it includes the last day.
+        while (loopCurrent.getTime() <= endDate.getTime()) {
+            // Use local date to construct the key because loopCurrent is iterating in local time
+            // toISOString() converts to UTC, causing a day shift (e.g. 00:00 TRT -> 21:00 UTC previous day)
+            const year = loopCurrent.getFullYear();
+            const month = String(loopCurrent.getMonth() + 1).padStart(2, '0');
+            const day = String(loopCurrent.getDate()).padStart(2, '0');
+            const isoKey = `${year}-${month}-${day}`;
+
+            if (salesMap.has(isoKey)) {
+                // We found data for this day. 
+                // Important: The DB returns UTC 00:00 for that day.
+                // loopCurrent is Local 00:00. 
+                // We prefer the DB object but its 'date' property is UTC. 
+                // Recharts handles ISO strings well usually.
+                filledData.push(salesMap.get(isoKey));
+            } else {
+                filledData.push({
+                    date: loopCurrent.toISOString(), // Use the loop's timestamp
+                    count: 0,
+                    revenue: 0
+                });
+            }
+            loopCurrent.setDate(loopCurrent.getDate() + 1);
+        }
+
+        // Sort explicitly just in case
+        data.daily_sales = filledData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    }
+
     return data;
 }
 

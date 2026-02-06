@@ -458,3 +458,21 @@ Search for `"auth":` prefix to find all authentication translations.
 **Build Status:** ✅ Success (no errors)
 **Project compiles:** ✅ Yes
 **All features implemented:** ✅ Yes
+
+---
+
+## 📧 Email Deliverability (DMARC & BIMI)
+
+To prevent emails from going to Spam and to enable BIMI (Brand Logo), you must update your DNS records.
+
+### 1. DMARC Configuration
+Add a **TXT** record to your DNS:
+- **Host:** `_dmarc`
+- **Value:** `v=DMARC1; p=quarantine; pct=100; adkim=r; aspf=r;`
+
+### 2. BIMI Configuration
+Requires DMARC `p=quarantine` or `p=reject`.
+- **Logo:** Must be SVG Tiny 1.2 format, hosted on HTTPS.
+- **Record:** `v=BIMI1; l=https://yourdomain.com/path-to-logo.svg;`
+
+*Note: Even without BIMI, setting DMARC to `quarantine` significantly improves deliverability.*

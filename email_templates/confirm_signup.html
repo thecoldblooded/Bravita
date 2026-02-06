@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light">
+    <meta name="supported-color-schemes" content="light">
+    <title>E-postanızı Doğrulayın</title>
+    <style>
+        /* Force Light Mode */
+        :root {
+            color-scheme: light;
+        }
+
+        body {
+            background-color: #FFFBF7 !important;
+            color: #1F2937 !important;
+        }
+
+        /* Mobile */
+        @media only screen and (max-width: 600px) {
+            .container {
+                width: 100% !important;
+                border-radius: 0 !important;
+            }
+
+            .content {
+                padding: 30px 20px !important;
+            }
+
+            .button {
+                width: 100% !important;
+                display: block !important;
+                text-align: center !important;
+            }
+        }
+    </style>
+</head>
+
+<body
+    style="margin: 0; padding: 0; background-color: #FFFBF7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+
+    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #FFFBF7;">
+        <tr>
+            <td align="center" style="padding: 40px 0;">
+
+                <table class="container" width="600" border="0" cellspacing="0" cellpadding="0"
+                    style="background-color: #ffffff; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); overflow: hidden;">
+
+                    <tr>
+                        <td height="6" style="background-color: #F97316;"></td>
+                    </tr>
+
+                    <!-- Logo Alanı -->
+                    <tr>
+                        <td align="center" style="padding: 40px 0 20px;">
+                            <img src="https://xpmbnznsmsujjuwumfiw.supabase.co/storage/v1/object/public/public-assets/bravita-logo.webp"
+                                alt="Bravita" width="180"
+                                style="display: block; border: 0; max-width: 100%; height: auto;" />
+                        </td>
+                    </tr>
+
+                    <!-- Emoji Icon (No Image) -->
+                    <tr>
+                        <td align="center" style="padding: 0 0 20px;">
+                            <div style="font-size: 64px; line-height: 1;">✉️</div>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="content" align="center" style="padding: 0 60px 40px;">
+                            <h1
+                                style="margin: 0 0 20px; color: #1F2937; font-size: 26px; font-weight: 700; letter-spacing: -0.5px;">
+                                E-postanızı Doğrulayın</h1>
+                            <p style="margin: 0 0 30px; color: #4B5563; font-size: 16px; line-height: 1.6;">
+                                Bravita dünyasına hoş geldiniz! 🎉<br>
+                                Hesabınızı güvenceye almak ve alışverişe başlamak için lütfen aşağıdaki butona tıklayın.
+                            </p>
+
+                            <table border="0" cellspacing="0" cellpadding="0">
+                                <tr>
+                                    <td align="center" style="border-radius: 50px; background-color: #F97316;">
+                                        <a href="{{ .ConfirmationURL }}" class="button"
+                                            style="display: inline-block; padding: 16px 48px; font-family: sans-serif; font-size: 16px; color: #ffffff; text-decoration: none; font-weight: 600; border-radius: 50px; background-color: #F97316; border: 1px solid #F97316;">
+                                            Hesabımı Doğrula
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <div style="margin-top: 40px; border-top: 1px solid #E5E7EB; padding-top: 20px;">
+                                <p style="margin: 0; color: #9CA3AF; font-size: 12px; line-height: 1.5;">
+                                    Link çalışmıyor mu? Bunu deneyin:<br>
+                                    <a href="{{ .ConfirmationURL }}"
+                                        style="color: #F97316; text-decoration: none; word-break: break-all;">{{
+                                        .ConfirmationURL }}</a>
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td align="center" style="background-color: #FFF8F0; padding: 20px;">
+                            <p style="margin: 0; color: #9CA3AF; font-size: 12px;">
+                                © 2026 Bravita. Tüm hakları saklıdır.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+
+                <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                    <tr>
+                        <td height="40"></td>
+                    </tr>
+                </table>
+
+            </td>
+        </tr>
+    </table>
+
+</body>
+
+</html>

@@ -12,6 +12,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
   profileComplete: boolean;
+  isPasswordRecovery: boolean;
   refreshSession: () => Promise<void>;
   refreshUserProfile: () => Promise<void>;
 }
@@ -73,6 +74,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Only active on first load of the session
     return !sessionStorage.getItem("bravita_splash_shown");
   });
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(() => {
+    return window.location.hash.includes("type=recovery");
+  });
 
   // Wrapper to persist profile_complete status
   const setUserDebug = useCallback((newUser: UserProfile | null) => {
@@ -88,24 +92,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshUserProfile = useCallback(async () => {
     if (!session?.user?.id) return;
-
-    // TEST USER BYPASS - Return mock profile for test user
-    if (session.user.id === "test-user-id-12345") {
-      const mockProfile = {
-        id: "test-user-id-12345",
-        email: "test@test.com",
-        full_name: "Test Kullanıcı",
-        phone: "+905551234567",
-        user_type: "individual",
-        company_name: null,
-        profile_complete: true,
-        phone_verified: true,
-        is_admin: true, // Admin for testing
-      };
-      setUserDebug(mockProfile as any);
-      return;
-    }
-    // END TEST USER BYPASS
 
     try {
       const { data: profile } = await supabase
@@ -222,90 +208,78 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(initialSession);
 
         if (initialSession?.user) {
+          const profilePromise = supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", initialSession.user.id)
+            .single();
 
-          // TEST USER BYPASS - Skip Supabase profile fetch for test user
-          if (initialSession.user.id === "test-user-id-12345") {
-            const mockProfile = {
-              id: "test-user-id-12345",
-              email: "test@test.com",
-              full_name: "Test Kullanıcı",
-              phone: "+905551234567",
-              user_type: "individual",
-              company_name: null,
-              profile_complete: true,
-              phone_verified: true,
-              is_admin: true, // Admin for testing
-            };
-            setUserDebug(mockProfile as any);
-          } else {
-            // END TEST USER BYPASS - Normal flow below
+          const profileTimeout = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("profile fetch timeout")), 3000)
+          );
 
-            const profilePromise = supabase
-              .from("profiles")
-              .select("*")
-              .eq("id", initialSession.user.id)
-              .single();
-
-            const profileTimeout = new Promise((_, reject) =>
-              setTimeout(() => reject(new Error("profile fetch timeout")), 3000)
-            );
-
-            try {
-              const { data: profile, error } = await Promise.race([profilePromise, profileTimeout]) as any;
+          try {
+            const { data: profile, error } = await Promise.race([profilePromise, profileTimeout]) as any;
 
 
 
-              if (error && error.code !== "PGRST116") {
+            if (error && error.code !== "PGRST116") {
 
-              }
+            }
 
-              if (profile) {
+            if (profile) {
 
-                setUserDebug(profile);
-              } else {
-                // Profile doesn't exist - create it from user_metadata
-                const metadata = initialSession.user.user_metadata || {};
-                const newProfile = {
-                  id: initialSession.user.id,
-                  email: initialSession.user.email || "",
-                  full_name: metadata.full_name || metadata.name || null,
-                  phone: metadata.phone || initialSession.user.phone || null,
-                  user_type: metadata.user_type || "individual",
-                  company_name: metadata.company_name || null,
-                  profile_complete: false,
-                  phone_verified: false,
-                  is_admin: false, // Default: not admin
-                };
+              setUserDebug(profile);
+            } else {
+              // Profile doesn't exist - create it from user_metadata
+              const metadata = initialSession.user.user_metadata || {};
 
-                // Try to create profile in database
-                const { error: insertError } = await supabase
-                  .from("profiles")
-                  .insert(newProfile);
+              // Detect OAuth provider from session
+              const oauthProvider = initialSession.user.app_metadata?.provider ||
+                (initialSession.user.identities?.[0]?.provider) ||
+                null;
 
-                if (!insertError) {
-                  setUserDebug(newProfile as any);
-                } else {
-                  // Fallback to stub if insert fails
-                  setUserDebug({ ...newProfile, isStub: true } as any);
-                }
-              }
-            } catch (error) {
-
-              const knownComplete = localStorage.getItem("profile_known_complete") === "true";
-              const minimalUser = {
+              const newProfile = {
                 id: initialSession.user.id,
                 email: initialSession.user.email || "",
-                full_name: initialSession.user.user_metadata?.full_name || initialSession.user.user_metadata?.name || null,
-                phone: initialSession.user.user_metadata?.phone || initialSession.user.phone || null,
-                profile_complete: knownComplete,
+                full_name: metadata.full_name || metadata.name || null,
+                phone: metadata.phone || initialSession.user.phone || null,
+                user_type: metadata.user_type || "individual",
+                company_name: metadata.company_name || null,
+                profile_complete: false,
                 phone_verified: false,
-                user_type: "individual",
-                isStub: true,
-              } as any;
+                is_admin: false, // Default: not admin
+                oauth_provider: oauthProvider,
+              };
 
-              setUserDebug(minimalUser);
+              // Try to create profile in database
+              const { error: insertError } = await supabase
+                .from("profiles")
+                .insert(newProfile);
+
+              if (!insertError) {
+                setUserDebug(newProfile as any);
+              } else {
+                // Fallback to stub if insert fails
+                setUserDebug({ ...newProfile, isStub: true } as any);
+              }
             }
-          } // End of else block for non-test users
+          } catch (error) {
+
+            const knownComplete = localStorage.getItem("profile_known_complete") === "true";
+            const minimalUser = {
+              id: initialSession.user.id,
+              email: initialSession.user.email || "",
+              full_name: initialSession.user.user_metadata?.full_name || initialSession.user.user_metadata?.name || null,
+              phone: initialSession.user.user_metadata?.phone || initialSession.user.phone || null,
+              profile_complete: knownComplete,
+              phone_verified: false,
+              user_type: "individual",
+              isStub: true,
+            } as any;
+
+            setUserDebug(minimalUser);
+          }
         }
 
         // Check localStorage for pending profile
@@ -338,134 +312,124 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setIsPasswordRecovery(true);
+      } else if (event === "SIGNED_OUT") {
+        setIsPasswordRecovery(false);
+      }
 
       setSession(newSession);
 
       if (newSession?.user) {
+        try {
+          // Fetch updated profile with timeout
+          const profilePromise = supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", newSession.user.id)
+            .single();
 
-        // TEST USER BYPASS - Skip Supabase profile fetch for test user
-        if (newSession.user.id === "test-user-id-12345") {
-          const mockProfile = {
-            id: "test-user-id-12345",
-            email: "test@test.com",
-            full_name: "Test Kullanıcı",
-            phone: "+905551234567",
-            user_type: "individual",
-            company_name: null,
-            profile_complete: true,
-            phone_verified: true,
-            is_admin: true, // Admin for testing
-          };
-          setUserDebug(mockProfile as any);
-          setIsLoading(false);
-        } else {
-          // END TEST USER BYPASS - Normal flow below
+          const profileTimeout = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("profile fetch timeout in onAuthStateChange")), 5000)
+          );
 
-          try {
-            // Fetch updated profile with timeout
+          const { data: profile, error } = await Promise.race([profilePromise, profileTimeout]) as any;
 
+          console.log(">>> PROFILE FETCH COMPLETE <<<", {
+            hasProfile: !!profile,
+            errorCode: error?.code,
+            errorMessage: error?.message,
+            isAdmin: profile?.is_admin
+          });
 
-            const profilePromise = supabase
-              .from("profiles")
-              .select("*")
-              .eq("id", newSession.user.id)
-              .single();
-
-            const profileTimeout = new Promise((_, reject) =>
-              setTimeout(() => reject(new Error("profile fetch timeout in onAuthStateChange")), 5000)
-            );
-
-            const { data: profile, error } = await Promise.race([profilePromise, profileTimeout]) as any;
-
-            console.log(">>> PROFILE FETCH COMPLETE <<<", {
-              hasProfile: !!profile,
-              errorCode: error?.code,
-              errorMessage: error?.message,
-              isAdmin: profile?.is_admin
+          if (error) {
+            console.error("Profile fetch error:", {
+              code: error.code,
+              message: error.message,
+              hint: error.hint,
+              details: error.details
             });
-
-            if (error) {
-              console.error("Profile fetch error:", {
-                code: error.code,
-                message: error.message,
-                hint: error.hint,
-                details: error.details
-              });
-            }
-
-            if (profile) {
-              setUserDebug(profile);
-            } else {
-              // Profile doesn't exist - create it from user_metadata
-              const metadata = newSession.user.user_metadata || {};
-              const newProfile = {
-                id: newSession.user.id,
-                email: newSession.user.email || "",
-                full_name: metadata.full_name || metadata.name || null,
-                phone: metadata.phone || newSession.user.phone || null,
-                user_type: metadata.user_type || "individual",
-                company_name: metadata.company_name || null,
-                profile_complete: false,
-                phone_verified: false,
-              };
-
-              // Try to create profile in database
-              const { error: insertError } = await supabase
-                .from("profiles")
-                .insert(newProfile);
-
-              if (!insertError) {
-                setUserDebug(newProfile as any);
-              } else {
-                // Fallback to stub if insert fails (might already exist)
-                // Fallback to stub if fails (might already exist)
-                setUserDebug({ ...newProfile, isStub: true } as any);
-              }
-            }
-          } catch (err) {
-
-            setUserDebug(((current: UserProfile | null) => {
-              if (current?.id === newSession.user.id && !current.isStub) {
-                return current;
-              }
-
-              const knownComplete = localStorage.getItem("profile_known_complete") === "true";
-              const minimalUser = {
-                id: newSession.user.id,
-                email: newSession.user.email || "",
-                full_name: newSession.user.user_metadata?.full_name || newSession.user.user_metadata?.name || null,
-                phone: newSession.user.user_metadata?.phone || newSession.user.phone || null,
-                profile_complete: knownComplete,
-                phone_verified: false,
-                user_type: "individual",
-                isStub: true,
-                is_admin: false,
-                company_name: null,
-                phone_verified_at: null,
-                oauth_provider: null,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              } as UserProfile;
-              return minimalUser;
-            }) as any);
-          } finally {
-
-            // Check if there's pending profile data to sync
-            const pendingProfile = localStorage.getItem("pending_profile");
-            if (pendingProfile && newSession?.user?.id) {
-              try {
-                setIsLoading(true);
-                const profileData = JSON.parse(pendingProfile);
-                await syncPendingProfile(newSession.user.id, profileData);
-              } catch (error) {
-
-              }
-            }
-
-
-            setIsLoading(false);
           }
-        } // End of else block for non-test users
+
+          if (profile) {
+            setUserDebug(profile);
+          } else {
+            // Profile doesn't exist - create it from user_metadata
+            const metadata = newSession.user.user_metadata || {};
+
+            // Detect OAuth provider from session
+            const oauthProvider = newSession.user.app_metadata?.provider ||
+              (newSession.user.identities?.[0]?.provider) ||
+              null;
+
+            const newProfile = {
+              id: newSession.user.id,
+              email: newSession.user.email || "",
+              full_name: metadata.full_name || metadata.name || null,
+              phone: metadata.phone || newSession.user.phone || null,
+              user_type: metadata.user_type || "individual",
+              company_name: metadata.company_name || null,
+              profile_complete: false,
+              phone_verified: false,
+              oauth_provider: oauthProvider,
+            };
+
+            // Try to create profile in database
+            const { error: insertError } = await supabase
+              .from("profiles")
+              .insert(newProfile);
+
+            if (!insertError) {
+              setUserDebug(newProfile as any);
+            } else {
+              // Fallback to stub if insert fails (might already exist)
+              // Fallback to stub if fails (might already exist)
+              setUserDebug({ ...newProfile, isStub: true } as any);
+            }
+          }
+        } catch (err) {
+
+          setUserDebug(((current: UserProfile | null) => {
+            if (current?.id === newSession.user.id && !current.isStub) {
+              return current;
+            }
+
+            const knownComplete = localStorage.getItem("profile_known_complete") === "true";
+            const minimalUser = {
+              id: newSession.user.id,
+              email: newSession.user.email || "",
+              full_name: newSession.user.user_metadata?.full_name || newSession.user.user_metadata?.name || null,
+              phone: newSession.user.user_metadata?.phone || newSession.user.phone || null,
+              profile_complete: knownComplete,
+              phone_verified: false,
+              user_type: "individual",
+              isStub: true,
+              is_admin: false,
+              company_name: null,
+              phone_verified_at: null,
+              oauth_provider: null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            } as UserProfile;
+            return minimalUser;
+          }) as any);
+        } finally {
+
+          // Check if there's pending profile data to sync
+          const pendingProfile = localStorage.getItem("pending_profile");
+          if (pendingProfile && newSession?.user?.id) {
+            try {
+              setIsLoading(true);
+              const profileData = JSON.parse(pendingProfile);
+              await syncPendingProfile(newSession.user.id, profileData);
+            } catch (error) {
+
+            }
+          }
+
+
+          setIsLoading(false);
+        }
       } else {
 
         setUserDebug(null);
@@ -488,6 +452,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated: !!session?.user,
     isAdmin: user?.is_admin ?? false,
     profileComplete: user?.profile_complete ?? false,
+    isPasswordRecovery,
     refreshSession,
     refreshUserProfile,
   };

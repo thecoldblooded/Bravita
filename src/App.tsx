@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import CompleteProfile from "./pages/CompleteProfile";
 import Profile from "./pages/Profile";
+import UpdatePassword from "./pages/UpdatePassword";
 import Checkout from "./pages/Checkout";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import PeriodicGif from "@/components/PeriodicGif";
@@ -42,7 +43,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import Loader from "@/components/ui/Loader";
 
 const App = () => {
-  const { isSplashScreenActive } = useAuth();
+  const { isSplashScreenActive, isPasswordRecovery } = useAuth();
 
   // 🚧 Maintenance mode - show under construction page
   if (MAINTENANCE_MODE) {
@@ -65,6 +66,22 @@ const App = () => {
     );
   }
 
+  if (isPasswordRecovery) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            <Routes>
+              <Route path="*" element={<UpdatePassword />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -75,6 +92,7 @@ const App = () => {
             {/* Main site routes */}
             <Route path="/" element={<Index />} />
             <Route path="/complete-profile" element={<CompleteProfile />} />
+            <Route path="/update-password" element={<UpdatePassword />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />

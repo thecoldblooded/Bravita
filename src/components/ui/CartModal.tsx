@@ -334,13 +334,7 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
                                                     <Plus className="w-3 h-3" />
                                                 </button>
                                             </div>
-                                            <button
-                                                onClick={handleRemove}
-                                                className="text-neutral-300 hover:text-red-500 transition-colors p-1"
-                                                title={t("cart.remove")}
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
+                                            {/* Delete button removed as per user request */}
                                         </div>
                                         <div className="flex flex-col items-end">
                                             {serverOriginalPrice && serverOriginalPrice > (serverPrice ?? 600) && (

@@ -7,7 +7,7 @@ import { getAllOrders, Order, OrderStatus, STATUS_CONFIG } from "@/lib/admin";
 import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import Loader from "@/components/ui/Loader";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AdminOrders() {
     const [orders, setOrders] = useState<Order[]>([]);
@@ -91,8 +91,32 @@ export default function AdminOrders() {
                         className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
                     >
                         {isLoading ? (
-                            <div className="flex items-center justify-center py-20">
-                                <Loader />
+                            <div className="divide-y divide-gray-100">
+                                {[...Array(8)].map((_, i) => (
+                                    <div key={i} className="grid grid-cols-12 gap-4 px-6 py-5">
+                                        <div className="col-span-3 flex items-center gap-3">
+                                            <Skeleton className="h-10 w-10 rounded-lg" />
+                                            <div>
+                                                <Skeleton className="h-4 w-24 mb-1" />
+                                                <Skeleton className="h-3 w-16" />
+                                            </div>
+                                        </div>
+                                        <div className="col-span-3">
+                                            <Skeleton className="h-4 w-32 mb-1" />
+                                            <Skeleton className="h-3 w-24" />
+                                        </div>
+                                        <div className="col-span-2">
+                                            <Skeleton className="h-6 w-20 rounded-full" />
+                                        </div>
+                                        <div className="col-span-2">
+                                            <Skeleton className="h-4 w-16" />
+                                        </div>
+                                        <div className="col-span-2 flex items-center justify-between">
+                                            <Skeleton className="h-4 w-20" />
+                                            <Skeleton className="h-5 w-5" />
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         ) : orders.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-20">

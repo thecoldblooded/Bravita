@@ -7,7 +7,7 @@ import { AdminGuard } from "@/components/admin/AdminGuard";
 import { getOrderById, updateOrderStatus, updateTrackingNumber, getOrderStatusHistory, Order, OrderStatus, STATUS_CONFIG, OrderStatusHistoryItem } from "@/lib/admin";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import Loader from "@/components/ui/Loader";
+import { OrderDetailSkeleton } from "@/components/admin/skeletons";
 import { toast } from "sonner";
 
 export default function AdminOrderDetail() {
@@ -108,8 +108,8 @@ export default function AdminOrderDetail() {
         return (
             <AdminGuard>
                 <AdminLayout>
-                    <div className="flex items-center justify-center h-96">
-                        <Loader />
+                    <div className="max-w-7xl mx-auto">
+                        <OrderDetailSkeleton />
                     </div>
                 </AdminLayout>
             </AdminGuard>

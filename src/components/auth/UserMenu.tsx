@@ -12,6 +12,7 @@ import { useAuthOperations } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { User, LogOut, MapPin, ShoppingBag, Settings, ChevronRight } from "lucide-react";
 import { LordIcon } from "@/components/ui/LordIcon";
+import { translateError } from "@/lib/errorTranslator";
 
 interface MenuItemProps {
   icon: React.ReactNode;
@@ -75,7 +76,7 @@ export function UserMenu() {
       toast.success(t("auth.logout_successful"));
     } catch (error) {
       console.error("Logout flow error:", error);
-      toast.error(t("auth.logout_failed") || "Oturum kapatılırken bir sorun oluştu.");
+      toast.error(translateError(error, t));
     }
 
     // Always navigate to home

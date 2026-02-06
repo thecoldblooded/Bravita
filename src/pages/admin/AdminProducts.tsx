@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminGuard } from "@/components/admin/AdminGuard";
 import { getProducts, updateProductStock, updateProduct, addProduct, deleteProduct, Product } from "@/lib/admin";
-import Loader from "@/components/ui/Loader";
+import { ProductGridSkeleton } from "@/components/admin/skeletons";
 import { Package, Search, Edit2, Save, X, Plus, AlertCircle, CheckCircle, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -141,8 +141,8 @@ export default function AdminProducts() {
         return (
             <AdminGuard>
                 <AdminLayout>
-                    <div className="flex h-96 items-center justify-center">
-                        <Loader />
+                    <div className="max-w-7xl mx-auto">
+                        <ProductGridSkeleton count={6} />
                     </div>
                 </AdminLayout>
             </AdminGuard>

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminGuard } from "@/components/admin/AdminGuard";
 import { getDashboardStats } from "@/lib/admin";
-import Loader from "@/components/ui/Loader";
+import { DashboardSkeleton } from "@/components/admin/skeletons";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { Calendar, DollarSign, ShoppingBag, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,8 +17,11 @@ export default function AdminDashboard() {
             setIsLoading(true);
             try {
                 const end = new Date();
+                end.setHours(23, 59, 59, 999);
+
                 const start = new Date();
                 start.setDate(start.getDate() - parseInt(dateRange));
+                start.setHours(0, 0, 0, 0);
 
                 const data = await getDashboardStats(start, end);
                 setStats(data);
@@ -35,8 +38,8 @@ export default function AdminDashboard() {
         return (
             <AdminGuard>
                 <AdminLayout>
-                    <div className="flex h-96 items-center justify-center">
-                        <Loader />
+                    <div className="max-w-7xl mx-auto">
+                        <DashboardSkeleton />
                     </div>
                 </AdminLayout>
             </AdminGuard>

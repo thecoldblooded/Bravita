@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light">
+    <meta name="supported-color-schemes" content="light">
+    <title>Siparişiniz Onaylandı</title>
+    <style>
+        :root {
+            color-scheme: light;
+        }
+
+        body {
+            background-color: #FFFBF7 !important;
+            color: #1F2937 !important;
+        }
+
+        .item-row td {
+            border-bottom: 1px solid #F3F4F6;
+            padding: 16px 0;
+        }
+
+        .item-row:last-child td {
+            border-bottom: none;
+        }
+
+        @media only screen and (max-width: 600px) {
+            .container {
+                width: 100% !important;
+                border-radius: 0 !important;
+            }
+
+            .content {
+                padding: 30px 20px !important;
+            }
+
+            .responsive-table {
+                width: 100% !important;
+            }
+        }
+    </style>
+</head>
+
+<body
+    style="margin: 0; padding: 0; background-color: #FFFBF7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+
+    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #FFFBF7;">
+        <tr>
+            <td align="center" style="padding: 40px 0;">
+
+                <table class="container" width="600" border="0" cellspacing="0" cellpadding="0"
+                    style="background-color: #ffffff; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); overflow: hidden;">
+
+                    <!-- Top Border -->
+                    <tr>
+                        <td height="6" style="background-color: #22C55E;"></td>
+                    </tr>
+
+                    <!-- Logo -->
+                    <tr>
+                        <td align="center" style="padding: 40px 0 20px;">
+                            <img src="https://xpmbnznsmsujjuwumfiw.supabase.co/storage/v1/object/public/public-assets/bravita-logo.webp"
+                                alt="Bravita" width="180"
+                                style="display: block; border: 0; max-width: 100%; height: auto;" />
+                        </td>
+                    </tr>
+
+                    <!-- Success Icon -->
+                    <tr>
+                        <td align="center" style="padding: 0 0 20px;">
+                            <div style="font-size: 64px; line-height: 1;">🎉</div>
+                        </td>
+                    </tr>
+
+                    <!-- Main Content -->
+                    <tr>
+                        <td class="content" align="center" style="padding: 0 40px 40px;">
+                            <h1 style="margin: 0 0 10px; color: #1F2937; font-size: 26px; font-weight: 700;">Siparişiniz
+                                Onaylandı!</h1>
+                            <p style="margin: 0 0 30px; color: #4B5563; font-size: 16px; line-height: 1.6;">
+                                Siparişiniz başarıyla alındı ve hazırlanmaya başlandı.
+                            </p>
+
+                            <!-- Order Info Box -->
+                            <table width="100%" border="0" cellspacing="0" cellpadding="0"
+                                style="background-color: #F9FAFB; border-radius: 12px; margin-bottom: 30px; padding: 20px;">
+                                <tr>
+                                    <td align="left" style="padding-bottom: 8px;">
+                                        <span
+                                            style="color: #6B7280; font-size: 13px; font-weight: 600; text-transform: uppercase;">Sipariş
+                                            No</span><br>
+                                        <span
+                                            style="color: #111827; font-size: 16px; font-weight: 700;">#{{ORDER_ID}}</span>
+                                    </td>
+                                    <td align="right" style="padding-bottom: 8px;">
+                                        <span
+                                            style="color: #6B7280; font-size: 13px; font-weight: 600; text-transform: uppercase;">Tarih</span><br>
+                                        <span
+                                            style="color: #111827; font-size: 16px; font-weight: 700;">{{ORDER_DATE}}</span>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Items List -->
+                            <div style="text-align: left; margin-bottom: 30px;">
+                                <h3
+                                    style="margin: 0 0 15px; color: #F97316; font-size: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+                                    Sipariş Detayları</h3>
+                                <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                    {{ITEMS_LIST}}
+                                </table>
+                            </div>
+
+                            <!-- Totals -->
+                            <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 30px;">
+                                <tr>
+                                    <td style="padding: 8px 0; color: #6B7280; font-size: 14px;">Ara Toplam</td>
+                                    <td align="right"
+                                        style="padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600;">
+                                        ₺{{SUBTOTAL}}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px 0; color: #22C55E; font-size: 14px;">İndirim</td>
+                                    <td align="right"
+                                        style="padding: 8px 0; color: #22C55E; font-size: 14px; font-weight: 600;">
+                                        -₺{{DISCOUNT}}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px 0; color: #6B7280; font-size: 14px;">KDV (%20)</td>
+                                    <td align="right"
+                                        style="padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600;">
+                                        ₺{{TAX}}</td>
+                                </tr>
+                                <tr>
+                                    <td
+                                        style="border-top: 1px solid #E5E7EB; padding: 16px 0 0; color: #111827; font-size: 18px; font-weight: 800;">
+                                        Toplam</td>
+                                    <td align="right"
+                                        style="border-top: 1px solid #E5E7EB; padding: 16px 0 0; color: #F97316; font-size: 24px; font-weight: 800;">
+                                        ₺{{TOTAL}}</td>
+                                </tr>
+                            </table>
+
+                            <!-- Shipping Address -->
+                            <div
+                                style="text-align: left; background-color: #FFF7ED; padding: 20px; border-radius: 12px; border: 1px solid #FFEDD5;">
+                                <h3
+                                    style="margin: 0 0 10px; color: #EA580C; font-size: 14px; font-weight: 700; text-transform: uppercase;">
+                                    Teslimat Adresi</h3>
+                                <p style="margin: 0; color: #431407; font-size: 14px; line-height: 1.6;">
+                                    {{SHIPPING_ADDRESS}}
+                                </p>
+                            </div>
+
+                            <!-- Payment Info (Conditional) -->
+                            <div style="margin-top: 20px; text-align: center;">
+                                <p style="color: #6B7280; font-size: 13px;">
+                                    Ödeme Yöntemi: <strong>{{PAYMENT_METHOD}}</strong>
+                                </p>
+                            </div>
+
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td align="center" style="background-color: #FFF8F0; padding: 20px;">
+                            <p style="margin: 0 0 10px; color: #9CA3AF; font-size: 12px;">Sorularınız mı var? <a
+                                    href="mailto:destek@bravita.com.tr"
+                                    style="color: #F97316; text-decoration: none;">Bize ulaşın</a></p>
+                            <p style="margin: 0; color: #9CA3AF; font-size: 12px;">© 2026 Bravita</p>
+                        </td>
+                    </tr>
+
+                </table>
+
+                <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                    <tr>
+                        <td height="40"></td>
+                    </tr>
+                </table>
+
+            </td>
+        </tr>
+    </table>
+
+</body>
+
+</html>

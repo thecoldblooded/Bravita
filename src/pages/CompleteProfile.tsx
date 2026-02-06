@@ -63,6 +63,13 @@ export function CompleteProfile() {
     },
   });
 
+  // Update form when user data becomes available (e.g., from OAuth)
+  useEffect(() => {
+    if (user?.full_name && !profileForm.getValues("fullName")) {
+      profileForm.setValue("fullName", user.full_name);
+    }
+  }, [user?.full_name, profileForm]);
+
   // Check authentication and profile status
   useEffect(() => {
     console.log("CompleteProfile mount check:", {

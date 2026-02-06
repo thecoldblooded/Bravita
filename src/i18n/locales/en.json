@@ -276,7 +276,18 @@
             "must_accept_terms": "You must accept terms and conditions",
             "must_accept_privacy": "You must accept privacy policy",
             "must_accept_kvkk": "You must accept KVKK notice"
-        }
+        },
+        "password_reset_sent": "Password reset link sent to your email",
+        "email_required_for_reset": "Please enter your email address to reset password",
+        "forgot_password_info": "Enter your email address and click this link to reset password",
+        "update_password": "Update Password",
+        "enter_new_password": "Please enter your new password",
+        "new_password": "New Password",
+        "confirm_password": "Confirm Password",
+        "update_password_btn": "Update Password",
+        "password_updated": "Password successfully updated",
+        "captcha_required": "Please verify you are human.",
+        "session_expired": "Session expired, please try again."
     },
     "cart": {
         "title": "Your Cart",
@@ -292,5 +303,31 @@
         "promo_code": "Promo Code",
         "apply": "Apply",
         "remove": "Remove"
+    },
+    "errors": {
+        "unknown": "An error occurred. Please try again.",
+        "invalid_login_credentials": "Invalid email or password",
+        "email_not_confirmed": "Your email has not been verified yet",
+        "user_not_found": "User not found",
+        "user_already_exists": "An account with this email already exists",
+        "password_required": "Password is required",
+        "password_min": "Password must be at least 6 characters",
+        "email_invalid": "Invalid email address",
+        "email_required": "Email address is required",
+        "rate_limit_exceeded": "Too many attempts. Please wait a moment.",
+        "password_same_as_old": "New password must be different from the old password",
+        "session_expired": "Your session has expired. Please log in again.",
+        "token_expired": "Verification has expired. Please try again.",
+        "network_error": "Network error. Please check your internet connection.",
+        "login_failed": "Login failed",
+        "signup_failed": "Sign up failed",
+        "google_signup_failed": "Google sign in failed",
+        "duplicate_entry": "This entry already exists",
+        "invalid_reference": "Invalid reference",
+        "insufficient_stock": "Insufficient stock",
+        "product_not_found": "Product not found",
+        "invalid_promo_code": "Invalid promo code",
+        "promo_code_expired": "Promo code has expired",
+        "promo_code_limit_reached": "Promo code usage limit reached"
     }
 }

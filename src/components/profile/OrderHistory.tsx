@@ -232,7 +232,7 @@ export function OrderHistory() {
                                                     <span className="text-gray-600">₺{order.order_details.subtotal}</span>
                                                 </div>
 
-                                                {order.order_details.discount && order.order_details.discount > 0 && (
+                                                {(order.order_details.discount || 0) > 0 && (
                                                     <div className="flex justify-between text-sm py-2 text-green-600">
                                                         <span className="font-medium">İndirim {order.order_details.promo_code ? `(${order.order_details.promo_code})` : ''}</span>
                                                         <span className="font-medium">-₺{order.order_details.discount}</span>

@@ -9,6 +9,7 @@ export interface SignupData {
   userType: "individual" | "company";
   companyName?: string;
   fullName?: string;
+  captchaToken?: string;
 }
 
 export interface LoginData {
@@ -16,6 +17,7 @@ export interface LoginData {
   password?: string;
   username?: string;
   userType: "individual" | "company";
+  captchaToken?: string;
 }
 
 export function useAuthOperations() {
@@ -28,18 +30,24 @@ export function useAuthOperations() {
     setError(null);
 
     try {
+      const options: any = {
+        data: {
+          phone: data.phone,
+          full_name: data.fullName || null,
+          user_type: data.userType,
+          company_name: data.userType === "company" ? data.companyName : null,
+        },
+      };
+
+      if (data.captchaToken) {
+        options.captchaToken = data.captchaToken;
+      }
+
       // Sign up with email and password - store user data in user_metadata
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
-        options: {
-          data: {
-            phone: data.phone,
-            full_name: data.fullName || null,
-            user_type: data.userType,
-            company_name: data.userType === "company" ? data.companyName : null,
-          },
-        },
+        options,
       });
 
       if (authError) {
@@ -98,57 +106,10 @@ export function useAuthOperations() {
     setError(null);
 
     try {
-      // TEST USER BYPASS - Remove in production!
-      const TEST_EMAIL = "test@test.com";
-      const TEST_PASSWORD = "test123";
-
-      if (data.email === TEST_EMAIL && data.password === TEST_PASSWORD) {
-        // Create mock session for test user
-        const mockUser = {
-          id: "test-user-id-12345",
-          email: TEST_EMAIL,
-          user_metadata: {
-            full_name: "Test Kullanıcı",
-            phone: "+905551234567",
-            user_type: "individual",
-            is_admin: true, // Mock admin access
-          },
-          app_metadata: {},
-          aud: "authenticated",
-          created_at: new Date().toISOString(),
-        };
-
-        const mockSession = {
-          access_token: "test-access-token",
-          refresh_token: "test-refresh-token",
-          expires_in: 3600,
-          expires_at: Math.floor(Date.now() / 1000) + 3600,
-          token_type: "bearer",
-          user: mockUser,
-        };
-
-        // Store mock session in localStorage for persistence
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const urlMatch = supabaseUrl?.match(/https:\/\/([^.]+)\.supabase\.co/);
-        if (urlMatch) {
-          const projectRef = urlMatch[1];
-          const storageKey = `sb-${projectRef}-auth-token`;
-          localStorage.setItem(storageKey, JSON.stringify(mockSession));
-        }
-
-        // Set profile_known_complete for test user
-        localStorage.setItem("profile_known_complete", "true");
-
-        // Trigger a page reload to reinitialize auth with mock session
-        window.location.reload();
-
-        return { user: mockUser as any, session: mockSession as any };
-      }
-      // END TEST USER BYPASS
-
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: data.email!,
         password: data.password!,
+        options: data.captchaToken ? { captchaToken: data.captchaToken } : undefined,
       });
 
       if (authError) throw authError;
@@ -179,13 +140,14 @@ export function useAuthOperations() {
         .single();
 
       if (queryError || !companyUser) {
-        throw new Error("Company credentials not found");
+        throw new Error("Geçersiz kullanıcı adı veya şifre");
       }
 
       // Sign in with the company's email
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: companyUser.email,
         password: data.password!,
+        options: data.captchaToken ? { captchaToken: data.captchaToken } : undefined,
       });
 
       if (authError) throw authError;
@@ -296,6 +258,47 @@ export function useAuthOperations() {
     }
   };
 
+  const resetPassword = async (email: string, captchaToken?: string) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/update-password`,
+        captchaToken,
+      });
+
+      if (error) throw error;
+      return { success: true };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Şifre sıfırlama işlemi başarısız";
+      setError(message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateUserPassword = async (newPassword: string) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) throw error;
+      return { success: true };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Şifre güncellenemedi";
+      setError(message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     isLoading,
     error,
@@ -306,5 +309,7 @@ export function useAuthOperations() {
     logout,
     resendEmailConfirmation,
     changePassword,
+    resetPassword,
+    updateUserPassword,
   };
 }

@@ -276,7 +276,18 @@
             "must_accept_terms": "Kullanım koşullarını kabul etmelisiniz",
             "must_accept_privacy": "Gizlilik politikasını kabul etmelisiniz",
             "must_accept_kvkk": "KVKK metnini kabul etmelisiniz"
-        }
+        },
+        "password_reset_sent": "Şifre sıfırlama bağlantısı e-posta adresinize gönderildi",
+        "email_required_for_reset": "Şifre sıfırlamak için lütfen e-posta adresinizi girin",
+        "forgot_password_info": "Şifrenizi sıfırlamak için e-posta adresinizi girip bu bağlantıya tıklayın",
+        "update_password": "Şifreni Güncelle",
+        "enter_new_password": "Lütfen yeni şifrenizi girin",
+        "new_password": "Yeni Şifre",
+        "confirm_password": "Şifre Tekrar",
+        "update_password_btn": "Şifreyi Güncelle",
+        "password_updated": "Şifreniz başarıyla güncellendi",
+        "captcha_required": "Lütfen robot olmadığınızı doğrulayın.",
+        "session_expired": "Oturum süresi doldu, lütfen tekrar deneyin."
     },
     "cart": {
         "title": "Sepetim",
@@ -292,5 +303,31 @@
         "promo_code": "İndirim Kuponu",
         "apply": "Uygula",
         "remove": "Kaldır"
+    },
+    "errors": {
+        "unknown": "Bir hata oluştu. Lütfen tekrar deneyin.",
+        "invalid_login_credentials": "E-posta veya şifre hatalı",
+        "email_not_confirmed": "E-posta adresiniz henüz doğrulanmamış",
+        "user_not_found": "Kullanıcı bulunamadı",
+        "user_already_exists": "Bu e-posta adresi ile kayıtlı bir hesap zaten var",
+        "password_required": "Şifre gerekli",
+        "password_min": "Şifre en az 6 karakter olmalıdır",
+        "email_invalid": "Geçersiz e-posta adresi",
+        "email_required": "E-posta adresi gerekli",
+        "rate_limit_exceeded": "Çok fazla deneme yaptınız. Lütfen biraz bekleyin.",
+        "password_same_as_old": "Yeni şifre eski şifreden farklı olmalıdır",
+        "session_expired": "Oturumunuz sona erdi. Lütfen tekrar giriş yapın.",
+        "token_expired": "Doğrulama süresi doldu. Lütfen tekrar deneyin.",
+        "network_error": "Bağlantı hatası. İnternet bağlantınızı kontrol edin.",
+        "login_failed": "Giriş başarısız oldu",
+        "signup_failed": "Kayıt başarısız oldu",
+        "google_signup_failed": "Google ile giriş başarısız oldu",
+        "duplicate_entry": "Bu kayıt zaten mevcut",
+        "invalid_reference": "Geçersiz referans",
+        "insufficient_stock": "Yetersiz stok",
+        "product_not_found": "Ürün bulunamadı",
+        "invalid_promo_code": "Geçersiz promosyon kodu",
+        "promo_code_expired": "Promosyon kodunun süresi dolmuş",
+        "promo_code_limit_reached": "Promosyon kodu kullanım limiti dolmuş"
     }
 }

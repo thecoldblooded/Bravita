@@ -6,7 +6,7 @@ import { AdminGuard } from "@/components/admin/AdminGuard";
 import { getAdminUsers, searchUsersByEmail, setUserAdmin } from "@/lib/admin";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import Loader from "@/components/ui/Loader";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
 interface AdminUser {
@@ -128,8 +128,19 @@ export default function AdminUsers() {
                         </div>
 
                         {isLoading ? (
-                            <div className="flex items-center justify-center py-16">
-                                <Loader />
+                            <div className="divide-y divide-gray-50">
+                                {[...Array(5)].map((_, i) => (
+                                    <div key={i} className="flex items-center justify-between p-4">
+                                        <div className="flex items-center gap-4">
+                                            <Skeleton className="w-12 h-12 rounded-full" />
+                                            <div>
+                                                <Skeleton className="h-4 w-32 mb-2" />
+                                                <Skeleton className="h-3 w-48" />
+                                            </div>
+                                        </div>
+                                        <Skeleton className="h-9 w-28" />
+                                    </div>
+                                ))}
                             </div>
                         ) : admins.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-16">

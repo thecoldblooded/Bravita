@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
+import HCaptcha from "@hcaptcha/react-hcaptcha";
 import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,6 +22,7 @@ import Loader from "@/components/ui/Loader";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import { Mail, RefreshCw } from "lucide-react";
+import { translateError } from "@/lib/errorTranslator";
 
 interface SignupFormProps {
   onSuccess?: () => void;
@@ -87,6 +89,11 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
   const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState<string>("");
   const [isResending, setIsResending] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const captchaRef = useRef<HCaptcha>(null);
+
+  // Production Key: "203039b0-ee5c-48ba-aa2c-390a43ecaae0"
+  const HCAPTCHA_SITE_KEY = "203039b0-ee5c-48ba-aa2c-390a43ecaae0";
 
   // Individual signup form
   const individualForm = useForm<IndividualSignupForm>({
@@ -120,6 +127,11 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
 
   const handleIndividualSignupSubmit = async (data: IndividualSignupForm) => {
     try {
+      if (!captchaToken) {
+        toast.error(t("auth.captcha_required"));
+        return;
+      }
+
       // Create account directly - Supabase will send confirmation email
       await signupWithEmail({
         email: data.email,
@@ -127,6 +139,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
         phone: data.phone,
         userType: "individual",
         fullName: data.fullName,
+        captchaToken,
       });
 
       // Set flag so IncompleteProfileBanner shows after email confirmation
@@ -135,26 +148,38 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
       setRegisteredEmail(data.email);
       setShowEmailConfirmation(true);
       toast.success(t("auth.email_confirmation_sent"));
+
+      captchaRef.current?.resetCaptcha();
+      setCaptchaToken(null);
     } catch (err) {
-      toast.error(error || t("auth.signup_failed"));
+      toast.error(translateError(err, t));
     }
   };
 
   const handleCompanySignupSubmit = async (data: CompanySignupForm) => {
     try {
+      if (!captchaToken) {
+        toast.error(t("auth.captcha_required"));
+        return;
+      }
+
       await signupWithEmail({
         email: data.email,
         password: data.password,
         phone: "",
         userType: "company",
         companyName: data.companyName,
+        captchaToken,
       });
 
       setRegisteredEmail(data.email);
       setShowEmailConfirmation(true);
       toast.success(t("auth.email_confirmation_sent"));
+
+      captchaRef.current?.resetCaptcha();
+      setCaptchaToken(null);
     } catch (err) {
-      toast.error(error || t("auth.signup_failed"));
+      toast.error(translateError(err, t));
     }
   };
 
@@ -165,7 +190,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
       await resendEmailConfirmation(registeredEmail);
       toast.success(t("auth.email_sent"));
     } catch (err) {
-      toast.error(error || t("auth.email_failed"));
+      toast.error(translateError(err, t));
     } finally {
       setIsResending(false);
     }
@@ -178,7 +203,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
 
       await signupWithGoogle({ userType: "individual", phone: "" });
     } catch (err) {
-      toast.error(error || t("auth.google_signup_failed"));
+      toast.error(translateError(err, t));
     }
   };
 
@@ -225,6 +250,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
             onClick={() => {
               setShowEmailConfirmation(false);
               setRegisteredEmail("");
+              setCaptchaToken(null);
             }}
             className="text-sm text-orange-600 hover:underline"
           >
@@ -437,6 +463,16 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
                     </div>
                   </FormItem>
                 )}
+              />
+            </div>
+
+            <div className="flex justify-center py-4">
+              <HCaptcha
+                sitekey={HCAPTCHA_SITE_KEY}
+                onVerify={(token) => setCaptchaToken(token)}
+                onError={(err) => console.error("hCaptcha Error:", err)}
+                onExpire={() => setCaptchaToken(null)}
+                ref={captchaRef}
               />
             </div>
 
@@ -701,6 +737,20 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
               />
             </div>
 
+            <div className="flex justify-center py-4">
+              <HCaptcha
+                sitekey={HCAPTCHA_SITE_KEY}
+                onVerify={(token) => setCaptchaToken(token)}
+                onError={(err) => console.error("hCaptcha Error:", err)}
+                onExpire={() => setCaptchaToken(null)}
+                // We share the ref, but since tabs unmount content, it might be tricky. 
+                // However, usually only one is mounted or visible.
+                // Re-using ref for simplicity as tabs implementation might keep both mounted or unmount.
+                // Ideally we should use separate refs but let's test.
+                ref={captchaRef}
+              />
+            </div>
+
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? <Loader size="1.25rem" noMargin /> : t("auth.signup")}
             </Button>
@@ -717,7 +767,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
             {t("auth.login")}
           </button>
         </div>
-      </TabsContent>
-    </Tabs>
+      </TabsContent >
+    </Tabs >
   );
 }

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminGuard } from "@/components/admin/AdminGuard";
 import { getPromoCodes, addPromoCode, updatePromoCode, deletePromoCode, PromoCode } from "@/lib/admin";
-import Loader from "@/components/ui/Loader";
+import { TableSkeleton } from "@/components/admin/skeletons";
 import { Search, Edit2, Trash2, Plus, Percent, Coins, CheckCircle, AlertCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -103,8 +103,8 @@ export default function AdminPromoCodes() {
         return (
             <AdminGuard>
                 <AdminLayout>
-                    <div className="flex h-96 items-center justify-center">
-                        <Loader />
+                    <div className="max-w-7xl mx-auto">
+                        <TableSkeleton rows={5} columns={5} />
                     </div>
                 </AdminLayout>
             </AdminGuard>
