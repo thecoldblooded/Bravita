@@ -1,4 +1,5 @@
-// @ts-expect-error: Deno URL imports
+
+/// <reference path="./types.d.ts" />
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { ORDER_CONFIRMATION_HTML, SHIPPED_HTML, DELIVERED_HTML, CANCELLED_HTML } from "./template.ts";
@@ -27,40 +28,93 @@ interface OrderItem {
 }
 
 serve(async (req: Request) => {
+    // Handle CORS preflight requests
     if (req.method === "OPTIONS") {
         return new Response("ok", { headers: corsHeaders });
     }
 
     try {
         if (!RESEND_API_KEY) {
-            throw new Error("RESEND_API_KEY is not set");
+            console.error("RESEND_API_KEY is missing");
+            throw new Error("Server configuration error: Missing email provider key");
         }
 
         const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+        // 1. JWT Verification & Authorization
+        // We manually verify the token here since we disabled the platform-level verify_jwt
+        // to avoid 401 errors during session refresh/handoffs.
+        const authHeader = req.headers.get("Authorization");
+        if (!authHeader) {
+            throw new Error("Missing Authorization header");
+        }
+
+        const token = authHeader.replace("Bearer ", "");
+        const { data: { user: requestingUser }, error: authError } = await supabase.auth.getUser(token);
+
+        if (authError || !requestingUser) {
+            console.error("Auth error:", authError);
+            throw new Error("Unauthorized: Invalid token");
+        }
+
+        // Parse Request Body
         const { order_id, type = "order_confirmation", tracking_number, shipping_company, cancellation_reason }: OrderEmailRequest = await req.json();
 
         if (!order_id) {
             throw new Error("Order ID is required");
         }
 
-        // 1. Fetch Order Details
+        // 2. Fetch Order Details & Owner Info
         const { data: order, error: orderError } = await supabase
             .from("orders")
             .select(`
-        *,
-        shipping_address:addresses(*),
-        user:profiles(email, full_name, order_notifications)
-      `)
+                *,
+                shipping_address:addresses(*),
+                user:profiles(id, email, full_name, order_notifications, is_admin)
+            `)
             .eq("id", order_id)
             .single();
 
         if (orderError || !order) {
+            console.error("Order fetch error:", orderError);
             throw new Error(`Order not found: ${orderError?.message}`);
         }
 
+        // 3. SECURE AUTHORIZATION CHECK
+        // Allow if user is admin OR if user owns the order
+        const isAdmin = requestingUser.app_metadata?.is_admin === true || order.user.is_admin === true; // Check both metadata and profile
+        const isOwner = requestingUser.id === order.user_id;
+
+        if (!isOwner && !isAdmin) {
+            console.error(`Access Denied: User ${requestingUser.id} tried to access order ${order_id} owned by ${order.user_id}`);
+            throw new Error("Forbidden: You do not have permission to access this order.");
+        }
+
+        // 3.5 RATE LIMIT CHECK
+        // Check if an email for this order and type was sent recently (2 minutes)
+        // Only applies to order_confirmation to prevent spam, allow status updates
+        if (type === "order_confirmation") {
+            const { data: recentLogs } = await supabase
+                .from("email_logs")
+                .select("sent_at")
+                .eq("order_id", order_id)
+                .eq("email_type", type)
+                .gt("sent_at", new Date(Date.now() - 2 * 60 * 1000).toISOString()) // Last 2 minutes
+                .limit(1);
+
+            if (recentLogs && recentLogs.length > 0) {
+                console.log(`Rate Limit Exceeded: Email for order ${order_id} type ${type} was sent recently.`);
+                return new Response(JSON.stringify({
+                    message: "Rate limit exceeded. Email already sent recently.",
+                    skipped: true
+                }), {
+                    headers: { ...corsHeaders, "Content-Type": "application/json" },
+                    status: 429,
+                });
+            }
+        }
+
         // Check user preferences for notifications
-        // We always send 'order_confirmation' as it is a receipt.
-        // For other status updates, we check the user's preference.
         if (type !== "order_confirmation" && order.user.order_notifications === false) {
             console.log(`User ${order.user.email} has disabled order notifications. Skipping email for type: ${type}`);
             return new Response(JSON.stringify({ message: "User disabled notifications", skipped: true }), {
@@ -69,7 +123,7 @@ serve(async (req: Request) => {
             });
         }
 
-        // 2. Prepare Data
+        // 4. Prepare Data
         const orderDate = new Date(order.created_at).toLocaleDateString("tr-TR", {
             day: "numeric",
             month: "long",
@@ -78,7 +132,7 @@ serve(async (req: Request) => {
             minute: "2-digit",
         });
 
-        const items = order.order_details.items as OrderItem[];
+        const items: OrderItem[] = order.order_details.items;
         const totals = {
             subtotal: order.order_details.subtotal,
             discount: order.order_details.discount || 0,
@@ -87,62 +141,65 @@ serve(async (req: Request) => {
         };
 
         const address = order.shipping_address;
-        const addressString = `${address.street}, ${address.district || ""}, ${address.city} ${address.postal_code || ""}`;
+        const addressString = address
+            ? `${address.street}, ${address.district || ""}, ${address.city} ${address.postal_code || ""}`
+            : "Adres bilgisi bulunamadı";
 
         const paymentMethod =
             order.payment_method === "credit_card" ? "Kredi Kartı" : "Havale / EFT";
 
-        // 3. Generate Items HTML
-        let itemsHtml = "";
-        for (const item of items) {
-            const imgUrl = "https://xpmbnznsmsujjuwumfiw.supabase.co/storage/v1/object/public/public-assets/bravita-bottle.webp";
+        // 5. HTML Escape Helper
+        const sanitize = (str: string) => str ? String(str).replace(/[&<>"']/g, (m) => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[m as keyof typeof map])) : "";
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 
-            itemsHtml += `
-      <tr class="item-row">
-          <td width="80" style="padding: 16px 0;">
-              <div style="width: 60px; height: 60px; background-color: #F3F4F6; border-radius: 8px; overflow: hidden;">
-                  <img src="${imgUrl}" alt="${item.product_name}" style="width: 100%; height: 100%; object-fit: contain;" />
-              </div>
-          </td>
-          <td style="padding: 16px 0;">
-              <p style="margin: 0; color: #111827; font-size: 14px; font-weight: 600;">${item.product_name}</p>
-              <p style="margin: 4px 0 0; color: #6B7280; font-size: 13px;">Adet: ${item.quantity}</p>
-          </td>
-          <td align="right" style="padding: 16px 0;">
-              <p style="margin: 0; color: #111827; font-size: 14px; font-weight: 600;">₺${(item.unit_price * item.quantity).toFixed(2)}</p>
-          </td>
-      </tr>`;
+        let itemsHtml = "";
+        if (items && Array.isArray(items)) {
+            for (const item of items) {
+                const imgUrl = "https://xpmbnznsmsujjuwumfiw.supabase.co/storage/v1/object/public/public-assets/bravita-bottle.webp";
+                // Only show product name and qty, simple table row
+                itemsHtml += `
+            <tr class="item-row">
+                <td width="80" style="padding: 16px 0;">
+                    <div style="width: 60px; height: 60px; background-color: #F3F4F6; border-radius: 8px; overflow: hidden;">
+                        <img src="${imgUrl}" alt="${sanitize(item.product_name)}" style="width: 100%; height: 100%; object-fit: contain;" />
+                    </div>
+                </td>
+                <td style="padding: 16px 0;">
+                    <p style="margin: 0; color: #111827; font-size: 14px; font-weight: 600;">${sanitize(item.product_name)}</p>
+                    <p style="margin: 4px 0 0; color: #6B7280; font-size: 13px;">Adet: ${item.quantity}</p>
+                </td>
+                <td align="right" style="padding: 16px 0;">
+                    <p style="margin: 0; color: #111827; font-size: 14px; font-weight: 600;">₺${(item.unit_price * item.quantity).toFixed(2)}</p>
+                </td>
+            </tr>`;
+            }
         }
 
-        // 4. Determine Template and Context
+        // 6. Determine Template and Context
         let html = "";
         let subject = "";
-        let textContent = ""; // Basic text version
+        let textContent = "";
 
         const commonTextInfo = `
 Sipariş No: #${order.id.substring(0, 8).toUpperCase()}
 Tarih: ${orderDate}
 Ürünler:
-${items.map((item) => `- ${item.product_name} (${item.quantity} adet)`).join('\n')}
+${items ? items.map((item: OrderItem) => `- ${item.product_name} (${item.quantity} adet)`).join('\n') : ''}
 Teslimat Adresi: ${addressString}
         `;
 
         if (type === "shipped") {
-            // Use passed tracking info or fallback to order data
-            const validTrackingNumber = tracking_number || order.tracking_number;
-            const validShippingCompany = shipping_company || order.shipping_company || "Kargo Firması";
-
-            if (!validTrackingNumber) {
-                // It's possible to mark as shipped without tracking momentarily, but for email we prefer having it.
-                // We will still send the email but might show "Bilgi Bekleniyor" if missing, though frontend should prevent this.
-            }
+            const validTrackingNumber = sanitize(tracking_number || order.tracking_number || "");
+            const validShippingCompany = sanitize(shipping_company || order.shipping_company || "Kargo Firması");
 
             subject = `Siparişiniz Kargoya Verildi 🚚 #${order.id.substring(0, 8).toUpperCase()}`;
             html = SHIPPED_HTML
                 .replace("{{ORDER_ID}}", order.id.substring(0, 8).toUpperCase())
                 .replace("{{ORDER_DATE}}", orderDate)
                 .replace("{{ITEMS_LIST}}", itemsHtml)
-                .replace("{{SHIPPING_ADDRESS}}", addressString)
+                .replace("{{SHIPPING_ADDRESS}}", sanitize(addressString))
                 .replace("{{SHIPPING_COMPANY}}", validShippingCompany)
                 .replace("{{TRACKING_NUMBER}}", validTrackingNumber || "Takip numarası girilmedi");
 
@@ -154,13 +211,13 @@ Teslimat Adresi: ${addressString}
                 .replace("{{ORDER_ID}}", order.id.substring(0, 8).toUpperCase())
                 .replace("{{ORDER_DATE}}", orderDate)
                 .replace("{{ITEMS_LIST}}", itemsHtml)
-                .replace("{{SHIPPING_ADDRESS}}", addressString);
+                .replace("{{SHIPPING_ADDRESS}}", sanitize(addressString));
 
             textContent = `Siparişiniz Teslim Edildi!\n\nBizi tercih ettiğiniz için teşekkürler.\n\n${commonTextInfo}`;
 
         } else if (type === "cancelled") {
             subject = `Siparişiniz İptal Edildi ❌ #${order.id.substring(0, 8).toUpperCase()}`;
-            const reason = cancellation_reason || order.cancellation_reason || "Belirtilmedi";
+            const reason = sanitize(cancellation_reason || order.cancellation_reason || "Belirtilmedi");
 
             html = CANCELLED_HTML
                 .replace("{{ORDER_ID}}", order.id.substring(0, 8).toUpperCase())
@@ -180,13 +237,14 @@ Teslimat Adresi: ${addressString}
                 .replace("{{DISCOUNT}}", totals.discount.toFixed(2))
                 .replace("{{TAX}}", totals.vat.toFixed(2))
                 .replace("{{TOTAL}}", totals.total.toFixed(2))
-                .replace("{{SHIPPING_ADDRESS}}", addressString)
+                .replace("{{SHIPPING_ADDRESS}}", sanitize(addressString))
                 .replace("{{PAYMENT_METHOD}}", paymentMethod);
 
             textContent = `Siparişiniz Onaylandı!\n\n${commonTextInfo}\n\nToplam Tutar: ₺${totals.total.toFixed(2)}`;
         }
 
-        // 5. Send Email via Resend
+        console.log(`Sending email to ${order.user.email} with subject: ${subject}`);
+
         const res = await fetch("https://api.resend.com/emails", {
             method: "POST",
             headers: {
@@ -209,16 +267,32 @@ Teslimat Adresi: ${addressString}
         const data = await res.json();
 
         if (!res.ok) {
+            console.error("Resend API Error details:", data);
             throw new Error(`Resend API Error: ${JSON.stringify(data)}`);
         }
 
-        return new Response(JSON.stringify(data), {
+        console.log("Email sent successfully:", data.id);
+
+        // Log the successful email for rate limiting
+        await supabase.from("email_logs").insert({
+            order_id: order_id,
+            email_type: type,
+            recipient: order.user.email,
+            sent_at: new Date().toISOString()
+        });
+
+        return new Response(JSON.stringify({ success: true, id: data.id }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
             status: 200,
         });
     } catch (error) {
-        const err = error as Error;
-        return new Response(JSON.stringify({ error: err.message }), {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        console.error(`Edge Function Error (Caught): ${errorMessage}`);
+        // Return 400 with error details to help debugging
+        return new Response(JSON.stringify({
+            error: "İşlem sırasında bir hata oluştu.",
+            details: errorMessage
+        }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
             status: 400,
         });
