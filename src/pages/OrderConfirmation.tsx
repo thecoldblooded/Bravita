@@ -8,6 +8,7 @@ import Loader from "@/components/ui/Loader";
 import bravitaBottle from "@/assets/bravita-bottle.webp";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 interface OrderDetails {
     items: Array<{
@@ -45,6 +46,7 @@ const BANK_INFO = {
 };
 
 export default function OrderConfirmation() {
+    const { t } = useTranslation();
     const { orderId } = useParams<{ orderId: string }>();
     const [order, setOrder] = useState<Order | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -64,7 +66,7 @@ export default function OrderConfirmation() {
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
         setCopied(true);
-        toast.success("Kopyalandı!");
+        toast.success(t("common.copied", "Kopyalandı!"));
         setTimeout(() => setCopied(false), 2000);
     };
 
@@ -73,7 +75,7 @@ export default function OrderConfirmation() {
             <div className="min-h-screen bg-linear-to-b from-orange-50/50 to-white">
                 <div className="flex flex-col items-center justify-center min-h-[60vh]">
                     <Loader />
-                    <p className="text-gray-500 mt-4">Sipariş yükleniyor...</p>
+                    <p className="text-gray-500 mt-4">{t("order.loading", "Sipariş yükleniyor...")}</p>
                 </div>
             </div>
         );
@@ -84,11 +86,11 @@ export default function OrderConfirmation() {
             <div className="min-h-screen bg-linear-to-b from-orange-50/50 to-white">
                 <div className="flex flex-col items-center justify-center min-h-[60vh]">
                     <Package className="w-16 h-16 text-gray-300 mb-4" />
-                    <h2 className="text-xl font-bold text-gray-900 mb-2">Sipariş Bulunamadı</h2>
-                    <p className="text-gray-500 mb-6">Bu sipariş mevcut değil veya erişim izniniz yok.</p>
+                    <h2 className="text-xl font-bold text-gray-900 mb-2">{t("order.not_found", "Sipariş Bulunamadı")}</h2>
+                    <p className="text-gray-500 mb-6">{t("order.not_found_desc", "Bu sipariş mevcut değil veya erişim izniniz yok.")}</p>
                     <Link to="/">
                         <Button className="bg-orange-500 hover:bg-orange-600 text-white">
-                            Ana Sayfaya Dön
+                            {t("order.back_home", "Ana Sayfaya Dön")}
                         </Button>
                     </Link>
                 </div>
@@ -118,12 +120,12 @@ export default function OrderConfirmation() {
                     className="text-center mb-8"
                 >
                     <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                        {isBankTransfer ? "Siparişiniz Alındı!" : "Siparişiniz Onaylandı!"}
+                        {isBankTransfer ? t("order.success_title_bank", "Siparişiniz Alındı!") : t("order.success_title", "Siparişiniz Onaylandı!")}
                     </h1>
                     <p className="text-gray-500">
                         {isBankTransfer
-                            ? "Havale/EFT ile ödeme bekleniyor."
-                            : "Siparişiniz hazırlanmaya başlandı."}
+                            ? t("order.success_desc_bank", "Havale/EFT ile ödeme bekleniyor.")
+                            : t("order.success_desc", "Siparişiniz hazırlanmaya başlandı.")}
                     </p>
                 </motion.div>
 
@@ -136,11 +138,11 @@ export default function OrderConfirmation() {
                 >
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-sm text-gray-500">Sipariş Numarası</p>
+                            <p className="text-sm text-gray-500">{t("order.number", "Sipariş Numarası")}</p>
                             <p className="font-mono font-bold text-gray-900">{order.id.slice(0, 8).toUpperCase()}</p>
                         </div>
                         <div className="text-right">
-                            <p className="text-sm text-gray-500">Tarih</p>
+                            <p className="text-sm text-gray-500">{t("order.date", "Tarih")}</p>
                             <p className="font-medium text-gray-900">
                                 {formatDate(order.created_at)}
                             </p>
@@ -158,16 +160,16 @@ export default function OrderConfirmation() {
                     >
                         <h3 className="font-bold text-blue-900 mb-4 flex items-center gap-2">
                             <Building2 className="w-5 h-5" />
-                            Havale/EFT Bilgileri
+                            {t("order.bank_info", "Havale/EFT Bilgileri")}
                         </h3>
 
                         <div className="space-y-3 text-sm">
                             <div className="flex justify-between items-center">
-                                <span className="text-gray-600">Banka:</span>
+                                <span className="text-gray-600">{t("order.bank_name", "Banka:")}</span>
                                 <span className="font-medium text-gray-900">{BANK_INFO.bankName}</span>
                             </div>
                             <div className="flex justify-between items-center">
-                                <span className="text-gray-600">IBAN:</span>
+                                <span className="text-gray-600">{t("order.iban", "IBAN:")}</span>
                                 <div className="flex items-center gap-2">
                                     <span className="font-mono text-gray-900">{BANK_INFO.iban}</span>
                                     <button
@@ -183,18 +185,18 @@ export default function OrderConfirmation() {
                                 </div>
                             </div>
                             <div className="flex justify-between items-center">
-                                <span className="text-gray-600">Hesap Sahibi:</span>
+                                <span className="text-gray-600">{t("order.account_holder", "Hesap Sahibi:")}</span>
                                 <span className="font-medium text-gray-900">{BANK_INFO.accountHolder}</span>
                             </div>
                             <div className="flex justify-between items-center">
-                                <span className="text-gray-600">Tutar:</span>
+                                <span className="text-gray-600">{t("order.amount", "Tutar:")}</span>
                                 <span className="font-bold text-lg text-blue-900">₺{order.order_details.total}</span>
                             </div>
                         </div>
 
                         <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                             <p className="text-sm text-yellow-800">
-                                <strong>Önemli:</strong> Açıklama kısmına sipariş numaranızı ({order.id.slice(0, 8).toUpperCase()}) yazmayı unutmayın.
+                                <strong>{t("common.important", "Önemli")}:</strong> {t("order.bank_reference_note", "Açıklama kısmına sipariş numaranızı ({{orderId}}) yazmayı unutmayın.", { orderId: order.id.slice(0, 8).toUpperCase() })}
                             </p>
                         </div>
                     </motion.div>
@@ -209,7 +211,7 @@ export default function OrderConfirmation() {
                 >
                     <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
                         <Package className="w-5 h-5 text-orange-500" />
-                        Sipariş Detayları
+                        {t("order.details", "Sipariş Detayları")}
                     </h3>
 
                     {order.order_details.items.map((item, index) => (
@@ -219,7 +221,7 @@ export default function OrderConfirmation() {
                             </div>
                             <div className="flex-1">
                                 <h4 className="font-medium text-gray-900">{item.product_name}</h4>
-                                <p className="text-sm text-gray-500">Adet: {item.quantity} × ₺{item.unit_price}</p>
+                                <p className="text-sm text-gray-500">{t("order.quantity_label", "Adet:")} {item.quantity} × ₺{item.unit_price}</p>
                             </div>
                             <span className="font-bold text-gray-900">₺{item.subtotal}</span>
                         </div>
@@ -227,23 +229,23 @@ export default function OrderConfirmation() {
 
                     <div className="mt-4 pt-4 border-t border-gray-100 space-y-2 text-sm">
                         <div className="flex justify-between">
-                            <span className="text-gray-500">Ara Toplam</span>
+                            <span className="text-gray-500">{t("cart.subtotal", "Ara Toplam")}</span>
                             <span className="text-gray-900">₺{order.order_details.subtotal}</span>
                         </div>
 
                         {(order.order_details.discount || 0) > 0 && (
                             <div className="flex justify-between text-green-600">
-                                <span className="font-medium">İndirim {order.order_details.promo_code ? `(${order.order_details.promo_code})` : ''}</span>
+                                <span className="font-medium">{t("cart.discount", "İndirim")} {order.order_details.promo_code ? `(${order.order_details.promo_code})` : ''}</span>
                                 <span className="font-medium">-₺{order.order_details.discount}</span>
                             </div>
                         )}
 
                         <div className="flex justify-between">
-                            <span className="text-gray-500">KDV (%20)</span>
+                            <span className="text-gray-500">{t("cart.vat", "KDV (%20)")}</span>
                             <span className="text-gray-900">₺{order.order_details.vat_amount}</span>
                         </div>
                         <div className="flex justify-between font-bold text-lg">
-                            <span className="text-gray-900">Toplam</span>
+                            <span className="text-gray-900">{t("cart.total", "Toplam")}</span>
                             <span className="text-orange-600">₺{order.order_details.total}</span>
                         </div>
                     </div>
@@ -259,7 +261,7 @@ export default function OrderConfirmation() {
                     >
                         <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
                             <MapPin className="w-5 h-5 text-orange-500" />
-                            Teslimat Adresi
+                            {t("checkout.delivery_address", "Teslimat Adresi")}
                         </h3>
                         <p className="font-medium text-gray-900">{order.shipping_address.city}</p>
                         <p className="text-gray-600">{order.shipping_address.street}</p>
@@ -276,13 +278,13 @@ export default function OrderConfirmation() {
                 >
                     <Link to="/profile?tab=orders" className="flex-1">
                         <Button variant="outline" className="w-full rounded-xl py-3 border-gray-200">
-                            Siparişlerim
+                            {t("order.my_orders_btn", "Siparişlerim")}
                             <ArrowRight className="w-4 h-4 ml-2" />
                         </Button>
                     </Link>
                     <Link to="/" className="flex-1">
                         <Button className="w-full rounded-xl py-3 bg-orange-500 hover:bg-orange-600 text-white">
-                            Alışverişe Devam Et
+                            {t("order.continue_shopping", "Alışverişe Devam Et")}
                         </Button>
                     </Link>
                 </motion.div>

@@ -127,7 +127,9 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
 
   const handleIndividualSignupSubmit = async (data: IndividualSignupForm) => {
     try {
-      if (!captchaToken) {
+      const skipCaptcha = import.meta.env.VITE_SKIP_CAPTCHA === "true";
+
+      if (!captchaToken && !skipCaptcha) {
         toast.error(t("auth.captcha_required"));
         return;
       }
@@ -139,7 +141,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
         phone: data.phone,
         userType: "individual",
         fullName: data.fullName,
-        captchaToken,
+        captchaToken: captchaToken || "skip_captcha_token",
       });
 
       // Set flag so IncompleteProfileBanner shows after email confirmation
@@ -158,7 +160,9 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
 
   const handleCompanySignupSubmit = async (data: CompanySignupForm) => {
     try {
-      if (!captchaToken) {
+      const skipCaptcha = import.meta.env.VITE_SKIP_CAPTCHA === "true";
+
+      if (!captchaToken && !skipCaptcha) {
         toast.error(t("auth.captcha_required"));
         return;
       }
@@ -169,7 +173,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
         phone: "",
         userType: "company",
         companyName: data.companyName,
-        captchaToken,
+        captchaToken: captchaToken || "skip_captcha_token",
       });
 
       setRegisteredEmail(data.email);

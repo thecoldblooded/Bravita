@@ -7,16 +7,20 @@ interface ProfileSidebarProps {
     setActiveTab: (tab: string) => void;
 }
 
+import { useTranslation } from "react-i18next";
+
 export function ProfileSidebar({ activeTab, setActiveTab }: ProfileSidebarProps) {
+    const { t } = useTranslation();
+
     const menuItems = [
-        { id: "profile", label: "Profil Bilgilerim", icon: User },
-        { id: "addresses", label: "Adreslerim", icon: MapPin },
-        { id: "orders", label: "Siparişlerim", icon: ShoppingBag },
-        { id: "settings", label: "Ayarlar", icon: Settings },
+        { id: "profile", label: t("profile.sidebar.info"), icon: User },
+        { id: "addresses", label: t("profile.sidebar.addresses"), icon: MapPin },
+        { id: "orders", label: t("profile.sidebar.orders"), icon: ShoppingBag },
+        { id: "settings", label: t("profile.sidebar.settings"), icon: Settings },
     ];
 
     return (
-        <div className="w-full md:w-64 flex-shrink-0">
+        <div className="w-full md:w-64 shrink-0">
             <div className="bg-white rounded-2xl shadow-sm border border-orange-100/50 p-2 space-y-1">
                 {menuItems.map((item) => (
                     <button

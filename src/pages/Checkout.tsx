@@ -13,10 +13,10 @@ import { OrderSummary } from "@/components/checkout/OrderSummary";
 import { createOrder } from "@/lib/checkout";
 import Header from "@/components/Header";
 
-const steps = [
-    { id: 1, name: "Teslimat Adresi", icon: MapPin },
-    { id: 2, name: "Ödeme Yöntemi", icon: CreditCard },
-    { id: 3, name: "Sipariş Özeti", icon: Package },
+const getSteps = (t: (key: string, options?: Record<string, unknown>) => string) => [
+    { id: 1, name: t("checkout.steps.delivery"), icon: MapPin },
+    { id: 2, name: t("checkout.steps.payment"), icon: CreditCard },
+    { id: 3, name: t("checkout.steps.summary"), icon: Package },
 ];
 
 interface CheckoutData {
@@ -32,6 +32,7 @@ interface CheckoutData {
 
 export default function Checkout() {
     const { t } = useTranslation();
+    const steps = getSteps(t);
     const navigate = useNavigate();
     const { user, isAuthenticated } = useAuth();
     const { cartItems, cartTotal, clearCart, promoCode: contextPromoCode } = useCart();
@@ -42,6 +43,8 @@ export default function Checkout() {
         paymentMethod: "credit_card",
     });
 
+    const [isAgreed, setIsAgreed] = useState(false);
+
     // Redirect if not authenticated or cart is empty (but not if order was just placed)
     const [orderPlaced, setOrderPlaced] = useState(false);
 
@@ -49,16 +52,16 @@ export default function Checkout() {
         if (orderPlaced) return; // Don't redirect if order was just placed
 
         if (!isAuthenticated) {
-            toast.error("Lütfen giriş yapın");
+            toast.error(t("auth.login_required", "Lütfen giriş yapın"));
             navigate("/");
             return;
         }
         if (cartItems.length === 0) {
-            toast.error("Sepetiniz boş");
+            toast.error(t("cart.empty", "Sepetiniz boş"));
             navigate("/");
             return;
         }
-    }, [isAuthenticated, cartItems, navigate, orderPlaced]);
+    }, [isAuthenticated, cartItems, navigate, orderPlaced, t]);
 
     const canProceed = () => {
         switch (currentStep) {
@@ -71,7 +74,7 @@ export default function Checkout() {
                 }
                 return true; // Bank transfer doesn't need card details
             case 3:
-                return true;
+                return isAgreed;
             default:
                 return false;
         }
@@ -91,6 +94,10 @@ export default function Checkout() {
 
     const handlePlaceOrder = async () => {
         if (!user || !checkoutData.addressId) return;
+        if (!isAgreed) {
+            toast.error("Lütfen sözleşmeleri onaylayın.");
+            return;
+        }
 
         setIsProcessing(true);
         try {
@@ -108,7 +115,7 @@ export default function Checkout() {
 
             if (result.success && result.orderId) {
                 setOrderPlaced(true); // Prevent redirect
-                toast.success("Siparişiniz başarıyla oluşturuldu!");
+                toast.success(t("order.success_toast", "Siparişiniz başarıyla oluşturuldu!"));
 
                 // Navigate first, then clear cart
                 navigate(`/order-confirmation/${result.orderId}`);
@@ -118,11 +125,11 @@ export default function Checkout() {
                     clearCart();
                 }, 100);
             } else {
-                toast.error(result.message || "Sipariş oluşturulamadı");
+                toast.error(result.message || t("errors.order_failed", "Sipariş oluşturulamadı"));
             }
         } catch (error) {
             console.error("Order creation error:", error);
-            toast.error("Bir hata oluştu, lütfen tekrar deneyin");
+            toast.error(t("errors.unknown", "Bir hata oluştu, lütfen tekrar deneyin"));
         } finally {
             setIsProcessing(false);
         }
@@ -140,10 +147,10 @@ export default function Checkout() {
                         <div className="absolute left-0 right-0 top-1/2 h-0.5 bg-gray-200 -translate-y-1/2" />
                         <div
                             className="absolute left-0 top-1/2 h-0.5 bg-orange-500 -translate-y-1/2 transition-all duration-500"
-                            style={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
+                            style={{ width: `${((currentStep - 1) / (getSteps(t).length - 1)) * 100}%` }}
                         />
 
-                        {steps.map((step) => {
+                        {getSteps(t).map((step) => {
                             const Icon = step.icon;
                             const isCompleted = currentStep > step.id;
                             const isCurrent = currentStep === step.id;
@@ -221,6 +228,9 @@ export default function Checkout() {
                                     paymentMethod={checkoutData.paymentMethod}
                                     items={cartItems}
                                     totals={cartTotal}
+                                    user={user}
+                                    isAgreed={isAgreed}
+                                    onAgreementChange={setIsAgreed}
                                 />
                             </motion.div>
                         )}
@@ -236,7 +246,7 @@ export default function Checkout() {
                         className="px-6 py-3 rounded-xl border-gray-200"
                     >
                         <ArrowLeft className="w-4 h-4 mr-2" />
-                        Geri
+                        {t("common.back", "Geri")}
                     </Button>
 
                     {currentStep < 3 ? (
@@ -245,7 +255,7 @@ export default function Checkout() {
                             disabled={!canProceed()}
                             className="px-6 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white"
                         >
-                            İleri
+                            {t("common.next", "İleri")}
                             <ArrowRight className="w-4 h-4 ml-2" />
                         </Button>
                     ) : (
@@ -257,12 +267,12 @@ export default function Checkout() {
                             {isProcessing ? (
                                 <>
                                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                                    İşleniyor...
+                                    {t("common.processing", "İşleniyor...")}
                                 </>
                             ) : (
                                 <>
                                     <Check className="w-5 h-5 mr-2" />
-                                    Siparişi Onayla
+                                    {t("checkout.confirm_order", "Siparişi Onayla")}
                                 </>
                             )}
                         </Button>

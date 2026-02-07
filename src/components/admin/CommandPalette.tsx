@@ -117,7 +117,7 @@ export const CommandPalette = () => {
     );
 };
 
-const Item = ({ children, icon: Icon, onSelect }: { children: React.ReactNode; icon: any; onSelect: () => void }) => {
+const Item = ({ children, icon: Icon, onSelect }: { children: React.ReactNode; icon: React.ElementType; onSelect: () => void }) => {
     return (
         <Command.Item
             onSelect={onSelect}

@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { CreditCard, Building2, Check, AlertCircle } from "lucide-react";
+import { CreditCard, Building2, Check, AlertCircle, Lock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useTranslation } from "react-i18next";
 
 interface CardDetails {
     number: string;
@@ -31,6 +32,7 @@ export function PaymentMethodSelector({
     onMethodChange,
     onCardDetailsChange,
 }: PaymentMethodSelectorProps) {
+    const { t } = useTranslation();
     const [localCardDetails, setLocalCardDetails] = useState<CardDetails>(
         cardDetails || { number: "", expiry: "", cvv: "", name: "" }
     );
@@ -72,8 +74,8 @@ export function PaymentMethodSelector({
 
     return (
         <div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Ödeme Yöntemi</h2>
-            <p className="text-gray-500 text-sm mb-6">Ödeme yönteminizi seçin.</p>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">{t("checkout.payment_method", "Ödeme Yöntemi")}</h2>
+            <p className="text-gray-500 text-sm mb-6">{t("checkout.payment_desc", "Ödeme yönteminizi seçin.")}</p>
 
             <div className="grid gap-4 mb-6">
                 {/* Credit Card Option */}
@@ -94,8 +96,8 @@ export function PaymentMethodSelector({
                             <CreditCard className="w-5 h-5" />
                         </div>
                         <div className="flex-1">
-                            <h3 className="font-medium text-gray-900">Kredi Kartı / Banka Kartı</h3>
-                            <p className="text-sm text-gray-500">Test ortamı - Herhangi bir kart numarası kabul edilir</p>
+                            <h3 className="font-medium text-gray-900">{t("checkout.payment.credit_card", "Kredi Kartı / Banka Kartı")}</h3>
+                            <p className="text-sm text-gray-500">{t("checkout.payment.credit_card_desc", "Test ortamı - Herhangi bir kart numarası kabul edilir")}</p>
                         </div>
                         {selectedMethod === "credit_card" && (
                             <div className="w-6 h-6 rounded-full bg-orange-500 flex items-center justify-center">
@@ -123,8 +125,8 @@ export function PaymentMethodSelector({
                             <Building2 className="w-5 h-5" />
                         </div>
                         <div className="flex-1">
-                            <h3 className="font-medium text-gray-900">Havale / EFT</h3>
-                            <p className="text-sm text-gray-500">Banka hesabına havale ile ödeme</p>
+                            <h3 className="font-medium text-gray-900">{t("checkout.payment.bank_transfer", "Havale / EFT")}</h3>
+                            <p className="text-sm text-gray-500">{t("checkout.payment.bank_transfer_desc", "Banka hesabına havale ile ödeme")}</p>
                         </div>
                         {selectedMethod === "bank_transfer" && (
                             <div className="w-6 h-6 rounded-full bg-orange-500 flex items-center justify-center">
@@ -145,23 +147,23 @@ export function PaymentMethodSelector({
                 >
                     <div className="flex items-center gap-2 mb-4">
                         <AlertCircle className="w-4 h-4 text-yellow-400" />
-                        <span className="text-sm text-yellow-400">Test Modu - Gerçek ödeme alınmaz</span>
+                        <span className="text-sm text-yellow-400">{t("checkout.payment.test_mode_warning", "Test Modu - Gerçek ödeme alınmaz")}</span>
                     </div>
 
                     <div className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="cardName" className="text-gray-300">Kart Üzerindeki İsim</Label>
+                            <Label htmlFor="cardName" className="text-gray-300">{t("checkout.card.name", "Kart Üzerindeki İsim")}</Label>
                             <Input
                                 id="cardName"
                                 value={localCardDetails.name}
                                 onChange={(e) => handleCardChange("name", e.target.value)}
-                                placeholder="AD SOYAD"
+                                placeholder={t("checkout.card.name_placeholder", "AD SOYAD")}
                                 className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 uppercase"
                             />
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="cardNumber" className="text-gray-300">Kart Numarası</Label>
+                            <Label htmlFor="cardNumber" className="text-gray-300">{t("checkout.card.number", "Kart Numarası")}</Label>
                             <Input
                                 id="cardNumber"
                                 value={localCardDetails.number}
@@ -174,7 +176,7 @@ export function PaymentMethodSelector({
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="expiry" className="text-gray-300">Son Kullanma</Label>
+                                <Label htmlFor="expiry" className="text-gray-300">{t("checkout.card.expiry", "Son Kullanma")}</Label>
                                 <Input
                                     id="expiry"
                                     value={localCardDetails.expiry}
@@ -185,7 +187,7 @@ export function PaymentMethodSelector({
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="cvv" className="text-gray-300">CVV</Label>
+                                <Label htmlFor="cvv" className="text-gray-300">{t("checkout.card.cvv", "CVV")}</Label>
                                 <Input
                                     id="cvv"
                                     type="password"
@@ -198,41 +200,53 @@ export function PaymentMethodSelector({
                             </div>
                         </div>
                     </div>
+
+                    <div className="flex items-center gap-2 mt-4 justify-center bg-gray-700/50 p-3 rounded-xl border border-gray-600/50">
+                        <div className="p-1.5 bg-green-500/10 rounded-full">
+                            <Lock className="w-3.5 h-3.5 text-green-400" />
+                        </div>
+                        <span className="text-sm font-medium text-gray-300">
+                            {t("checkout.payment.secure_payment", "Güvenli Ödeme - 256-bit SSL Korumalı")}
+                        </span>
+                    </div>
                 </motion.div>
-            )}
+            )
+            }
 
             {/* Bank Transfer Info */}
-            {selectedMethod === "bank_transfer" && (
-                <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="bg-blue-50 border border-blue-100 p-6 rounded-2xl overflow-hidden"
-                >
-                    <h3 className="font-medium text-blue-900 mb-4">Banka Hesap Bilgileri</h3>
+            {
+                selectedMethod === "bank_transfer" && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="bg-blue-50 border border-blue-100 p-6 rounded-2xl overflow-hidden"
+                    >
+                        <h3 className="font-medium text-blue-900 mb-4">{t("order.bank_info", "Banka Hesap Bilgileri")}</h3>
 
-                    <div className="space-y-3 text-sm">
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Banka:</span>
-                            <span className="font-medium text-gray-900">{BANK_INFO.bankName}</span>
+                        <div className="space-y-3 text-sm">
+                            <div className="flex justify-between">
+                                <span className="text-gray-600">{t("order.bank_name", "Banka:")}</span>
+                                <span className="font-medium text-gray-900">{BANK_INFO.bankName}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-gray-600">{t("order.iban", "IBAN:")}</span>
+                                <span className="font-mono text-gray-900">{BANK_INFO.iban}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-gray-600">{t("order.account_holder", "Hesap Sahibi:")}</span>
+                                <span className="font-medium text-gray-900">{BANK_INFO.accountHolder}</span>
+                            </div>
                         </div>
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">IBAN:</span>
-                            <span className="font-mono text-gray-900">{BANK_INFO.iban}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Hesap Sahibi:</span>
-                            <span className="font-medium text-gray-900">{BANK_INFO.accountHolder}</span>
-                        </div>
-                    </div>
 
-                    <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                        <p className="text-sm text-yellow-800">
-                            <strong>Not:</strong> {BANK_INFO.referenceNote}
-                        </p>
-                    </div>
-                </motion.div>
-            )}
-        </div>
+                        <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <p className="text-sm text-yellow-800">
+                                <strong>{t("common.note", "Not")}:</strong> {t("checkout.payment.reference_note", BANK_INFO.referenceNote)}
+                            </p>
+                        </div>
+                    </motion.div>
+                )
+            }
+        </div >
     );
 }

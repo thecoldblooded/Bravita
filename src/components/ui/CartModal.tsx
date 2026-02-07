@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./dialog";
 import { useTranslation } from "react-i18next";
 import { ShoppingCart, Trash2, Ticket, Plus, Minus } from "lucide-react";
@@ -107,13 +107,58 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
 
     // Let's modify the modal to keep using local state for display, but commit to context on checkout.
 
-    const [localAppliedPromo, setLocalAppliedPromo] = useState<{ code: string; discount: number } | null>(null);
+    const [localAppliedPromo, setLocalAppliedPromo] = useState<{
+        code: string;
+        type: 'percentage' | 'fixed_amount';
+        value: number;
+        minOrderAmount: number;
+        maxDiscountAmount: number | null;
+    } | null>(null);
+
+    // Brute force protection state
+    const [failedAttempts, setFailedAttempts] = useState(0);
+    const [lastAttemptTimestamp, setLastAttemptTimestamp] = useState<number | null>(null);
+    const MAX_ATTEMPTS = 5;
+    const LOCKOUT_TIME = 10 * 60 * 1000; // 10 minutes
 
     const subtotal = PRICING.UNIT_PRICE * quantity;
-    const discountAmount = localAppliedPromo ? localAppliedPromo.discount : 0;
-    const discountedSubtotal = Math.max(0, subtotal - discountAmount);
-    const vatAmount = discountedSubtotal * PRICING.VAT_RATE;
-    const total = discountedSubtotal + vatAmount;
+    const vatAmountBeforeDiscount = subtotal * PRICING.VAT_RATE;
+    const totalBeforeDiscount = subtotal + vatAmountBeforeDiscount;
+
+    // Recalculate discount dynamically based on Total
+    const discountAmount = useMemo(() => {
+        if (!localAppliedPromo) return 0;
+
+        let calculated = localAppliedPromo.value;
+        if (localAppliedPromo.type === 'percentage') {
+            calculated = (totalBeforeDiscount * localAppliedPromo.value) / 100;
+            // Apply maximum discount cap
+            if (localAppliedPromo.maxDiscountAmount && calculated > localAppliedPromo.maxDiscountAmount) {
+                calculated = localAppliedPromo.maxDiscountAmount;
+            }
+        }
+        return calculated;
+    }, [localAppliedPromo, totalBeforeDiscount]);
+
+    // Validation Effect: Monitor subtotal and auto-remove promo if threshold not met
+    useEffect(() => {
+        if (localAppliedPromo && subtotal < localAppliedPromo.minOrderAmount) {
+            setLocalAppliedPromo(null);
+            toast.error(t("promo.invalid_threshold", {
+                defaultValue: "Sepet tutarı minimum limitin altına düştüğü için kupon kaldırıldı.",
+                amount: localAppliedPromo.minOrderAmount
+            }));
+        }
+    }, [subtotal, localAppliedPromo, t]);
+
+    // Shipping Calculation
+    const SHIPPING_COST = 49.90;
+    const FREE_SHIPPING_THRESHOLD = 1500;
+    const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
+    const remainingForFreeShipping = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
+
+    const total = Math.max(0, totalBeforeDiscount - discountAmount + shipping);
+    const vatAmount = vatAmountBeforeDiscount; // Fixed VAT on full amount
 
     const handleRemove = () => {
         setQuantity(0);
@@ -131,18 +176,38 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
     const handleApplyPromoCode = async () => {
         if (!inputPromoCode.trim()) return;
 
+        // 1. Brute Force Protection
+        if (failedAttempts >= MAX_ATTEMPTS && lastAttemptTimestamp) {
+            const timePassed = Date.now() - lastAttemptTimestamp;
+            if (timePassed < LOCKOUT_TIME) {
+                const remainingMinutes = Math.ceil((LOCKOUT_TIME - timePassed) / 60000);
+                toast.error(`Çok fazla hatalı deneme. Lütfen ${remainingMinutes} dakika sonra tekrar deneyin.`);
+                return;
+            } else {
+                // Reset after lockout
+                setFailedAttempts(0);
+            }
+        }
+
         setIsApplyingPromo(true);
         try {
-            const result = await import("@/lib/checkout").then(m => m.validatePromoCode(inputPromoCode, subtotal));
+            const result = await import("@/lib/checkout").then(m => m.validatePromoCode(inputPromoCode, subtotal, subtotal));
 
             if (result.valid) {
-                // Check against local subtotal
+                // Success: Reset failed attempts
+                setFailedAttempts(0);
                 setLocalAppliedPromo({
                     code: inputPromoCode,
-                    discount: result.discountAmount
+                    type: result.type as 'percentage' | 'fixed_amount',
+                    value: result.value || 0,
+                    minOrderAmount: result.minOrderAmount || 0,
+                    maxDiscountAmount: result.maxDiscountAmount ?? null
                 });
                 toast.success(result.message);
             } else {
+                // Failure: Increment brute force counter
+                setFailedAttempts(prev => prev + 1);
+                setLastAttemptTimestamp(Date.now());
                 setLocalAppliedPromo(null);
                 toast.error(result.message);
             }
@@ -195,7 +260,7 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
 
             // 3. Apply Promo to Context if exists
             if (localAppliedPromo) {
-                applyPromoCode(localAppliedPromo.code, localAppliedPromo.discount);
+                applyPromoCode(localAppliedPromo.code, discountAmount);
             } else {
                 removePromoCode();
             }
@@ -376,7 +441,7 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
                         {localAppliedPromo && (
                             <div className="flex justify-between text-sm text-green-600">
                                 <span className="font-bold">İndirim ({localAppliedPromo.code})</span>
-                                <span className="font-black">-₺{localAppliedPromo.discount.toFixed(2)}</span>
+                                <span className="font-black">-₺{discountAmount.toFixed(2)}</span>
                             </div>
                         )}
 
@@ -384,6 +449,20 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
                             <span className="font-bold text-neutral-400">{t("cart.vat")}</span>
                             <span className="font-black text-neutral-900">₺{vatAmount.toFixed(2)}</span>
                         </div>
+
+                        <div className="flex justify-between text-sm">
+                            <span className="font-bold text-neutral-400">{t("checkout.shipping")}</span>
+                            <span className={shipping === 0 ? "font-black text-green-600" : "font-black text-neutral-900"}>
+                                {shipping === 0 ? t("checkout.free") : `₺${shipping.toFixed(2)}`}
+                            </span>
+                        </div>
+
+                        {remainingForFreeShipping > 0 && (
+                            <div className="bg-orange-50 text-orange-700 p-3 rounded-xl text-xs font-bold text-center border border-orange-100">
+                                {t('cart.free_shipping_remaining', { amount: remainingForFreeShipping.toFixed(2) })}
+                            </div>
+                        )}
+
                         <div className="pt-4 border-t border-neutral-100 flex justify-between items-center">
                             <span className="font-black text-neutral-900 text-xl tracking-tight">{t("cart.total")}</span>
                             <span className="font-black text-orange-600 text-3xl">₺{total.toFixed(2)}</span>

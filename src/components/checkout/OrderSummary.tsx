@@ -1,10 +1,16 @@
 import { useEffect, useState } from "react";
 import { MapPin, CreditCard, Building2, Package, X, Loader2 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { supabase, UserProfile } from "@/lib/supabase";
 import bravitaBottle from "@/assets/bravita-bottle.webp";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useTranslation, Trans } from "react-i18next";
+import { SalesAgreements } from "./SalesAgreements";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { useCart } from "@/contexts/CartContext";
+import { validatePromoCode } from "@/lib/checkout";
 
 interface CartItem {
     id: string;
@@ -17,7 +23,8 @@ interface Totals {
     subtotal: number;
     vat: number;
     total: number;
-    discount?: number;
+    discount: number;
+    shipping: number;
 }
 
 interface Address {
@@ -25,7 +32,7 @@ interface Address {
     street: string;
     city: string;
     postal_code: string;
-    district?: string; // Added district as it's used in the render
+    district?: string;
 }
 
 interface OrderSummaryProps {
@@ -33,19 +40,25 @@ interface OrderSummaryProps {
     paymentMethod: "credit_card" | "bank_transfer";
     items: CartItem[];
     totals: Totals;
+    user: UserProfile | null;
+    isAgreed: boolean;
+    onAgreementChange: (val: boolean) => void;
 }
 
-import { useCart } from "@/contexts/CartContext";
-import { validatePromoCode } from "@/lib/checkout";
-
-// ... import interfaces ...
-
-export function OrderSummary({ addressId, paymentMethod, items, totals }: OrderSummaryProps) {
+export function OrderSummary({ addressId, paymentMethod, items, totals, user, isAgreed, onAgreementChange }: OrderSummaryProps) {
+    const { t } = useTranslation();
     const [address, setAddress] = useState<Address | null>(null);
     const { applyPromoCode, removePromoCode, promoCode } = useCart();
+
     // Local input state
     const [inputPromoCode, setInputPromoCode] = useState(promoCode || "");
     const [isApplyingPromo, setIsApplyingPromo] = useState(false);
+
+    // Brute force protection state
+    const [failedAttempts, setFailedAttempts] = useState(0);
+    const [lastAttemptTimestamp, setLastAttemptTimestamp] = useState<number | null>(null);
+    const MAX_ATTEMPTS = 5;
+    const LOCKOUT_TIME = 10 * 60 * 1000; // 10 minutes
 
     useEffect(() => {
         if (promoCode) setInputPromoCode(promoCode);
@@ -83,15 +96,32 @@ export function OrderSummary({ addressId, paymentMethod, items, totals }: OrderS
 
     const handleApplyPromo = async () => {
         if (!inputPromoCode.trim()) return;
+
+        // 1. Brute Force Protection
+        if (failedAttempts >= MAX_ATTEMPTS && lastAttemptTimestamp) {
+            const timePassed = Date.now() - lastAttemptTimestamp;
+            if (timePassed < LOCKOUT_TIME) {
+                const remainingMinutes = Math.ceil((LOCKOUT_TIME - timePassed) / 60000);
+                toast.error(`Çok fazla hatalı deneme. Lütfen ${remainingMinutes} dakika sonra tekrar deneyin.`);
+                return;
+            } else {
+                setFailedAttempts(0);
+            }
+        }
+
         setIsApplyingPromo(true);
         try {
+            const totalOnFullPrice = totals.subtotal * 1.20; // 20% VAT
             // Validate code
-            const result = await validatePromoCode(inputPromoCode, totals.subtotal);
+            const result = await validatePromoCode(inputPromoCode, totalOnFullPrice, totals.subtotal);
 
             if (result.valid) {
+                setFailedAttempts(0);
                 applyPromoCode(inputPromoCode, result.discountAmount);
                 toast.success(result.message);
             } else {
+                setFailedAttempts(prev => prev + 1);
+                setLastAttemptTimestamp(Date.now());
                 toast.error(result.message);
             }
 
@@ -103,20 +133,18 @@ export function OrderSummary({ addressId, paymentMethod, items, totals }: OrderS
         }
     };
 
-    // We don't need finalTotal calc anymore, totals.total is already discounted
-
 
     return (
         <div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Sipariş Özeti</h2>
-            <p className="text-gray-500 text-sm mb-6">Siparişinizi onaylamadan önce kontrol edin.</p>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">{t("checkout.summary_title", "Sipariş Özeti")}</h2>
+            <p className="text-gray-500 text-sm mb-6">{t("checkout.summary_desc", "Siparişinizi onaylamadan önce kontrol edin.")}</p>
 
             <div className="space-y-6">
                 {/* Products */}
                 <div className="bg-gray-50 rounded-xl p-4">
                     <div className="flex items-center gap-2 mb-4">
                         <Package className="w-5 h-5 text-orange-500" />
-                        <h3 className="font-medium text-gray-900">Ürünler</h3>
+                        <h3 className="font-medium text-gray-900">{t("checkout.products", "Ürünler")}</h3>
                     </div>
 
                     {items.map((item) => (
@@ -137,7 +165,7 @@ export function OrderSummary({ addressId, paymentMethod, items, totals }: OrderS
                 <div className="bg-gray-50 rounded-xl p-4">
                     <div className="flex items-center gap-2 mb-3">
                         <MapPin className="w-5 h-5 text-orange-500" />
-                        <h3 className="font-medium text-gray-900">Teslimat Adresi</h3>
+                        <h3 className="font-medium text-gray-900">{t("checkout.delivery_address", "Teslimat Adresi")}</h3>
                     </div>
 
                     {address ? (
@@ -161,17 +189,17 @@ export function OrderSummary({ addressId, paymentMethod, items, totals }: OrderS
                         ) : (
                             <Building2 className="w-5 h-5 text-orange-500" />
                         )}
-                        <h3 className="font-medium text-gray-900">Ödeme Yöntemi</h3>
+                        <h3 className="font-medium text-gray-900">{t("checkout.payment_method", "Ödeme Yöntemi")}</h3>
                     </div>
 
                     <p className="text-sm text-gray-600">
                         {paymentMethod === "credit_card"
-                            ? "Kredi Kartı / Banka Kartı"
-                            : "Havale / EFT"}
+                            ? t("checkout.payment.credit_card", "Kredi Kartı / Banka Kartı")
+                            : t("checkout.payment.bank_transfer", "Havale / EFT")}
                     </p>
                     {paymentMethod === "bank_transfer" && (
                         <p className="text-xs text-orange-600 mt-1">
-                            * Sipariş onayı sonrası havale bilgileri e-posta ile gönderilecektir.
+                            {t('checkout.bank_transfer_hint')}
                         </p>
                     )}
                 </div>
@@ -181,7 +209,7 @@ export function OrderSummary({ addressId, paymentMethod, items, totals }: OrderS
                     {/* Promo Code Input */}
                     <div className="flex gap-2">
                         <Input
-                            placeholder="Promosyon Kodu"
+                            placeholder={t('checkout.promo_placeholder')}
                             className="bg-white"
                             value={inputPromoCode}
                             onChange={(e) => setInputPromoCode(e.target.value)}
@@ -196,7 +224,7 @@ export function OrderSummary({ addressId, paymentMethod, items, totals }: OrderS
                                 onClick={() => {
                                     removePromoCode();
                                     setInputPromoCode("");
-                                    toast.info("Promosyon kodu kaldırıldı");
+                                    toast.info(t('checkout.promo_removed'));
                                 }}
                             >
                                 <X className="w-4 h-4" />
@@ -214,32 +242,64 @@ export function OrderSummary({ addressId, paymentMethod, items, totals }: OrderS
 
                     <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
-                            <span className="text-gray-600">Ara Toplam</span>
+                            <span className="text-gray-600">{t('cart.subtotal')}</span>
                             <span className="font-medium text-gray-900">₺{totals.subtotal.toFixed(2)}</span>
                         </div>
 
                         {/* We can show the discount if it exists in totals */}
                         {totals.discount > 0 && (
                             <div className="flex justify-between text-green-600 font-medium">
-                                <span>İndirim {promoCode ? `(${promoCode})` : ''}</span>
+                                <span>{t('cart.discount')} {promoCode ? `(${promoCode})` : ''}</span>
                                 <span>-₺{totals.discount.toFixed(2)}</span>
                             </div>
                         )}
 
                         <div className="flex justify-between">
-                            <span className="text-gray-600">KDV (%20)</span>
+                            <span className="text-gray-600">{t('cart.vat')}</span>
                             <span className="font-medium text-gray-900">₺{totals.vat.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-gray-600">Kargo</span>
-                            <span className="font-medium text-green-600">Ücretsiz</span>
+                            <span className="text-gray-600">{t('checkout.shipping')}</span>
+                            <span className={totals.shipping === 0 ? "font-medium text-green-600" : "font-medium text-gray-900"}>
+                                {totals.shipping === 0 ? t('checkout.free') : `₺${totals.shipping.toFixed(2)}`}
+                            </span>
                         </div>
 
                         <div className="h-px bg-orange-200 my-2" />
                         <div className="flex justify-between items-center">
-                            <span className="font-bold text-gray-900">Toplam</span>
+                            <span className="font-bold text-gray-900">{t('cart.total')}</span>
                             <span className="text-2xl font-black text-orange-600">₺{totals.total.toFixed(2)}</span>
                         </div>
+                    </div>
+                </div>
+
+                <SalesAgreements
+                    user={user}
+                    address={address}
+                    items={items}
+                    totals={totals}
+                    paymentMethod={paymentMethod}
+                />
+
+                <div className="flex items-start space-x-2 pt-2 pb-2">
+                    <Checkbox
+                        id="terms"
+                        checked={isAgreed}
+                        onCheckedChange={(checked) => onAgreementChange(checked === true)}
+                    />
+                    <div className="grid gap-1.5 leading-none">
+                        <Label
+                            htmlFor="terms"
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-gray-600"
+                        >
+                            <Trans
+                                i18nKey="checkout.agreements.consent"
+                                components={{
+                                    1: <span className="font-bold text-gray-900" />,
+                                    3: <span className="font-bold text-gray-900" />
+                                }}
+                            />
+                        </Label>
                     </div>
                 </div>
             </div>

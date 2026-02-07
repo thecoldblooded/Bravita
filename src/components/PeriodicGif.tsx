@@ -41,7 +41,7 @@ const PeriodicGif = ({
   if (!isVisible) return null;
 
   return (
-    <div className="fixed bottom-[38px] left-0 z-[9999]">
+    <div className="fixed bottom-9.5 left-0 z-9999">
       <img
         src={gifSrc}
         alt={alt}

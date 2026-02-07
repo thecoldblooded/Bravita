@@ -301,8 +301,11 @@ const Header = () => {
             initial={{ opacity: 0, scale: 0.5, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.5, y: 20 }}
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="fixed bottom-24 right-6 md:bottom-10 md:right-10 z-100 bg-orange-600 text-white p-4 rounded-full shadow-2xl hover:bg-orange-700 transition-colors group"
+            onClick={(e) => {
+              e.stopPropagation();
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className="fixed bottom-32 right-6 md:bottom-20 md:right-10 z-100 bg-orange-600 text-white p-4 rounded-full shadow-2xl hover:bg-orange-700 transition-colors group"
           >
             <ChevronUp className="w-6 h-6 group-hover:-translate-y-1 transition-transform" />
           </motion.button>

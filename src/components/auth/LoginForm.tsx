@@ -72,7 +72,9 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
 
   const handleIndividualLogin = async (data: IndividualLoginForm) => {
     try {
-      if (!captchaToken) {
+      const skipCaptcha = import.meta.env.VITE_SKIP_CAPTCHA === "true";
+
+      if (!captchaToken && !skipCaptcha) {
         toast.error(t("auth.captcha_required"));
         return;
       }
@@ -81,7 +83,7 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
         email: data.email,
         password: data.password,
         userType: "individual",
-        captchaToken,
+        captchaToken: captchaToken || "skip_captcha_token",
       });
       toast.success(t("auth.login_successful"));
 
@@ -97,7 +99,9 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
 
   const handleCompanyLogin = async (data: CompanyLoginForm) => {
     try {
-      if (!captchaToken) {
+      const skipCaptcha = import.meta.env.VITE_SKIP_CAPTCHA === "true";
+
+      if (!captchaToken && !skipCaptcha) {
         toast.error(t("auth.captcha_required"));
         return;
       }
@@ -106,7 +110,7 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
         username: data.username,
         password: data.password,
         userType: "company",
-        captchaToken,
+        captchaToken: captchaToken || "skip_captcha_token",
       });
       toast.success(t("auth.login_successful"));
 
@@ -139,13 +143,15 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
       return;
     }
 
-    if (!captchaToken) {
-      toast.error(t("auth.captcha_required"));
-      return;
-    }
-
     try {
-      await resetPassword(email, captchaToken);
+      const skipCaptcha = import.meta.env.VITE_SKIP_CAPTCHA === "true";
+
+      if (!captchaToken && !skipCaptcha) {
+        toast.error(t("auth.captcha_required"));
+        return;
+      }
+
+      await resetPassword(email, captchaToken || "skip_captcha_token");
       toast.success(t("auth.password_reset_sent"));
 
       captchaRef.current?.resetCaptcha();

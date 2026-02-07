@@ -1,0 +1,109 @@
+{
+  "meta": {
+    "project": "Bravita E-Commerce Platform Frontend",
+    "date": "2026-02-06",
+    "prepared_by": "Software Development Manager"
+  },
+  "product_overview": "Bravita is a performance-focused, modern Single Page Application e-commerce platform built with React, TypeScript, and Tailwind CSS. It provides a seamless user experience with secure authentication, product and cart management, and a smooth checkout flow integrated with Supabase backend services.",
+  "core_goals": [
+    "Enable secure and user-friendly authentication with session management and password recovery.",
+    "Provide efficient product and cart management with real-time UI updates and localStorage synchronization.",
+    "Ensure a robust checkout process including address selection, promo code validation, and order creation with backend verification.",
+    "Offer comprehensive user profile management including order history, address book, and password updates.",
+    "Facilitate admin capabilities for managing orders, products, users, and promotional codes through an admin dashboard."
+  ],
+  "key_features": [
+    "User Authentication with email/password login, signup, password recovery, and profile completion.",
+    "Shopping Cart management with add, update quantity, and remove product functionalities synchronized with localStorage.",
+    "Checkout process with address selection, promo code validation connecting to backend RPCs, and order confirmation flow.",
+    "User Profile page encompassing order history, address management, and password update.",
+    "Admin Dashboard for managing orders, products, users, and promo codes.",
+    "Public facing landing page and custom 404 not found page.",
+    "Reusable UI components including loaders, promotions marquee, GIFs, and cookie consent dialog."
+  ],
+  "user_flow_summary": [
+    "User signs up or logs in via authentication flow using email and password, with session persistence.",
+    "User browses products and adds items to their shopping cart with instant UI feedback.",
+    "User proceeds to checkout, selects delivery address from saved addresses, applies promo codes validated by backend, and completes the order.",
+    "User views their profile to manage personal information, review order history, update address and change password.",
+    "Admins log into admin panel to manage orders, products, user accounts, and promotions efficiently.",
+    "All users access landing page initially; unmatched URLs route to a custom 404 page."
+  ],
+  "validation_criteria": [
+    "Authentication succeeds with valid credentials and denies invalid attempts with proper error messages.",
+    "Cart updates reflect in UI immediately and persist correctly using localStorage synchronization.",
+    "Promo codes are validated against backend RPCs, and invalid codes are rejected before order creation.",
+    "Order creation RPC succeeds after successful checkout with accurate pricing verified by backend.",
+    "User profile updates including password changes reflect correctly and maintain security.",
+    "Admin dashboard functions provide comprehensive data management capabilities and reflect real-time data changes.",
+    "Public pages load correctly and handle invalid routes gracefully with a 404 page."
+  ],
+  "code_summary": {
+    "tech_stack": [
+      "TypeScript",
+      "React",
+      "Vite",
+      "Supabase",
+      "Tailwind CSS",
+      "React Router",
+      "React Query",
+      "Shadcn UI",
+      "Framer Motion"
+    ],
+    "features": [
+      {
+        "name": "Authentication",
+        "description": "User authentication, password recovery, and profile completion.",
+        "files": [
+          "src/contexts/AuthContext.tsx",
+          "src/pages/UpdatePassword.tsx",
+          "src/pages/CompleteProfile.tsx"
+        ]
+      },
+      {
+        "name": "E-commerce Flow",
+        "description": "Checkout process and order confirmation.",
+        "files": [
+          "src/pages/Checkout.tsx",
+          "src/pages/OrderConfirmation.tsx"
+        ]
+      },
+      {
+        "name": "Admin Dashboard",
+        "description": "Admin panel for managing orders, products, users, and promo codes.",
+        "files": [
+          "src/pages/admin/AdminDashboard.tsx",
+          "src/pages/admin/AdminOrders.tsx",
+          "src/pages/admin/AdminProducts.tsx",
+          "src/pages/admin/AdminUsers.tsx",
+          "src/pages/admin/AdminPromoCodes.tsx"
+        ]
+      },
+      {
+        "name": "User Profile",
+        "description": "User profile management.",
+        "files": [
+          "src/pages/Profile.tsx"
+        ]
+      },
+      {
+        "name": "Public Pages",
+        "description": "Landing page and 404 page.",
+        "files": [
+          "src/pages/Index.tsx",
+          "src/pages/NotFound.tsx"
+        ]
+      },
+      {
+        "name": "UI Components",
+        "description": "Reusable UI components like loaders, marquees, and cookie consent.",
+        "files": [
+          "src/components/PeriodicGif.tsx",
+          "src/components/PromotionMarquee.tsx",
+          "src/components/CookieConsent.tsx",
+          "src/components/ui/Loader.tsx"
+        ]
+      }
+    ]
+  }
+}

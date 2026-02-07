@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useAuthOperations } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 interface ChangePasswordModalProps {
     children?: React.ReactNode;
@@ -21,6 +22,7 @@ interface ChangePasswordModalProps {
 }
 
 export function ChangePasswordModal({ children, open, onOpenChange }: ChangePasswordModalProps) {
+    const { t } = useTranslation();
     const { changePassword, isLoading } = useAuthOperations();
     const [oldPassword, setOldPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
@@ -32,25 +34,25 @@ export function ChangePasswordModal({ children, open, onOpenChange }: ChangePass
         e.preventDefault();
 
         if (newPassword !== confirmPassword) {
-            toast.error("Yeni şifreler eşleşmiyor.");
+            toast.error(t("profile.settings.security.password_mismatch"));
             return;
         }
 
         if (newPassword.length < 6) {
-            toast.error("Yeni şifre en az 6 karakter olmalıdır.");
+            toast.error(t("profile.settings.security.password_too_short"));
             return;
         }
 
         try {
             await changePassword(oldPassword, newPassword);
-            toast.success("Şifreniz başarıyla değiştirildi.");
+            toast.success(t("profile.settings.security.password_success"));
             if (onOpenChange) onOpenChange(false);
             setOldPassword("");
             setNewPassword("");
             setConfirmPassword("");
         } catch (err) {
             const error = err as Error;
-            toast.error(error.message || "Şifre değiştirilirken bir hata oluştu.");
+            toast.error(error.message || t("profile.settings.security.password_error"));
         }
     };
 
@@ -63,16 +65,16 @@ export function ChangePasswordModal({ children, open, onOpenChange }: ChangePass
                         <div className="p-2 bg-blue-50 rounded-lg">
                             <Lock className="w-5 h-5 text-blue-600" />
                         </div>
-                        Şifre Değiştir
+                        {t("profile.settings.security.change_password")}
                     </DialogTitle>
                     <DialogDescription>
-                        Güvenliğiniz için mevcut şifrenizi doğrulamanız gerekmektedir.
+                        {t("profile.settings.security.password_desc")}
                     </DialogDescription>
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit} className="space-y-4 py-4">
                     <div className="space-y-2">
-                        <Label htmlFor="old-password">Mevcut Şifre</Label>
+                        <Label htmlFor="old-password">{t("profile.settings.security.old_password")}</Label>
                         <div className="relative">
                             <Input
                                 id="old-password"
@@ -94,7 +96,7 @@ export function ChangePasswordModal({ children, open, onOpenChange }: ChangePass
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="new-password">Yeni Şifre</Label>
+                        <Label htmlFor="new-password">{t("profile.settings.security.new_password")}</Label>
                         <div className="relative">
                             <Input
                                 id="new-password"
@@ -116,7 +118,7 @@ export function ChangePasswordModal({ children, open, onOpenChange }: ChangePass
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="confirm-password">Yeni Şifre (Yeniden)</Label>
+                        <Label htmlFor="confirm-password">{t("profile.settings.security.confirm_password")}</Label>
                         <Input
                             id="confirm-password"
                             type="password"
@@ -135,16 +137,16 @@ export function ChangePasswordModal({ children, open, onOpenChange }: ChangePass
                             onClick={() => onOpenChange?.(false)}
                             disabled={isLoading}
                         >
-                            İptal
+                            {t("common.cancel")}
                         </Button>
                         <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700" disabled={isLoading}>
                             {isLoading ? (
                                 <>
                                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                    Güncelleniyor...
+                                    {t("profile.settings.security.updating")}
                                 </>
                             ) : (
-                                "Şifreyi Güncelle"
+                                t("profile.settings.security.update_btn")
                             )}
                         </Button>
                     </div>

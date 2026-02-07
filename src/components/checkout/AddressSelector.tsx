@@ -161,15 +161,15 @@ export function AddressSelector({ selectedAddressId, onSelect }: AddressSelector
         return (
             <div className="flex flex-col items-center justify-center py-12">
                 <Loader />
-                <p className="text-gray-500 mt-4">Adresler yükleniyor...</p>
+                <p className="text-gray-500 mt-4">{t("checkout.address.loading", "Adresler yükleniyor...")}</p>
             </div>
         );
     }
 
     return (
         <div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Teslimat Adresi</h2>
-            <p className="text-gray-500 text-sm mb-6">Siparişinizin gönderileceği adresi seçin.</p>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">{t("checkout.delivery_title", "Teslimat Adresi")}</h2>
+            <p className="text-gray-500 text-sm mb-6">{t("checkout.delivery_desc", "Siparişinizin gönderileceği adresi seçin.")}</p>
 
             {addresses.length === 0 && !showNewForm ? (
                 <div className="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
@@ -180,7 +180,7 @@ export function AddressSelector({ selectedAddressId, onSelect }: AddressSelector
                         className="bg-orange-500 hover:bg-orange-600 text-white"
                     >
                         <Plus className="w-4 h-4 mr-2" />
-                        Yeni Adres Ekle
+                        {t("checkout.address.add_new", "Yeni Adres Ekle")}
                     </Button>
                 </div>
             ) : (
@@ -213,7 +213,7 @@ export function AddressSelector({ selectedAddressId, onSelect }: AddressSelector
                                             <h3 className="font-medium text-gray-900">{address.city}</h3>
                                             {address.is_default && (
                                                 <span className="text-[10px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-medium">
-                                                    Varsayılan
+                                                    {t("profile.addresses.item.default", "Varsayılan")}
                                                 </span>
                                             )}
                                         </div>
@@ -237,7 +237,7 @@ export function AddressSelector({ selectedAddressId, onSelect }: AddressSelector
                             className="w-full border-dashed border-gray-300 text-gray-600 hover:border-orange-300 hover:text-orange-600"
                         >
                             <Plus className="w-4 h-4 mr-2" />
-                            Yeni Adres Ekle
+                            {t("checkout.address.add_new", "Yeni Adres Ekle")}
                         </Button>
                     )}
                 </>
@@ -250,11 +250,11 @@ export function AddressSelector({ selectedAddressId, onSelect }: AddressSelector
                     className="bg-orange-50/50 border border-orange-100 p-4 rounded-xl mt-4 overflow-hidden"
                     onSubmit={handleAddAddress}
                 >
-                    <h3 className="font-medium text-gray-900 mb-4">Yeni Adres Ekle</h3>
+                    <h3 className="font-medium text-gray-900 mb-4">{t("checkout.address.add_new_title", "Yeni Adres Ekle")}</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         {/* Address Type Selector */}
                         <div className="space-y-2 md:col-span-2">
-                            <Label>Adres Tipi</Label>
+                            <Label>{t("checkout.address.type", "Adres Tipi")}</Label>
                             <div className="flex gap-2">
                                 <button
                                     type="button"
@@ -265,7 +265,7 @@ export function AddressSelector({ selectedAddressId, onSelect }: AddressSelector
                                         }`}
                                 >
                                     <Home className="w-4 h-4" />
-                                    <span className="font-medium">Ev</span>
+                                    <span className="font-medium">{t("checkout.address.home", "Ev")}</span>
                                 </button>
                                 <button
                                     type="button"
@@ -276,45 +276,45 @@ export function AddressSelector({ selectedAddressId, onSelect }: AddressSelector
                                         }`}
                                 >
                                     <Building2 className="w-4 h-4" />
-                                    <span className="font-medium">İşyeri</span>
+                                    <span className="font-medium">{t("checkout.address.work", "İşyeri")}</span>
                                 </button>
                             </div>
                         </div>
                         <div className="space-y-2 md:col-span-2">
-                            <Label htmlFor="street">Adres Başlığı ve Açık Adres</Label>
+                            <Label htmlFor="street">{t("checkout.address.street_label", "Adres Başlığı ve Açık Adres")}</Label>
                             <Input
                                 id="street"
                                 value={newAddress.street}
                                 onChange={(e) => setNewAddress({ ...newAddress, street: e.target.value })}
-                                placeholder={newAddress.address_type === "home" ? "Örn: Evim - Çiçek Mah. Gül Sok. No:1" : "Örn: Ofisim - Levent Plaza Kat:5"}
+                                placeholder={newAddress.address_type === "home" ? t("checkout.address.home_placeholder", "Örn: Evim - Çiçek Mah. Gül Sok. No:1") : t("checkout.address.work_placeholder", "Örn: Ofisim - Levent Plaza Kat:5")}
                                 required
                                 className="bg-white"
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="city">Şehir</Label>
+                            <Label htmlFor="city">{t("checkout.address.city", "Şehir")}</Label>
                             <Input
                                 id="city"
                                 value={newAddress.city}
                                 onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
-                                placeholder="İstanbul"
+                                placeholder={t("checkout.address.city_placeholder", "İstanbul")}
                                 required
                                 className="bg-white"
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="district">İlçe</Label>
+                            <Label htmlFor="district">{t("checkout.address.district", "İlçe")}</Label>
                             <Input
                                 id="district"
                                 value={newAddress.district}
                                 onChange={(e) => setNewAddress({ ...newAddress, district: e.target.value })}
-                                placeholder="Kadıköy"
+                                placeholder={t("checkout.address.district_placeholder", "Kadıköy")}
                                 required
                                 className="bg-white"
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="postal_code">Posta Kodu</Label>
+                            <Label htmlFor="postal_code">{t("checkout.address.postal_code", "Posta Kodu")}</Label>
                             <Input
                                 id="postal_code"
                                 value={newAddress.postal_code}
@@ -332,14 +332,14 @@ export function AddressSelector({ selectedAddressId, onSelect }: AddressSelector
                             onClick={() => setShowNewForm(false)}
                             disabled={isSubmitting}
                         >
-                            İptal
+                            {t("common.cancel", "İptal")}
                         </Button>
                         <Button
                             type="submit"
                             className="bg-orange-500 hover:bg-orange-600 text-white min-w-20"
                             disabled={isSubmitting}
                         >
-                            {isSubmitting ? <Loader size="1.25rem" noMargin /> : "Kaydet"}
+                            {isSubmitting ? <Loader size="1.25rem" noMargin /> : t("common.save", "Kaydet")}
                         </Button>
                     </div>
                 </motion.form>

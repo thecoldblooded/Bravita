@@ -16,6 +16,7 @@ interface CartTotal {
     vat: number;
     total: number;
     discount: number;
+    shipping: number;
 }
 
 interface CartContextType {
@@ -168,18 +169,25 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }, [removePromoCode]);
 
     const rawSubtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const vatOnFullPrice = rawSubtotal * VAT_RATE;
+    const totalBeforeDiscount = rawSubtotal + vatOnFullPrice;
 
-    // Ensure discount doesn't exceed subtotal
-    const validDiscount = Math.min(discountAmount, rawSubtotal);
-    const discountedSubtotal = rawSubtotal - validDiscount;
-    const vat = discountedSubtotal * VAT_RATE;
-    const total = discountedSubtotal + vat;
+    // Ensure discount doesn't exceed the total price
+    const validDiscount = Math.min(discountAmount, totalBeforeDiscount);
+
+    // Shipping Calculation
+    const SHIPPING_COST = 49.90;
+    const FREE_SHIPPING_THRESHOLD = 1500;
+    const shipping = (totalBeforeDiscount - validDiscount) >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
+
+    const finalTotal = totalBeforeDiscount - validDiscount + shipping;
 
     const cartTotal: CartTotal = {
         subtotal: rawSubtotal,
-        vat,
-        total,
+        vat: vatOnFullPrice,
+        total: finalTotal,
         discount: validDiscount,
+        shipping,
     };
 
     const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);

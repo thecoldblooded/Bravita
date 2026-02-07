@@ -85,7 +85,7 @@ function Footer() {
   ];
 
   return (
-    <footer ref={footerRef} className="bg-[#2e241e] relative h-fit rounded-[3rem] overflow-hidden m-4 md:m-8">
+    <footer ref={footerRef} className="bg-[#2e241e] relative h-fit rounded-[3rem] overflow-hidden m-4 md:m-8 pb-24">
       <div className="max-w-7xl mx-auto p-8 md:p-14 z-40 relative">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 md:gap-8 lg:gap-16 pb-12">
 
@@ -194,7 +194,7 @@ function Footer() {
         </div>
 
         {/* Footer bottom */}
-        <div className="flex flex-col md:flex-row justify-between items-center text-sm space-y-4 md:space-y-0 text-neutral-400">
+        <div className="flex flex-col md:flex-row justify-between items-center text-sm space-y-4 md:space-y-0 text-neutral-400 relative z-60">
           {/* Social icons */}
           <div className="flex space-x-6">
             {socialLinks.map(({ icon, label, href }) => (
@@ -229,13 +229,13 @@ function Footer() {
           {/* Copyright */}
           <div className="text-center md:text-right">
             <p>&copy; {new Date().getFullYear()} Bravita. {t('footer.copyright')}</p>
-            <p className="text-xs opacity-60 mt-1">Valco İlaç Arge Laboratuvar Hizmetleri</p>
+            <p className="text-xs opacity-60 mt-1">{t('footer.valco_desc')}</p>
           </div>
         </div>
       </div>
 
       {/* Text hover effect - Using the EXACT positioning classes from the demo */}
-      <div className="md:flex hidden h-120 -mt-20 -mb-36 pointer-events-none justify-center items-center">
+      <div className="md:flex hidden h-120 -mt-20 -mb-36 justify-center items-center">
         <TextHoverEffect text="BRAVITA" className="z-50 translate-y-20 md:translate-y-0" />
       </div>
 

@@ -3,14 +3,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
-import { Save } from "lucide-react";
+import { Save, Lock } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
 import Loader from "@/components/ui/Loader";
 
 export function ProfileInfo() {
-    const { user, refreshUserProfile } = useAuth();
+    const { t } = useTranslation();
+    const { user, refreshUserProfile } = useAuth(); // Keep refreshUserProfile as per original code, instruction had updateProfile but it's not used consistently.
     const [formData, setFormData] = useState({
         full_name: "",
         phone: "",
@@ -50,9 +53,6 @@ export function ProfileInfo() {
 
         setIsSaving(true);
         try {
-
-
-
             const { data, error } = await supabase
                 .from("profiles")
                 .update({
@@ -62,8 +62,6 @@ export function ProfileInfo() {
                 })
                 .eq("id", user.id)
                 .select();
-
-
 
             if (error) {
                 console.error("Supabase error details:", {
@@ -76,11 +74,9 @@ export function ProfileInfo() {
             }
 
             await refreshUserProfile();
-            toast.success("Profil bilgileri güncellendi");
+            toast.success(t("profile.info.save_success"));
         } catch (error) {
-            const err = error as Error;
-            const errorMessage = err.message || "Bilinmeyen hata";
-            toast.error(`Profil güncellenirken hata: ${errorMessage}`);
+            toast.error(t("profile.info.save_error"));
         } finally {
             setIsSaving(false);
         }
@@ -93,40 +89,43 @@ export function ProfileInfo() {
             className="max-w-xl"
         >
             <div className="mb-6">
-                <h2 className="text-xl font-bold text-gray-900">Profil Bilgileri</h2>
-                <p className="text-gray-500 text-sm">Kişisel bilgilerinizi buradan düzenleyebilirsiniz.</p>
+                <h2 className="text-xl font-bold text-gray-900">{t("profile.info.title")}</h2>
+                <p className="text-gray-500 text-sm">{t("profile.info.description")}</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-2xl shadow-sm border border-orange-100/50">
                 <div className="space-y-2">
-                    <Label htmlFor="email">E-posta Adresi</Label>
-                    <Input
-                        id="email"
-                        value={formData.email}
-                        disabled
-                        className="bg-gray-50 text-gray-500 border-gray-200"
-                    />
-                    <p className="text-xs text-gray-400">E-posta adresi değiştirilemez.</p>
+                    <Label className="text-gray-700">{t("profile.info.email_label")}</Label>
+                    <div className="relative group">
+                        <Input
+                            value={user?.email || ""}
+                            disabled
+                            className="bg-gray-50/50 border-gray-200 text-gray-500 cursor-not-allowed"
+                        />
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                            <Lock className="w-4 h-4 text-gray-400" />
+                        </div>
+                    </div>
+                    <p className="text-[10px] text-gray-400 mt-1 ml-1">{t("profile.info.email_note")}</p>
                 </div>
 
                 <div className="space-y-2">
-                    <Label htmlFor="full_name">Ad Soyad</Label>
+                    <Label htmlFor="full_name">{t("profile.info.full_name_label")}</Label>
                     <Input
                         id="full_name"
                         value={formData.full_name}
                         onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                        placeholder="Adınız ve Soyadınız"
-                        className="focus-visible:ring-orange-500"
+                        placeholder={t("profile.info.full_name_placeholder")}
                     />
                 </div>
 
                 <div className="space-y-2">
-                    <Label htmlFor="phone">Telefon Numarası</Label>
+                    <Label htmlFor="phone">{t("profile.info.phone_label")}</Label>
                     <Input
                         id="phone"
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        placeholder="05XX XXX XX XX"
+                        placeholder={t("profile.info.phone_placeholder")}
                         className="focus-visible:ring-orange-500"
                     />
                 </div>
@@ -142,7 +141,7 @@ export function ProfileInfo() {
                         ) : (
                             <>
                                 <Save className="w-4 h-4 mr-2" />
-                                Kaydet
+                                {t("common.save")}
                             </>
                         )}
                     </Button>

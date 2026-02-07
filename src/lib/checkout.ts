@@ -178,106 +178,67 @@ export function generateBankReference(): string {
  */
 export async function createOrder(params: CreateOrderParams): Promise<CreateOrderResponse> {
     const {
-        userId,
-        items,
         shippingAddressId,
         paymentMethod,
-        subtotal,
-        vatAmount,
-        total,
+        items,
         promoCode,
     } = params;
 
-    // Build order_details JSONB
-    const orderDetails = {
-        items: items.map((item) => ({
-            product_id: item.id,
-            product_name: item.name,
-            quantity: item.quantity,
-            unit_price: item.price,
-            subtotal: item.price * item.quantity,
-        })),
-        subtotal,
-        vat_rate: 0.20,
-        vat_amount: vatAmount,
-        total,
-        promo_code: promoCode || null,
-        discount: params.discountAmount || 0,
-    };
-
-    // For bank transfer, generate reference
-    const bankReference = paymentMethod === "bank_transfer" ? generateBankReference() : null;
-
-    // Determine initial status
-    const paymentStatus = paymentMethod === "credit_card" ? "paid" : "pending";
-    const orderStatus = paymentMethod === "credit_card" ? "processing" : "pending";
-
-
+    // Map items to simplified structure for RPC
+    const rpcItems = items.map((item) => ({
+        product_id: item.id || item.product_id, // Ensure correct ID
+        quantity: item.quantity,
+    }));
 
     try {
-        const { data, error } = await supabase
-            .from("orders")
-            .insert({
-                user_id: userId,
-                order_details: orderDetails,
-                status: orderStatus,
-                payment_method: paymentMethod,
-                payment_status: paymentStatus,
-                shipping_address_id: shippingAddressId,
-            })
-            .select("id")
-            .single();
+        // Call the secure backend function
+        const { data, error } = await supabase.rpc("create_order", {
+            p_items: rpcItems,
+            p_shipping_address_id: shippingAddressId,
+            p_payment_method: paymentMethod,
+            p_promo_code: promoCode || null,
+        });
 
         if (error) {
-            console.error("Order creation error:", error);
+            console.error("Order creation RPC error:", error);
             return {
                 success: false,
-                message: error.message || "Sipariş oluşturulamadı",
-                error: "INSERT_ERROR",
+                message: error.message || "Sipariş oluşturulamadı (Sunucu hatası)",
+                error: "RPC_ERROR",
             };
         }
 
-        // Insert initial status history
-        await supabase.from("order_status_history").insert({
-            order_id: data.id,
-            status: orderStatus,
-            note: paymentMethod === "credit_card"
-                ? "Ödeme alındı, sipariş hazırlanıyor"
-                : "Havale/EFT bekleniyor",
-        });
-
-        // Reserve stock logic is handled by 'manage_inventory' database trigger on INSERT.
-        // We do NOT need to call it manually here, otherwise it doubles the reservation.
-        /*
-        for (const item of items) {
-             const targetId = item.product_id || item.id;
-             // ...
+        // Check the success flag returned by the function
+        if (!data.success) {
+            return {
+                success: false,
+                message: data.message || "Sipariş oluşturulamadı",
+                error: "RPC_LOGIC_ERROR",
+            };
         }
-        */
-
-        // Usage increment and logging is handled by 'handle_new_order_promo' trigger.
-        // if (promoCode) { ... }
 
         // Send email (fire and forget)
         supabase.functions.invoke('send-order-email', {
-            body: { order_id: data.id }
+            body: { order_id: data.order_id }
         }).catch(err => console.error("Failed to trigger email function:", err));
 
         return {
             success: true,
-            orderId: data.id,
-            bankReference: bankReference || undefined,
-            message: "Sipariş başarıyla oluşturuldu",
+            orderId: data.order_id,
+            bankReference: data.bank_reference,
+            message: data.message,
         };
-    } catch (err) {
-        console.error("Order creation exception:", err);
+    } catch (error) {
+        console.error("Order creation exception:", error);
         return {
             success: false,
-            message: "Bir hata oluştu",
+            message: "Beklenmeyen bir hata oluştu",
             error: "EXCEPTION",
         };
     }
 }
+
+
 
 /**
  * Get order by ID with full details
@@ -363,13 +324,17 @@ export async function getUserOrders(userId: string, filters?: {
 
 /**
  * Validate promo code and calculate discount
+ * @param totalAmount - The total amount of the order INCLUDING VAT (for threshold check)
+ * @param netSubtotal - The net subtotal of the items (for percentage calculation)
  */
-export async function validatePromoCode(code: string, subtotal: number): Promise<{
+export async function validatePromoCode(code: string, totalAmount: number, netSubtotal: number): Promise<{
     valid: boolean;
     discountAmount: number;
     message: string;
     type?: 'percentage' | 'fixed_amount';
     value?: number;
+    minOrderAmount?: number;
+    maxDiscountAmount?: number | null;
 }> {
     // Use RPC to verify promo code (bypass RLS)
     const { data: result, error } = await supabase.rpc('verify_promo_code', { p_code: code });
@@ -382,18 +347,19 @@ export async function validatePromoCode(code: string, subtotal: number): Promise
         };
     }
 
-    // Check min order amount locally with the data from RPC
-    if (result.min_order_amount && subtotal < result.min_order_amount) {
+    // Check min order amount locally with the data from RPC (using Net Subtotal)
+    if (result.min_order_amount && netSubtotal < result.min_order_amount) {
         return {
             valid: false,
             discountAmount: 0,
-            message: `Minimum sepet tutarı ₺${result.min_order_amount} olmalıdır`,
+            message: `Minimum sepet tutarı ₺${result.min_order_amount} olmalıdır (Ara Toplam)`,
         };
     }
 
     let discountAmount = 0;
     if (result.discount_type === 'percentage') {
-        discountAmount = (subtotal * result.discount_value) / 100;
+        // Calculate based on Gross Total (Total including VAT)
+        discountAmount = (totalAmount * result.discount_value) / 100;
         if (result.max_discount_amount && discountAmount > result.max_discount_amount) {
             discountAmount = result.max_discount_amount;
         }
@@ -406,6 +372,8 @@ export async function validatePromoCode(code: string, subtotal: number): Promise
         discountAmount,
         message: 'Promosyon kodu uygulandı',
         type: result.discount_type,
-        value: result.discount_value
+        value: result.discount_value,
+        minOrderAmount: result.min_order_amount || 0,
+        maxDiscountAmount: result.max_discount_amount || null
     };
 }
