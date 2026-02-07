@@ -59,11 +59,11 @@ export function OrderHistory() {
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [sortBy, setSortBy] = useState<"created_at" | "total">("created_at");
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-    
+
     // Input states (for typing)
     const [minAmountInput, setMinAmountInput] = useState<string>("");
     const [maxAmountInput, setMaxAmountInput] = useState<string>("");
-    
+
     // Actual filter states (applied on button click)
     const [minAmount, setMinAmount] = useState<string>("");
     const [maxAmount, setMaxAmount] = useState<string>("");
@@ -92,9 +92,7 @@ export function OrderHistory() {
         } finally {
             setIsLoading(false);
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user?.id, sortBy, sortOrder, minAmount, maxAmount]); // Stable dependency
-
+    }, [user, sortBy, sortOrder, minAmount, maxAmount]); // Stable dependency
     useEffect(() => {
         fetchOrders();
     }, [fetchOrders]);

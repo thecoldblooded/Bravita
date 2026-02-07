@@ -357,7 +357,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Background attempt with 10s limit
             const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Background fetch timeout')), 10000));
             try {
-              const result = await Promise.race([fetchProfile(), timeout]) as any;
+              const result = (await Promise.race([fetchProfile(), timeout])) as { data: UserProfile | null; error: { message: string; code?: string } | null };
               if (result.error) throw result.error;
               userProfile = result.data;
 
@@ -368,12 +368,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   localStorage.setItem("profile_known_complete", "true");
                 }
               }
-            } catch (err: any) {
+            } catch (err: unknown) {
               console.warn("Auth: Background profile fetch failed or timed out. User is operating on secure stub.", err);
             }
-          } catch (err: any) {
+          } catch (err: unknown) {
             // "Not Found" handling for completely new users
-            if (err.code === "PGRST116" || err.message?.includes("PGRST116")) {
+            const errorMessage = err instanceof Error ? err.message : String(err);
+            const errorCode = (err as { code?: string })?.code;
+
+            if (errorCode === "PGRST116" || errorMessage.includes("PGRST116")) {
               console.log("Auth: Profile not found, creating background entry...");
               const metadata = newSession.user.user_metadata || {};
               const newProfile: UserProfile = {

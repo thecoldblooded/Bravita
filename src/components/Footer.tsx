@@ -175,6 +175,24 @@ function Footer() {
 
 
 
+        {/* Bank Cards Section */}
+        <div className="border-t border-white/5 py-8 flex flex-wrap justify-center items-center gap-4 md:gap-6 opacity-60 hover:opacity-100 transition-all">
+          <img src={new URL("@/assets/payment-methods/bonus-card.svg", import.meta.url).href} alt="Bonus Card" width="76" className="h-auto grayscale invert hover:grayscale-0 hover:invert-0 transition-all" />
+          <img src={new URL("@/assets/payment-methods/maximum.svg", import.meta.url).href} alt="Maximum" width="62" className="h-auto grayscale invert hover:grayscale-0 hover:invert-0 transition-all" />
+          <img src={new URL("@/assets/payment-methods/world.svg", import.meta.url).href} alt="World" width="62" className="h-auto grayscale invert hover:grayscale-0 hover:invert-0 transition-all" />
+          <img src={new URL("@/assets/payment-methods/ziraat.svg", import.meta.url).href} alt="Ziraat" width="58" className="h-auto grayscale invert hover:grayscale-0 hover:invert-0 transition-all" />
+          <img src={new URL("@/assets/payment-methods/card-finans.svg", import.meta.url).href} alt="Card Finans" width="64" className="h-auto grayscale invert hover:grayscale-0 hover:invert-0 transition-all" />
+          <img src={new URL("@/assets/payment-methods/axess.svg", import.meta.url).href} alt="Axess" width="43" className="h-auto grayscale invert hover:grayscale-0 hover:invert-0 transition-all" />
+          <img src={new URL("@/assets/payment-methods/kuveyt-turk.svg", import.meta.url).href} alt="Kuveyt Türk" width="76" className="h-auto grayscale invert hover:grayscale-0 hover:invert-0 transition-all" />
+          <img src={new URL("@/assets/payment-methods/hsbc.svg", import.meta.url).href} alt="HSBC" width="100" className="h-auto grayscale invert hover:grayscale-0 hover:invert-0 transition-all" />
+          <img src={new URL("@/assets/payment-methods/union-pay.svg", import.meta.url).href} alt="Union Pay" width="30" className="h-auto grayscale invert hover:grayscale-0 hover:invert-0 transition-all" />
+          <img src={new URL("@/assets/payment-methods/paraf.svg", import.meta.url).href} alt="Paraf" width="35" className="h-auto grayscale invert hover:grayscale-0 hover:invert-0 transition-all" />
+          <img src={new URL("@/assets/payment-methods/visa.svg", import.meta.url).href} alt="Visa" width="45" className="h-auto grayscale invert hover:grayscale-0 hover:invert-0 transition-all" />
+          <img src={new URL("@/assets/payment-methods/master-card.svg", import.meta.url).href} alt="MasterCard" width="35" className="h-auto grayscale invert hover:grayscale-0 hover:invert-0 transition-all" />
+          <img src={new URL("@/assets/payment-methods/american-express.svg", import.meta.url).href} alt="American Express" width="30" className="h-auto grayscale invert hover:grayscale-0 hover:invert-0 transition-all" />
+          <img src={new URL("@/assets/payment-methods/troy.svg", import.meta.url).href} alt="Troy" width="45" className="h-auto grayscale invert hover:grayscale-0 hover:invert-0 transition-all" />
+        </div>
+
         {/* Footer bottom */}
         <div className="flex flex-col md:flex-row justify-between items-center text-sm space-y-4 md:space-y-0 text-neutral-400">
           {/* Social icons */}
@@ -197,7 +215,7 @@ function Footer() {
           <div className="flex items-center space-x-2 bg-neutral-800/50 px-4 py-2 rounded-full">
             <Users size={16} className="text-bravita-orange" />
             <span className="text-neutral-300 text-sm">
-              <FreeVisitorCounter 
+              <FreeVisitorCounter
                 className="font-semibold text-white inline"
                 totalCountPrefix={`${t('footer.visitor_total')} `}
                 todayCountPrefix={`${t('footer.visitor_today')} `}
@@ -217,7 +235,7 @@ function Footer() {
       </div>
 
       {/* Text hover effect - Using the EXACT positioning classes from the demo */}
-      <div className="md:flex hidden h-120 -mt-20 -mb-36 pointer-events-auto justify-center items-center">
+      <div className="md:flex hidden h-120 -mt-20 -mb-36 pointer-events-none justify-center items-center">
         <TextHoverEffect text="BRAVITA" className="z-50 translate-y-20 md:translate-y-0" />
       </div>
 

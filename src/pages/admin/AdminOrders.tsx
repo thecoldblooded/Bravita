@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDateTime } from "@/lib/utils";
 import { ArrowUpDown } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
 
 export default function AdminOrders() {
     const [orders, setOrders] = useState<Order[]>([]);
@@ -64,6 +66,28 @@ export default function AdminOrders() {
     // Auto-load on status/sort change (Tabs usually expect immediate feedback)
     useEffect(() => {
         loadOrders();
+
+        // Real-time subscription for NEW orders
+        const channel = supabase
+            .channel('admin-order-updates')
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'orders'
+                },
+                () => {
+                    // Update the list and show notification
+                    loadOrders();
+                    toast.info("Yeni bir siparişiniz var!");
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, [loadOrders]);
 
     const handleClearFilters = () => {

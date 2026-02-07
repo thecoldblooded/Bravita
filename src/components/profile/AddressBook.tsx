@@ -87,10 +87,8 @@ export function AddressBook() {
                 setIsLoading(false);
             }
             fetchLock.current = false;
-            fetchLock.current = false;
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user?.id]); // Use user.id for rock-stable dependency tracking
+    }, [user]);
 
     useEffect(() => {
         fetchAddresses();

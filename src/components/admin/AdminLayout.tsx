@@ -9,6 +9,8 @@ interface AdminLayoutProps {
     children: React.ReactNode;
 }
 
+import { CommandPalette } from "./CommandPalette";
+
 export function AdminLayout({ children }: AdminLayoutProps) {
     const location = useLocation();
     const navigate = useNavigate();
@@ -25,8 +27,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 },
                 (payload) => {
                     console.log("Realtime event received:", payload);
-                    // If we are mostly on orders page, we might want to refresh the list automatically effectively.
-                    // But user asked for notification if NOT on orders page.
                     if (location.pathname !== '/admin/orders') {
                         const newOrder = payload.new as Order;
                         const total = newOrder.order_details?.total || 0;
@@ -38,8 +38,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                             },
                             duration: 5000,
                         });
-
-                        // Play a subtle sound? Optional. Keeping it visual for now.
                     }
                 }
             )
@@ -58,6 +56,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             <main className="flex-1 p-8 overflow-auto">
                 {children}
             </main>
+            <CommandPalette />
         </div>
     );
 }

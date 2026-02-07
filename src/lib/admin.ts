@@ -283,7 +283,7 @@ export async function getOrderById(orderId: string): Promise<Order | null> {
 }
 
 /**
- * Update order status and create history record
+ * Update order status and create history record using atomic RPC
  */
 export async function updateOrderStatus(
     orderId: string,
@@ -298,7 +298,6 @@ export async function updateOrderStatus(
         const index = orders.findIndex((o: Order) => o.id === orderId);
         if (index !== -1) {
             if (orders[index].status === "cancelled") {
-                console.error("Cancelled order cannot be updated");
                 throw new Error("İptal edilen sipariş güncellenemez.");
             }
             orders[index].status = status;
@@ -308,10 +307,6 @@ export async function updateOrderStatus(
                 if (orders[index].payment_status === "paid") {
                     orders[index].payment_status = "refunded";
                 }
-
-                // Simulate stock return (just logging it for test user as we don't have local product db linked here)
-                // In a real app with local mock, we'd update a 'products' local storage key.
-                console.log("Restoring stock for test order items:", orders[index].order_details?.items);
             }
             localStorage.setItem("test_user_orders", JSON.stringify(orders));
             return;
@@ -320,101 +315,23 @@ export async function updateOrderStatus(
 
     if (!user) throw new Error("Not authenticated");
 
-    // Fetch current order to check current status and get details for stock restoration
-    const { data: currentOrderData, error: fetchError } = await supabase
-        .from("orders")
-        .select("status, order_details, payment_status")
-        .eq("id", orderId)
-        .single();
+    // Atomic RPC call handles:
+    // 1. Admin verification
+    // 2. Status update
+    // 4. Stock restoration (on cancellation)
+    // 5. Payment status update (refund)
+    // 6. Order status history record
+    // 7. Admin audit logging
+    const { error: rpcError } = await supabase.rpc("admin_update_order_status", {
+        p_order_id: orderId,
+        p_new_status: status,
+        p_note: note || null
+    });
 
-    if (fetchError || !currentOrderData) throw new Error("Order not found");
-
-    if (currentOrderData.status === "cancelled") {
-        throw new Error("İptal edilen sipariş güncellenemez.");
+    if (rpcError) {
+        console.error("RPC Error (admin_update_order_status):", rpcError);
+        throw new Error(rpcError.message || "Sipariş durumu güncellenemedi.");
     }
-
-    // Is it a cancellation?
-    const isCancelling = status === "cancelled";
-
-    // Prepare update data
-    const updateData: Partial<Order> = { status, updated_at: new Date().toISOString() };
-
-    // If cancelling
-    if (isCancelling) {
-        updateData.cancellation_reason = note || null;
-
-        // Check payment status for refund
-        if (currentOrderData.payment_status === "paid") {
-            updateData.payment_status = "refunded";
-        }
-
-        // Restore stock logic
-        const details = currentOrderData.order_details as unknown as OrderDetails;
-        if (details && details.items && Array.isArray(details.items)) {
-            for (const item of details.items) {
-                let targetId = item.product_id;
-
-                // Fallback: If no ID or invalid, try lookup by name
-                if (!targetId && item.product_name) {
-                    const { data: prod } = await supabase.from('products').select('id').eq('name', item.product_name).single();
-                    if (prod) targetId = prod.id;
-                }
-
-                if (targetId && item.quantity) {
-                    const { error: stockError } = await supabase.rpc("restore_stock", {
-                        p_id: targetId,
-                        quantity: item.quantity
-                    });
-
-                    if (stockError) console.error(`Failed to restore stock:`, stockError);
-                }
-            }
-        }
-    }
-
-    // If Delivered -> Finalize Reservation (Decrement reserved_stock)
-    if (status === "delivered" && currentOrderData.status !== "delivered") {
-        const details = currentOrderData.order_details as unknown as OrderDetails;
-        if (details && details.items && Array.isArray(details.items)) {
-            for (const item of details.items) {
-                let targetId = item.product_id;
-
-                // Fallback: If no ID or invalid, try lookup by name
-                if (!targetId && item.product_name) {
-                    const { data: prod } = await supabase.from('products').select('id').eq('name', item.product_name).single();
-                    if (prod) targetId = prod.id;
-                }
-
-                if (targetId && item.quantity) {
-                    const { error: finalError } = await supabase.rpc("finalize_reservation", {
-                        p_id: targetId,
-                        quantity: item.quantity
-                    });
-                    if (finalError) console.error("Failed to finalize reservation:", finalError);
-                }
-            }
-        }
-    }
-
-    // Update order status
-    const { error: updateError } = await supabase
-        .from("orders")
-        .update(updateData)
-        .eq("id", orderId);
-
-    if (updateError) throw updateError;
-
-    // Add to status history
-    const { error: historyError } = await supabase
-        .from("order_status_history")
-        .insert({
-            order_id: orderId,
-            status,
-            note: note || null,
-            created_by: user.id,
-        });
-
-    if (historyError) throw historyError;
 }
 
 /**

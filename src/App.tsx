@@ -12,6 +12,7 @@ import UpdatePassword from "./pages/UpdatePassword";
 import Checkout from "./pages/Checkout";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import PeriodicGif from "@/components/PeriodicGif";
+import PromotionMarquee from "@/components/PromotionMarquee";
 import "@/i18n/config"; // Ensure i18n is initialized
 import CookieConsent from "@/components/CookieConsent";
 import UnderConstruction from "@/components/UnderConstruction";
@@ -40,6 +41,7 @@ const GIF_URL = alpacaGif; // assets klasöründeki alpaca.webp
 const queryClient = new QueryClient();
 
 import { useAuth } from "@/contexts/AuthContext";
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import Loader from "@/components/ui/Loader";
 
 const App = () => {
@@ -50,74 +52,69 @@ const App = () => {
     return <UnderConstruction />;
   }
 
-  if (isSplashScreenActive) {
-    return (
-      <div className="fixed inset-0 bg-[#FFFBF7] z-50 flex flex-col items-center justify-center">
-        <Loader size="280px" noMargin />
-        <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1 }}
-          className="text-orange-900/40 font-medium text-sm tracking-widest uppercase mt-4"
-        >
-          Yükleniyor
-        </motion.p>
-      </div>
-    );
-  }
-
-  if (isPasswordRecovery) {
-    return (
+  return (
+    <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-            <Routes>
-              <Route path="*" element={<UpdatePassword />} />
-            </Routes>
-          </BrowserRouter>
+
+          {isSplashScreenActive ? (
+            <div className="fixed inset-0 bg-[#FFFBF7] z-50 flex flex-col items-center justify-center">
+              <Loader size="280px" noMargin />
+              <motion.p
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1 }}
+                className="text-orange-900/40 font-medium text-sm tracking-widest uppercase mt-4"
+              >
+                Yükleniyor
+              </motion.p>
+            </div>
+          ) : isPasswordRecovery ? (
+            <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+              <Routes>
+                <Route path="*" element={<UpdatePassword />} />
+              </Routes>
+            </BrowserRouter>
+          ) : (
+            <>
+              <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                <Routes>
+                  {/* Main site routes */}
+                  <Route path="/" element={<Index />} />
+                  <Route path="/complete-profile" element={<CompleteProfile />} />
+                  <Route path="/update-password" element={<UpdatePassword />} />
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/checkout" element={<Checkout />} />
+                  <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
+
+                  {/* Admin routes */}
+                  <Route path="/admin" element={<AdminDashboard />} />
+                  <Route path="/admin/orders" element={<AdminOrders />} />
+                  <Route path="/admin/orders/:orderId" element={<AdminOrderDetail />} />
+                  <Route path="/admin/products" element={<AdminProducts />} />
+                  <Route path="/admin/promotions" element={<AdminPromoCodes />} />
+                  <Route path="/admin/admins" element={<AdminUsers />} />
+
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+
+              {/* Her 1 dakikada bir sol altta görünen GIF */}
+              <PeriodicGif
+                gifSrc={GIF_URL}
+                intervalMs={60000} // 1 dakika = 60000ms
+                alt="Periodic animation"
+              />
+              <PromotionMarquee />
+              <div className="h-12 md:h-14" aria-hidden="true" /> {/* Spacer for marquee */}
+              <CookieConsent />
+            </>
+          )}
         </TooltipProvider>
       </QueryClientProvider>
-    );
-  }
-
-  return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-          <Routes>
-            {/* Main site routes */}
-            <Route path="/" element={<Index />} />
-            <Route path="/complete-profile" element={<CompleteProfile />} />
-            <Route path="/update-password" element={<UpdatePassword />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/checkout" element={<Checkout />} />
-            <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
-
-            {/* Admin routes */}
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/orders" element={<AdminOrders />} />
-            <Route path="/admin/orders/:orderId" element={<AdminOrderDetail />} />
-            <Route path="/admin/products" element={<AdminProducts />} />
-            <Route path="/admin/promotions" element={<AdminPromoCodes />} />
-            <Route path="/admin/admins" element={<AdminUsers />} />
-
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-
-        {/* Her 1 dakikada bir sol altta görünen GIF */}
-        <PeriodicGif
-          gifSrc={GIF_URL}
-          intervalMs={60000} // 1 dakika = 60000ms
-          alt="Periodic animation"
-        />
-        <CookieConsent />
-      </TooltipProvider>
-    </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 

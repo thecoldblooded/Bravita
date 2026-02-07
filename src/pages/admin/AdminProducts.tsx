@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminGuard } from "@/components/admin/AdminGuard";
 import { getProducts, updateProductStock, updateProduct, addProduct, deleteProduct, Product } from "@/lib/admin";
@@ -22,23 +22,7 @@ export default function AdminProducts() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
-    useEffect(() => {
-        loadProducts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
-    useEffect(() => {
-        if (!search.trim()) {
-            setFilteredProducts(products);
-        } else {
-            const query = search.toLowerCase();
-            setFilteredProducts(products.filter(p =>
-                p.name.toLowerCase().includes(query)
-            ));
-        }
-    }, [search, products]);
-
-    async function loadProducts(manual = false) {
+    const loadProducts = useCallback(async (manual = false) => {
         if (manual) setIsLoading(true);
         try {
             // Minimum loading time for visual feedback
@@ -69,7 +53,22 @@ export default function AdminProducts() {
         } finally {
             setIsLoading(false);
         }
-    }
+    }, []);
+
+    useEffect(() => {
+        loadProducts();
+    }, [loadProducts]);
+
+    useEffect(() => {
+        if (!search.trim()) {
+            setFilteredProducts(products);
+        } else {
+            const query = search.toLowerCase();
+            setFilteredProducts(products.filter(p =>
+                p.name.toLowerCase().includes(query)
+            ));
+        }
+    }, [search, products]);
 
     const handleStockUpdate = async (product: Product) => {
         const newTotal = parseInt(stockInput);

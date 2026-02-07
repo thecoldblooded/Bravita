@@ -302,7 +302,13 @@
         "discounts_applied": "{{count}} İndirim Uygulandı",
         "promo_code": "İndirim Kuponu",
         "apply": "Uygula",
-        "remove": "Kaldır"
+        "remove": "Kaldır",
+        "min_amount": "Min. Tutar"
+    },
+    "promo": {
+        "valid_until": "tarihine kadar geçerli",
+        "copied": "Kod Kopyalandı",
+        "click_to_copy": "Kopyalamak için tıkla"
     },
     "errors": {
         "unknown": "Bir hata oluştu. Lütfen tekrar deneyin.",

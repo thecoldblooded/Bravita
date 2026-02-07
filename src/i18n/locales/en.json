@@ -302,7 +302,13 @@
         "discounts_applied": "{{count}} Discounts Applied",
         "promo_code": "Promo Code",
         "apply": "Apply",
-        "remove": "Remove"
+        "remove": "Remove",
+        "min_amount": "Min. Amount"
+    },
+    "promo": {
+        "valid_until": "valid until",
+        "copied": "Code Copied",
+        "click_to_copy": "Click to copy"
     },
     "errors": {
         "unknown": "An error occurred. Please try again.",
