@@ -1,7 +1,21 @@
 {
-  "status": "init",
-  "scope": "codebase",
+  "status": "commited",
   "type": "frontend",
-  "localEndpoint": "http://localhost:5173/",
-  "serverPort": 58472
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:8080",
+  "loginUser": "umut.dogan91@windowslive.com",
+  "loginPassword": "Abc123987.,!",
+  "executionArgs": {
+    "projectName": "bravita-future-focused-growth-main",
+    "projectPath": "c:\\Users\\Umut\\.gemini\\antigravity\\scratch\\bravita-future-focused-growth-main",
+    "testIds": [
+      "TC003"
+    ],
+    "additionalInstruction": "Testing login flow (TC003). Localhost:8080. Handle modal.",
+    "envs": {
+      "API_KEY": "sk-user-RrlAm_Zh2llIu6mrsQg0JXj4KDPg3-ncvgAvCJrVBTyrdxFfMYuua-gDB61A0pvLO9gbOctk91e3rgOCcglmn4xJiE_Jw9OKIXB71anSO56jMAA32eRr8bGZlnm-Fc7i_bM"
+    }
+  },
+  "serverPort": 61329,
+  "proxy": "http://b45c828c-2c58-4691-8fcf-581f711aa1db:dSkM6IKMf4tNODkNXRLpp2vpi5i7NntT@tun.testsprite.com:8080"
 }

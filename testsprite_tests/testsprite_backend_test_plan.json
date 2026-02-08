@@ -1,0 +1,37 @@
+[
+  {
+    "id": "TC001",
+    "title": "user authentication with hcaptcha validation",
+    "description": "Test the user signup and login process including hCaptcha validation to ensure secure authentication and proper session management via Supabase."
+  },
+  {
+    "id": "TC002",
+    "title": "product browsing and cart management",
+    "description": "Verify that users can browse products, add items to the cart with correct quantity limits, and that the cart state updates optimistically and syncs with localStorage."
+  },
+  {
+    "id": "TC003",
+    "title": "checkout process with promo code validation",
+    "description": "Test the checkout flow including address selection, promo code application with backend validation, and final order creation ensuring backend price confirmation and order email dispatch."
+  },
+  {
+    "id": "TC004",
+    "title": "user order history viewing",
+    "description": "Verify that users can view their past orders accurately with correct order details and status updates."
+  },
+  {
+    "id": "TC005",
+    "title": "admin order management and tracking update",
+    "description": "Test the admin dashboard functionalities for managing orders, updating shipment tracking information, and ensuring audit logs are recorded correctly."
+  },
+  {
+    "id": "TC006",
+    "title": "user profile and address book management",
+    "description": "Verify that users can manage their profile settings and address book entries including adding, editing, and deleting addresses."
+  },
+  {
+    "id": "TC007",
+    "title": "frontend responsiveness and accessibility",
+    "description": "Test the frontend UI responsiveness and accessibility across different devices and screen sizes under typical and peak load conditions."
+  }
+]

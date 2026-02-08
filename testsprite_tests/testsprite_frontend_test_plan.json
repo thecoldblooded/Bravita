@@ -1,532 +1,487 @@
 [
   {
     "id": "TC001",
-    "title": "User Login Success with Valid Credentials",
-    "description": "Verify that a user can log in successfully with valid email and password and session is persisted.",
+    "title": "Login success with valid credentials and hCaptcha",
+    "description": "Verify that a user can login successfully with correct email and password when hCaptcha validation is passed.",
     "category": "functional",
     "priority": "High",
     "steps": [
       {
         "type": "action",
-        "description": "Click the Log In button on the home page to open the login modal"
+        "description": "Navigate to login page."
       },
       {
         "type": "action",
-        "description": "Enter valid email and password"
+        "description": "Input valid email and password."
       },
       {
         "type": "action",
-        "description": "Click login button"
+        "description": "Complete hCaptcha verification successfully."
+      },
+      {
+        "type": "action",
+        "description": "Click login button."
       },
       {
         "type": "assertion",
-        "description": "Verify that user is authenticated and redirected to home page or dashboard"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify that session is persisted across page reload"
+        "description": "System authenticates user and redirects to home/dashboard."
       }
     ]
   },
   {
     "id": "TC002",
-    "title": "User Login Failure with Invalid Credentials",
-    "description": "Verify that login fails and proper error message is shown for invalid credentials.",
+    "title": "Login failure with invalid credentials",
+    "description": "Verify that the system rejects login attempts with incorrect email or password and shows an appropriate error message.",
     "category": "error handling",
     "priority": "High",
     "steps": [
       {
         "type": "action",
-        "description": "Click the Log In button on the home page to open the login modal"
+        "description": "Navigate to login page."
       },
       {
         "type": "action",
-        "description": "Enter invalid email or password"
+        "description": "Input invalid email or incorrect password."
       },
       {
         "type": "action",
-        "description": "Click login button"
+        "description": "Complete hCaptcha verification successfully."
+      },
+      {
+        "type": "action",
+        "description": "Click login button."
       },
       {
         "type": "assertion",
-        "description": "Verify that login is rejected and error message is displayed"
+        "description": "System refuses login and displays clear error message about invalid credentials."
       }
     ]
   },
   {
     "id": "TC003",
-    "title": "User Signup Success with Valid Data",
-    "description": "Verify that a new user can sign up with valid email and password and complete profile.",
-    "category": "functional",
-    "priority": "High",
-    "steps": [
-      {
-        "type": "action",
-        "description": "Click the Sign Up or Log In button and switch to signup tab"
-      },
-      {
-        "type": "action",
-        "description": "Fill in valid email, password, and required profile fields"
-      },
-      {
-        "type": "action",
-        "description": "Submit signup form"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify that user account is created"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify user is redirected to profile completion if required"
-      }
-    ]
-  },
-  {
-    "id": "TC004",
-    "title": "Password Recovery Workflow Success",
-    "description": "Verify user can request password recovery and reset password through link.",
-    "category": "functional",
-    "priority": "High",
-    "steps": [
-      {
-        "type": "action",
-        "description": "Navigate to password recovery page"
-      },
-      {
-        "type": "action",
-        "description": "Submit registered email for password reset"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify confirmation message for email sent is displayed"
-      },
-      {
-        "type": "action",
-        "description": "Use received link to reset password"
-      },
-      {
-        "type": "action",
-        "description": "Enter new valid password and submit"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify password is updated and user can log in with new password"
-      }
-    ]
-  },
-  {
-    "id": "TC005",
-    "title": "Add Product to Cart and Verify UI Update",
-    "description": "Verify that adding a product from product listing updates cart UI instantly.",
-    "category": "functional",
-    "priority": "High",
-    "steps": [
-      {
-        "type": "action",
-        "description": "Navigate to products page"
-      },
-      {
-        "type": "action",
-        "description": "Select a product and add to cart"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify cart count and contents update immediately in UI"
-      }
-    ]
-  },
-  {
-    "id": "TC006",
-    "title": "Update Product Quantity in Cart",
-    "description": "Verify that user can update product quantity in cart and UI updates accordingly.",
-    "category": "functional",
-    "priority": "Medium",
-    "steps": [
-      {
-        "type": "action",
-        "description": "Navigate to cart page or open cart dropdown"
-      },
-      {
-        "type": "action",
-        "description": "Change quantity of a product to a valid number"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify cart total and product quantity update instantly"
-      }
-    ]
-  },
-  {
-    "id": "TC007",
-    "title": "Remove Product from Cart",
-    "description": "Verify that removing a product from cart updates UI and cart state correctly.",
-    "category": "functional",
-    "priority": "Medium",
-    "steps": [
-      {
-        "type": "action",
-        "description": "Navigate to cart"
-      },
-      {
-        "type": "action",
-        "description": "Remove a product from cart"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify product is removed from UI and cart count updates"
-      }
-    ]
-  },
-  {
-    "id": "TC008",
-    "title": "Cart State Persistence with localStorage",
-    "description": "Verify that shopping cart contents persist after page reload via localStorage sync.",
-    "category": "functional",
-    "priority": "High",
-    "steps": [
-      {
-        "type": "action",
-        "description": "Add several products to cart"
-      },
-      {
-        "type": "action",
-        "description": "Reload the webpage"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify cart products and quantities are persisted and loaded correctly"
-      }
-    ]
-  },
-  {
-    "id": "TC009",
-    "title": "Checkout Process with Valid Address and Promo Code",
-    "description": "Test checkout flow with selecting a saved delivery address and applying valid promo code.",
-    "category": "functional",
-    "priority": "High",
-    "steps": [
-      {
-        "type": "action",
-        "description": "Add products to cart and proceed to checkout"
-      },
-      {
-        "type": "action",
-        "description": "Select a saved delivery address"
-      },
-      {
-        "type": "action",
-        "description": "Enter a valid promo code and trigger backend validation RPC"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify promo code is accepted and discount applied"
-      },
-      {
-        "type": "action",
-        "description": "Confirm order creation"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify backend order creation RPC succeeds and order confirmation page is shown"
-      }
-    ]
-  },
-  {
-    "id": "TC010",
-    "title": "Checkout Process with Invalid Promo Code",
-    "description": "Verify that invalid promo codes are rejected during checkout with appropriate error and no discount applied.",
-    "category": "error handling",
-    "priority": "Medium",
-    "steps": [
-      {
-        "type": "action",
-        "description": "Proceed to checkout with products in cart"
-      },
-      {
-        "type": "action",
-        "description": "Select delivery address"
-      },
-      {
-        "type": "action",
-        "description": "Enter invalid promo code and trigger backend validation"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify promo code is rejected with clear error message"
-      },
-      {
-        "type": "action",
-        "description": "Proceed to order confirmation without discount"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify order is created successfully with correct pricing without promo discount"
-      }
-    ]
-  },
-  {
-    "id": "TC011",
-    "title": "User Profile Order History Display",
-    "description": "Verify that user profile page accurately displays past orders with correct details.",
-    "category": "functional",
-    "priority": "Medium",
-    "steps": [
-      {
-        "type": "action",
-        "description": "Log in as user with completed orders"
-      },
-      {
-        "type": "action",
-        "description": "Navigate to Profile page"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify order history list loads and displays correct order details"
-      }
-    ]
-  },
-  {
-    "id": "TC012",
-    "title": "User Address Management - Add, Edit, Delete",
-    "description": "Verify users can manage their address book with add, edit, and delete operations reflecting UI and backend.",
-    "category": "functional",
-    "priority": "Medium",
-    "steps": [
-      {
-        "type": "action",
-        "description": "Navigate to Profile address management section"
-      },
-      {
-        "type": "action",
-        "description": "Add a new valid address"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify new address appears in address list"
-      },
-      {
-        "type": "action",
-        "description": "Edit an existing address and save changes"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify updated address changes are reflected"
-      },
-      {
-        "type": "action",
-        "description": "Delete an address"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify address is removed from list and backend"
-      }
-    ]
-  },
-  {
-    "id": "TC013",
-    "title": "User Password Update",
-    "description": "Verify that user can update their password successfully from profile with validation and security.",
+    "title": "Prevent login submission without hCaptcha verification",
+    "description": "Verify that login form cannot be submitted unless the hCaptcha is successfully completed.",
     "category": "security",
     "priority": "High",
     "steps": [
       {
         "type": "action",
-        "description": "Navigate to password update page from Profile"
+        "description": "Navigate to login page."
       },
       {
         "type": "action",
-        "description": "Enter current password and new valid password"
+        "description": "Input valid email and password."
       },
       {
         "type": "action",
-        "description": "Submit password update"
+        "description": "Do NOT complete the hCaptcha verification."
+      },
+      {
+        "type": "action",
+        "description": "Attempt to submit the login form."
       },
       {
         "type": "assertion",
-        "description": "Verify password is stored securely and updated in backend"
+        "description": "Form submission is blocked and user is prompted to complete hCaptcha."
+      }
+    ]
+  },
+  {
+    "id": "TC004",
+    "title": "Signup success with valid data and hCaptcha",
+    "description": "Verify that a user can successfully register using valid email, password, and after completing hCaptcha.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to signup page."
       },
       {
         "type": "action",
-        "description": "Log out and log in using new password"
+        "description": "Input valid email and password."
+      },
+      {
+        "type": "action",
+        "description": "Complete hCaptcha verification successfully."
+      },
+      {
+        "type": "action",
+        "description": "Submit the signup form."
       },
       {
         "type": "assertion",
-        "description": "Verify login succeeds with new password"
+        "description": "Account is created and user is directed to OTP verification or profile completion."
+      }
+    ]
+  },
+  {
+    "id": "TC005",
+    "title": "Signup failure with missing/invalid hCaptcha",
+    "description": "Verify that signup cannot proceed if hCaptcha is not completed or invalid.",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to signup page."
+      },
+      {
+        "type": "action",
+        "description": "Input valid email and password."
+      },
+      {
+        "type": "action",
+        "description": "Do not complete hCaptcha or trigger an invalid hCaptcha state."
+      },
+      {
+        "type": "action",
+        "description": "Attempt to submit signup form."
+      },
+      {
+        "type": "assertion",
+        "description": "Form submission is blocked with clear warning to complete hCaptcha."
+      }
+    ]
+  },
+  {
+    "id": "TC006",
+    "title": "Cart add product with stock availability enforcement",
+    "description": "Verify that adding a product to the cart respects stock limits and updates the cart UI optimistically.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Browse to product listing."
+      },
+      {
+        "type": "action",
+        "description": "Add an available product to the cart."
+      },
+      {
+        "type": "assertion",
+        "description": "Product is added instantly (optimistic UI) and cart quantity updates accordingly."
+      },
+      {
+        "type": "action",
+        "description": "Try to add more quantity than available stock."
+      },
+      {
+        "type": "assertion",
+        "description": "System prevents exceeding stock and shows an informative error message."
+      }
+    ]
+  },
+  {
+    "id": "TC007",
+    "title": "Cart quantity adjustment with stock limit validation",
+    "description": "Verify that users can adjust product quantities in cart without exceeding stock and UI updates totals correctly.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to cart page with products added."
+      },
+      {
+        "type": "action",
+        "description": "Increase quantity of a product within available stock."
+      },
+      {
+        "type": "assertion",
+        "description": "Quantity updates and total price recalculates immediately including VAT and shipping."
+      },
+      {
+        "type": "action",
+        "description": "Attempt to increase quantity beyond stock."
+      },
+      {
+        "type": "assertion",
+        "description": "Quantity change is prevented and a clear error message is displayed."
+      }
+    ]
+  },
+  {
+    "id": "TC008",
+    "title": "Cart deletion functionality",
+    "description": "Verify that users can remove products from the cart and that the totals update correctly afterwards.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to cart page."
+      },
+      {
+        "type": "action",
+        "description": "Delete a product from the cart."
+      },
+      {
+        "type": "assertion",
+        "description": "Product is removed immediately and total price updates accordingly including VAT and shipping."
+      }
+    ]
+  },
+  {
+    "id": "TC009",
+    "title": "Cart persistence across page reloads",
+    "description": "Verify that cart contents remain consistent and available after a browser reload using localStorage synchronization.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Add several products to cart."
+      },
+      {
+        "type": "action",
+        "description": "Reload the page."
+      },
+      {
+        "type": "assertion",
+        "description": "Cart contents and totals remain intact and accurately shown."
+      }
+    ]
+  },
+  {
+    "id": "TC010",
+    "title": "Checkout address selection and order summary accuracy",
+    "description": "Verify that user can select an address during checkout and that order summary including VAT, shipping and promo codes is accurately displayed.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to checkout page with cart items."
+      },
+      {
+        "type": "action",
+        "description": "Select a shipping address from the user's address book."
+      },
+      {
+        "type": "action",
+        "description": "Verify that the order summary updates accordingly to reflect address selection impacts."
+      },
+      {
+        "type": "assertion",
+        "description": "Order summary correctly calculates total price with VAT and shipping based on selected address."
+      }
+    ]
+  },
+  {
+    "id": "TC011",
+    "title": "Apply valid promo code during checkout",
+    "description": "Verify that when a user applies a valid promo code, the backend validates it and the discount is applied correctly in the order summary.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to checkout page."
+      },
+      {
+        "type": "action",
+        "description": "Enter a valid promo code and apply it."
+      },
+      {
+        "type": "assertion",
+        "description": "Promo code is validated with backend and discount is applied correctly to the total."
+      }
+    ]
+  },
+  {
+    "id": "TC012",
+    "title": "Reject invalid promo code with error message",
+    "description": "Verify that when an invalid or expired promo code is entered, backend validation rejects it and shows a clear error message to the user.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to checkout page."
+      },
+      {
+        "type": "action",
+        "description": "Enter an invalid promo code and apply it."
+      },
+      {
+        "type": "assertion",
+        "description": "System displays an informative error message about invalid promo code and does not apply discount."
+      }
+    ]
+  },
+  {
+    "id": "TC013",
+    "title": "Successful order placement with backend validation",
+    "description": "Verify that after completing checkout steps and confirming order, the backend validates the order details and creates the order successfully.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Complete all checkout steps including address selection and promo code application."
+      },
+      {
+        "type": "action",
+        "description": "Confirm and submit the order."
+      },
+      {
+        "type": "assertion",
+        "description": "Backend confirms order validity and creates order record successfully."
+      },
+      {
+        "type": "assertion",
+        "description": "User is shown a confirmation message or page."
       }
     ]
   },
   {
     "id": "TC014",
-    "title": "Admin Dashboard - Manage Orders List and Details",
-    "description": "Verify Admin can view, filter, and manage orders from AdminOrders panel with real-time updates.",
+    "title": "User profile update personal settings",
+    "description": "Verify that users can update personal settings such as name, email (except password here), and those changes are saved and reflected immediately.",
     "category": "functional",
-    "priority": "High",
+    "priority": "Medium",
     "steps": [
       {
         "type": "action",
-        "description": "Log in as admin user"
+        "description": "Navigate to profile settings page."
       },
       {
         "type": "action",
-        "description": "Navigate to AdminOrders page"
+        "description": "Modify personal setting fields."
+      },
+      {
+        "type": "action",
+        "description": "Save changes."
       },
       {
         "type": "assertion",
-        "description": "Verify list of orders loads with correct data"
-      },
-      {
-        "type": "action",
-        "description": "Apply filters (e.g., status, date range) and verify list updates"
-      },
-      {
-        "type": "action",
-        "description": "Open order details and update status"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify order status update reflects immediately in UI and backend"
+        "description": "Changes are saved successfully and updated data is shown."
       }
     ]
   },
   {
     "id": "TC015",
-    "title": "Admin Dashboard - Manage Products CRUD",
-    "description": "Verify admin can create, update, and delete products through AdminProducts panel safely.",
+    "title": "User address book add/edit/delete addresses",
+    "description": "Verify that users can add new addresses, edit existing addresses, and delete addresses in the address book with expected validations.",
     "category": "functional",
-    "priority": "High",
+    "priority": "Medium",
     "steps": [
       {
         "type": "action",
-        "description": "Log in as admin and navigate to AdminProducts page"
+        "description": "Navigate to the user address book page."
       },
       {
         "type": "action",
-        "description": "Create a new product with valid details"
+        "description": "Add a new valid address and save."
       },
       {
         "type": "assertion",
-        "description": "Verify new product appears in list"
+        "description": "New address appears in the address list."
       },
       {
         "type": "action",
-        "description": "Edit an existing product's details"
+        "description": "Edit an existing address and save."
       },
       {
         "type": "assertion",
-        "description": "Verify product details updated correctly"
+        "description": "Address details are updated accordingly."
       },
       {
         "type": "action",
-        "description": "Delete a selected product"
+        "description": "Delete an address."
       },
       {
         "type": "assertion",
-        "description": "Verify product is removed from list and backend"
+        "description": "Address is removed from the address book."
       }
     ]
   },
   {
     "id": "TC016",
-    "title": "Admin Dashboard - Manage Users CRUD",
-    "description": "Verify admin can view, edit, deactivate, and delete user accounts via AdminUsers panel.",
-    "category": "functional",
-    "priority": "Medium",
+    "title": "Admin login and access control enforcement",
+    "description": "Verify that only admin users can login to the admin dashboard and that non-admin users are prevented from accessing admin pages.",
+    "category": "security",
+    "priority": "High",
     "steps": [
       {
         "type": "action",
-        "description": "Log in as admin and navigate to AdminUsers page"
+        "description": "Attempt to login to admin dashboard with admin credentials."
       },
       {
         "type": "assertion",
-        "description": "Verify users list loads with accurate data"
+        "description": "Admin successfully logs in and access is granted to admin pages."
       },
       {
         "type": "action",
-        "description": "Edit user details (e.g., roles, status)"
+        "description": "Attempt to access admin dashboard with non-admin user credentials."
       },
       {
         "type": "assertion",
-        "description": "Verify changes are saved and reflected"
-      },
-      {
-        "type": "action",
-        "description": "Deactivate or delete a user"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify user is deactivated or removed from system"
+        "description": "Access is denied and user is redirected or shown permission error."
       }
     ]
   },
   {
     "id": "TC017",
-    "title": "Admin Dashboard - Manage Promo Codes CRUD",
-    "description": "Verify that admin can create, update, delete promo codes and changes impact checkout validation.",
+    "title": "Admin update shipment tracking number and order status",
+    "description": "Verify that admin users can update shipment tracking numbers and order status, that these updates are saved correctly in the database, and confirmation emails are sent to users.",
     "category": "functional",
-    "priority": "Medium",
+    "priority": "High",
     "steps": [
       {
         "type": "action",
-        "description": "Log in as admin and navigate to AdminPromoCodes page"
+        "description": "Login as admin and navigate to orders list."
       },
       {
         "type": "action",
-        "description": "Create a new promo code with valid data"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify promo code appears in list"
+        "description": "Select an order and update shipment tracking number."
       },
       {
         "type": "action",
-        "description": "Update promo code details"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify updated details are saved"
+        "description": "Change the order status (e.g., from pending to shipped)."
       },
       {
         "type": "action",
-        "description": "Delete promo code"
+        "description": "Save changes."
       },
       {
         "type": "assertion",
-        "description": "Verify promo code no longer validates at checkout"
+        "description": "Database records accurately reflect updated shipment info and status."
+      },
+      {
+        "type": "assertion",
+        "description": "User receives a confirmation email about shipment and status update."
       }
     ]
   },
   {
     "id": "TC018",
-    "title": "Landing Page Loads Correctly",
-    "description": "Verify that the public landing page loads with all expected components and UI elements.",
+    "title": "Order listing pagination and filtering in admin dashboard",
+    "description": "Verify that the admin order list supports pagination and filtering by order status and date correctly.",
     "category": "functional",
-    "priority": "Low",
+    "priority": "Medium",
     "steps": [
       {
         "type": "action",
-        "description": "Navigate to root URL of the site"
+        "description": "Login as admin and open the orders list page."
       },
-      {
-        "type": "assertion",
-        "description": "Verify landing page loads with visible reusable UI components like loaders, promotions marquee, GIFs, and cookie consent dialog"
-      }
-    ]
-  },
-  {
-    "id": "TC019",
-    "title": "Invalid Routes Show Custom 404 Page",
-    "description": "Verify that navigating to an unknown URL displays the custom 404 Not Found page.",
-    "category": "error handling",
-    "priority": "Low",
-    "steps": [
       {
         "type": "action",
-        "description": "Navigate to a non-existent URL path"
+        "description": "Apply filters by order status (e.g., pending, shipped)."
       },
       {
         "type": "assertion",
-        "description": "Verify custom 404 page is rendered with appropriate message and UI"
+        "description": "Only orders matching the selected status are displayed."
+      },
+      {
+        "type": "action",
+        "description": "Navigate through pagination controls."
+      },
+      {
+        "type": "assertion",
+        "description": "Orders page updates correctly with consistent data loads."
       }
     ]
   }
