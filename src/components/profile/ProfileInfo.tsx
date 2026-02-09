@@ -10,6 +10,8 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
 import Loader from "@/components/ui/Loader";
+import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
+import "react-phone-number-input/style.css";
 
 export function ProfileInfo() {
     const { t } = useTranslation();
@@ -50,6 +52,17 @@ export function ProfileInfo() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!user) return;
+
+        // Validation like in signup
+        if (formData.full_name.trim().length < 2) {
+            toast.error(t("auth.validation.full_name_required"));
+            return;
+        }
+
+        if (formData.phone && !isValidPhoneNumber(formData.phone)) {
+            toast.error(t("auth.validation.phone_invalid"));
+            return;
+        }
 
         setIsSaving(true);
         try {
@@ -121,12 +134,15 @@ export function ProfileInfo() {
 
                 <div className="space-y-2">
                     <Label htmlFor="phone">{t("profile.info.phone_label")}</Label>
-                    <Input
-                        id="phone"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    <PhoneInput
+                        international
+                        countryCallingCodeEditable={false}
+                        defaultCountry="TR"
                         placeholder={t("profile.info.phone_placeholder")}
-                        className="focus-visible:ring-orange-500"
+                        value={formData.phone}
+                        onChange={(value) => setFormData({ ...formData, phone: value || "" })}
+                        disabled={isSaving}
+                        className="flex h-10 rounded-md border border-gray-300 bg-white px-3 py-2 text-base ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     />
                 </div>
 

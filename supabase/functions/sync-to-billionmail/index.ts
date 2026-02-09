@@ -1,4 +1,3 @@
-// @ts-ignore: Deno is a global in Supabase Edge Functions
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
 const corsHeaders = {
@@ -6,7 +5,7 @@ const corsHeaders = {
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-serve(async (req: any) => {
+serve(async (req: Request) => {
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders })
     }
@@ -15,9 +14,7 @@ serve(async (req: any) => {
         const body = await req.json();
         const { contact } = body;
 
-        // @ts-ignore
         const BILLIONMAIL_API_URL = Deno.env.get('BILLIONMAIL_API_URL')
-        // @ts-ignore
         const BILLIONMAIL_API_KEY = Deno.env.get('BILLIONMAIL_API_KEY')
 
         if (!BILLIONMAIL_API_URL || !BILLIONMAIL_API_KEY) {
@@ -69,11 +66,11 @@ serve(async (req: any) => {
         }
 
         // Safe Access
-        const groupList = groupsData.data?.list || [];
-        const group = groupList.find((g: any) => g.name === 'Smarter_Signup');
+        const groupList = (groupsData.data?.list || []) as Array<{ id: string; name: string }>;
+        const group = groupList.find((g) => g.name === 'Smarter_Signup');
 
         if (!group) {
-            console.error("Group Not Found. Available:", groupList.map((g: any) => g.name));
+            console.error("Group Not Found. Available:", groupList.map((g) => g.name));
             return new Response(JSON.stringify({
                 success: false,
                 error: `Group 'Smarter_Signup' configuration missing in BillionMail`
@@ -133,7 +130,7 @@ serve(async (req: any) => {
             status: 200,
         })
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Unhandled Exception:", error);
         return new Response(JSON.stringify({
             success: false,

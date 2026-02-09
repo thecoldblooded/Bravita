@@ -4,7 +4,7 @@ interface BillionMailContact {
     email: string;
     first_name?: string;
     last_name?: string;
-    attributes?: Record<string, any>;
+    attributes?: Record<string, unknown>;
     tags?: string[];
 }
 
@@ -38,7 +38,7 @@ class BillionMailService {
      * Sends a transactional email via BillionMail. 
      * In the future, this can also be moved to an Edge Function for security.
      */
-    async sendTransactionalEmail(templateId: string, recipient: string, params: Record<string, any> = {}) {
+    async sendTransactionalEmail(templateId: string, recipient: string, params: Record<string, unknown> = {}) {
         // Placeholder for future implementation if needed via Edge Functions
         console.warn('sendTransactionalEmail not yet implemented via Edge Functions');
         return null;

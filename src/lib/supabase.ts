@@ -89,6 +89,7 @@ export interface UserProfile {
   phone_verified_at: string | null;
   oauth_provider: string | null;
   is_admin: boolean;
+  is_superadmin?: boolean;
   isStub?: boolean;
   created_at: string;
   updated_at: string;

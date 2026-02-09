@@ -7,12 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAdminTheme } from "@/contexts/AdminThemeContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AdminUser {
     id: string;
     email: string;
     full_name: string | null;
     is_admin?: boolean;
+    is_superadmin?: boolean;
 }
 
 function AddAdminModal({ isOpen, onClose, onAdd }: { isOpen: boolean; onClose: () => void; onAdd: (email: string) => Promise<void> }) {
@@ -69,6 +71,7 @@ function UsersContent() {
     const [search, setSearch] = useState("");
     const [showAddModal, setShowAddModal] = useState(false);
     const { theme } = useAdminTheme();
+    const { isSuperAdmin } = useAuth();
     const isDark = theme === "dark";
 
     const loadUsers = useCallback(async () => {
@@ -122,7 +125,7 @@ function UsersContent() {
             toast.success("Admin eklendi");
             setShowAddModal(false);
             await loadUsers();
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error("Eklenemedi");
             throw error;
         }
@@ -146,9 +149,11 @@ function UsersContent() {
                         <Button variant="outline" size="icon" onClick={loadUsers} className={isDark ? "bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600" : ""}>
                             <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
                         </Button>
-                        <Button onClick={() => setShowAddModal(true)} className="bg-orange-500 hover:bg-orange-600 text-white">
-                            <UserPlus className="w-4 h-4 mr-2" />Admin Ekle
-                        </Button>
+                        {isSuperAdmin && (
+                            <Button onClick={() => setShowAddModal(true)} className="bg-orange-500 hover:bg-orange-600 text-white">
+                                <UserPlus className="w-4 h-4 mr-2" />Admin Ekle
+                            </Button>
+                        )}
                     </div>
                 </div>
 
@@ -176,18 +181,20 @@ function UsersContent() {
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3">
-                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${isDark ? "bg-orange-500/20 text-orange-400" : "bg-orange-100 text-orange-600"}`}>
-                                            <Shield className="w-3 h-3 inline mr-1" />Admin
+                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.is_superadmin ? (isDark ? "bg-purple-500/20 text-purple-400" : "bg-purple-100 text-purple-600") : (isDark ? "bg-orange-500/20 text-orange-400" : "bg-orange-100 text-orange-600")}`}>
+                                            <Shield className="w-3 h-3 inline mr-1" />{user.is_superadmin ? "Super Admin" : "Admin"}
                                         </span>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => handleRemoveAdmin(user)}
-                                            className={isDark ? "text-red-400 hover:text-red-300 hover:bg-red-500/20" : "text-red-500 hover:text-red-600 hover:bg-red-50"}
-                                            title="Yetkiyi Kaldır"
-                                        >
-                                            <ShieldOff className="w-4 h-4" />
-                                        </Button>
+                                        {isSuperAdmin && !user.is_superadmin && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => handleRemoveAdmin(user)}
+                                                className={isDark ? "text-red-400 hover:text-red-300 hover:bg-red-500/20" : "text-red-500 hover:text-red-600 hover:bg-red-50"}
+                                                title="Yetkiyi Kaldır"
+                                            >
+                                                <ShieldOff className="w-4 h-4" />
+                                            </Button>
+                                        )}
                                     </div>
                                 </li>
                             ))}

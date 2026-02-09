@@ -51,6 +51,7 @@ export function AdminThemeProvider({ children }: { children: ReactNode }) {
     );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAdminTheme() {
     const context = useContext(AdminThemeContext);
     if (!context) {

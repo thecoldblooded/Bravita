@@ -478,10 +478,10 @@ export async function getDashboardStats(startDate: Date, endDate: Date): Promise
 /**
  * Get all admin users
  */
-export async function getAdminUsers(): Promise<{ id: string; email: string; full_name: string | null }[]> {
+export async function getAdminUsers(): Promise<{ id: string; email: string; full_name: string | null; is_superadmin?: boolean }[]> {
     const { data, error } = await supabase
         .from("profiles")
-        .select("id, email, full_name")
+        .select("id, email, full_name, is_superadmin")
         .eq("is_admin", true);
 
     if (error) throw error;
@@ -506,10 +506,10 @@ export async function setUserAdmin(userId: string, isAdmin: boolean): Promise<vo
 /**
  * Search users by email (for adding admins)
  */
-export async function searchUsersByEmail(email: string): Promise<{ id: string; email: string; full_name: string | null; is_admin: boolean }[]> {
+export async function searchUsersByEmail(email: string): Promise<{ id: string; email: string; full_name: string | null; is_admin: boolean; is_superadmin?: boolean }[]> {
     const { data, error } = await supabase
         .from("profiles")
-        .select("id, email, full_name, is_admin")
+        .select("id, email, full_name, is_admin, is_superadmin")
         .ilike("email", `%${email}%`)
         .limit(10);
 

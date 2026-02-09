@@ -91,13 +91,16 @@ export const LordIcon = memo(function LordIcon({
         if (!containerRef.current || !isReady) return;
 
         // Check if icon already exists
-        let lordIcon = containerRef.current.querySelector("lord-icon") as any;
+        let lordIcon = containerRef.current.querySelector("lord-icon") as (HTMLElement & { setAttribute: (name: string, value: string) => void }) | null;
 
         if (!lordIcon) {
             // Create lord-icon element
-            lordIcon = document.createElement("lord-icon");
-            containerRef.current.appendChild(lordIcon);
+            const el = document.createElement("lord-icon");
+            lordIcon = el as unknown as (HTMLElement & { setAttribute: (name: string, value: string) => void });
+            containerRef.current.appendChild(el);
         }
+
+        if (!lordIcon) return; // Should not happen
 
         // Update attributes if they changed
         if (lordIcon.getAttribute("src") !== src) lordIcon.setAttribute("src", src);
@@ -117,9 +120,10 @@ export const LordIcon = memo(function LordIcon({
 
     // Cleanup to prevent LordIcon player from accessing destroyed elements
     useEffect(() => {
+        const currentContainer = containerRef.current;
         return () => {
-            if (containerRef.current) {
-                containerRef.current.innerHTML = "";
+            if (currentContainer) {
+                currentContainer.innerHTML = "";
             }
         };
     }, []);

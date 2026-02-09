@@ -17,6 +17,7 @@ interface AuthContextType {
   isSplashScreenActive: boolean;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
   profileComplete: boolean;
   isPasswordRecovery: boolean;
   refreshSession: () => Promise<void>;
@@ -55,8 +56,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const getInitialUser = (session: Session | null) => {
     if (!session?.user) return null;
 
-    // Check for admin status in session metadata (securely signed by Supabase)
+    // Check for admin/superadmin status in session metadata (securely signed by Supabase)
     const isAdminFromMetadata = !!session.user.app_metadata?.is_admin || !!session.user.user_metadata?.is_admin;
+    const isSuperAdminFromMetadata = !!session.user.app_metadata?.is_superadmin || !!session.user.user_metadata?.is_superadmin;
 
     // Create a minimal stub user - will be replaced by actual profile from DB
     return {
@@ -69,6 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user_type: "individual",
       isStub: true,
       is_admin: isAdminFromMetadata, // Trust signed session metadata instantly
+      is_superadmin: isSuperAdminFromMetadata,
       company_name: null,
       phone_verified_at: null,
       oauth_provider: null,
@@ -351,7 +354,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           try {
             const fetchProfile = () => supabase
               .from("profiles")
-              .select("id, email, full_name, phone, user_type, company_name, profile_complete, phone_verified, is_admin, oauth_provider, created_at, updated_at")
+              .select("id, email, full_name, phone, user_type, company_name, profile_complete, phone_verified, is_admin, is_superadmin, oauth_provider, created_at, updated_at")
               .eq("id", newSession.user.id)
               .single();
 
@@ -502,6 +505,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isSplashScreenActive,
     isAuthenticated: !!session?.user,
     isAdmin: user?.is_admin ?? false,
+    isSuperAdmin: user?.is_superadmin ?? false,
     profileComplete: user?.profile_complete ?? false,
     isPasswordRecovery,
     refreshSession,

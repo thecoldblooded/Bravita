@@ -119,7 +119,7 @@ export function AddressBook() {
             setNewAddress({ street: "", city: "", district: "", postal_code: "", address_type: "home" });
             setIsAdding(false);
             fetchAddresses();
-        } catch (err) {
+        } catch (err: unknown) {
             if (!isMountedRef.current) return;
             toast.error(err instanceof Error ? err.message : t("profile.addresses.add_error"));
         } finally {
@@ -133,7 +133,7 @@ export function AddressBook() {
         if (deletingId || !isMountedRef.current) return;
 
         const addressToDelete = addresses.find(a => a.id === id);
-        if (addressToDelete?.is_default && addresses.length > 1) {
+        if (addressToDelete?.is_default) {
             toast.error(t("profile.addresses.delete_default_error"));
             return;
         }
@@ -156,7 +156,7 @@ export function AddressBook() {
             if (!isMountedRef.current) return;
             toast.success(t("profile.addresses.delete_success"));
             setAddresses(prev => prev.filter((a) => a.id !== id));
-        } catch (err) {
+        } catch (err: unknown) {
             if (!isMountedRef.current) return;
             const message = err instanceof Error ? err.message : String(err);
             if (message.includes("ERR_ADDRESS_DELETE_DEFAULT_FORBIDDEN") ||
@@ -202,7 +202,7 @@ export function AddressBook() {
                     is_default: addr.id === id
                 })).sort((a, b) => (b.is_default ? 1 : 0) - (a.is_default ? 1 : 0))
             );
-        } catch (err) {
+        } catch (err: unknown) {
             if (!isMountedRef.current) return;
             toast.error(err instanceof Error ? err.message : t("errors.unknown"));
         } finally {
@@ -414,8 +414,8 @@ export function AddressBook() {
                                     size="icon"
                                     onClick={() => handleDelete(address.id)}
                                     disabled={!!deletingId || !!settingDefaultId}
-                                    title={address.is_default && addresses.length > 1 ? t("profile.addresses.delete_default_error") : ""}
-                                    className={`group-hover:opacity-100 transition-opacity ${deletingId === address.id ? 'opacity-100' : 'opacity-0'} ${address.is_default && addresses.length > 1
+                                    title={address.is_default ? t("profile.addresses.delete_default_error") : ""}
+                                    className={`group-hover:opacity-100 transition-opacity ${deletingId === address.id ? 'opacity-100' : 'opacity-0'} ${address.is_default
                                         ? "text-gray-300 cursor-not-allowed"
                                         : "text-red-400 hover:text-red-500 hover:bg-red-50"
                                         }`}
