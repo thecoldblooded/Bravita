@@ -1,0 +1,146 @@
+// @ts-ignore: Deno is a global in Supabase Edge Functions
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+
+const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+serve(async (req: any) => {
+    if (req.method === 'OPTIONS') {
+        return new Response('ok', { headers: corsHeaders })
+    }
+
+    try {
+        const body = await req.json();
+        const { contact } = body;
+
+        // @ts-ignore
+        const BILLIONMAIL_API_URL = Deno.env.get('BILLIONMAIL_API_URL')
+        // @ts-ignore
+        const BILLIONMAIL_API_KEY = Deno.env.get('BILLIONMAIL_API_KEY')
+
+        if (!BILLIONMAIL_API_URL || !BILLIONMAIL_API_KEY) {
+            console.error("Configuration Missing in Supabase Secrets");
+            return new Response(JSON.stringify({
+                success: false,
+                error: 'Server Configuration Error'
+            }), {
+                status: 200,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            })
+        }
+
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${BILLIONMAIL_API_KEY}`,
+        }
+
+        // 1. Get Group ID
+        console.log("Searching Group: Smarter_Signup...");
+        const searchUrl = `${BILLIONMAIL_API_URL}/contact/group/all?keyword=Smarter_Signup`;
+
+        const groupsResponse = await fetch(searchUrl, { headers })
+        const groupsText = await groupsResponse.text();
+
+        let groupsData;
+        try {
+            groupsData = JSON.parse(groupsText);
+        } catch (e) {
+            console.error("Invalid JSON from Group Search:", groupsText);
+            return new Response(JSON.stringify({
+                success: false,
+                error: "External API Error (Invalid JSON)"
+            }), {
+                status: 200,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            })
+        }
+
+        if (groupsData.success === false) { // Check explicit false, sometimes it's omitted
+            console.error("API Logic Error (Group Search):", groupsData);
+            return new Response(JSON.stringify({
+                success: false,
+                error: `API Error: ${groupsData.msg || 'Unknown'}`
+            }), {
+                status: 200,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            })
+        }
+
+        // Safe Access
+        const groupList = groupsData.data?.list || [];
+        const group = groupList.find((g: any) => g.name === 'Smarter_Signup');
+
+        if (!group) {
+            console.error("Group Not Found. Available:", groupList.map((g: any) => g.name));
+            return new Response(JSON.stringify({
+                success: false,
+                error: `Group 'Smarter_Signup' configuration missing in BillionMail`
+            }), {
+                status: 200,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            })
+        }
+
+        // 2. Import Contact
+        const importPayload = {
+            group_ids: [group.id],
+            contacts: contact.email,
+            import_type: 2,
+            default_active: 1,
+            status: 1,
+            overwrite: 1
+        };
+
+        const response = await fetch(`${BILLIONMAIL_API_URL}/contact/group/import`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(importPayload),
+        })
+
+        const importText = await response.text();
+        let importData;
+
+        try {
+            importData = JSON.parse(importText);
+        } catch (e) {
+            console.error("Invalid JSON from Import:", importText);
+            return new Response(JSON.stringify({
+                success: false,
+                error: "External API Error (Import Invalid JSON)"
+            }), {
+                status: 200,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            })
+        }
+
+        if (importData.success === false) {
+            console.error("API Logic Error (Import):", importData);
+            return new Response(JSON.stringify({
+                success: false,
+                error: `Import Failed: ${importData.msg || 'Unknown'}`
+            }), {
+                status: 200,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            })
+        }
+
+        // Success!
+        console.log("Import Successful:", importData);
+        return new Response(JSON.stringify({ success: true, data: importData }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200,
+        })
+
+    } catch (error: any) {
+        console.error("Unhandled Exception:", error);
+        return new Response(JSON.stringify({
+            success: false,
+            error: "Internal Server Error" // Generic user-facing message
+        }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200,
+        })
+    }
+})
