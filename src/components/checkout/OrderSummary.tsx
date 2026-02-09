@@ -17,6 +17,7 @@ interface CartItem {
     name: string;
     quantity: number;
     price: number;
+    product_id?: string;
 }
 
 interface Totals {
@@ -147,18 +148,37 @@ export function OrderSummary({ addressId, paymentMethod, items, totals, user, is
                         <h3 className="font-medium text-gray-900">{t("checkout.products", "Ürünler")}</h3>
                     </div>
 
-                    {items.map((item) => (
-                        <div key={item.id} className="flex items-center gap-4 py-3 border-b border-gray-100 last:border-0">
-                            <div className="w-16 h-16 bg-orange-50 rounded-xl flex items-center justify-center p-2">
-                                <img src={bravitaBottle} alt={item.name} className="w-full h-full object-contain" />
+                    {items && items.length > 0 ? (
+                        items.map((item) => (
+                            <div key={item.id} className="flex items-center gap-4 py-3 border-b border-gray-100 last:border-0">
+                                <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center p-2 border border-orange-100 shadow-sm overflow-hidden">
+                                    <img
+                                        src={bravitaBottle}
+                                        alt={item.name || "Bravita"}
+                                        className="w-full h-full object-contain hover:scale-110 transition-transform duration-500"
+                                    />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <h4 className="font-black text-neutral-900 truncate">{item.name || "Bravita Multivitamin"}</h4>
+                                    <p className="text-sm font-bold text-neutral-400 mt-0.5">
+                                        {t("cart.quantity", "Adet")}: {item.quantity}
+                                    </p>
+                                </div>
+                                <div className="text-right">
+                                    <span className="font-black text-neutral-900 block">
+                                        ₺{(item.price * item.quantity).toFixed(2)}
+                                    </span>
+                                    <span className="text-[10px] font-bold text-neutral-400 block">
+                                        ₺{item.price.toFixed(2)} / {t("cart.unit", "birim")}
+                                    </span>
+                                </div>
                             </div>
-                            <div className="flex-1">
-                                <h4 className="font-medium text-gray-900">{item.name}</h4>
-                                <p className="text-sm text-gray-500">Adet: {item.quantity}</p>
-                            </div>
-                            <span className="font-bold text-gray-900">₺{(item.price * item.quantity).toFixed(2)}</span>
+                        ))
+                    ) : (
+                        <div className="py-4 text-center">
+                            <p className="text-sm text-gray-500">{t("cart.empty", "Sepetiniz boş")}</p>
                         </div>
-                    ))}
+                    )}
                 </div>
 
                 {/* Delivery Address */}

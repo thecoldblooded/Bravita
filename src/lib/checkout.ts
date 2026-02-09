@@ -186,7 +186,7 @@ export async function createOrder(params: CreateOrderParams): Promise<CreateOrde
 
     // Map items to simplified structure for RPC
     const rpcItems = items.map((item) => ({
-        product_id: item.id || item.product_id, // Ensure correct ID
+        product_id: item.product_id || item.id, // Prioritize product_id (DB ID) over cart item id
         quantity: item.quantity,
     }));
 

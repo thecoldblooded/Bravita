@@ -252,6 +252,7 @@
         "name_too_short": "Name must be at least 2 characters",
         "street_address_required": "Street address required (at least 5 characters)",
         "phone_required": "Phone number required",
+        "phone_invalid": "Invalid phone number. Please enter a complete number for the selected country",
         "login_required": "Please log in to continue",
         "user_already_exists": "An account with this email already exists",
         "address_saved": "Address information saved",
@@ -269,6 +270,7 @@
             "company_name_required": "Company name required",
             "full_name_required": "Full name is required",
             "phone_required": "Phone number required",
+            "phone_invalid": "Invalid phone number. Please enter a complete number for the selected country",
             "password_min": "Password must be at least 12 characters",
             "password_uppercase": "Password must contain at least one uppercase letter",
             "password_lowercase": "Password must contain at least one lowercase letter",
@@ -288,7 +290,27 @@
         "update_password_btn": "Update Password",
         "password_updated": "Password successfully updated",
         "captcha_required": "Please verify you are human.",
-        "session_expired": "Session expired, please try again."
+        "session_expired": "Session expired, please try again.",
+        "password_strength": {
+            "label": "Password Strength",
+            "very_weak": "Very weak",
+            "weak": "Weak",
+            "medium": "Medium",
+            "strong": "Strong password ✓",
+            "rules": {
+                "min_chars": "At least 12 characters",
+                "uppercase": "Uppercase letter (A-Z)",
+                "lowercase": "Lowercase letter (a-z)",
+                "number": "Number (0-9)",
+                "special": "Special character (!@#$%^&*)"
+            }
+        },
+        "placeholders": {
+            "email": "example@email.com",
+            "full_name": "Your Full Name",
+            "password": "Create a strong password",
+            "confirm_password": "Re-enter your password"
+        }
     },
     "cart": {
         "title": "Your Cart",

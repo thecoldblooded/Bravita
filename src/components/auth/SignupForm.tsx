@@ -19,10 +19,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { useAuthOperations } from "@/hooks/useAuth";
 import Loader from "@/components/ui/Loader";
-import PhoneInput from "react-phone-number-input";
+import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import { Mail, RefreshCw } from "lucide-react";
 import { translateError } from "@/lib/errorTranslator";
+import { PasswordStrengthIndicator } from "./PasswordStrengthIndicator";
 
 interface SignupFormProps {
   onSuccess?: () => void;
@@ -45,7 +46,12 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
       email: z.string().email(t("auth.validation.email_invalid")),
       password: passwordSchema,
       confirmPassword: z.string(),
-      phone: z.string().min(1, t("auth.validation.phone_required")),
+      phone: z.string()
+        .min(1, t("auth.validation.phone_required"))
+        .refine(
+          (value) => isValidPhoneNumber(value || ""),
+          t("auth.validation.phone_invalid")
+        ),
       fullName: z.string().min(2, t("auth.validation.full_name_required")),
       agreeTerms: z.boolean().refine((v) => v === true, t("auth.validation.must_accept_terms")),
       agreePrivacy: z.boolean().refine((v) => v === true, t("auth.validation.must_accept_privacy")),
@@ -291,7 +297,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
                   <FormLabel>{t("auth.email")}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder={t("auth.email_placeholder")}
+                      placeholder={t("auth.placeholders.email")}
                       type="email"
                       {...field}
                       disabled={isLoading}
@@ -310,7 +316,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
                   <FormLabel>{t("auth.full_name")}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder={t("auth.your_name")}
+                      placeholder={t("auth.placeholders.full_name")}
                       {...field}
                       disabled={isLoading}
                     />
@@ -351,15 +357,13 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
                   <FormLabel>{t("auth.password")}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="••••••••"
+                      placeholder={t("auth.placeholders.password")}
                       type="password"
                       {...field}
                       disabled={isLoading}
                     />
                   </FormControl>
-                  <p className="text-xs text-gray-500 mt-2">
-                    {t("auth.password_requirements")}
-                  </p>
+                  <PasswordStrengthIndicator password={field.value} />
                   <FormMessage />
                 </FormItem>
               )}
@@ -373,7 +377,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
                   <FormLabel>{t("auth.confirm_password")}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="••••••••"
+                      placeholder={t("auth.placeholders.confirm_password")}
                       type="password"
                       {...field}
                       disabled={isLoading}
@@ -622,15 +626,13 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
                   <FormLabel>{t("auth.password")}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="••••••••"
+                      placeholder={t("auth.placeholders.password")}
                       type="password"
                       {...field}
                       disabled={isLoading}
                     />
                   </FormControl>
-                  <p className="text-xs text-gray-500 mt-2">
-                    {t("auth.password_requirements")}
-                  </p>
+                  <PasswordStrengthIndicator password={field.value} />
                   <FormMessage />
                 </FormItem>
               )}
@@ -644,7 +646,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
                   <FormLabel>{t("auth.confirm_password")}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="••••••••"
+                      placeholder={t("auth.placeholders.confirm_password")}
                       type="password"
                       {...field}
                       disabled={isLoading}

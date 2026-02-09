@@ -43,8 +43,10 @@ const PromotionMarquee = () => {
                 const active = data.filter(promo => {
                     const start = new Date(promo.start_date);
                     const end = new Date(promo.end_date);
-                    return isAfter(now, start) && isBefore(now, end);
+                    const isValid = now > start && now < end;
+                    return isValid;
                 });
+
                 setPromos(active);
             }
         } catch (err) {
@@ -136,7 +138,7 @@ const PromotionMarquee = () => {
         `}
             </style>
             <div
-                className="promo-marquee-wrapper fixed bottom-0 left-0 right-0 z-100 bg-black/95 backdrop-blur-md border-t border-white/10 py-2 shadow-[0_-8px_30px_rgba(0,0,0,0.8)] overflow-hidden"
+                className="promo-marquee-wrapper fixed bottom-0 left-0 right-0 z-999 bg-black/95 backdrop-blur-md border-t border-white/10 py-2 shadow-[0_-8px_30px_rgba(0,0,0,0.8)] overflow-hidden"
             >
                 <div
                     className="promo-marquee-container"
@@ -152,3 +154,4 @@ const PromotionMarquee = () => {
 };
 
 export default PromotionMarquee;
+

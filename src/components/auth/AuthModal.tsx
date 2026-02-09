@@ -61,11 +61,13 @@ export function AuthModal({
     document.body.style.width = '100%';
     document.body.style.overflow = 'hidden';
 
-    // 3. Final barrier against touch bleed
+    // 3. Final barrier against touch bleed - but allow scrolling inside modal
     const preventDefault = (e: TouchEvent) => {
       if (e.touches.length > 1) return;
-      const isScrollable = (e.target as HTMLElement).closest('.overflow-y-auto');
-      if (!isScrollable) {
+      const target = e.target as HTMLElement;
+      // Allow scrolling inside elements with overflow-y-auto or inside dialog content
+      const isInsideScrollable = target.closest('.overflow-y-auto, [role="dialog"], [data-radix-dialog-content]');
+      if (!isInsideScrollable) {
         e.preventDefault();
       }
     };
@@ -73,8 +75,9 @@ export function AuthModal({
     document.addEventListener('touchmove', preventDefault, { passive: false });
 
     const handleWheel = (e: WheelEvent) => {
-      const isScrollable = (e.target as HTMLElement).closest('.overflow-y-auto');
-      if (!isScrollable) {
+      const target = e.target as HTMLElement;
+      const isInsideScrollable = target.closest('.overflow-y-auto, [role="dialog"], [data-radix-dialog-content]');
+      if (!isInsideScrollable) {
         e.preventDefault();
       } else {
         // Stop propagation to prevent Lenis or other listeners from seeing it
@@ -109,7 +112,7 @@ export function AuthModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange} modal>
       <DialogContent
-        className="max-w-4xl p-0 overflow-hidden max-h-[95vh] md:max-h-[600px] border-none shadow-2xl"
+        className="max-w-4xl p-0 overflow-hidden h-dvh max-h-dvh md:h-auto md:max-h-150 border-none shadow-2xl"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <div className="flex flex-col md:flex-row h-full overflow-hidden">
@@ -118,7 +121,7 @@ export function AuthModal({
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3 }}
-            className="w-full md:w-1/2 p-6 md:p-8 bg-gradient-to-br from-orange-50 to-white overflow-y-auto custom-scrollbar"
+            className="w-full md:w-1/2 p-6 md:p-8 bg-linear-to-br from-orange-50 to-white overflow-y-auto custom-scrollbar"
             data-lenis-prevent
           >
             <div className="flex flex-col items-center mb-8">
@@ -157,7 +160,7 @@ export function AuthModal({
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3, delay: 0.1 }}
-            className="hidden md:flex w-1/2 bg-gradient-to-br from-orange-100 to-yellow-50 items-center justify-center p-8 overflow-hidden"
+            className="hidden md:flex w-1/2 bg-linear-to-br from-orange-100 to-yellow-50 items-center justify-center p-8 overflow-hidden"
           >
             <video
               key={`${activeTab}-video`}

@@ -252,6 +252,7 @@
         "name_too_short": "Ad Soyad en az 2 karakter olmalı",
         "street_address_required": "Sokak adresi gerekli (en az 5 karakter)",
         "phone_required": "Telefon numarası gerekli",
+        "phone_invalid": "Geçersiz telefon numarası. Lütfen ülke koduna uygun tam numarayı girin",
         "login_required": "Lütfen devam etmek için giriş yapın",
         "user_already_exists": "Bu e-posta adresi ile kayıtlı bir hesap zaten var",
         "address_saved": "Adres bilgileri kaydedildi",
@@ -269,6 +270,7 @@
             "company_name_required": "Şirket adı gerekli",
             "full_name_required": "Ad Soyad gerekli",
             "phone_required": "Telefon numarası gerekli",
+            "phone_invalid": "Geçersiz telefon numarası. Lütfen ülke koduna uygun tam numarayı girin",
             "password_min": "Şifre en az 12 karakter olmalıdır",
             "password_uppercase": "Şifre en az bir büyük harf içermelidir",
             "password_lowercase": "Şifre en az bir küçük harf içermelidir",
@@ -288,7 +290,27 @@
         "update_password_btn": "Şifreyi Güncelle",
         "password_updated": "Şifreniz başarıyla güncellendi",
         "captcha_required": "Lütfen robot olmadığınızı doğrulayın.",
-        "session_expired": "Oturum süresi doldu, lütfen tekrar deneyin."
+        "session_expired": "Oturum süresi doldu, lütfen tekrar deneyin.",
+        "password_strength": {
+            "label": "Şifre Gücü",
+            "very_weak": "Çok zayıf",
+            "weak": "Zayıf",
+            "medium": "Orta güçlükte",
+            "strong": "Güçlü şifre ✓",
+            "rules": {
+                "min_chars": "En az 12 karakter",
+                "uppercase": "Büyük harf (A-Z)",
+                "lowercase": "Küçük harf (a-z)",
+                "number": "Sayı (0-9)",
+                "special": "Özel karakter (!@#$%^&*)"
+            }
+        },
+        "placeholders": {
+            "email": "ornek@email.com",
+            "full_name": "Adınız Soyadınız",
+            "password": "Güçlü bir şifre oluşturun",
+            "confirm_password": "Şifrenizi tekrar girin"
+        }
     },
     "cart": {
         "title": "Sepetim",
