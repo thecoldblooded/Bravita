@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Save, AlertCircle } from "lucide-react";
+import { X, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Product } from "@/lib/admin";
 import Loader from "@/components/ui/Loader";
+import { useAdminTheme } from "@/contexts/AdminThemeContext";
 
 interface ProductModalProps {
     isOpen: boolean;
@@ -16,6 +17,8 @@ interface ProductModalProps {
 
 export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalProps) {
     const [isLoading, setIsLoading] = useState(false);
+    const { theme } = useAdminTheme();
+    const isDark = theme === "dark";
     const [formData, setFormData] = useState<Partial<Product>>({
         name: "",
         slug: "",
@@ -93,6 +96,18 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
         }
     };
 
+    // Dark mode styles
+    const modalBg = isDark ? "bg-gray-800" : "bg-white";
+    const headerBg = isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-100";
+    const footerBg = isDark ? "bg-gray-700/50 border-gray-700" : "bg-gray-50 border-gray-100";
+    const textPrimary = isDark ? "text-white" : "text-gray-900";
+    const textSecondary = isDark ? "text-gray-400" : "text-gray-500";
+    const inputClass = isDark ? "bg-gray-700 border-gray-600 text-white" : "";
+    const pricingBg = isDark ? "bg-orange-500/10 border-orange-500/30" : "bg-orange-50 border-orange-100";
+    const closeButtonClass = isDark
+        ? "bg-gray-700 text-gray-400 hover:text-gray-200 hover:bg-gray-600"
+        : "bg-gray-50 text-gray-400 hover:text-gray-600 hover:bg-gray-100";
+
     return (
         <AnimatePresence>
             {isOpen && (
@@ -110,16 +125,16 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
                         exit={{ opacity: 0, scale: 0.95 }}
                         className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
                     >
-                        <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl pointer-events-auto max-h-[90vh] overflow-y-auto">
+                        <div className={`${modalBg} rounded-2xl shadow-xl w-full max-w-2xl pointer-events-auto max-h-[90vh] overflow-y-auto`}>
                             <form onSubmit={handleSubmit}>
-                                <div className="p-6 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
-                                    <h2 className="text-xl font-bold text-gray-900">
+                                <div className={`p-6 border-b ${headerBg} flex items-center justify-between sticky top-0 z-10`}>
+                                    <h2 className={`text-xl font-bold ${textPrimary}`}>
                                         {product ? "Ürünü Düzenle" : "Yeni Ürün Ekle"}
                                     </h2>
                                     <button
                                         type="button"
                                         onClick={onClose}
-                                        className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                                        className={`w-8 h-8 rounded-full flex items-center justify-center ${closeButtonClass}`}
                                     >
                                         <X className="w-4 h-4" />
                                     </button>
@@ -129,29 +144,31 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
                                     {/* Basic Info */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="md:col-span-2 space-y-2">
-                                            <Label htmlFor="name">Ürün Adı *</Label>
+                                            <Label htmlFor="name" className={textPrimary}>Ürün Adı *</Label>
                                             <Input
                                                 id="name"
                                                 value={formData.name}
                                                 onChange={(e) => handleNameChange(e.target.value)}
                                                 required
                                                 placeholder="Örn: Bravita Multivitamin"
+                                                className={inputClass}
                                             />
                                         </div>
 
                                         <div className="space-y-2">
-                                            <Label htmlFor="slug">URL Slug *</Label>
+                                            <Label htmlFor="slug" className={textPrimary}>URL Slug *</Label>
                                             <Input
                                                 id="slug"
                                                 value={formData.slug}
                                                 onChange={(e) => handleChange("slug", e.target.value)}
                                                 required
                                                 placeholder="bravita-multivitamin"
+                                                className={inputClass}
                                             />
                                         </div>
 
                                         <div className="space-y-2">
-                                            <Label htmlFor="max_qty">Maks. Sipariş Adedi</Label>
+                                            <Label htmlFor="max_qty" className={textPrimary}>Maks. Sipariş Adedi</Label>
                                             <Input
                                                 id="max_qty"
                                                 type="number"
@@ -159,14 +176,15 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
                                                 onChange={(e) => handleChange("max_quantity_per_order", parseInt(e.target.value))}
                                                 required
                                                 min={1}
+                                                className={inputClass}
                                             />
                                         </div>
                                     </div>
 
                                     {/* Pricing & Stock */}
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-orange-50 rounded-xl border border-orange-100">
+                                    <div className={`grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-xl border ${pricingBg}`}>
                                         <div className="space-y-2">
-                                            <Label htmlFor="price">Satış Fiyatı (₺) *</Label>
+                                            <Label htmlFor="price" className={textPrimary}>Satış Fiyatı (₺) *</Label>
                                             <Input
                                                 id="price"
                                                 type="number"
@@ -175,12 +193,12 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
                                                 required
                                                 min={0}
                                                 step="0.01"
-                                                className="bg-white"
+                                                className={isDark ? "bg-gray-700 border-gray-600 text-white" : "bg-white"}
                                             />
                                         </div>
 
                                         <div className="space-y-2">
-                                            <Label htmlFor="original_price">Liste Fiyatı (₺)</Label>
+                                            <Label htmlFor="original_price" className={textPrimary}>Liste Fiyatı (₺)</Label>
                                             <div className="relative">
                                                 <Input
                                                     id="original_price"
@@ -190,7 +208,7 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
                                                     min={0}
                                                     step="0.01"
                                                     placeholder="Opsiyonel"
-                                                    className="bg-white"
+                                                    className={isDark ? "bg-gray-700 border-gray-600 text-white" : "bg-white"}
                                                 />
                                                 {formData.original_price && formData.original_price > (formData.price || 0) && (
                                                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-green-600">
@@ -198,11 +216,11 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
                                                     </span>
                                                 )}
                                             </div>
-                                            <p className="text-[10px] text-gray-500">İndirimli göstermek için doldurun.</p>
+                                            <p className={`text-[10px] ${textSecondary}`}>İndirimli göstermek için doldurun.</p>
                                         </div>
 
                                         <div className="space-y-2">
-                                            <Label htmlFor="stock">Stok Adedi *</Label>
+                                            <Label htmlFor="stock" className={textPrimary}>Stok Adedi *</Label>
                                             <Input
                                                 id="stock"
                                                 type="number"
@@ -210,30 +228,31 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
                                                 onChange={(e) => handleChange("stock", parseInt(e.target.value))}
                                                 required
                                                 min={0}
-                                                className="bg-white"
+                                                className={isDark ? "bg-gray-700 border-gray-600 text-white" : "bg-white"}
                                             />
                                         </div>
                                     </div>
 
                                     {/* Details */}
                                     <div className="space-y-2">
-                                        <Label htmlFor="description">Açıklama</Label>
+                                        <Label htmlFor="description" className={textPrimary}>Açıklama</Label>
                                         <textarea
                                             id="description"
                                             value={formData.description}
                                             onChange={(e) => handleChange("description", e.target.value)}
-                                            className="flex min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                            className={`flex min-h-20 w-full rounded-md border px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${isDark ? "bg-gray-700 border-gray-600 text-white" : "bg-background border-input"}`}
                                             placeholder="Ürün açıklaması..."
                                         />
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label htmlFor="image_url">Görsel URL</Label>
+                                        <Label htmlFor="image_url" className={textPrimary}>Görsel URL</Label>
                                         <Input
                                             id="image_url"
                                             value={formData.image_url}
                                             onChange={(e) => handleChange("image_url", e.target.value)}
                                             placeholder="https://..."
+                                            className={inputClass}
                                         />
                                     </div>
 
@@ -245,12 +264,18 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
                                             onChange={(e) => handleChange("is_active", e.target.checked)}
                                             className="w-4 h-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
                                         />
-                                        <Label htmlFor="is_active" className="cursor-pointer">Ürün Satışa Açık (Aktif)</Label>
+                                        <Label htmlFor="is_active" className={`cursor-pointer ${textPrimary}`}>Ürün Satışa Açık (Aktif)</Label>
                                     </div>
                                 </div>
 
-                                <div className="p-6 border-t border-gray-100 flex items-center justify-end gap-3 bg-gray-50 rounded-b-2xl">
-                                    <Button type="button" variant="ghost" onClick={onClose} disabled={isLoading}>
+                                <div className={`p-6 border-t ${footerBg} flex items-center justify-end gap-3 rounded-b-2xl`}>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        onClick={onClose}
+                                        disabled={isLoading}
+                                        className={isDark ? "text-gray-300 hover:bg-gray-700" : ""}
+                                    >
                                         İptal
                                     </Button>
                                     <Button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white min-w-32" disabled={isLoading}>

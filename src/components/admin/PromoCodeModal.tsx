@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAdminTheme } from "@/contexts/AdminThemeContext";
 
 const promoSchema = z.object({
     code: z.string().min(3, "En az 3 karakter olmalı"),
@@ -31,12 +32,14 @@ interface PromoCodeModalProps {
 }
 
 export function PromoCodeModal({ isOpen, onClose, onSave, promoCode }: PromoCodeModalProps) {
+    const { theme } = useAdminTheme();
+    const isDark = theme === "dark";
+
     const {
         register,
         handleSubmit,
         reset,
         watch,
-        setValue,
         formState: { errors, isSubmitting }
     } = useForm<PromoFormValues>({
         resolver: zodResolver(promoSchema),
@@ -86,6 +89,17 @@ export function PromoCodeModal({ isOpen, onClose, onSave, promoCode }: PromoCode
         onClose();
     };
 
+    // Dark mode styles
+    const modalBg = isDark ? "bg-gray-800" : "bg-white";
+    const headerBorder = isDark ? "border-gray-700" : "border-gray-100";
+    const textPrimary = isDark ? "text-white" : "text-gray-900";
+    const textSecondary = isDark ? "text-gray-400" : "text-gray-600";
+    const inputClass = isDark ? "bg-gray-700 border-gray-600 text-white" : "";
+    const selectClass = isDark
+        ? "bg-gray-700 border-gray-600 text-white"
+        : "bg-background border-input";
+    const closeButtonClass = isDark ? "text-gray-400 hover:text-gray-200" : "text-gray-400 hover:text-gray-600";
+
     return (
         <AnimatePresence>
             {isOpen && (
@@ -103,12 +117,12 @@ export function PromoCodeModal({ isOpen, onClose, onSave, promoCode }: PromoCode
                         exit={{ opacity: 0, scale: 0.95 }}
                         className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
                     >
-                        <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg pointer-events-auto flex flex-col max-h-[90vh]">
-                            <div className="flex items-center justify-between p-6 border-b border-gray-100">
-                                <h2 className="text-xl font-bold text-gray-900">
+                        <div className={`${modalBg} rounded-2xl shadow-xl w-full max-w-lg pointer-events-auto flex flex-col max-h-[90vh]`}>
+                            <div className={`flex items-center justify-between p-6 border-b ${headerBorder}`}>
+                                <h2 className={`text-xl font-bold ${textPrimary}`}>
                                     {promoCode ? "Promosyon Kodunu Düzenle" : "Yeni Promosyon Kodu"}
                                 </h2>
-                                <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+                                <button onClick={onClose} className={closeButtonClass}>
                                     <X className="w-5 h-5" />
                                 </button>
                             </div>
@@ -116,32 +130,33 @@ export function PromoCodeModal({ isOpen, onClose, onSave, promoCode }: PromoCode
                             <form onSubmit={handleSubmit(onSubmit)} className="p-6 overflow-y-auto">
                                 <div className="space-y-4">
                                     <div className="space-y-2">
-                                        <Label>Promosyon Kodu</Label>
+                                        <Label className={textPrimary}>Promosyon Kodu</Label>
                                         <Input
                                             {...register("code")}
                                             placeholder="Örn: WELCOME10"
-                                            className="uppercase"
+                                            className={`uppercase ${inputClass}`}
                                         />
                                         {errors.code && <p className="text-xs text-red-500">{errors.code.message}</p>}
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <Label>İndirim Tipi</Label>
+                                            <Label className={textPrimary}>İndirim Tipi</Label>
                                             <select
                                                 {...register("discount_type")}
-                                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                                className={`flex h-10 w-full rounded-md border px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${selectClass}`}
                                             >
                                                 <option value="percentage">Yüzde (%)</option>
                                                 <option value="fixed_amount">Sabit Tutar (₺)</option>
                                             </select>
                                         </div>
                                         <div className="space-y-2">
-                                            <Label>Değer {discountType === "percentage" ? "(%)" : "(₺)"}</Label>
+                                            <Label className={textPrimary}>Değer {discountType === "percentage" ? "(%)" : "(₺)"}</Label>
                                             <Input
                                                 type="number"
                                                 {...register("discount_value")}
                                                 step="0.01"
+                                                className={inputClass}
                                             />
                                             {errors.discount_value && <p className="text-xs text-red-500">{errors.discount_value.message}</p>}
                                         </div>
@@ -149,46 +164,51 @@ export function PromoCodeModal({ isOpen, onClose, onSave, promoCode }: PromoCode
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <Label>Minimum Sepet Tutarı (₺)</Label>
+                                            <Label className={textPrimary}>Minimum Sepet Tutarı (₺)</Label>
                                             <Input
                                                 type="number"
                                                 {...register("min_order_amount")}
                                                 placeholder="Opsiyonel"
+                                                className={inputClass}
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label>Maksimum İndirim (₺)</Label>
+                                            <Label className={textPrimary}>Maksimum İndirim (₺)</Label>
                                             <Input
                                                 type="number"
                                                 {...register("max_discount_amount")}
                                                 placeholder="Opsiyonel"
+                                                className={inputClass}
                                             />
                                         </div>
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <Label>Başlangıç Tarihi</Label>
+                                            <Label className={textPrimary}>Başlangıç Tarihi</Label>
                                             <Input
                                                 type="date"
                                                 {...register("start_date")}
+                                                className={inputClass}
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label>Bitiş Tarihi</Label>
+                                            <Label className={textPrimary}>Bitiş Tarihi</Label>
                                             <Input
                                                 type="date"
                                                 {...register("end_date")}
+                                                className={inputClass}
                                             />
                                         </div>
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label>Kullanım Limiti</Label>
+                                        <Label className={textPrimary}>Kullanım Limiti</Label>
                                         <Input
                                             type="number"
                                             {...register("usage_limit")}
                                             placeholder="Sınırsız için boş bırakın"
+                                            className={inputClass}
                                         />
                                     </div>
 
@@ -199,12 +219,17 @@ export function PromoCodeModal({ isOpen, onClose, onSave, promoCode }: PromoCode
                                             {...register("is_active")}
                                             className="h-4 w-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
                                         />
-                                        <Label htmlFor="is_active">Aktif</Label>
+                                        <Label htmlFor="is_active" className={textPrimary}>Aktif</Label>
                                     </div>
                                 </div>
 
                                 <div className="mt-6 flex justify-end gap-3">
-                                    <Button type="button" variant="outline" onClick={onClose}>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={onClose}
+                                        className={isDark ? "border-gray-600 text-gray-300 hover:bg-gray-700" : ""}
+                                    >
                                         İptal
                                     </Button>
                                     <Button type="submit" disabled={isSubmitting} className="bg-orange-500 hover:bg-orange-600 text-white">

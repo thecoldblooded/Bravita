@@ -1,285 +1,211 @@
-import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Users, Search, Shield, ShieldOff, Plus, X, UserPlus } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminGuard } from "@/components/admin/AdminGuard";
-import { getAdminUsers, searchUsersByEmail, setUserAdmin } from "@/lib/admin";
+import { getAdminUsers, setUserAdmin, searchUsersByEmail } from "@/lib/admin";
+import { Search, Shield, ShieldOff, UserPlus, RefreshCw, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { useAdminTheme } from "@/contexts/AdminThemeContext";
 
 interface AdminUser {
     id: string;
     email: string;
     full_name: string | null;
+    is_admin?: boolean;
 }
 
-interface SearchResult {
-    id: string;
-    email: string;
-    full_name: string | null;
-    is_admin: boolean;
-}
+function AddAdminModal({ isOpen, onClose, onAdd }: { isOpen: boolean; onClose: () => void; onAdd: (email: string) => Promise<void> }) {
+    const [email, setEmail] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    const { theme } = useAdminTheme();
+    const isDark = theme === "dark";
 
-export default function AdminUsers() {
-    const [admins, setAdmins] = useState<AdminUser[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isSearching, setIsSearching] = useState(false);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-    const [showAddModal, setShowAddModal] = useState(false);
-    const [processingId, setProcessingId] = useState<string | null>(null);
+    if (!isOpen) return null;
 
-    useEffect(() => {
-        loadAdmins();
-    }, []);
-
-    async function loadAdmins() {
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!email.trim()) return;
+        setIsLoading(true);
         try {
-            const data = await getAdminUsers();
-            setAdmins(data);
-        } catch (error) {
-            console.error("Failed to load admins:", error);
-            toast.error("Admin listesi yüklenemedi");
+            await onAdd(email.trim());
+            setEmail("");
         } finally {
             setIsLoading(false);
         }
-    }
+    };
 
-    async function handleSearch() {
-        if (!searchQuery.trim()) return;
-        setIsSearching(true);
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className={`w-full max-w-md rounded-2xl p-6 ${isDark ? "bg-gray-800" : "bg-white"}`}>
+                <div className="flex items-center justify-between mb-4">
+                    <h2 className={`text-lg font-bold ${isDark ? "text-white" : "text-gray-900"}`}>Admin Ekle</h2>
+                    <Button variant="ghost" size="icon" onClick={onClose}><X className="w-4 h-4" /></Button>
+                </div>
+                <form onSubmit={handleSubmit}>
+                    <Input
+                        type="email"
+                        placeholder="E-posta adresi"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className={isDark ? "bg-gray-700 border-gray-600 text-white" : ""}
+                    />
+                    <div className="flex gap-2 mt-4">
+                        <Button type="button" variant="outline" onClick={onClose} className="flex-1">İptal</Button>
+                        <Button type="submit" disabled={isLoading} className="flex-1 bg-orange-500 hover:bg-orange-600">
+                            {isLoading ? "Ekleniyor..." : "Ekle"}
+                        </Button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
+
+function UsersContent() {
+    const [users, setUsers] = useState<AdminUser[]>([]);
+    const [filteredUsers, setFilteredUsers] = useState<AdminUser[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [search, setSearch] = useState("");
+    const [showAddModal, setShowAddModal] = useState(false);
+    const { theme } = useAdminTheme();
+    const isDark = theme === "dark";
+
+    const loadUsers = useCallback(async () => {
+        setIsLoading(true);
         try {
-            const results = await searchUsersByEmail(searchQuery);
-            setSearchResults(results);
+            const data = await getAdminUsers();
+            const usersWithAdmin = data.map(u => ({ ...u, is_admin: true }));
+            setUsers(usersWithAdmin);
+            setFilteredUsers(usersWithAdmin);
         } catch (error) {
-            console.error("Search failed:", error);
-            toast.error("Arama başarısız");
+            toast.error("Kullanıcılar yüklenemedi");
         } finally {
-            setIsSearching(false);
+            setIsLoading(false);
         }
-    }
+    }, []);
 
-    async function handleAddAdmin(userId: string) {
-        setProcessingId(userId);
-        try {
-            await setUserAdmin(userId, true);
-            await loadAdmins();
-            setSearchResults((prev) => prev.map((u) => u.id === userId ? { ...u, is_admin: true } : u));
-            toast.success("Admin yetkisi verildi");
-        } catch (error) {
-            console.error("Failed to add admin:", error);
-            toast.error("Admin yetkisi verilemedi");
-        } finally {
-            setProcessingId(null);
-        }
-    }
+    useEffect(() => { loadUsers(); }, [loadUsers]);
 
-    async function handleRemoveAdmin(userId: string) {
-        if (admins.length <= 1) {
-            toast.error("En az bir admin olmalı");
-            return;
+    useEffect(() => {
+        if (!search.trim()) setFilteredUsers(users);
+        else {
+            const q = search.toLowerCase();
+            setFilteredUsers(users.filter(u => u.email?.toLowerCase().includes(q) || u.full_name?.toLowerCase().includes(q)));
         }
-        setProcessingId(userId);
+    }, [search, users]);
+
+    const handleRemoveAdmin = async (user: AdminUser) => {
+        if (!confirm(`${user.full_name || user.email} admin yetkisini kaldırmak istediğinize emin misiniz?`)) return;
         try {
-            await setUserAdmin(userId, false);
-            setAdmins((prev) => prev.filter((a) => a.id !== userId));
-            setSearchResults((prev) => prev.map((u) => u.id === userId ? { ...u, is_admin: false } : u));
+            await setUserAdmin(user.id, false);
+            setUsers(users.filter(u => u.id !== user.id));
             toast.success("Admin yetkisi kaldırıldı");
         } catch (error) {
-            console.error("Failed to remove admin:", error);
-            toast.error("Admin yetkisi kaldırılamadı");
-        } finally {
-            setProcessingId(null);
+            toast.error("İşlem başarısız");
         }
-    }
+    };
 
+    const handleAddAdmin = async (email: string) => {
+        try {
+            const results = await searchUsersByEmail(email);
+            if (results.length === 0) {
+                toast.error("Kullanıcı bulunamadı");
+                return;
+            }
+            const user = results[0];
+            if (user.is_admin) {
+                toast.error("Bu kullanıcı zaten admin");
+                return;
+            }
+            await setUserAdmin(user.id, true);
+            toast.success("Admin eklendi");
+            setShowAddModal(false);
+            await loadUsers();
+        } catch (error: any) {
+            toast.error("Eklenemedi");
+            throw error;
+        }
+    };
+
+    const textPrimary = isDark ? "text-white" : "text-gray-900";
+    const textSecondary = isDark ? "text-gray-400" : "text-gray-500";
+    const cardClass = isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-100";
+    const inputClass = isDark ? "bg-gray-700 border-gray-600 text-white" : "bg-white";
+    const rowHoverClass = isDark ? "hover:bg-gray-700" : "hover:bg-gray-50";
+
+    return (
+        <>
+            <div className="max-w-4xl mx-auto">
+                <div className="flex items-center justify-between mb-8">
+                    <div>
+                        <h1 className={`text-2xl font-bold ${textPrimary}`}>Kullanıcı Yönetimi</h1>
+                        <p className={textSecondary}>Admin yetkilerini yönetin.</p>
+                    </div>
+                    <div className="flex gap-3">
+                        <Button variant="outline" size="icon" onClick={loadUsers} className={isDark ? "bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600" : ""}>
+                            <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
+                        </Button>
+                        <Button onClick={() => setShowAddModal(true)} className="bg-orange-500 hover:bg-orange-600 text-white">
+                            <UserPlus className="w-4 h-4 mr-2" />Admin Ekle
+                        </Button>
+                    </div>
+                </div>
+
+                <div className="relative mb-6">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Input placeholder="Ad veya e-posta ara..." value={search} onChange={(e) => setSearch(e.target.value)} className={`pl-10 ${inputClass}`} />
+                </div>
+
+                <div className={`rounded-2xl border overflow-hidden shadow-sm ${cardClass}`}>
+                    {isLoading ? (
+                        <div className="p-8 text-center"><div className={`animate-pulse ${textSecondary}`}>Yükleniyor...</div></div>
+                    ) : filteredUsers.length === 0 ? (
+                        <div className={`p-8 text-center ${textSecondary}`}>Admin bulunamadı.</div>
+                    ) : (
+                        <ul className={isDark ? "divide-y divide-gray-700" : "divide-y divide-gray-100"}>
+                            {filteredUsers.map((user) => (
+                                <li key={user.id} className={`flex items-center justify-between px-6 py-4 transition-colors ${rowHoverClass}`}>
+                                    <div className="flex items-center gap-4">
+                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${isDark ? "bg-orange-500/20 text-orange-400" : "bg-orange-100 text-orange-600"}`}>
+                                            {user.full_name?.charAt(0) || user.email?.charAt(0) || "?"}
+                                        </div>
+                                        <div>
+                                            <p className={`font-medium ${textPrimary}`}>{user.full_name || "İsimsiz"}</p>
+                                            <p className={`text-sm ${textSecondary}`}>{user.email}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${isDark ? "bg-orange-500/20 text-orange-400" : "bg-orange-100 text-orange-600"}`}>
+                                            <Shield className="w-3 h-3 inline mr-1" />Admin
+                                        </span>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => handleRemoveAdmin(user)}
+                                            className={isDark ? "text-red-400 hover:text-red-300 hover:bg-red-500/20" : "text-red-500 hover:text-red-600 hover:bg-red-50"}
+                                            title="Yetkiyi Kaldır"
+                                        >
+                                            <ShieldOff className="w-4 h-4" />
+                                        </Button>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+            </div>
+
+            <AddAdminModal isOpen={showAddModal} onClose={() => setShowAddModal(false)} onAdd={handleAddAdmin} />
+        </>
+    );
+}
+
+export default function AdminUsers() {
     return (
         <AdminGuard>
             <AdminLayout>
-                <div className="max-w-4xl mx-auto">
-                    {/* Header */}
-                    <div className="mb-8 flex items-center justify-between">
-                        <div>
-                            <h1 className="text-2xl font-bold text-gray-900">Admin Yönetimi</h1>
-                            <p className="text-gray-500">Admin kullanıcıları yönetin</p>
-                        </div>
-                        <Button
-                            onClick={() => setShowAddModal(true)}
-                            className="bg-orange-500 hover:bg-orange-600"
-                        >
-                            <UserPlus className="w-4 h-4 mr-2" />
-                            Admin Ekle
-                        </Button>
-                    </div>
-
-                    {/* Admin List */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
-                    >
-                        <div className="p-6 border-b border-gray-100">
-                            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                                <Shield className="w-5 h-5 text-orange-500" />
-                                Mevcut Adminler
-                            </h2>
-                        </div>
-
-                        {isLoading ? (
-                            <div className="divide-y divide-gray-50">
-                                {[...Array(5)].map((_, i) => (
-                                    <div key={i} className="flex items-center justify-between p-4">
-                                        <div className="flex items-center gap-4">
-                                            <Skeleton className="w-12 h-12 rounded-full" />
-                                            <div>
-                                                <Skeleton className="h-4 w-32 mb-2" />
-                                                <Skeleton className="h-3 w-48" />
-                                            </div>
-                                        </div>
-                                        <Skeleton className="h-9 w-28" />
-                                    </div>
-                                ))}
-                            </div>
-                        ) : admins.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-16">
-                                <Users className="w-12 h-12 text-gray-300 mb-4" />
-                                <p className="text-gray-500">Henüz admin yok</p>
-                            </div>
-                        ) : (
-                            <div className="divide-y divide-gray-50">
-                                {admins.map((admin) => (
-                                    <div
-                                        key={admin.id}
-                                        className="flex items-center justify-between p-4 hover:bg-gray-50"
-                                    >
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center">
-                                                <span className="text-orange-600 font-bold text-lg">
-                                                    {admin.full_name?.charAt(0) || admin.email.charAt(0).toUpperCase()}
-                                                </span>
-                                            </div>
-                                            <div>
-                                                <p className="font-medium text-gray-900">{admin.full_name || "İsimsiz"}</p>
-                                                <p className="text-sm text-gray-500">{admin.email}</p>
-                                            </div>
-                                        </div>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => handleRemoveAdmin(admin.id)}
-                                            disabled={processingId === admin.id || admins.length <= 1 || admin.email === 'umut.dog91@gmail.com'}
-                                            className="text-red-600 hover:text-red-700 hover:bg-red-50 disabled:opacity-30"
-                                        >
-                                            <ShieldOff className="w-4 h-4 mr-1" />
-                                            Kaldır
-                                        </Button>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </motion.div>
-
-                    {/* Add Admin Modal */}
-                    <AnimatePresence>
-                        {showAddModal && (
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-                                onClick={() => setShowAddModal(false)}
-                            >
-                                <motion.div
-                                    initial={{ scale: 0.95, opacity: 0 }}
-                                    animate={{ scale: 1, opacity: 1 }}
-                                    exit={{ scale: 0.95, opacity: 0 }}
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden"
-                                >
-                                    <div className="flex items-center justify-between p-6 border-b border-gray-100">
-                                        <h2 className="text-xl font-bold text-gray-900">Admin Ekle</h2>
-                                        <button
-                                            onClick={() => setShowAddModal(false)}
-                                            className="p-2 hover:bg-gray-100 rounded-lg"
-                                        >
-                                            <X className="w-5 h-5" />
-                                        </button>
-                                    </div>
-
-                                    <div className="p-6">
-                                        <div className="flex gap-2 mb-6">
-                                            <div className="relative flex-1">
-                                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                                <Input
-                                                    placeholder="E-posta ile kullanıcı ara..."
-                                                    value={searchQuery}
-                                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                                    onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                                                    className="pl-10"
-                                                />
-                                            </div>
-                                            <Button
-                                                onClick={handleSearch}
-                                                disabled={isSearching || !searchQuery.trim()}
-                                                className="bg-orange-500 hover:bg-orange-600"
-                                            >
-                                                {isSearching ? "Aranıyor..." : "Ara"}
-                                            </Button>
-                                        </div>
-
-                                        {/* Search Results */}
-                                        <div className="max-h-72 overflow-y-auto">
-                                            {searchResults.length === 0 ? (
-                                                <div className="text-center py-8 text-gray-500">
-                                                    <Users className="w-10 h-10 mx-auto text-gray-300 mb-2" />
-                                                    <p>Kullanıcı aramak için e-posta girin</p>
-                                                </div>
-                                            ) : (
-                                                <div className="space-y-2">
-                                                    {searchResults.map((user) => (
-                                                        <div
-                                                            key={user.id}
-                                                            className="flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:bg-gray-50"
-                                                        >
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                                                                    <span className="text-gray-600 font-medium">
-                                                                        {user.full_name?.charAt(0) || user.email.charAt(0).toUpperCase()}
-                                                                    </span>
-                                                                </div>
-                                                                <div>
-                                                                    <p className="font-medium text-gray-900">{user.full_name || "İsimsiz"}</p>
-                                                                    <p className="text-sm text-gray-500">{user.email}</p>
-                                                                </div>
-                                                            </div>
-                                                            {user.is_admin ? (
-                                                                <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-700 font-medium">
-                                                                    Admin
-                                                                </span>
-                                                            ) : (
-                                                                <Button
-                                                                    size="sm"
-                                                                    onClick={() => handleAddAdmin(user.id)}
-                                                                    disabled={processingId === user.id}
-                                                                    className="bg-orange-500 hover:bg-orange-600"
-                                                                >
-                                                                    <Plus className="w-4 h-4 mr-1" />
-                                                                    Ekle
-                                                                </Button>
-                                                            )}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </div>
+                <UsersContent />
             </AdminLayout>
         </AdminGuard>
     );

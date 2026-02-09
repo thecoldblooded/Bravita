@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -44,6 +44,51 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import Loader from "@/components/ui/Loader";
 
+// Separate component to use useLocation inside BrowserRouter
+const AppContent = () => {
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/admin');
+
+  return (
+    <>
+      <Routes>
+        {/* Main site routes */}
+        <Route path="/" element={<Index />} />
+        <Route path="/complete-profile" element={<CompleteProfile />} />
+        <Route path="/update-password" element={<UpdatePassword />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
+
+        {/* Admin routes */}
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/admin/orders" element={<AdminOrders />} />
+        <Route path="/admin/orders/:orderId" element={<AdminOrderDetail />} />
+        <Route path="/admin/products" element={<AdminProducts />} />
+        <Route path="/admin/promotions" element={<AdminPromoCodes />} />
+        <Route path="/admin/admins" element={<AdminUsers />} />
+
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+
+      {/* Only show these on non-admin routes */}
+      {!isAdminRoute && (
+        <>
+          {/* Her 1 dakikada bir sol altta görünen GIF */}
+          <PeriodicGif
+            gifSrc={GIF_URL}
+            intervalMs={60000} // 1 dakika = 60000ms
+            alt="Periodic animation"
+          />
+          <PromotionMarquee />
+          <div className="h-12 md:h-14" aria-hidden="true" /> {/* Spacer for marquee */}
+          <CookieConsent />
+        </>
+      )}
+    </>
+  );
+};
+
 const App = () => {
   const { isSplashScreenActive, isPasswordRecovery } = useAuth();
 
@@ -78,39 +123,9 @@ const App = () => {
               </Routes>
             </BrowserRouter>
           ) : (
-            <>
-              <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-                <Routes>
-                  {/* Main site routes */}
-                  <Route path="/" element={<Index />} />
-                  <Route path="/complete-profile" element={<CompleteProfile />} />
-                  <Route path="/update-password" element={<UpdatePassword />} />
-                  <Route path="/profile" element={<Profile />} />
-                  <Route path="/checkout" element={<Checkout />} />
-                  <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
-
-                  {/* Admin routes */}
-                  <Route path="/admin" element={<AdminDashboard />} />
-                  <Route path="/admin/orders" element={<AdminOrders />} />
-                  <Route path="/admin/orders/:orderId" element={<AdminOrderDetail />} />
-                  <Route path="/admin/products" element={<AdminProducts />} />
-                  <Route path="/admin/promotions" element={<AdminPromoCodes />} />
-                  <Route path="/admin/admins" element={<AdminUsers />} />
-
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </BrowserRouter>
-
-              {/* Her 1 dakikada bir sol altta görünen GIF */}
-              <PeriodicGif
-                gifSrc={GIF_URL}
-                intervalMs={60000} // 1 dakika = 60000ms
-                alt="Periodic animation"
-              />
-              <PromotionMarquee />
-              <div className="h-12 md:h-14" aria-hidden="true" /> {/* Spacer for marquee */}
-              <CookieConsent />
-            </>
+            <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+              <AppContent />
+            </BrowserRouter>
           )}
         </TooltipProvider>
       </QueryClientProvider>
@@ -119,4 +134,3 @@ const App = () => {
 };
 
 export default App;
-

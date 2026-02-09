@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { AdminSidebar } from "./AdminSidebar";
 import { Order } from "@/lib/admin";
+import { AdminThemeProvider, useAdminTheme } from "@/contexts/AdminThemeContext";
 
 interface AdminLayoutProps {
     children: React.ReactNode;
@@ -11,9 +12,10 @@ interface AdminLayoutProps {
 
 import { CommandPalette } from "./CommandPalette";
 
-export function AdminLayout({ children }: AdminLayoutProps) {
+function AdminLayoutInner({ children }: AdminLayoutProps) {
     const location = useLocation();
     const navigate = useNavigate();
+    const { theme } = useAdminTheme();
 
     useEffect(() => {
         const channel = supabase
@@ -26,7 +28,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                     table: 'orders'
                 },
                 (payload) => {
-                    console.log("Realtime event received:", payload);
+                    // console.log("Realtime event received:", payload);
                     if (location.pathname !== '/admin/orders') {
                         const newOrder = payload.new as Order;
                         const total = newOrder.order_details?.total || 0;
@@ -42,7 +44,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 }
             )
             .subscribe((status) => {
-                console.log("Realtime Subscription Status:", status);
+                // console.log("Realtime Subscription Status:", status);
             });
 
         return () => {
@@ -51,12 +53,23 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     }, [navigate, location.pathname]);
 
     return (
-        <div className="min-h-screen bg-[#FFFBF7] flex">
+        <div className={`min-h-screen flex transition-colors duration-300 ${theme === "dark"
+                ? "bg-gray-900"
+                : "bg-[#FFFBF7]"
+            }`}>
             <AdminSidebar />
             <main className="flex-1 p-8 overflow-auto">
                 {children}
             </main>
             <CommandPalette />
         </div>
+    );
+}
+
+export function AdminLayout({ children }: AdminLayoutProps) {
+    return (
+        <AdminThemeProvider>
+            <AdminLayoutInner>{children}</AdminLayoutInner>
+        </AdminThemeProvider>
     );
 }

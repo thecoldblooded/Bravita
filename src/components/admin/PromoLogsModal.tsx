@@ -5,6 +5,7 @@ import { TableSkeleton } from "./skeletons";
 import { Link } from "react-router-dom";
 import { ExternalLink } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
+import { useAdminTheme } from "@/contexts/AdminThemeContext";
 
 interface PromoLogsModalProps {
     isOpen: boolean;
@@ -35,6 +36,8 @@ interface PromoLog {
 export function PromoLogsModal({ isOpen, onClose, promoId, promoCode }: PromoLogsModalProps) {
     const [logs, setLogs] = useState<PromoLog[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const { theme } = useAdminTheme();
+    const isDark = theme === "dark";
 
     useEffect(() => {
         if (isOpen && promoId) {
@@ -110,23 +113,40 @@ export function PromoLogsModal({ isOpen, onClose, promoId, promoCode }: PromoLog
         }
     };
 
+    // Dark mode styles
+    const dialogClass = isDark ? "bg-gray-800 border-gray-700 text-white" : "";
+    const titleClass = isDark ? "text-white" : "";
+    const emptyStateClass = isDark
+        ? "text-gray-400 bg-gray-700 border-gray-600"
+        : "text-gray-400 bg-gray-50 border-gray-200";
+    const tableBorderClass = isDark ? "border-gray-700" : "border-gray-100";
+    const theadClass = isDark ? "bg-gray-700 text-gray-400" : "bg-gray-50 text-gray-500";
+    const tbodyDividerClass = isDark ? "divide-gray-700" : "divide-gray-100";
+    const rowClass = isDark ? "bg-gray-800 hover:bg-gray-700" : "bg-white hover:bg-gray-50";
+    const textPrimary = isDark ? "text-white" : "text-gray-900";
+    const textSecondary = isDark ? "text-gray-400" : "text-gray-600";
+    const textMuted = isDark ? "text-gray-500" : "text-gray-500";
+    const linkClass = isDark
+        ? "bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 hover:text-orange-300"
+        : "bg-orange-50 text-orange-700 hover:bg-orange-100 hover:text-orange-800";
+
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto w-full">
+            <DialogContent className={`max-w-3xl max-h-[80vh] overflow-y-auto w-full ${dialogClass}`}>
                 <DialogHeader>
-                    <DialogTitle>Kullanım Geçmişi: <span className="font-mono text-orange-600">{promoCode}</span></DialogTitle>
+                    <DialogTitle className={titleClass}>Kullanım Geçmişi: <span className="font-mono text-orange-500">{promoCode}</span></DialogTitle>
                 </DialogHeader>
 
                 {isLoading ? (
                     <TableSkeleton rows={3} columns={4} />
                 ) : logs.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                    <div className={`flex flex-col items-center justify-center py-12 rounded-xl border border-dashed ${emptyStateClass}`}>
                         <p>Henüz kullanım kaydı yok.</p>
                     </div>
                 ) : (
-                    <div className="overflow-hidden rounded-xl border border-gray-100">
+                    <div className={`overflow-hidden rounded-xl border ${tableBorderClass}`}>
                         <table className="w-full text-sm text-left">
-                            <thead className="bg-gray-50 text-gray-500 font-medium">
+                            <thead className={`font-medium ${theadClass}`}>
                                 <tr>
                                     <th className="p-4">Tarih</th>
                                     <th className="p-4">Kullanıcı</th>
@@ -134,17 +154,17 @@ export function PromoLogsModal({ isOpen, onClose, promoId, promoCode }: PromoLog
                                     <th className="p-4 text-right">İndirim</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100">
+                            <tbody className={`divide-y ${tbodyDividerClass}`}>
                                 {logs.map((log) => (
-                                    <tr key={log.id} className="bg-white hover:bg-gray-50 transition-colors">
-                                        <td className="p-4 text-gray-600">
+                                    <tr key={log.id} className={`${rowClass} transition-colors`}>
+                                        <td className={`p-4 ${textSecondary}`}>
                                             {formatDateTime(log.created_at)}
                                         </td>
                                         <td className="p-4">
                                             {log.user ? (
                                                 <>
-                                                    <div className="font-medium text-gray-900">{log.user.full_name}</div>
-                                                    <div className="text-xs text-gray-500">{log.user.email}</div>
+                                                    <div className={`font-medium ${textPrimary}`}>{log.user.full_name}</div>
+                                                    <div className={`text-xs ${textMuted}`}>{log.user.email}</div>
                                                 </>
                                             ) : (
                                                 <span className="text-gray-400 italic">Misafir / Bilinmiyor</span>
@@ -153,14 +173,14 @@ export function PromoLogsModal({ isOpen, onClose, promoId, promoCode }: PromoLog
                                         <td className="p-4">
                                             <Link
                                                 to={`/admin/orders/${log.order_id}`}
-                                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-orange-50 text-orange-700 hover:bg-orange-100 hover:text-orange-800 transition-colors font-medium font-mono text-xs"
+                                                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg ${linkClass} transition-colors font-medium font-mono text-xs`}
                                                 onClick={onClose}
                                             >
                                                 #{log.order?.id?.substring(0, 8).toUpperCase()}
                                                 <ExternalLink className="w-3 h-3" />
                                             </Link>
                                         </td>
-                                        <td className="p-4 text-right font-bold text-gray-900">
+                                        <td className={`p-4 text-right font-bold ${textPrimary}`}>
                                             ₺{log.discount_amount}
                                         </td>
                                     </tr>

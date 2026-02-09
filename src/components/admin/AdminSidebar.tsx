@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Package, Users, LogOut, ChevronRight, Tags, Ticket } from "lucide-react";
+import { LayoutDashboard, Package, Users, LogOut, ChevronRight, Tags, Ticket, Home, Sun, Moon } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAdminTheme } from "@/contexts/AdminThemeContext";
 import { supabase } from "@/lib/supabase";
 import { motion } from "framer-motion";
 
@@ -16,7 +17,10 @@ export function AdminSidebar() {
     const location = useLocation();
     const navigate = useNavigate();
     const { user } = useAuth();
+    const { theme, toggleTheme } = useAdminTheme();
     const [unreadCount, setUnreadCount] = useState(0);
+
+    const isDark = theme === "dark";
 
     // Mark as read when entering orders page
     useEffect(() => {
@@ -66,14 +70,30 @@ export function AdminSidebar() {
     };
 
     return (
-        <aside className="w-64 bg-white border-r border-gray-100 min-h-screen flex flex-col">
+        <aside className={`w-64 min-h-screen flex flex-col transition-colors duration-300 ${isDark
+                ? "bg-gray-800 border-r border-gray-700"
+                : "bg-white border-r border-gray-100"
+            }`}>
             {/* Logo */}
-            <div className="p-6 border-b border-gray-100">
-                <Link to="/admin" className="block">
-                    <h1 className="text-xl font-bold text-gray-900">
-                        <span className="text-orange-500">Bravita</span> Admin
-                    </h1>
-                </Link>
+            <div className={`p-6 border-b ${isDark ? "border-gray-700" : "border-gray-100"}`}>
+                <div className="flex items-center justify-between">
+                    <Link to="/admin" className="block">
+                        <h1 className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
+                            <span className="text-orange-500">Bravita</span> Admin
+                        </h1>
+                    </Link>
+                    {/* Theme Toggle */}
+                    <button
+                        onClick={toggleTheme}
+                        className={`p-2 rounded-lg transition-all ${isDark
+                                ? "bg-gray-700 text-yellow-400 hover:bg-gray-600"
+                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                            }`}
+                        title={isDark ? "Açık Mod" : "Koyu Mod"}
+                    >
+                        {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                    </button>
+                </div>
             </div>
 
             {/* Navigation */}
@@ -81,8 +101,12 @@ export function AdminSidebar() {
                 <button
                     onClick={() => navigate("/admin")}
                     className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all ${location.pathname === "/admin" || location.pathname === "/admin/dashboard"
-                        ? "bg-orange-50 text-orange-600 shadow-sm ring-1 ring-orange-100"
-                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                            ? isDark
+                                ? "bg-orange-500/20 text-orange-400 shadow-sm ring-1 ring-orange-500/30"
+                                : "bg-orange-50 text-orange-600 shadow-sm ring-1 ring-orange-100"
+                            : isDark
+                                ? "text-gray-300 hover:bg-gray-700 hover:text-white"
+                                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                         }`}
                 >
                     <LayoutDashboard className="w-5 h-5" />
@@ -90,7 +114,8 @@ export function AdminSidebar() {
                 </button>
 
                 <div className="pt-4 pb-2">
-                    <p className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Yönetim</p>
+                    <p className={`px-4 text-xs font-semibold uppercase tracking-wider ${isDark ? "text-gray-500" : "text-gray-400"
+                        }`}>Yönetim</p>
                 </div>
 
                 {menuItems.map((item) => {
@@ -102,11 +127,20 @@ export function AdminSidebar() {
                             key={item.path}
                             onClick={() => navigate(item.path)}
                             className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all group cursor-pointer relative ${isActive
-                                ? "bg-orange-50 text-orange-600 shadow-sm ring-1 ring-orange-100"
-                                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                                    ? isDark
+                                        ? "bg-orange-500/20 text-orange-400 shadow-sm ring-1 ring-orange-500/30"
+                                        : "bg-orange-50 text-orange-600 shadow-sm ring-1 ring-orange-100"
+                                    : isDark
+                                        ? "text-gray-300 hover:bg-gray-700 hover:text-white"
+                                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                                 }`}
                         >
-                            <item.icon className={`w-5 h-5 ${isActive ? "text-orange-500" : "text-gray-400 group-hover:text-gray-600"}`} />
+                            <item.icon className={`w-5 h-5 ${isActive
+                                    ? "text-orange-500"
+                                    : isDark
+                                        ? "text-gray-500 group-hover:text-gray-300"
+                                        : "text-gray-400 group-hover:text-gray-600"
+                                }`} />
                             <span className="font-medium">{item.label}</span>
 
                             {item.path === "/admin/orders" && unreadCount > 0 && (
@@ -129,25 +163,41 @@ export function AdminSidebar() {
             </nav>
 
             {/* User section */}
-            <div className="p-4 border-t border-gray-100">
-                <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl mb-3">
-                    <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
-                        <span className="text-orange-600 font-semibold">
+            <div className={`p-4 border-t ${isDark ? "border-gray-700" : "border-gray-100"}`}>
+                <div className={`flex items-center gap-3 px-4 py-3 rounded-xl mb-3 ${isDark ? "bg-gray-700" : "bg-gray-50"
+                    }`}>
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isDark ? "bg-orange-500/20" : "bg-orange-100"
+                        }`}>
+                        <span className={`font-semibold ${isDark ? "text-orange-400" : "text-orange-600"}`}>
                             {user?.full_name?.charAt(0) || user?.email?.charAt(0) || "A"}
                         </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
+                        <p className={`text-sm font-medium truncate ${isDark ? "text-white" : "text-gray-900"}`}>
                             {user?.full_name || "Admin"}
                         </p>
-                        <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                        <p className={`text-xs truncate ${isDark ? "text-gray-400" : "text-gray-500"}`}>{user?.email}</p>
                     </div>
                 </div>
                 <button
+                    onClick={() => window.location.href = '/'}
+                    className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl transition-colors mb-2 ${isDark
+                            ? "text-gray-300 hover:bg-gray-700"
+                            : "text-gray-600 hover:bg-gray-100"
+                        }`}
+                >
+                    <Home className="w-5 h-5" />
+                    <span className="text-sm font-medium">Ana Siteye Dön</span>
+                </button>
+                <button
                     onClick={handleLogout}
-                    className="flex items-center gap-3 w-full px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                    className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl transition-colors ${isDark
+                            ? "text-red-400 hover:bg-red-500/10"
+                            : "text-red-600 hover:bg-red-50"
+                        }`}
                 >
                     <LogOut className="w-5 h-5" />
+                    <span className="text-sm font-medium">Çıkış Yap</span>
                 </button>
             </div>
         </aside>
