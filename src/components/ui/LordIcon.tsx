@@ -86,31 +86,43 @@ export const LordIcon = memo(function LordIcon({
         };
     }, [isReady]); // Re-run if isReady changes
 
-    // Create lord-icon element when ready
-    const createIcon = useCallback(() => {
+    // Create or update lord-icon element
+    const updateIcon = useCallback(() => {
         if (!containerRef.current || !isReady) return;
 
         // Check if icon already exists
-        const existingIcon = containerRef.current.querySelector("lord-icon");
-        if (existingIcon) return;
+        let lordIcon = containerRef.current.querySelector("lord-icon") as any;
 
-        // Create lord-icon element
-        const lordIcon = document.createElement("lord-icon");
-        lordIcon.setAttribute("src", src);
-        lordIcon.setAttribute("trigger", trigger);
-        lordIcon.setAttribute("stroke", stroke);
-        if (state) lordIcon.setAttribute("state", state);
-        if (colors) lordIcon.setAttribute("colors", colors);
+        if (!lordIcon) {
+            // Create lord-icon element
+            lordIcon = document.createElement("lord-icon");
+            containerRef.current.appendChild(lordIcon);
+        }
+
+        // Update attributes if they changed
+        if (lordIcon.getAttribute("src") !== src) lordIcon.setAttribute("src", src);
+        if (lordIcon.getAttribute("trigger") !== trigger) lordIcon.setAttribute("trigger", trigger);
+        if (lordIcon.getAttribute("stroke") !== stroke) lordIcon.setAttribute("stroke", stroke);
+        if (state && lordIcon.getAttribute("state") !== state) lordIcon.setAttribute("state", state);
+        if (colors && lordIcon.getAttribute("colors") !== colors) lordIcon.setAttribute("colors", colors);
+
         lordIcon.style.width = `${size}px`;
         lordIcon.style.height = `${size}px`;
         lordIcon.style.display = "block";
-
-        containerRef.current.appendChild(lordIcon);
     }, [src, trigger, stroke, state, colors, size, isReady]);
 
     useEffect(() => {
-        createIcon();
-    }, [createIcon]);
+        updateIcon();
+    }, [updateIcon]);
+
+    // Cleanup to prevent LordIcon player from accessing destroyed elements
+    useEffect(() => {
+        return () => {
+            if (containerRef.current) {
+                containerRef.current.innerHTML = "";
+            }
+        };
+    }, []);
 
     return (
         <div

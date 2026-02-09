@@ -131,16 +131,40 @@ export function AddressBook() {
 
     const handleDelete = async (id: string) => {
         if (deletingId || !isMountedRef.current) return;
+
+        const addressToDelete = addresses.find(a => a.id === id);
+        if (addressToDelete?.is_default && addresses.length > 1) {
+            toast.error(t("profile.addresses.delete_default_error"));
+            return;
+        }
+
         setDeletingId(id);
         try {
             const { error: deleteError } = await supabase.from("addresses").delete().eq("id", id);
-            if (deleteError) throw deleteError;
+
+            if (deleteError) {
+                // Handle localized error from backend if bypass frontend check
+                if (deleteError.message?.includes("ERR_ADDRESS_DELETE_DEFAULT_FORBIDDEN") ||
+                    deleteError.message?.includes("Birden fazla adresiniz varken")) {
+                    toast.error(t("profile.addresses.delete_default_error"));
+                } else {
+                    throw deleteError;
+                }
+                return;
+            }
+
             if (!isMountedRef.current) return;
             toast.success(t("profile.addresses.delete_success"));
             setAddresses(prev => prev.filter((a) => a.id !== id));
         } catch (err) {
             if (!isMountedRef.current) return;
-            toast.error(err instanceof Error ? err.message : t("errors.unknown"));
+            const message = err instanceof Error ? err.message : String(err);
+            if (message.includes("ERR_ADDRESS_DELETE_DEFAULT_FORBIDDEN") ||
+                message.includes("Birden fazla adresiniz varken")) {
+                toast.error(t("profile.addresses.delete_default_error"));
+            } else {
+                toast.error(err instanceof Error ? err.message : t("errors.unknown"));
+            }
         } finally {
             if (isMountedRef.current) {
                 setDeletingId(null);
@@ -390,7 +414,11 @@ export function AddressBook() {
                                     size="icon"
                                     onClick={() => handleDelete(address.id)}
                                     disabled={!!deletingId || !!settingDefaultId}
-                                    className={`group-hover:opacity-100 text-red-400 hover:text-red-500 hover:bg-red-50 transition-opacity ${deletingId === address.id ? 'opacity-100' : 'opacity-0'}`}
+                                    title={address.is_default && addresses.length > 1 ? t("profile.addresses.delete_default_error") : ""}
+                                    className={`group-hover:opacity-100 transition-opacity ${deletingId === address.id ? 'opacity-100' : 'opacity-0'} ${address.is_default && addresses.length > 1
+                                        ? "text-gray-300 cursor-not-allowed"
+                                        : "text-red-400 hover:text-red-500 hover:bg-red-50"
+                                        }`}
                                 >
                                     {deletingId === address.id ? (
                                         <Loader size="1rem" noMargin />

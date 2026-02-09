@@ -563,6 +563,7 @@
             "error_retry": "Tekrar Dene",
             "error_note": "Problem devam ederse veritabanı tablolarının oluşturulduğundan emin olun.",
             "delete_success": "Adres silindi",
+            "delete_default_error": "Birden fazla adresiniz varken varsayılan adresinizi silemezsiniz. Lütfen önce başka bir adresi varsayılan yapın.",
             "set_default_success": "Varsayılan adres güncellendi",
             "add_success": "Adres eklendi",
             "add_error": "Adres eklenirken hata oluştu",

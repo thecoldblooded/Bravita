@@ -563,6 +563,7 @@
             "error_retry": "Try Again",
             "error_note": "If the problem persists, ensure database tables are created.",
             "delete_success": "Address deleted",
+            "delete_default_error": "You cannot delete your default address when you have more than one address. Please set another address as default first.",
             "set_default_success": "Default address updated",
             "add_success": "Address added",
             "add_error": "Error adding address",
