@@ -118,7 +118,7 @@ export function AddressSelector({ selectedAddressId, onSelect }: AddressSelector
             }
             // END TEST USER BYPASS
 
-            console.log("Adding address for user:", user.id);
+            // console.log("Adding address for user:", user.id);
             const { data, error } = await supabase
                 .from("addresses")
                 .insert({

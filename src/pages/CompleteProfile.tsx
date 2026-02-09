@@ -72,24 +72,24 @@ export function CompleteProfile() {
 
   // Check authentication and profile status
   useEffect(() => {
-    console.log("CompleteProfile mount check:", {
-      authLoading,
-      hasSession: !!session?.user,
-      hasUser: !!user,
-      profileComplete: user?.profile_complete,
-      isStub: user?.isStub
-    });
+    // console.log("CompleteProfile mount check:", {
+    //   authLoading,
+    //   hasSession: !!session?.user,
+    //   hasUser: !!user,
+    //   profileComplete: user?.profile_complete,
+    //   isStub: user?.isStub
+    // });
 
     if (!authLoading) {
       // No session - redirect to home
       if (!session?.user) {
-        console.log("No session, redirecting to /");
+        // console.log("No session, redirecting to /");
         navigate("/");
         return;
       }
 
       if (user?.profile_complete === true) {
-        console.log("Profile complete, redirecting to /", user);
+        // console.log("Profile complete, redirecting to /");
         navigate("/");
         return;
       }
@@ -98,11 +98,11 @@ export function CompleteProfile() {
     }
   }, [session, user, authLoading, navigate]);
 
-  console.log("CompleteProfile render:", { authLoading, hasSession: !!session?.user });
+  // console.log("CompleteProfile render:", { authLoading, hasSession: !!session?.user });
 
   // Show loading only during initial auth check
   if (authLoading) {
-    console.log("Showing loading screen");
+    // console.log("Showing loading screen");
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

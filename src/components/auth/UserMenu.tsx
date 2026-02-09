@@ -10,7 +10,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuthOperations } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { User, LogOut, MapPin, ShoppingBag, Settings, ChevronRight } from "lucide-react";
+import { User, LogOut, MapPin, ShoppingBag, Settings, ChevronRight, Shield } from "lucide-react";
 import { LordIcon } from "@/components/ui/LordIcon";
 import { translateError } from "@/lib/errorTranslator";
 
@@ -58,7 +58,7 @@ const MenuItem = ({ icon, label, onClick, variant = "default", delay = 0 }: Menu
 export function UserMenu() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user, session } = useAuth();
+  const { user, session, isAdmin } = useAuth();
   const { logout, isLoading } = useAuthOperations();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -89,6 +89,8 @@ export function UserMenu() {
       : user.company_name || user.email;
 
   const menuItems = [
+    // Admin Panel - only visible for admin users
+    ...(isAdmin ? [{ icon: <Shield className="w-4 h-4" />, label: t("auth.admin_panel", "Admin Panel"), path: "/admin", isAdmin: true }] : []),
     { icon: <User className="w-4 h-4" />, label: t("auth.profile"), path: "/profile?tab=profile" },
     { icon: <MapPin className="w-4 h-4" />, label: t("auth.addresses"), path: "/profile?tab=addresses" },
     { icon: <ShoppingBag className="w-4 h-4" />, label: t("auth.my_orders"), path: "/profile?tab=orders" },

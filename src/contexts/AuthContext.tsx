@@ -2,6 +2,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useRef } from "react";
 import { Session } from "@supabase/supabase-js";
 import { supabase, UserProfile, getSessionSafe } from "@/lib/supabase";
+import { billionMail } from "@/lib/billionmail";
 
 declare global {
   interface Window {
@@ -251,7 +252,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       lastProcessedRef.current = sessionId;
 
-      console.log(`Auth Event: ${event} [User: ${sessionId.substring(0, 8)}]`);
+      // console.log(`Auth Event: ${event} [User: ${sessionId.substring(0, 8)}]`);
 
       if (event === "PASSWORD_RECOVERY") {
         setIsPasswordRecovery(true);
@@ -263,10 +264,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (event === "INITIAL_SESSION") {
         // If session is null but URL has fragment (OAuth callback), retrieve session again
         if (!newSession && window.location.hash) {
-          console.log("INITIAL_SESSION with empty session, checking URL fragment...");
+          // console.log("INITIAL_SESSION with empty session, checking URL fragment...");
           supabase.auth.getSession().then(async ({ data: { session: urlSession } }) => {
             if (urlSession && mounted) {
-              console.log("URL fragment session found, setting session");
+              // console.log("URL fragment session found, setting session");
               setSession(urlSession);
 
               // Fetch profile for the session with AbortError handling
@@ -377,7 +378,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const errorCode = (err as { code?: string })?.code;
 
             if (errorCode === "PGRST116" || errorMessage.includes("PGRST116")) {
-              console.log("Auth: Profile not found, creating background entry...");
+              // console.log("Auth: Profile not found, creating background entry...");
               const metadata = newSession.user.user_metadata || {};
               const newProfile: UserProfile = {
                 id: newSession.user.id,
@@ -395,7 +396,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 phone_verified_at: null
               };
               const { error: insertError } = await supabase.from("profiles").insert(newProfile);
-              if (!insertError && mounted) setUserDebug(newProfile);
+              if (!insertError && mounted) {
+                setUserDebug(newProfile);
+
+                // Sync to BillionMail ONLY after email confirmation (first login = confirmed)
+                // This ensures unconfirmed users never appear in BillionMail
+                billionMail.subscribeContact({
+                  email: newProfile.email,
+                  first_name: newProfile.full_name?.split(" ")[0],
+                  last_name: newProfile.full_name?.split(" ").slice(1).join(" "),
+                  attributes: {
+                    user_type: newProfile.user_type,
+                    company_name: newProfile.company_name,
+                    phone: newProfile.phone,
+                  },
+                  tags: ["website_signup", newProfile.user_type],
+                }).catch(err => console.error("BillionMail sync failed:", err));
+              }
             }
           }
 
@@ -425,7 +442,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const safetyTimer = setTimeout(() => {
       if (mounted && isSplashScreenActiveRef.current) {
         // Session loading took too long, close splash screen anyway
-        console.debug("Splash screen timeout, closing.");
+        // console.debug("Splash screen timeout, closing.");
         setIsSplashScreenActive(false);
       }
     }, 2000);

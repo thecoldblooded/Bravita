@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+// BillionMail sync moved to AuthContext - only after email confirmation
 
 export interface SignupData {
   email: string;
@@ -58,8 +59,8 @@ export function useAuthOperations() {
       }
       if (!authData.user) throw new Error("No user returned from signup");
 
-      // Profile will be created by database trigger or after email confirmation
-      // The user_metadata contains all necessary info for profile creation
+      // BillionMail sync disabled at signup
+      // Will be triggered after email confirmation in AuthContext
 
       return { user: authData.user, session: authData.session };
     } catch (err) {
