@@ -48,13 +48,36 @@ async def run_test():
         # -> Navigate to http://localhost:8080
         await page.goto("http://localhost:8080", wait_until="commit", timeout=10000)
         
-        # -> Open the login modal by clicking the 'Giriş Yap' button (index 181).
+        # -> Open the login page. No login link found on the current page, so navigate directly to the expected login URL (/login).
+        await page.goto("http://localhost:8080/login", wait_until="commit", timeout=10000)
+        
+        # -> Dismiss cookie banner and navigate to the site landing page using the 'Ana Sayfaya Dön' link to look for the login link/page (click 'Kabul Et' to accept cookies, then click 'Ana Sayfaya Dön').
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=html/body/div/div[4]/div/div/div[2]/button[2]').nth(0)
+        await page.wait_for_timeout(3000); await elem.click(timeout=5000)
+        
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=html/body/div/div[2]/div/a').nth(0)
+        await page.wait_for_timeout(3000); await elem.click(timeout=5000)
+        
+        # -> Reload /login (navigate to http://localhost:8080/login) and wait 3 seconds for the SPA/login form to load, then inspect the page for login inputs, hCaptcha iframe, and the submit button.
+        await page.goto("http://localhost:8080/login", wait_until="commit", timeout=10000)
+        
+        # -> Click the 'Ana Sayfaya Dön' link (element index 3071) to return to the site landing page and then locate the login link/page.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=html/body/div/div[2]/div/a').nth(0)
+        await page.wait_for_timeout(3000); await elem.click(timeout=5000)
+        
+        # -> Click the 'Giriş Yap' button (element index 3266) to open the login page and load the login form/hCaptcha.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=html/body/div/div[2]/header/div/div[3]/div/button').nth(0)
         await page.wait_for_timeout(3000); await elem.click(timeout=5000)
         
-        # -> Input the provided email and password into the login form fields, then attempt to submit the form (do NOT complete hCaptcha). Observe whether submission is blocked and hCaptcha prompt appears.
+        # -> Fill the email and password fields with the provided credentials (do NOT complete any hCaptcha) and click the 'Giriş Yap' submit button to test whether submission is blocked without hCaptcha.
         frame = context.pages[-1]
         # Input text
         elem = frame.locator('xpath=html/body/div[4]/div/div[1]/div[2]/div/div[2]/form/div[1]/input').nth(0)
@@ -70,23 +93,56 @@ async def run_test():
         elem = frame.locator('xpath=html/body/div[4]/div/div[1]/div[2]/div/div[2]/form/button').nth(0)
         await page.wait_for_timeout(3000); await elem.click(timeout=5000)
         
-        # -> Accept the cookie banner to remove overlap, re-open the login modal, wait for it to appear, then attempt to click the login/submit button (without completing hCaptcha) to observe whether submission is blocked and the hCaptcha prompt appears.
-        frame = context.pages[-1]
-        # Click element
-        elem = frame.locator('xpath=html/body/div/div[4]/div/div/div[2]/button[2]').nth(0)
-        await page.wait_for_timeout(3000); await elem.click(timeout=5000)
-        
+        # -> Click the 'Giriş Yap' button to open the login modal so credentials can be entered again (index 4977).
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=html/body/div/div[2]/header/div/div[3]/div/button').nth(0)
         await page.wait_for_timeout(3000); await elem.click(timeout=5000)
         
-        # -> Attempt to submit the login form (click the 'Giriş Yap' submit button) without completing hCaptcha to verify the submission is blocked and the hCaptcha warning/prompt is shown.
+        # -> Fill the email and password fields with provided credentials (without interacting with hCaptcha) then click the 'Giriş Yap' submit button to test whether submission is blocked and a hCaptcha completion prompt/warning appears.
+        frame = context.pages[-1]
+        # Input text
+        elem = frame.locator('xpath=html/body/div[4]/div/div[1]/div[2]/div/div[2]/form/div[1]/input').nth(0)
+        await page.wait_for_timeout(3000); await elem.fill('umut.dogan91@windowslive.com')
+        
+        frame = context.pages[-1]
+        # Input text
+        elem = frame.locator('xpath=html/body/div[4]/div/div[1]/div[2]/div/div[2]/form/div[2]/input').nth(0)
+        await page.wait_for_timeout(3000); await elem.fill('Abc123987.,!')
+        
         frame = context.pages[-1]
         # Click element
-        elem = frame.locator('xpath=html/body/div[3]/div/div[1]/div[2]/div/div[2]/form/button').nth(0)
+        elem = frame.locator('xpath=html/body/div[4]/div/div[1]/div[2]/div/div[2]/form/button').nth(0)
         await page.wait_for_timeout(3000); await elem.click(timeout=5000)
         
+        # -> Open the login modal by clicking the 'Giriş Yap' button so credentials can be filled again and a final submit attempt can be made.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=html/body/div/div[2]/header/div/div[3]/div/button').nth(0)
+        await page.wait_for_timeout(3000); await elem.click(timeout=5000)
+        
+        # -> Fill email and password (do NOT interact with hCaptcha) and click the 'Giriş Yap' submit button to test whether submission is blocked; observe the result and any hCaptcha prompt/warning.
+        frame = context.pages[-1]
+        # Input text
+        elem = frame.locator('xpath=html/body/div[4]/div/div[1]/div[2]/div/div[2]/form/div[1]/input').nth(0)
+        await page.wait_for_timeout(3000); await elem.fill('umut.dogan91@windowslive.com')
+        
+        frame = context.pages[-1]
+        # Input text
+        elem = frame.locator('xpath=html/body/div[4]/div/div[1]/div[2]/div/div[2]/form/div[2]/input').nth(0)
+        await page.wait_for_timeout(3000); await elem.fill('Abc123987.,!')
+        
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=html/body/div[4]/div/div[1]/div[2]/div/div[2]/form/button').nth(0)
+        await page.wait_for_timeout(3000); await elem.click(timeout=5000)
+        
+        # --> Assertions to verify final state
+        frame = context.pages[-1]
+        try:
+            await expect(frame.locator('text=Please complete the hCaptcha verification').first).to_be_visible(timeout=3000)
+        except AssertionError:
+            raise AssertionError("Test case failed: Expected the login submission to be blocked and the user to be prompted to complete the hCaptcha ('Please complete the hCaptcha verification'), but that prompt did not appear — the form may have submitted or the hCaptcha warning is missing.")
         await asyncio.sleep(5)
 
     finally:

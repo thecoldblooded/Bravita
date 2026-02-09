@@ -11,11 +11,11 @@
     "testIds": [
       "TC003"
     ],
-    "additionalInstruction": "Testing login flow (TC003). Localhost:8080. Handle modal.",
+    "additionalInstruction": "TC003 only.",
     "envs": {
       "API_KEY": "sk-user-RrlAm_Zh2llIu6mrsQg0JXj4KDPg3-ncvgAvCJrVBTyrdxFfMYuua-gDB61A0pvLO9gbOctk91e3rgOCcglmn4xJiE_Jw9OKIXB71anSO56jMAA32eRr8bGZlnm-Fc7i_bM"
     }
   },
-  "serverPort": 61329,
-  "proxy": "http://b45c828c-2c58-4691-8fcf-581f711aa1db:dSkM6IKMf4tNODkNXRLpp2vpi5i7NntT@tun.testsprite.com:8080"
+  "serverPort": 61812,
+  "proxy": "http://8184d080-867f-4221-8afe-e2d00b5bbdf0:vrCqVftod1CJBDxCebl24kjXOLJ4Rcf8@tun.testsprite.com:8080"
 }
