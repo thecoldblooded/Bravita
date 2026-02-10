@@ -53,7 +53,12 @@ export default function UpdatePassword() {
     }, [logout]);
 
     const formSchema = z.object({
-        password: z.string().min(6, t("auth.validation.password_min_length") || "Şifre en az 6 karakter olmalıdır"),
+        password: z.string()
+            .min(12, t("auth.validation.password_min_length") || "Şifre en az 12 karakter olmalıdır")
+            .regex(/[A-Z]/, t("auth.validation.password_uppercase") || "En az bir büyük harf içermelidir")
+            .regex(/[a-z]/, t("auth.validation.password_lowercase") || "En az bir küçük harf içermelidir")
+            .regex(/[0-9]/, t("auth.validation.password_number") || "En az bir rakam içermelidir")
+            .regex(/[!@#$%^&*]/, t("auth.validation.password_special") || "En az bir özel karakter içermelidir"),
         confirmPassword: z.string()
     }).refine((data) => data.password === data.confirmPassword, {
         message: t("auth.validation.passwords_must_match") || "Şifreler eşleşmiyor",

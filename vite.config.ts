@@ -83,6 +83,10 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  esbuild: {
+    // M-04 Security Fix: Strip console.* and debugger in production
+    drop: mode === "production" ? ["console", "debugger"] : [],
+  },
   build: {
     rollupOptions: {
       input: {

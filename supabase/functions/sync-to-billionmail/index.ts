@@ -1,13 +1,23 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
-const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+const ALLOWED_ORIGINS = [
+    'https://bravita.com.tr',
+    'https://www.bravita.com.tr',
+];
+
+function getCorsHeaders(req: Request) {
+    const origin = req.headers.get('Origin') || '';
+    const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+    return {
+        'Access-Control-Allow-Origin': allowedOrigin,
+        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    };
 }
 
 serve(async (req: Request) => {
     if (req.method === 'OPTIONS') {
-        return new Response('ok', { headers: corsHeaders })
+        return new Response('ok', { headers: getCorsHeaders(req) })
     }
 
     try {
@@ -24,7 +34,7 @@ serve(async (req: Request) => {
                 error: 'Server Configuration Error'
             }), {
                 status: 200,
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+                headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' }
             })
         }
 
@@ -50,7 +60,7 @@ serve(async (req: Request) => {
                 error: "External API Error (Invalid JSON)"
             }), {
                 status: 200,
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+                headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' }
             })
         }
 
@@ -61,7 +71,7 @@ serve(async (req: Request) => {
                 error: `API Error: ${groupsData.msg || 'Unknown'}`
             }), {
                 status: 200,
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+                headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' }
             })
         }
 
@@ -76,7 +86,7 @@ serve(async (req: Request) => {
                 error: `Group 'Smarter_Signup' configuration missing in BillionMail`
             }), {
                 status: 200,
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+                headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' }
             })
         }
 
@@ -108,7 +118,7 @@ serve(async (req: Request) => {
                 error: "External API Error (Import Invalid JSON)"
             }), {
                 status: 200,
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+                headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' }
             })
         }
 
@@ -119,14 +129,14 @@ serve(async (req: Request) => {
                 error: `Import Failed: ${importData.msg || 'Unknown'}`
             }), {
                 status: 200,
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+                headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' }
             })
         }
 
         // Success!
         console.log("Import Successful:", importData);
         return new Response(JSON.stringify({ success: true, data: importData }), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
             status: 200,
         })
 
@@ -136,7 +146,7 @@ serve(async (req: Request) => {
             success: false,
             error: "Internal Server Error" // Generic user-facing message
         }), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
             status: 200,
         })
     }

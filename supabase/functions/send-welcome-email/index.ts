@@ -1,4 +1,5 @@
 
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -7,10 +8,20 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const APP_WEBHOOK_SECRET = Deno.env.get("APP_WEBHOOK_SECRET") || "bravita-welcome-secret-2026";
 
-const corsHeaders = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-bravita-secret",
-};
+const ALLOWED_ORIGINS = [
+    'https://bravita.com.tr',
+    'https://www.bravita.com.tr',
+];
+
+function getCorsHeaders(req: Request) {
+    const origin = req.headers.get('Origin') || '';
+    const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+    return {
+        "Access-Control-Allow-Origin": allowedOrigin,
+        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-bravita-secret",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+    };
+}
 
 const WELCOME_HTML = `<!DOCTYPE html>
 <html lang="tr">
@@ -153,14 +164,14 @@ const WELCOME_HTML = `<!DOCTYPE html>
 
 serve(async (req: Request) => {
     if (req.method === "OPTIONS") {
-        return new Response("ok", { headers: corsHeaders });
+        return new Response("ok", { headers: getCorsHeaders(req) });
     }
 
     try {
         const secret = req.headers.get("x-bravita-secret");
         if (secret !== APP_WEBHOOK_SECRET) {
             console.error("Unauthorized Secret attempt");
-            return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+            return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: getCorsHeaders(req) });
         }
 
         if (!RESEND_API_KEY) {
@@ -211,7 +222,7 @@ serve(async (req: Request) => {
         }
 
         return new Response(JSON.stringify({ success: true, id: data.id }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
             status: 200,
         });
 
@@ -219,7 +230,7 @@ serve(async (req: Request) => {
         const errorMessage = error instanceof Error ? error.message : "Unknown error";
         console.error("Error in send-welcome-email:", errorMessage);
         return new Response(JSON.stringify({ error: errorMessage }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
             status: 400,
         });
     }

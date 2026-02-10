@@ -1,4 +1,5 @@
 
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { ORDER_CONFIRMATION_HTML, SHIPPED_HTML, DELIVERED_HTML, CANCELLED_HTML, PROCESSING_HTML, PREPARING_HTML } from "./template.ts";
@@ -7,10 +8,20 @@ const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-const corsHeaders = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+const ALLOWED_ORIGINS = [
+    'https://bravita.com.tr',
+    'https://www.bravita.com.tr',
+];
+
+function getCorsHeaders(req: Request) {
+    const origin = req.headers.get('Origin') || '';
+    const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+    return {
+        "Access-Control-Allow-Origin": allowedOrigin,
+        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+    };
+}
 
 interface OrderEmailRequest {
     order_id: string;
@@ -29,7 +40,7 @@ interface OrderItem {
 serve(async (req: Request) => {
     // Handle CORS preflight requests
     if (req.method === "OPTIONS") {
-        return new Response("ok", { headers: corsHeaders });
+        return new Response("ok", { headers: getCorsHeaders(req) });
     }
 
     try {
@@ -107,7 +118,7 @@ serve(async (req: Request) => {
                     message: "Rate limit exceeded. Email already sent recently.",
                     skipped: true
                 }), {
-                    headers: { ...corsHeaders, "Content-Type": "application/json" },
+                    headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
                     status: 429,
                 });
             }
@@ -117,7 +128,7 @@ serve(async (req: Request) => {
         if (type !== "order_confirmation" && order.user.order_notifications === false) {
             console.log(`User ${order.user.email} has disabled order notifications. Skipping email for type: ${type}`);
             return new Response(JSON.stringify({ message: "User disabled notifications", skipped: true }), {
-                headers: { ...corsHeaders, "Content-Type": "application/json" },
+                headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
                 status: 200,
             });
         }
@@ -320,7 +331,7 @@ ${bankDetailsText}
         });
 
         return new Response(JSON.stringify({ success: true, id: data.id }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
             status: 200,
         });
     } catch (error) {
@@ -331,7 +342,7 @@ ${bankDetailsText}
             error: "İşlem sırasında bir hata oluştu.",
             details: errorMessage
         }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
             status: 400,
         });
     }

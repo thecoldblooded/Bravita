@@ -147,7 +147,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
         phone: data.phone,
         userType: "individual",
         fullName: data.fullName,
-        captchaToken: captchaToken || "skip_captcha_token",
+        captchaToken: captchaToken!,
       });
 
       // Set flag so IncompleteProfileBanner shows after email confirmation
@@ -179,7 +179,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
         phone: "",
         userType: "company",
         companyName: data.companyName,
-        captchaToken: captchaToken || "skip_captcha_token",
+        captchaToken: captchaToken!,
       });
 
       setRegisteredEmail(data.email);

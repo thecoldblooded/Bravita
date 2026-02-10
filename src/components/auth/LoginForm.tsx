@@ -83,7 +83,7 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
         email: data.email,
         password: data.password,
         userType: "individual",
-        captchaToken: captchaToken || "skip_captcha_token",
+        captchaToken: captchaToken!,
       });
       toast.success(t("auth.login_successful"));
 
@@ -110,7 +110,7 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
         username: data.username,
         password: data.password,
         userType: "company",
-        captchaToken: captchaToken || "skip_captcha_token",
+        captchaToken: captchaToken!,
       });
       toast.success(t("auth.login_successful"));
 
@@ -151,7 +151,7 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
         return;
       }
 
-      await resetPassword(email, captchaToken || "skip_captcha_token");
+      await resetPassword(email, captchaToken!);
       toast.success(t("auth.password_reset_sent"));
 
       captchaRef.current?.resetCaptcha();

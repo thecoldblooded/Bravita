@@ -194,15 +194,6 @@ export async function confirmPayment(orderId: string): Promise<void> {
 /**
  * Get all orders with customer info (admin only)
  */
-// Helper to get local orders
-function getLocalOrders() {
-    const stored = localStorage.getItem("test_user_orders");
-    return stored ? JSON.parse(stored) : [];
-}
-
-/**
- * Get all orders with customer info (admin only)
- */
 export async function getAllOrders(filters?: {
     status?: OrderStatus;
     search?: string;
@@ -215,65 +206,6 @@ export async function getAllOrders(filters?: {
     limit?: number;
     offset?: number;
 }): Promise<{ orders: Order[]; count: number }> {
-    // Check for test user session
-    const { data: sessionData } = await getSessionSafe();
-    const isTestUser = sessionData.session?.user?.id === "test-user-id-12345";
-
-    if (isTestUser) {
-        let orders = getLocalOrders();
-
-        // Apply filters locally
-        if (filters?.status) {
-            orders = orders.filter((o: Order) => o.status === filters.status);
-        }
-        if (filters?.search) {
-            const search = filters.search.toLowerCase();
-            orders = orders.filter((o: Order) =>
-                o.id.toLowerCase().includes(search) ||
-                (o.profiles?.full_name?.toLowerCase().includes(search))
-            );
-        }
-        if (filters?.startDate) {
-            orders = orders.filter((o: Order) => new Date(o.created_at) >= new Date(filters.startDate!));
-        }
-        if (filters?.endDate) {
-            orders = orders.filter((o: Order) => new Date(o.created_at) <= new Date(filters.endDate!));
-        }
-        if (filters?.minAmount) {
-            orders = orders.filter((o: Order) => (o.order_details?.total || 0) >= filters.minAmount!);
-        }
-        if (filters?.maxAmount) {
-            orders = orders.filter((o: Order) => (o.order_details?.total || 0) <= filters.maxAmount!);
-        }
-
-        // Sort
-        const sortBy = filters?.sortBy || "created_at";
-        const sortOrder = filters?.sortOrder || "desc";
-
-        orders.sort((a: Order, b: Order) => {
-            const valA = sortBy === "total" ? (a.order_details?.total || 0) : new Date(a.created_at).getTime();
-            const valB = sortBy === "total" ? (b.order_details?.total || 0) : new Date(b.created_at).getTime();
-            return sortOrder === "asc" ? valA - valB : valB - valA;
-        });
-
-        const totalCount = orders.length;
-
-        // Pagination
-        if (filters?.limit) {
-            const offset = filters.offset || 0;
-            orders = orders.slice(offset, offset + filters.limit);
-        }
-
-        // Add dummy profile/address info if missing
-        orders = orders.map((o: Order) => ({
-            ...o,
-            profiles: o.profiles || { full_name: "Test Müşteri", email: "test@musteri.com", phone: "+905550000000" },
-            addresses: o.addresses || { street: "Test Mah. Test Sok.", city: "İstanbul", postal_code: "34000" }
-        }));
-
-        return { orders, count: totalCount };
-    }
-
     let query = supabase
         .from("orders")
         .select(`
@@ -352,23 +284,6 @@ export async function getAllOrders(filters?: {
  * Get single order by ID with full details
  */
 export async function getOrderById(orderId: string): Promise<Order | null> {
-    // Check for test user session
-    const { data: sessionData } = await supabase.auth.getSession();
-    const isTestUser = sessionData.session?.user?.id === "test-user-id-12345";
-
-    if (isTestUser) {
-        const orders = getLocalOrders();
-        let order = orders.find((o: Order) => o.id === orderId);
-        if (order) {
-            order = {
-                ...order,
-                profiles: order.profiles || { full_name: "Test Müşteri", email: "test@musteri.com", phone: "+905550000000" },
-                addresses: order.addresses || { street: "Test Mah. Test Sok.", city: "İstanbul", postal_code: "34000" }
-            };
-            return order;
-        }
-    }
-
     const { data, error } = await supabase
         .from("orders")
         .select(`
@@ -401,27 +316,6 @@ export async function updateOrderStatus(
 ): Promise<void> {
     const { data: { user } } = await supabase.auth.getUser();
 
-    // Test user bypass
-    if (user?.id === "test-user-id-12345") {
-        const orders = getLocalOrders();
-        const index = orders.findIndex((o: Order) => o.id === orderId);
-        if (index !== -1) {
-            if (orders[index].status === "cancelled") {
-                throw new Error("İptal edilen sipariş güncellenemez.");
-            }
-            orders[index].status = status;
-            orders[index].updated_at = new Date().toISOString();
-            if (status === "cancelled") {
-                orders[index].cancellation_reason = note || null;
-                if (orders[index].payment_status === "paid") {
-                    orders[index].payment_status = "refunded";
-                }
-            }
-            localStorage.setItem("test_user_orders", JSON.stringify(orders));
-            return;
-        }
-    }
-
     if (!user) throw new Error("Not authenticated");
 
     // Atomic RPC call handles:
@@ -453,18 +347,7 @@ export async function updateTrackingNumber(
 ): Promise<void> {
     const { data: { user } } = await supabase.auth.getUser();
 
-    // Test user bypass
-    if (user?.id === "test-user-id-12345") {
-        const orders = getLocalOrders();
-        const index = orders.findIndex((o: Order) => o.id === orderId);
-        if (index !== -1) {
-            orders[index].tracking_number = trackingNumber;
-            orders[index].shipping_company = shippingCompany || null;
-            orders[index].updated_at = new Date().toISOString();
-            localStorage.setItem("test_user_orders", JSON.stringify(orders));
-            return;
-        }
-    }
+    if (!user) throw new Error("Not authenticated");
 
     const { error } = await supabase
         .from("orders")
@@ -482,21 +365,6 @@ export async function updateTrackingNumber(
  * Get order status history
  */
 export async function getOrderStatusHistory(orderId: string): Promise<OrderStatusHistoryItem[]> {
-    // Check for test user session
-    const { data: sessionData } = await supabase.auth.getSession();
-    if (sessionData.session?.user?.id === "test-user-id-12345") {
-        // Mock history
-        return [{
-            id: "mock-history-1",
-            order_id: orderId,
-            status: "pending",
-            note: "Sipariş alındı (Test)",
-            created_by: "test-user-id-12345",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-        }];
-    }
-
     const { data, error } = await supabase
         .from("order_status_history")
         .select("*")
@@ -511,23 +379,6 @@ export async function getOrderStatusHistory(orderId: string): Promise<OrderStatu
  * Get dashboard statistics using secure RPC
  */
 export async function getDashboardStats(startDate: Date, endDate: Date): Promise<DashboardStats> {
-    const { data: { session } } = await getSessionSafe();
-    const user = session?.user;
-
-    // Test User Bypass
-    if (user?.id === "test-user-id-12345") {
-        return {
-            total_revenue: 15420,
-            order_count: 12,
-            cancelled_count: 3,
-            daily_sales: Array.from({ length: 7 }).map((_, i) => ({
-                date: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString(),
-                count: Math.floor(Math.random() * 5),
-                revenue: Math.floor(Math.random() * 5000)
-            })).reverse()
-        };
-    }
-
     const { data, error } = await supabase
         .rpc('get_dashboard_stats', {
             start_date: startDate.toISOString(),
