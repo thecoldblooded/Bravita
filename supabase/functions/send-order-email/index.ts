@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { ORDER_CONFIRMATION_HTML, SHIPPED_HTML, DELIVERED_HTML, CANCELLED_HTML } from "./template.ts";
+import { ORDER_CONFIRMATION_HTML, SHIPPED_HTML, DELIVERED_HTML, CANCELLED_HTML, PROCESSING_HTML, PREPARING_HTML } from "./template.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -14,7 +14,7 @@ const corsHeaders = {
 
 interface OrderEmailRequest {
     order_id: string;
-    type?: "order_confirmation" | "shipped" | "delivered" | "cancelled";
+    type?: "order_confirmation" | "shipped" | "delivered" | "cancelled" | "processing" | "preparing";
     tracking_number?: string;
     shipping_company?: string;
     cancellation_reason?: string;
@@ -180,6 +180,30 @@ serve(async (req: Request) => {
         let html = "";
         let subject = "";
         let textContent = "";
+        let bankDetailsHtml = "";
+        let bankDetailsText = "";
+
+        // Fetch Bank Details if payment method is bank_transfer
+        if (order.payment_method === "bank_transfer") {
+            const { data: settings } = await supabase
+                .from("site_settings")
+                .select("bank_name, bank_iban, bank_account_holder")
+                .eq("id", 1)
+                .single();
+
+            if (settings) {
+                bankDetailsHtml = `
+                <div style="margin-top: 20px; padding: 20px; background-color: #F0F9FF; border-radius: 12px; border: 1px solid #BAE6FD;">
+                    <h3 style="margin: 0 0 10px; color: #0369A1; font-size: 14px; font-weight: 700; text-transform: uppercase;">Havale/EFT Bilgileri</h3>
+                    <p style="margin: 0 5px 0 0; color: #0C4A6E; font-size: 14px;"><strong>Banka:</strong> ${sanitize(settings.bank_name)}</p>
+                    <p style="margin: 5px 0 0; color: #0C4A6E; font-size: 14px;"><strong>IBAN:</strong> ${sanitize(settings.bank_iban)}</p>
+                    <p style="margin: 5px 0 0; color: #0C4A6E; font-size: 14px;"><strong>Hesap Sahibi:</strong> ${sanitize(settings.bank_account_holder)}</p>
+                    <p style="margin: 10px 0 0; color: #0369A1; font-size: 12px; font-style: italic;">* Açıklama kısmına sipariş numaranızı (<strong>#${order.id.substring(0, 8).toUpperCase()}</strong>) yazmayı unutmayınız.</p>
+                </div>`;
+
+                bankDetailsText = `\nHavale/EFT Bilgileri:\nBanka: ${settings.bank_name}\nIBAN: ${settings.bank_iban}\nHesap Sahibi: ${settings.bank_account_holder}\nLütfen açıklama kısmına sipariş numaranızı (#${order.id.substring(0, 8).toUpperCase()}) yazınız.\n`;
+            }
+        }
 
         const commonTextInfo = `
 Sipariş No: #${order.id.substring(0, 8).toUpperCase()}
@@ -187,6 +211,7 @@ Tarih: ${orderDate}
 Ürünler:
 ${items ? items.map((item: OrderItem) => `- ${item.product_name} (${item.quantity} adet)`).join('\n') : ''}
 Teslimat Adresi: ${addressString}
+${bankDetailsText}
         `;
 
         if (type === "shipped") {
@@ -225,9 +250,22 @@ Teslimat Adresi: ${addressString}
 
             textContent = `Siparişiniz İptal Edildi!\n\nİptal Nedeni: ${reason}\n\n${commonTextInfo}`;
 
+        } else if (type === "processing") {
+            subject = `Siparişiniz İşleniyor ⚙️ #${order.id.substring(0, 8).toUpperCase()}`;
+            html = PROCESSING_HTML
+                .replace("{{ORDER_ID}}", order.id.substring(0, 8).toUpperCase())
+                .replace("{{ORDER_DATE}}", orderDate);
+            textContent = `Siparişiniz İşleniyor!\n\n${commonTextInfo}`;
+
+        } else if (type === "preparing") {
+            subject = `Siparişiniz Hazırlanıyor 📋 #${order.id.substring(0, 8).toUpperCase()}`;
+            html = PREPARING_HTML
+                .replace("{{ORDER_ID}}", order.id.substring(0, 8).toUpperCase())
+                .replace("{{ORDER_DATE}}", orderDate);
+            textContent = `Siparişiniz Hazırlanıyor!\n\n${commonTextInfo}`;
         } else {
             // Default: order_confirmation
-            subject = `Siparişiniz Onaylandı #${order.id.substring(0, 8).toUpperCase()}`;
+            subject = `Siparişiniz Alındı #${order.id.substring(0, 8).toUpperCase()}`;
             html = ORDER_CONFIRMATION_HTML
                 .replace("{{ORDER_ID}}", order.id.substring(0, 8).toUpperCase())
                 .replace("{{ORDER_DATE}}", orderDate)
@@ -237,6 +275,7 @@ Teslimat Adresi: ${addressString}
                 .replace("{{TAX}}", totals.vat.toFixed(2))
                 .replace("{{TOTAL}}", totals.total.toFixed(2))
                 .replace("{{SHIPPING_ADDRESS}}", sanitize(addressString))
+                .replace("{{BANK_DETAILS}}", bankDetailsHtml) // Explicitly include bank details placeholder
                 .replace("{{PAYMENT_METHOD}}", paymentMethod);
 
             textContent = `Siparişiniz Onaylandı!\n\n${commonTextInfo}\n\nToplam Tutar: ₺${totals.total.toFixed(2)}`;

@@ -1,12 +1,42 @@
 
 [1m[96m============================================================[0m
-Traceback (most recent call last):
-  File "C:\Users\Umut\.gemini\antigravity\scratch\bravita-future-focused-growth-main\.agent\scripts\checklist.py", line 217, in <module>
-    main()
-  File "C:\Users\Umut\.gemini\antigravity\scratch\bravita-future-focused-growth-main\.agent\scripts\checklist.py", line 184, in main
-    print_header("\U0001f680 ANTIGRAVITY KIT - MASTER CHECKLIST")
-  File "C:\Users\Umut\.gemini\antigravity\scratch\bravita-future-focused-growth-main\.agent\scripts\checklist.py", line 42, in print_header
-    print(f"{Colors.BOLD}{Colors.CYAN}{text.center(60)}{Colors.ENDC}")
-  File "C:\Program Files\Python310\lib\encodings\cp1252.py", line 19, in encode
-    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
-UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f680' in position 21: character maps to <undefined>
+[1m[96m             ANTIGRAVITY KIT - MASTER CHECKLIST             [0m
+[1m[96m============================================================[0m
+
+Project: C:\Users\Umut\.gemini\antigravity\scratch\bravita-future-focused-growth-main
+URL: Not provided (performance checks skipped)
+
+[1m[96m============================================================[0m
+[1m[96m                        CORE CHECKS                         [0m
+[1m[96m============================================================[0m
+
+[1m[94m[WAIT] Running: Security Scan[0m
+[92m[PASS] Security Scan: PASSED[0m
+[1m[94m[WAIT] Running: Lint Check[0m
+[92m[PASS] Lint Check: PASSED[0m
+[1m[94m[WAIT] Running: Schema Validation[0m
+[92m[PASS] Schema Validation: PASSED[0m
+[1m[94m[WAIT] Running: Test Runner[0m
+[92m[PASS] Test Runner: PASSED[0m
+[1m[94m[WAIT] Running: UX Audit[0m
+[91m[FAIL] UX Audit: FAILED[0m
+[1m[94m[WAIT] Running: SEO Check[0m
+[91m[FAIL] SEO Check: FAILED[0m
+
+[1m[96m============================================================[0m
+[1m[96m                     CHECKLIST SUMMARY                      [0m
+[1m[96m============================================================[0m
+
+Total Checks: 6
+[92m[PASS] Passed: 4[0m
+[91m[FAIL] Failed: 2[0m
+[93m[SKIP] Skipped: 0[0m
+
+[92m[PASS][0m Security Scan
+[92m[PASS][0m Lint Check
+[92m[PASS][0m Schema Validation
+[92m[PASS][0m Test Runner
+[91m[FAIL][0m UX Audit
+[91m[FAIL][0m SEO Check
+
+[91m[FAIL] 2 check(s) FAILED - Please fix before proceeding[0m

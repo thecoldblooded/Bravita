@@ -255,11 +255,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       lastProcessedRef.current = sessionId;
 
+      if (event === "SIGNED_IN" && newSession?.user) {
+        // Log admin login
+        const uid = newSession.user.id;
+        // Run async check without blocking auth flow
+        (async () => {
+          try {
+            // We can check metadata first for speed
+            const isMetaAdmin = newSession.user?.app_metadata?.is_admin || newSession.user?.app_metadata?.is_superadmin;
+            if (isMetaAdmin) {
+              await supabase.from('admin_audit_log').insert({
+                admin_user_id: uid,
+                action: 'LOGIN',
+                details: { method: 'auth_state_change', provider: newSession.user.app_metadata?.provider },
+                target_table: 'auth',
+                target_id: uid
+              });
+            } else {
+              // Double check DB just in case metadata is stale (less likely for login but good for security)
+              const { data: userData } = await supabase.from('profiles').select('is_admin, is_superadmin').eq('id', uid).single();
+              if (userData?.is_admin || userData?.is_superadmin) {
+                await supabase.from('admin_audit_log').insert({
+                  admin_user_id: uid,
+                  action: 'LOGIN',
+                  details: { method: 'auth_state_change' },
+                  target_table: 'auth',
+                  target_id: uid
+                });
+              }
+            }
+          } catch (e) {
+            console.error("Login logging failed", e);
+          }
+        })();
+      }
+
       // console.log(`Auth Event: ${event} [User: ${sessionId.substring(0, 8)}]`);
 
       if (event === "PASSWORD_RECOVERY") {
         setIsPasswordRecovery(true);
       } else if (event === "SIGNED_OUT") {
+        if (lastProcessedRef.current && lastProcessedRef.current !== 'none') {
+          // Best effort logout log - might fail if session is completely killed before this runs, 
+          // but user ID is cached in ref.
+          try {
+            // We use a separate un-authed call or rely on the fact that we might still have a fleeting token? 
+            // Actually SIGNED_OUT means no token. This is hard to log to DB without a token.
+            // WE SKIP LOGOUT LOGGING for now as it requires backend functions to be reliable.
+            // OR we can try if there's a lingering session, but usually there isn't.
+            // User requirement: "giriş çıkış saatlerini". 
+            // Alternative: Log "LOGOUT" *before* calling signOut() in the logout function.
+            // But this is the listener.
+          } catch (e) { console.error(e) }
+        }
         setIsPasswordRecovery(false);
       }
 

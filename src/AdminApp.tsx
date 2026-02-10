@@ -11,6 +11,7 @@ import AdminOrderDetail from "@/pages/admin/AdminOrderDetail";
 import AdminUsers from "@/pages/admin/AdminUsers";
 import AdminProducts from "@/pages/admin/AdminProducts";
 import AdminPromoCodes from "@/pages/admin/AdminPromoCodes";
+import AdminAuditLogs from "@/pages/admin/AdminAuditLogs";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ export default function AdminApp() {
                         <Route path="/admin/products" element={<AdminProducts />} />
                         <Route path="/admin/promotions" element={<AdminPromoCodes />} />
                         <Route path="/admin/admins" element={<AdminUsers />} />
+                        <Route path="/admin/logs" element={<AdminAuditLogs />} />
                         <Route path="*" element={<NotFound />} />
                     </Routes>
                 </BrowserRouter>

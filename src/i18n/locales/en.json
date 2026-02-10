@@ -394,6 +394,7 @@
             "credit_card_desc": "Test mode - Any card number accepted",
             "bank_transfer": "Bank Transfer / EFT",
             "bank_transfer_desc": "Payment by transfer to bank account",
+            "bank_transfer_short": "Transfer",
             "credit_card_short": "Credit Card",
             "test_mode_warning": "Test Mode - No real payment will be taken",
             "reference_note": "Please write your order number in the explanation section.",

@@ -1,5 +1,5 @@
-/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 import { getProductPrice } from "@/lib/checkout";
 
 export interface CartItem {
@@ -168,17 +168,58 @@ export function CartProvider({ children }: { children: ReactNode }) {
         removePromoCode();
     }, [removePromoCode]);
 
+    const [settings, setSettings] = useState({
+        vat_rate: 0.20,
+        shipping_cost: 49.90,
+        free_shipping_threshold: 1500
+    });
+
+    // Fetch settings on mount and periodically
+    useEffect(() => {
+        const fetchSettings = async () => {
+            const { data, error } = await supabase
+                .from('site_settings')
+                .select('*')
+                .eq('id', 1)
+                .single();
+
+            if (data && !error) {
+                setSettings({
+                    vat_rate: Number(data.vat_rate),
+                    shipping_cost: Number(data.shipping_cost),
+                    free_shipping_threshold: Number(data.free_shipping_threshold)
+                });
+            }
+        };
+
+        fetchSettings();
+
+        // Setting up real-time listener for settings updates
+        const channel = supabase
+            .channel('site-settings-changes')
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'site_settings' }, (payload) => {
+                setSettings({
+                    vat_rate: Number(payload.new.vat_rate),
+                    shipping_cost: Number(payload.new.shipping_cost),
+                    free_shipping_threshold: Number(payload.new.free_shipping_threshold)
+                });
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, []);
+
     const rawSubtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const vatOnFullPrice = rawSubtotal * VAT_RATE;
+    const vatOnFullPrice = rawSubtotal * settings.vat_rate;
     const totalBeforeDiscount = rawSubtotal + vatOnFullPrice;
 
     // Ensure discount doesn't exceed the total price
     const validDiscount = Math.min(discountAmount, totalBeforeDiscount);
 
     // Shipping Calculation
-    const SHIPPING_COST = 49.90;
-    const FREE_SHIPPING_THRESHOLD = 1500;
-    const shipping = (totalBeforeDiscount - validDiscount) >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
+    const shipping = (totalBeforeDiscount - validDiscount) >= settings.free_shipping_threshold ? 0 : settings.shipping_cost;
 
     const finalTotal = totalBeforeDiscount - validDiscount + shipping;
 

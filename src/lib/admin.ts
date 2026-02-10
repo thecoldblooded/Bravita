@@ -16,6 +16,7 @@ export interface OrderDetails {
     subtotal: number;
     vat_amount: number;
     total: number;
+    shipping_cost?: number;
     discount?: number;
     promo_code?: string;
 }
@@ -85,6 +86,109 @@ export interface DashboardStats {
         count: number;
         revenue: number;
     }[];
+}
+
+export interface SiteSettings {
+    vat_rate: number;
+    shipping_cost: number;
+    free_shipping_threshold: number;
+    bank_name: string;
+    bank_iban: string;
+    bank_account_holder: string;
+}
+
+/**
+ * Get current site settings
+ */
+export async function getSiteSettings(): Promise<SiteSettings> {
+    const { data, error } = await supabase
+        .from('site_settings')
+        .select('*')
+        .eq('id', 1)
+        .single();
+
+    if (error) {
+        console.error('Error fetching site settings:', error);
+        // Fallback to defaults
+        return {
+            vat_rate: 0.20,
+            shipping_cost: 49.90,
+            free_shipping_threshold: 1500.00,
+            bank_name: "Ziraat Bankası",
+            bank_iban: "TR00 0000 0000 0000 0000 0000 00",
+            bank_account_holder: "Bravita Sağlık A.Ş."
+        };
+    }
+
+    return {
+        vat_rate: Number(data.vat_rate),
+        shipping_cost: Number(data.shipping_cost),
+        free_shipping_threshold: Number(data.free_shipping_threshold),
+        bank_name: data.bank_name || "",
+        bank_iban: data.bank_iban || "",
+        bank_account_holder: data.bank_account_holder || ""
+    };
+}
+
+/**
+ * Update site settings
+ */
+export async function updateSiteSettings(settings: SiteSettings): Promise<void> {
+    const { error } = await supabase
+        .from('site_settings')
+        .update({
+            ...settings,
+            updated_at: new Date().toISOString()
+        })
+        .eq('id', 1);
+
+    if (error) {
+        throw error;
+    }
+
+    // Also log this change
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+        await supabase.from('admin_audit_log').insert({
+            admin_user_id: user.id,
+            action: 'UPDATE_SETTINGS',
+            target_table: 'site_settings',
+            details: settings
+        });
+    }
+}
+
+/**
+ * Confirm a bank transfer payment and advance order status
+ */
+export async function confirmPayment(orderId: string): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Unauthorized");
+
+    // Start a transaction-like update
+    // 1. Update order payment status and order status
+    const { error: orderError } = await supabase
+        .from('orders')
+        .update({
+            payment_status: 'paid',
+            status: 'processing', // Automatically move to processing after payment
+            updated_at: new Date().toISOString()
+        })
+        .eq('id', orderId);
+
+    if (orderError) throw orderError;
+
+    // 2. Add history entry
+    await updateOrderStatus(orderId, 'processing', 'Ödeme havale ile alındı, onaylandı.');
+
+    // 3. Log the action
+    await supabase.from('admin_audit_log').insert({
+        admin_user_id: user.id,
+        action: 'CONFIRM_PAYMENT',
+        target_table: 'orders',
+        target_id: orderId,
+        details: { method: 'bank_transfer', new_status: 'preparing' }
+    });
 }
 
 /**
@@ -193,7 +297,12 @@ export async function getAllOrders(filters?: {
 
     // Search filter
     if (filters?.search) {
-        query = query.or(`id.ilike.%${filters.search}%,profiles.full_name.ilike.%${filters.search}%`);
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(filters.search);
+        if (isUUID) {
+            query = query.eq("id", filters.search);
+        } else {
+            query = query.or(`id.ilike.%${filters.search}%,profiles.full_name.ilike.%${filters.search}%`);
+        }
     }
 
     // Date filters
@@ -675,5 +784,58 @@ export async function deletePromoCode(id: string): Promise<void> {
     if (error) {
         console.error('Error deleting promo code:', error);
         throw error;
+    }
+}
+
+// Audit Logs
+export interface AuditLogEntry {
+    id: string;
+    admin_user_id: string;
+    action: string;
+    target_table: string | null;
+    target_id: string | null;
+    details: Record<string, unknown> | null;
+    created_at: string;
+    admin_name?: string;
+    admin_email?: string;
+}
+
+export async function getAuditLogs(limit = 50, offset = 0): Promise<AuditLogEntry[]> {
+    try {
+        const { data, error } = await safeQuery<AuditLogEntry[]>(supabase
+            .from("admin_audit_log")
+            .select("*")
+            .order("created_at", { ascending: false })
+            .range(offset, offset + limit - 1));
+
+        if (error) throw error;
+        if (!data || data.length === 0) return [];
+
+        // Fetch admin details
+        const uniqueAdminIds = [...new Set(data.map(log => log.admin_user_id).filter(Boolean))];
+
+        if (uniqueAdminIds.length > 0) {
+            const { data: profiles, error: profileError } = await safeQuery<{ id: string, full_name: string | null, email: string }[]>(supabase
+                .from("profiles")
+                .select("id, full_name, email")
+                .in("id", uniqueAdminIds));
+
+            if (!profileError && profiles) {
+                const profileMap = new Map(profiles.map(p => [p.id, p]));
+                return data.map(log => {
+                    const profile = profileMap.get(log.admin_user_id);
+                    return {
+                        ...log,
+                        admin_name: profile?.full_name || "Unknown Admin",
+                        admin_email: profile?.email || ""
+                    };
+                });
+            }
+        }
+
+        return data;
+    } catch (error) {
+        console.error("Error fetching audit logs:", error);
+        return [];
     }
 }

@@ -1,10 +1,10 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Package, Search, Filter, ChevronRight, RefreshCw } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminGuard } from "@/components/admin/AdminGuard";
 import { getAllOrders, Order, OrderStatus, STATUS_CONFIG } from "@/lib/admin";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,6 +21,8 @@ function OrdersContent() {
     const [totalCount, setTotalCount] = useState(0);
     const [sortBy, setSortBy] = useState<"created_at" | "total">("created_at");
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [highlightedId, setHighlightedId] = useState<string | null>(null);
     const { theme } = useAdminTheme();
     const isDark = theme === "dark";
 
@@ -42,7 +44,7 @@ function OrdersContent() {
 
             const filters: Parameters<typeof getAllOrders>[0] = {
                 status: statusFilter || undefined,
-                search: searchVal || undefined,
+                search: searchVal || searchParams.get("highlight") || searchParams.get("search") || undefined,
                 startDate: startVal || undefined,
                 endDate: endVal || undefined,
                 minAmount: minVal ? parseFloat(minVal) : undefined,
@@ -64,10 +66,18 @@ function OrdersContent() {
         } finally {
             setIsLoading(false);
         }
-    }, [statusFilter, sortBy, sortOrder]);
+    }, [statusFilter, sortBy, sortOrder, searchParams]);
 
     // Auto-load on status/sort change (Tabs usually expect immediate feedback)
     useEffect(() => {
+        const urlHighlight = searchParams.get("highlight") || searchParams.get("search");
+        if (urlHighlight) {
+            setHighlightedId(urlHighlight);
+            // We DON'T set searchRef.current.value here anymore to keep the bar clean
+            // but we need to ensure the order is actually fetched
+            setTimeout(() => setHighlightedId(null), 6000);
+        }
+
         loadOrders();
 
         // Real-time subscription for NEW orders
@@ -91,7 +101,7 @@ function OrdersContent() {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [loadOrders]);
+    }, [loadOrders, searchParams]);
 
     const handleClearFilters = () => {
         if (searchRef.current) searchRef.current.value = "";
@@ -100,7 +110,14 @@ function OrdersContent() {
         if (minAmountRef.current) minAmountRef.current.value = "";
         if (maxAmountRef.current) maxAmountRef.current.value = "";
         setStatusFilter("");
-        loadOrders();
+
+        // If there are parameters, clear them and let useEffect trigger loadOrders
+        // If no parameters, manual loadOrders call
+        if (searchParams.toString() !== "") {
+            setSearchParams({});
+        } else {
+            loadOrders();
+        }
     };
 
     const statusOptions: { value: OrderStatus | ""; label: string }[] = [
@@ -301,13 +318,42 @@ function OrdersContent() {
                         <div className={`divide-y ${dividerClass}`}>
                             {orders.map((order) => {
                                 const statusConfig = STATUS_CONFIG[order.status as OrderStatus] || STATUS_CONFIG.pending;
+                                const isHighlighted = highlightedId === order.id;
 
                                 return (
                                     <Link
                                         key={order.id}
                                         to={`/admin/orders/${order.id}`}
-                                        className={`grid grid-cols-12 gap-4 px-6 py-4 transition-colors items-center group ${rowHoverClass}`}
+                                        className={`grid grid-cols-12 gap-4 px-6 py-4 transition-all items-center group relative ${rowHoverClass} ${isHighlighted
+                                            ? isDark
+                                                ? "bg-orange-500/5 z-10"
+                                                : "bg-orange-50/50 z-10 shadow-sm"
+                                            : ""
+                                            }`}
                                     >
+                                        {isHighlighted && (
+                                            <motion.div
+                                                className="absolute inset-0 pointer-events-none z-20 rounded-lg border-2 border-orange-500"
+                                                initial={{ boxShadow: "0 0 0 0px rgba(249, 115, 22, 0.4)", borderColor: "rgba(249, 115, 22, 0.8)" }}
+                                                animate={{
+                                                    boxShadow: [
+                                                        "0 0 0 0px rgba(249, 115, 22, 0.4)",
+                                                        "0 0 0 10px rgba(249, 115, 22, 0)"
+                                                    ],
+                                                    borderColor: [
+                                                        "rgba(249, 115, 22, 0.8)",
+                                                        "rgba(249, 115, 22, 0.2)"
+                                                    ],
+                                                }}
+                                                transition={{
+                                                    duration: 1.5,
+                                                    repeat: Infinity,
+                                                    ease: "easeOut",
+                                                    repeatDelay: 0.1
+                                                }}
+                                                style={{ willChange: "box-shadow, border-color" }}
+                                            />
+                                        )}
                                         <div className="col-span-3 flex items-center gap-3">
                                             <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isDark ? "bg-orange-500/20" : "bg-orange-100"}`}>
                                                 <Package className={`w-5 h-5 ${isDark ? "text-orange-400" : "text-orange-600"}`} />

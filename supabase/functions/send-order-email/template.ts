@@ -70,6 +70,8 @@ export const ORDER_CONFIRMATION_HTML = `<!DOCTYPE html>
                                 <h3 style="margin: 0 0 10px; color: #EA580C; font-size: 14px; font-weight: 700; text-transform: uppercase;">Teslimat Adresi</h3>
                                 <p style="margin: 0; color: #431407; font-size: 14px; line-height: 1.6;">{{SHIPPING_ADDRESS}}</p>
                             </div>
+
+                            {{BANK_DETAILS}}
                             
                             <div style="margin-top: 20px; text-align: center;">
                                 <p style="color: #6B7280; font-size: 13px;">Ödeme Yöntemi: <strong>{{PAYMENT_METHOD}}</strong></p>
@@ -290,6 +292,128 @@ export const CANCELLED_HTML = `<!DOCTYPE html>
                             <div style="margin-top: 20px; text-align: center;">
                                 <p style="color: #6B7280; font-size: 13px;">Sorularınız için <a href="mailto:destek@bravita.com.tr" style="color: #EF4444; text-decoration: none;">destek@bravita.com.tr</a> adresinden bize ulaşabilirsiniz.</p>
                             </div>
+                        </td>
+                    </tr>
+                    <tr><td align="center" style="background-color: #FFF8F0; padding: 20px;"><p style="margin: 0; color: #9CA3AF; font-size: 14px;">© 2026 Bravita</p></td></tr>
+                </table>
+                <table width="100%" border="0" cellspacing="0" cellpadding="0" role="presentation"><tr><td height="40"></td></tr></table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`;
+
+export const PROCESSING_HTML = `<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light">
+    <title>Siparişiniz İşleniyor</title>
+    <style>
+        :root { color-scheme: light; }
+        body { background-color: #FFFBF7 !important; color: #1F2937 !important; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        @media only screen and (max-width: 600px) {
+            .container { width: 100% !important; border-radius: 0 !important; }
+            .content { padding: 30px 20px !important; }
+        }
+    </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #FFFBF7;">
+    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #FFFBF7;" role="presentation">
+        <tr>
+            <td align="center" style="padding: 40px 0;">
+                <table class="container" width="600" border="0" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); overflow: hidden;" role="presentation">
+                    <tr><td height="6" style="background-color: #3B82F6;"></td></tr>
+                    <tr>
+                        <td align="center" style="padding: 40px 0 20px;">
+                            <img src="https://xpmbnznsmsujjuwumfiw.supabase.co/storage/v1/object/public/public-assets/bravita-logo.webp" alt="Bravita" width="180" style="display: block; border: 0; max-width: 100%; height: auto;" />
+                        </td>
+                    </tr>
+                    <tr><td align="center" style="padding: 0 0 20px;"><div style="font-size: 64px; line-height: 1;">⚙️</div></td></tr>
+                    <tr>
+                        <td class="content" align="center" style="padding: 0 40px 40px;">
+                            <h1 style="margin: 0 0 10px; color: #1F2937; font-size: 26px; font-weight: 700;">Siparişiniz İşleniyor!</h1>
+                            <p style="margin: 0 0 30px; color: #4B5563; font-size: 16px; line-height: 1.6;">Siparişiniz başarıyla işleniyor. Ürünleriniz en kısa sürede hazırlanmaya başlanacaktır.</p>
+                            
+                             <!-- Order Info -->
+                             <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #F9FAFB; border-radius: 12px; margin-bottom: 30px; padding: 20px;" role="presentation">
+                                <tr>
+                                    <td align="left" style="padding-bottom: 8px;">
+                                        <span style="color: #6B7280; font-size: 13px; font-weight: 600; text-transform: uppercase;">Sipariş No</span><br>
+                                        <span style="color: #111827; font-size: 16px; font-weight: 700;">#{{ORDER_ID}}</span>
+                                    </td>
+                                    <td align="right" style="padding-bottom: 8px;">
+                                        <span style="color: #6B7280; font-size: 13px; font-weight: 600; text-transform: uppercase;">Tarih</span><br>
+                                        <span style="color: #111827; font-size: 16px; font-weight: 700;">{{ORDER_DATE}}</span>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="margin: 0; color: #6B7280; font-size: 14px; line-height: 1.6; text-align: center;">
+                                Sipariş durumunuzu profilinizden takip edebilirsiniz.
+                            </p>
+                        </td>
+                    </tr>
+                    <tr><td align="center" style="background-color: #FFF8F0; padding: 20px;"><p style="margin: 0; color: #9CA3AF; font-size: 14px;">© 2026 Bravita</p></td></tr>
+                </table>
+                <table width="100%" border="0" cellspacing="0" cellpadding="0" role="presentation"><tr><td height="40"></td></tr></table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`;
+
+export const PREPARING_HTML = `<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light">
+    <title>Siparişiniz Hazırlanıyor</title>
+    <style>
+        :root { color-scheme: light; }
+        body { background-color: #FFFBF7 !important; color: #1F2937 !important; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        @media only screen and (max-width: 600px) {
+            .container { width: 100% !important; border-radius: 0 !important; }
+            .content { padding: 30px 20px !important; }
+        }
+    </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #FFFBF7;">
+    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #FFFBF7;" role="presentation">
+        <tr>
+            <td align="center" style="padding: 40px 0;">
+                <table class="container" width="600" border="0" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); overflow: hidden;" role="presentation">
+                    <tr><td height="6" style="background-color: #6366F1;"></td></tr>
+                    <tr>
+                        <td align="center" style="padding: 40px 0 20px;">
+                            <img src="https://xpmbnznsmsujjuwumfiw.supabase.co/storage/v1/object/public/public-assets/bravita-logo.webp" alt="Bravita" width="180" style="display: block; border: 0; max-width: 100%; height: auto;" />
+                        </td>
+                    </tr>
+                    <tr><td align="center" style="padding: 0 0 20px;"><div style="font-size: 64px; line-height: 1;">📋</div></td></tr>
+                    <tr>
+                        <td class="content" align="center" style="padding: 0 40px 40px;">
+                            <h1 style="margin: 0 0 10px; color: #1F2937; font-size: 26px; font-weight: 700;">Siparişiniz Hazırlanıyor!</h1>
+                            <p style="margin: 0 0 30px; color: #4B5563; font-size: 16px; line-height: 1.6;">Ürünleriniz özenle paketleniyor ve en kısa sürece kargoya teslim edilecektir.</p>
+                            
+                             <!-- Order Info -->
+                             <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #F9FAFB; border-radius: 12px; margin-bottom: 30px; padding: 20px;" role="presentation">
+                                <tr>
+                                    <td align="left" style="padding-bottom: 8px;">
+                                        <span style="color: #6B7280; font-size: 13px; font-weight: 600; text-transform: uppercase;">Sipariş No</span><br>
+                                        <span style="color: #111827; font-size: 16px; font-weight: 700;">#{{ORDER_ID}}</span>
+                                    </td>
+                                    <td align="right" style="padding-bottom: 8px;">
+                                        <span style="color: #6B7280; font-size: 13px; font-weight: 600; text-transform: uppercase;">Tarih</span><br>
+                                        <span style="color: #111827; font-size: 16px; font-weight: 700;">{{ORDER_DATE}}</span>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="margin: 0; color: #6B7280; font-size: 14px; line-height: 1.6; text-align: center;">
+                                Şıklık ve sağlık paketinize ekleniyor! ✨
+                            </p>
                         </td>
                     </tr>
                     <tr><td align="center" style="background-color: #FFF8F0; padding: 20px;"><p style="margin: 0; color: #9CA3AF; font-size: 14px;">© 2026 Bravita</p></td></tr>

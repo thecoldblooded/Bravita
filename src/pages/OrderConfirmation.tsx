@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Check, Package, MapPin, CreditCard, Building2, ArrowRight, Copy, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getOrderById } from "@/lib/checkout";
+import { getOrderById, getBankDetails } from "@/lib/checkout";
 import Loader from "@/components/ui/Loader";
 import bravitaBottle from "@/assets/bravita-bottle.webp";
 import { toast } from "sonner";
@@ -39,28 +39,33 @@ interface Order {
     } | null;
 }
 
-const BANK_INFO = {
-    bankName: "Ziraat Bankası",
-    iban: "TR00 0000 0000 0000 0000 0000 00",
-    accountHolder: "Bravita Sağlık A.Ş.",
-};
+interface BankInfo {
+    bankName: string;
+    iban: string;
+    accountHolder: string;
+}
 
 export default function OrderConfirmation() {
     const { t } = useTranslation();
     const { orderId } = useParams<{ orderId: string }>();
     const [order, setOrder] = useState<Order | null>(null);
+    const [bankInfo, setBankInfo] = useState<BankInfo | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [copied, setCopied] = useState(false);
 
     useEffect(() => {
-        async function fetchOrder() {
+        async function fetchData() {
             if (!orderId) return;
             setIsLoading(true);
-            const data = await getOrderById(orderId);
-            setOrder(data as Order);
+            const [orderData, bankData] = await Promise.all([
+                getOrderById(orderId),
+                getBankDetails()
+            ]);
+            setOrder(orderData as Order);
+            setBankInfo(bankData);
             setIsLoading(false);
         }
-        fetchOrder();
+        fetchData();
     }, [orderId]);
 
     const copyToClipboard = (text: string) => {
@@ -166,14 +171,14 @@ export default function OrderConfirmation() {
                         <div className="space-y-3 text-sm">
                             <div className="flex justify-between items-center">
                                 <span className="text-gray-600">{t("order.bank_name", "Banka:")}</span>
-                                <span className="font-medium text-gray-900">{BANK_INFO.bankName}</span>
+                                <span className="font-medium text-gray-900">{bankInfo?.bankName}</span>
                             </div>
                             <div className="flex justify-between items-center">
                                 <span className="text-gray-600">{t("order.iban", "IBAN:")}</span>
                                 <div className="flex items-center gap-2">
-                                    <span className="font-mono text-gray-900">{BANK_INFO.iban}</span>
+                                    <span className="font-mono text-gray-900">{bankInfo?.iban}</span>
                                     <button
-                                        onClick={() => copyToClipboard(BANK_INFO.iban.replace(/\s/g, ""))}
+                                        onClick={() => bankInfo && copyToClipboard(bankInfo.iban.replace(/\s/g, ""))}
                                         className="p-1 hover:bg-blue-100 rounded"
                                     >
                                         {copied ? (
@@ -186,7 +191,7 @@ export default function OrderConfirmation() {
                             </div>
                             <div className="flex justify-between items-center">
                                 <span className="text-gray-600">{t("order.account_holder", "Hesap Sahibi:")}</span>
-                                <span className="font-medium text-gray-900">{BANK_INFO.accountHolder}</span>
+                                <span className="font-medium text-gray-900">{bankInfo?.accountHolder}</span>
                             </div>
                             <div className="flex justify-between items-center">
                                 <span className="text-gray-600">{t("order.amount", "Tutar:")}</span>

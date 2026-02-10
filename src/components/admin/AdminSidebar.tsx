@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Package, Users, LogOut, ChevronRight, Tags, Ticket, Home, Sun, Moon } from "lucide-react";
+import { LayoutDashboard, Package, Users, LogOut, ChevronRight, Tags, Ticket, Home, Sun, Moon, Shield } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminTheme } from "@/contexts/AdminThemeContext";
 import { supabase } from "@/lib/supabase";
@@ -16,9 +16,14 @@ const menuItems = [
 export function AdminSidebar() {
     const location = useLocation();
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const { user, isSuperAdmin } = useAuth();
     const { theme, toggleTheme } = useAdminTheme();
     const [unreadCount, setUnreadCount] = useState(0);
+
+    const displayMenuItems = [...menuItems];
+    if (isSuperAdmin) {
+        displayMenuItems.push({ path: "/admin/logs", label: "Sistem Logları", icon: Shield });
+    }
 
     const isDark = theme === "dark";
 
@@ -70,9 +75,9 @@ export function AdminSidebar() {
     };
 
     return (
-        <aside className={`w-64 min-h-screen flex flex-col transition-colors duration-300 ${isDark
-                ? "bg-gray-800 border-r border-gray-700"
-                : "bg-white border-r border-gray-100"
+        <aside className={`w-64 h-screen sticky top-0 flex flex-col transition-colors duration-300 ${isDark
+            ? "bg-gray-800 border-r border-gray-700"
+            : "bg-white border-r border-gray-100"
             }`}>
             {/* Logo */}
             <div className={`p-6 border-b ${isDark ? "border-gray-700" : "border-gray-100"}`}>
@@ -86,8 +91,8 @@ export function AdminSidebar() {
                     <button
                         onClick={toggleTheme}
                         className={`p-2 rounded-lg transition-all ${isDark
-                                ? "bg-gray-700 text-yellow-400 hover:bg-gray-600"
-                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                            ? "bg-gray-700 text-yellow-400 hover:bg-gray-600"
+                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                             }`}
                         title={isDark ? "Açık Mod" : "Koyu Mod"}
                     >
@@ -97,16 +102,16 @@ export function AdminSidebar() {
             </div>
 
             {/* Navigation */}
-            <nav className="flex-1 px-4 py-6 space-y-2">
+            <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto custom-scrollbar">
                 <button
                     onClick={() => navigate("/admin")}
                     className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all ${location.pathname === "/admin" || location.pathname === "/admin/dashboard"
-                            ? isDark
-                                ? "bg-orange-500/20 text-orange-400 shadow-sm ring-1 ring-orange-500/30"
-                                : "bg-orange-50 text-orange-600 shadow-sm ring-1 ring-orange-100"
-                            : isDark
-                                ? "text-gray-300 hover:bg-gray-700 hover:text-white"
-                                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                        ? isDark
+                            ? "bg-orange-500/20 text-orange-400 shadow-sm ring-1 ring-orange-500/30"
+                            : "bg-orange-50 text-orange-600 shadow-sm ring-1 ring-orange-100"
+                        : isDark
+                            ? "text-gray-300 hover:bg-gray-700 hover:text-white"
+                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                         }`}
                 >
                     <LayoutDashboard className="w-5 h-5" />
@@ -118,7 +123,7 @@ export function AdminSidebar() {
                         }`}>Yönetim</p>
                 </div>
 
-                {menuItems.map((item) => {
+                {displayMenuItems.map((item) => {
                     const isActive = location.pathname === item.path ||
                         (item.path !== "/" && location.pathname.startsWith(item.path));
 
@@ -127,19 +132,19 @@ export function AdminSidebar() {
                             key={item.path}
                             onClick={() => navigate(item.path)}
                             className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all group cursor-pointer relative ${isActive
-                                    ? isDark
-                                        ? "bg-orange-500/20 text-orange-400 shadow-sm ring-1 ring-orange-500/30"
-                                        : "bg-orange-50 text-orange-600 shadow-sm ring-1 ring-orange-100"
-                                    : isDark
-                                        ? "text-gray-300 hover:bg-gray-700 hover:text-white"
-                                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                                ? isDark
+                                    ? "bg-orange-500/20 text-orange-400 shadow-sm ring-1 ring-orange-500/30"
+                                    : "bg-orange-50 text-orange-600 shadow-sm ring-1 ring-orange-100"
+                                : isDark
+                                    ? "text-gray-300 hover:bg-gray-700 hover:text-white"
+                                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                                 }`}
                         >
                             <item.icon className={`w-5 h-5 ${isActive
-                                    ? "text-orange-500"
-                                    : isDark
-                                        ? "text-gray-500 group-hover:text-gray-300"
-                                        : "text-gray-400 group-hover:text-gray-600"
+                                ? "text-orange-500"
+                                : isDark
+                                    ? "text-gray-500 group-hover:text-gray-300"
+                                    : "text-gray-400 group-hover:text-gray-600"
                                 }`} />
                             <span className="font-medium">{item.label}</span>
 
@@ -182,8 +187,8 @@ export function AdminSidebar() {
                 <button
                     onClick={() => window.location.href = '/'}
                     className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl transition-colors mb-2 ${isDark
-                            ? "text-gray-300 hover:bg-gray-700"
-                            : "text-gray-600 hover:bg-gray-100"
+                        ? "text-gray-300 hover:bg-gray-700"
+                        : "text-gray-600 hover:bg-gray-100"
                         }`}
                 >
                     <Home className="w-5 h-5" />
@@ -192,8 +197,8 @@ export function AdminSidebar() {
                 <button
                     onClick={handleLogout}
                     className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl transition-colors ${isDark
-                            ? "text-red-400 hover:bg-red-500/10"
-                            : "text-red-600 hover:bg-red-50"
+                        ? "text-red-400 hover:bg-red-500/10"
+                        : "text-red-600 hover:bg-red-50"
                         }`}
                 >
                     <LogOut className="w-5 h-5" />

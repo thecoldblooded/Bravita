@@ -1,10 +1,10 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Package, User, MapPin, Clock, Truck, CheckCircle, Edit2, Save, X, ClipboardList, RefreshCw } from "lucide-react";
+import { ArrowLeft, Package, User, MapPin, Clock, Truck, CheckCircle, Edit2, Save, X, ClipboardList, RefreshCw, Building2, CreditCard } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminGuard } from "@/components/admin/AdminGuard";
-import { getOrderById, updateOrderStatus, updateTrackingNumber, getOrderStatusHistory, Order, OrderStatus, STATUS_CONFIG, OrderStatusHistoryItem } from "@/lib/admin";
+import { getOrderById, updateOrderStatus, updateTrackingNumber, getOrderStatusHistory, Order, OrderStatus, STATUS_CONFIG, OrderStatusHistoryItem, confirmPayment } from "@/lib/admin";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { OrderDetailSkeleton } from "@/components/admin/skeletons";
@@ -28,6 +28,7 @@ function AdminOrderDetailContent() {
 
     const [showCancelDialog, setShowCancelDialog] = useState(false);
     const [cancelNote, setCancelNote] = useState("");
+    const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
 
     const { theme } = useAdminTheme();
     const isDark = theme === "dark";
@@ -77,6 +78,12 @@ function AdminOrderDetailContent() {
             return;
         }
 
+        // Payment validation: Cannot advance status if payment is not confirmed (for bank transfer)
+        if (order.payment_status !== 'paid' && newStatus !== 'pending' && newStatus !== 'cancelled') {
+            toast.error("Siparişi işleme almak için önce ödemeyi onaylamalısınız.");
+            return;
+        }
+
         // If trying to cancel via timeline button without flow
         if (newStatus === "cancelled" && !note) {
             setShowCancelDialog(true);
@@ -90,9 +97,9 @@ function AdminOrderDetailContent() {
             const newHistory = await getOrderStatusHistory(orderId);
             setHistory(newHistory);
 
-            // Send Email Notification for Shipped, Delivered, or Cancelled
+            // Send Email Notification for all status changes
             let emailSent = false;
-            if (newStatus === "shipped" || newStatus === "delivered" || newStatus === "cancelled") {
+            if (newStatus !== "pending") {
                 try {
                     const { error: emailError } = await supabase.functions.invoke("send-order-email", {
                         body: {
@@ -108,18 +115,21 @@ function AdminOrderDetailContent() {
                     emailSent = true;
                 } catch (emailErr) {
                     console.error("Email sending failed:", emailErr);
-                    toast.warning("Durum güncellendi ancak e-posta gönderilemedi.");
+                    toast.warning("Durum güncellendi ancak e-posta bildirimi gönderilemedi.");
                 }
             }
 
             if (!emailSent) {
                 toast.success("Sipariş durumu güncellendi");
             } else {
-                let actionText = 'bildirim';
-                if (newStatus === 'shipped') actionText = 'kargo';
-                else if (newStatus === 'delivered') actionText = 'teslimat';
-                else if (newStatus === 'cancelled') actionText = 'iptal';
-
+                const actionMap: Record<string, string> = {
+                    processing: 'işleniyor',
+                    preparing: 'hazırlanıyor',
+                    shipped: 'kargo',
+                    delivered: 'teslimat',
+                    cancelled: 'iptal'
+                };
+                const actionText = actionMap[newStatus] || 'bildirim';
                 toast.success(`Sipariş durumu güncellendi ve ${actionText} bildirimi gönderildi.`);
             }
 
@@ -132,6 +142,21 @@ function AdminOrderDetailContent() {
             toast.error("Durum güncellenemedi");
         } finally {
             setIsUpdatingStatus(false);
+        }
+    };
+
+    const handleConfirmPayment = async () => {
+        if (!orderId || !order) return;
+        setIsConfirmingPayment(true);
+        try {
+            await confirmPayment(orderId);
+            toast.success("Ödeme onaylandı. Sipariş işleniyor aşamasına geçti.");
+            await loadOrder();
+        } catch (error) {
+            console.error("Failed to confirm payment:", error);
+            toast.error("Ödeme onaylanamadı.");
+        } finally {
+            setIsConfirmingPayment(false);
         }
     };
 
@@ -227,6 +252,68 @@ function AdminOrderDetailContent() {
                 </div>
             </div>
 
+            {/* Payment Status & Action */}
+            {order.payment_method === "bank_transfer" && (
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className={`mb-6 p-4 rounded-xl border flex flex-col md:flex-row items-center justify-between gap-4 ${order.payment_status === 'paid'
+                        ? (isDark ? 'bg-green-500/10 border-green-500/20' : 'bg-green-50 border-green-100')
+                        : (isDark ? 'bg-blue-500/10 border-blue-500/20' : 'bg-blue-50 border-blue-100')
+                        }`}
+                >
+                    <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${order.payment_status === 'paid'
+                            ? (isDark ? 'bg-green-500/20 text-green-400' : 'bg-green-100 text-green-600')
+                            : (isDark ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-100 text-blue-600')
+                            }`}>
+                            <Building2 className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <p className={`font-bold ${textPrimary}`}>
+                                {order.payment_status === 'paid' ? 'Ödeme Alındı' : 'Ödeme Bekleniyor (Havale/EFT)'}
+                            </p>
+                            <p className={`text-sm ${textSecondary}`}>
+                                {order.payment_status === 'paid'
+                                    ? 'Bu siparişin ödemesi onaylanmıştır.'
+                                    : 'Müşteriden havale/EFT yapması bekleniyor. Lütfen hesabı kontrol edip onaylayın.'}
+                            </p>
+                        </div>
+                    </div>
+                    {order.payment_status !== 'paid' && order.status !== 'cancelled' && (
+                        <Button
+                            onClick={handleConfirmPayment}
+                            disabled={isConfirmingPayment}
+                            className="bg-green-600 hover:bg-green-700 text-white min-w-40"
+                        >
+                            {isConfirmingPayment ? (
+                                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                            ) : (
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                            )}
+                            Ödemeyi Onayla
+                        </Button>
+                    )}
+                </motion.div>
+            )}
+
+            {/* Credit Card Payment Info (Optional visualization) */}
+            {order.payment_method === "credit_card" && (
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className={`mb-6 p-4 rounded-xl border flex items-center gap-3 ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-100'}`}
+                >
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isDark ? 'bg-gray-700 text-gray-400' : 'bg-gray-200 text-gray-400'}`}>
+                        <CreditCard className="w-5 h-5" />
+                    </div>
+                    <div>
+                        <p className={`font-bold ${textPrimary}`}>Kredi Kartı ile Ödendi</p>
+                        <p className={`text-sm ${textSecondary}`}>İşlem otomatik olarak onaylandı.</p>
+                    </div>
+                </motion.div>
+            )}
+
             {/* Cancellation Dialog */}
             {showCancelDialog && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -281,13 +368,18 @@ function AdminOrderDetailContent() {
                 className={cardClass + " mb-6"}
             >
                 <h2 className={`text-lg font-bold ${textPrimary} mb-6`}>Sipariş Durumu</h2>
-                <div className="flex items-center justify-between relative">
-                    {/* Progress Line */}
-                    <div className={`absolute top-6 left-0 right-0 h-1 ${isDark ? "bg-gray-700" : "bg-gray-200"} -z-10`} />
-                    <div
-                        className="absolute top-6 left-0 h-1 bg-orange-500 -z-10 transition-all duration-500"
-                        style={{ width: `${(currentStatusIndex / (statusSteps.length - 1)) * 100}%` }}
-                    />
+                <div className="flex items-center justify-between relative mt-4 px-6">
+                    {/* Progress Line Container */}
+                    <div className="absolute top-6 left-12 right-12 h-1 pointer-events-none">
+                        {/* Background Line */}
+                        <div className={`absolute inset-0 ${isDark ? "bg-gray-700" : "bg-gray-200"} rounded-full`} />
+                        {/* Active Line */}
+                        <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${(currentStatusIndex / (statusSteps.length - 1)) * 100}%` }}
+                            className="absolute inset-y-0 left-0 bg-orange-500 rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(249,115,22,0.5)]"
+                        />
+                    </div>
 
                     {statusSteps.map((status, index) => {
                         const StatusIcon = getStatusIcon(status);
@@ -298,15 +390,44 @@ function AdminOrderDetailContent() {
                             <button
                                 key={status}
                                 onClick={() => handleStatusChange(status)}
-                                disabled={isUpdatingStatus || order.status === "cancelled" || index < currentStatusIndex}
-                                className={`flex flex-col items-center gap-2 relative ${isUpdatingStatus || order.status === "cancelled" || index < currentStatusIndex ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:scale-105 transition-transform"
+                                disabled={
+                                    isUpdatingStatus ||
+                                    order.status === "cancelled" ||
+                                    index < currentStatusIndex ||
+                                    (order.payment_status !== "paid" && status !== "pending" && status !== "cancelled")
+                                }
+                                className={`flex flex-col items-center gap-2 relative z-10 ${isUpdatingStatus ||
+                                    order.status === "cancelled" ||
+                                    index < currentStatusIndex ||
+                                    (order.payment_status !== "paid" && status !== "pending" && status !== "cancelled")
+                                    ? "opacity-60 cursor-not-allowed"
+                                    : "cursor-pointer hover:scale-105 transition-transform"
                                     }`}
                             >
-                                <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${isPast ? "bg-orange-500 text-white" : isDark ? "bg-gray-700 text-gray-400" : "bg-gray-200 text-gray-400"
-                                    } ${isCurrent ? "ring-4 ring-orange-200" : ""}`}>
-                                    <StatusIcon className="w-6 h-6" />
-                                </div>
-                                <span className={`text-sm font-medium ${isPast ? textPrimary : textMuted}`}>
+                                <motion.div
+                                    animate={isCurrent ? { scale: 1.1 } : { scale: 1 }}
+                                    className={`w-12 h-12 rounded-full flex items-center justify-center relative transition-colors duration-300 ${isPast ? "bg-orange-500 text-white shadow-[0_0_15px_rgba(249,115,22,0.3)]" : isDark ? "bg-gray-700 text-gray-400" : "bg-gray-100 text-gray-400"
+                                        } ${isCurrent ? "ring-4 ring-orange-100 dark:ring-orange-500/30" : ""}`}>
+                                    {isCurrent && (
+                                        <motion.div
+                                            className="absolute inset-0 rounded-full bg-orange-500"
+                                            initial={{ scale: 1, opacity: 0.5 }}
+                                            animate={{
+                                                scale: [1, 1.8],
+                                                opacity: [0.5, 0]
+                                            }}
+                                            transition={{
+                                                duration: 2,
+                                                repeat: Infinity,
+                                                ease: "easeOut",
+                                                repeatDelay: 0.2
+                                            }}
+                                            style={{ willChange: "transform, opacity" }}
+                                        />
+                                    )}
+                                    <StatusIcon className="w-5 h-5 relative z-10" />
+                                </motion.div>
+                                <span className={`text-[11px] font-semibold uppercase tracking-wider transition-colors ${isPast ? (isDark ? "text-orange-400" : "text-orange-600") : textMuted}`}>
                                     {STATUS_CONFIG[status]?.label}
                                 </span>
                             </button>
@@ -347,6 +468,13 @@ function AdminOrderDetailContent() {
                                 <div className="flex justify-between text-green-600">
                                     <span>İndirim {order.order_details.promo_code ? `(${order.order_details.promo_code})` : ''}</span>
                                     <span>-₺{order.order_details.discount.toLocaleString("tr-TR")}</span>
+                                </div>
+                            )}
+
+                            {order.order_details?.shipping_cost && order.order_details.shipping_cost > 0 && (
+                                <div className={`flex justify-between ${textSecondary}`}>
+                                    <span>Kargo Ücreti</span>
+                                    <span>₺{order.order_details.shipping_cost.toLocaleString("tr-TR")}</span>
                                 </div>
                             )}
 

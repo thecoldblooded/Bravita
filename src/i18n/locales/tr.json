@@ -399,6 +399,7 @@
             "credit_card_desc": "Test ortamı - Herhangi bir kart numarası kabul edilir",
             "bank_transfer": "Havale / EFT",
             "bank_transfer_desc": "Banka hesabına havale ile ödeme",
+            "bank_transfer_short": "Havale",
             "credit_card_short": "Kredi Kartı",
             "test_mode_warning": "Test Modu - Gerçek ödeme alınmaz",
             "reference_note": "Sipariş numaranızı açıklama kısmına yazmayı unutmayın.",

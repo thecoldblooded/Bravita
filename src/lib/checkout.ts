@@ -131,6 +131,36 @@ export async function checkStock(slug: string, quantity: number): Promise<{
     };
 }
 
+/**
+ * Get bank transfer details from site settings
+ */
+export async function getBankDetails(): Promise<{
+    bankName: string;
+    iban: string;
+    accountHolder: string;
+}> {
+    const { data, error } = await supabase
+        .from('site_settings')
+        .select('bank_name, bank_iban, bank_account_holder')
+        .eq('id', 1)
+        .single();
+
+    if (error) {
+        console.error('Error fetching bank details:', error);
+        return {
+            bankName: "Ziraat Bankası",
+            iban: "TR00 0000 0000 0000 0000 0000 00",
+            accountHolder: "Bravita Sağlık A.Ş."
+        };
+    }
+
+    return {
+        bankName: data.bank_name,
+        iban: data.bank_iban,
+        accountHolder: data.bank_account_holder
+    };
+}
+
 // ============================================
 // ORDER CREATION
 // ============================================
