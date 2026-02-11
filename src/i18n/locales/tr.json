@@ -540,6 +540,7 @@
             "info": "Profil Bilgilerim",
             "addresses": "Adreslerim",
             "orders": "Siparişlerim",
+            "support": "Destek Merkezi",
             "settings": "Ayarlar"
         },
         "info": {
@@ -661,5 +662,45 @@
             "preferences_saved": "Tercihler kaydedildi",
             "preferences_failed": "Ayarlar güncellenemedi"
         }
+    },
+    "support": {
+        "name": "Ad Soyad",
+        "name_placeholder": "Adınızı giriniz",
+        "email": "E-posta Adresi",
+        "email_placeholder": "e-posta@örnek.com",
+        "category": "Kategori",
+        "category_placeholder": "Bir kategori seçin",
+        "category_general": "Genel Sorular",
+        "category_order_issue": "Sipariş Sorunu",
+        "category_product_info": "Ürün Bilgisi",
+        "category_delivery": "Teslimat Hakkında",
+        "category_other": "Diğer",
+        "subject": "Konu",
+        "subject_placeholder": "Konu başlığı",
+        "message": "Mesajınız",
+        "message_placeholder": "Mesajınızı buraya yazınız...",
+        "submit": "Gönder",
+        "success_message": "Mesajınız başarıyla iletildi. En kısa sürede size dönüş yapacağız.",
+        "reply_button": "Cevap Ver",
+        "reply_placeholder": "Yanıtınızı buraya yazın...",
+        "reply_submit": "Yanıtı Gönder",
+        "reply_success": "Yanıtınız başarıyla iletildi.",
+        "original_message": "Orijinal Mesaj",
+        "error_message": "Mesaj gönderilirken bir hata oluştu.",
+        "history_title": "Destek Taleplerim",
+        "status_open": "Bekliyor",
+        "status_answered": "Yanıtlandı",
+        "status_closed": "Kapatıldı",
+        "validation": {
+            "name_min": "İsim en az 2 karakter olmalıdır",
+            "email_invalid": "Geçerli bir e-posta adresi giriniz",
+            "category_required": "Lütfen bir kategori seçiniz",
+            "subject_min": "Konu en az 5 karakter olmalıdır",
+            "message_min": "Mesaj en az 10 karakter olmalıdır"
+        }
+    },
+    "landing": {
+        "support_title": "Bize Ulaşın",
+        "support_subtitle": "Sormak istediğiniz her türlü soru veya yaşadığınız problemler için bize yazabilirsiniz."
     }
 }

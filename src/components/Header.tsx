@@ -12,6 +12,7 @@ import { UserMenu } from "@/components/auth/UserMenu";
 import { IncompleteProfileBanner } from "@/components/IncompleteProfileBanner";
 import { CartModal } from "@/components/ui/CartModal";
 import { useCart } from "@/contexts/CartContext";
+import FloatingSupport from "@/components/FloatingSupport";
 
 const BravitaLogo = ({ isScrolled }: { isScrolled: boolean }) => {
   const letters = [
@@ -294,23 +295,34 @@ const Header = () => {
         </div>
       )}
 
-      {/* Back to Top Button */}
-      <AnimatePresence>
-        {showBackToTop && (
-          <motion.button
-            initial={{ opacity: 0, scale: 0.5, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.5, y: 20 }}
-            onClick={(e) => {
-              e.stopPropagation();
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-            className="fixed bottom-36 right-6 md:bottom-20 md:right-10 z-100 bg-orange-600 text-white p-4 rounded-full shadow-2xl hover:bg-orange-700 transition-colors group"
-          >
-            <ChevronUp className="w-6 h-6 group-hover:-translate-y-1 transition-transform" />
-          </motion.button>
+      {/* Floating Action Buttons Container */}
+      <div className="fixed bottom-36 right-6 md:bottom-20 md:right-10 z-40 flex flex-col gap-4 items-end pointer-events-none">
+        {/* Support Button - Now part of floating actions */}
+        {!isProfilePage && !isCheckoutPage && (
+          <div className="pointer-events-auto">
+            <FloatingSupport />
+          </div>
         )}
-      </AnimatePresence>
+
+        {/* Back to Top Button */}
+        <AnimatePresence>
+          {showBackToTop && (
+            <motion.button
+              initial={{ opacity: 0, scale: 0.5, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.5, y: 20 }}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="pointer-events-auto bg-orange-600 text-white p-4 rounded-full shadow-2xl hover:bg-orange-700 transition-colors group"
+            >
+              <ChevronUp className="w-6 h-6 group-hover:-translate-y-1 transition-transform" />
+            </motion.button>
+          )}
+        </AnimatePresence>
+      </div>
 
       {/* Auth Modal */}
       <AuthModal

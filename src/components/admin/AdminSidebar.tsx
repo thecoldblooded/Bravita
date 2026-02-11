@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Package, Users, LogOut, ChevronRight, Tags, Ticket, Home, Sun, Moon, Shield } from "lucide-react";
+import { LayoutDashboard, Package, Users, LogOut, ChevronRight, Tags, Ticket, Home, Sun, Moon, Shield, LifeBuoy } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminTheme } from "@/contexts/AdminThemeContext";
 import { supabase } from "@/lib/supabase";
@@ -10,7 +10,7 @@ const menuItems = [
     { path: "/admin/orders", label: "Siparişler", icon: Package },
     { path: "/admin/products", label: "Ürünler & Stok", icon: Tags },
     { path: "/admin/promotions", label: "Promosyonlar", icon: Ticket },
-    { path: "/admin/admins", label: "Admin Yönetimi", icon: Users },
+    { path: "/admin/support", label: "Destek Talepleri", icon: LifeBuoy },
 ];
 
 export function AdminSidebar() {
@@ -19,9 +19,11 @@ export function AdminSidebar() {
     const { user, isSuperAdmin } = useAuth();
     const { theme, toggleTheme } = useAdminTheme();
     const [unreadCount, setUnreadCount] = useState(0);
+    const [unreadSupportCount, setUnreadSupportCount] = useState(0);
 
     const displayMenuItems = [...menuItems];
     if (isSuperAdmin) {
+        displayMenuItems.push({ path: "/admin/admins", label: "Admin Yönetimi", icon: Users });
         displayMenuItems.push({ path: "/admin/logs", label: "Sistem Logları", icon: Shield });
     }
 
@@ -55,10 +57,20 @@ export function AdminSidebar() {
             setUnreadCount(count || 0);
         };
 
-        fetchUnread();
+        const fetchUnreadSupport = async () => {
+            const { count } = await supabase
+                .from('support_tickets')
+                .select('*', { count: 'exact', head: true })
+                .eq('status', 'open');
 
-        const channel = supabase
-            .channel('admin-sidebar-badges')
+            setUnreadSupportCount(count || 0);
+        };
+
+        fetchUnread();
+        fetchUnreadSupport();
+
+        const ordersChannel = supabase
+            .channel('admin-sidebar-badges-orders')
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, () => {
                 if (!location.pathname.startsWith('/admin/orders')) {
                     fetchUnread();
@@ -66,7 +78,17 @@ export function AdminSidebar() {
             })
             .subscribe();
 
-        return () => { supabase.removeChannel(channel); };
+        const supportChannel = supabase
+            .channel('admin-sidebar-badges-support')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'support_tickets' }, () => {
+                fetchUnreadSupport();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(ordersChannel);
+            supabase.removeChannel(supportChannel);
+        };
     }, [location.pathname]);
 
     const handleLogout = async () => {
@@ -151,6 +173,12 @@ export function AdminSidebar() {
                             {item.path === "/admin/orders" && unreadCount > 0 && (
                                 <span className="ml-auto bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
                                     {unreadCount}
+                                </span>
+                            )}
+
+                            {item.path === "/admin/support" && unreadSupportCount > 0 && (
+                                <span className="ml-auto bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+                                    {unreadSupportCount}
                                 </span>
                             )}
 

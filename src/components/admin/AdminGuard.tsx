@@ -8,7 +8,7 @@ interface AdminGuardProps {
 }
 
 export function AdminGuard({ children }: AdminGuardProps) {
-    const { isAuthenticated, isAdmin, isLoading, user } = useAuth();
+    const { isAuthenticated, isAdmin, isSuperAdmin, isLoading, user } = useAuth();
     const [showTimeout, setShowTimeout] = useState(false);
 
     // Safety timeout - if still loading after 3 seconds, show error
@@ -31,8 +31,8 @@ export function AdminGuard({ children }: AdminGuardProps) {
         );
     }
 
-    // Secure Check: Only proceed if authenticated AND definitively marked as admin
-    if (!isAuthenticated || !isAdmin) {
+    // Secure Check: Only proceed if authenticated AND definitively marked as admin or superadmin
+    if (!isAuthenticated || (!isAdmin && !isSuperAdmin)) {
         // If we are still loading verify status, stay in loading above.
         // If loading finished and not admin, show Access Denied.
 

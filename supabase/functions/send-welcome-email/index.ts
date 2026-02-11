@@ -1,5 +1,4 @@
-
-
+/// <reference path="./types.d.ts" />
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -11,15 +10,20 @@ const APP_WEBHOOK_SECRET = Deno.env.get("APP_WEBHOOK_SECRET") || "bravita-welcom
 const ALLOWED_ORIGINS = [
     'https://bravita.com.tr',
     'https://www.bravita.com.tr',
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://localhost:8080',
 ];
 
 function getCorsHeaders(req: Request) {
     const origin = req.headers.get('Origin') || '';
-    const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+    const isLocalhost = origin.includes('localhost') || origin.includes('127.0.0.1');
+    const allowedOrigin = (isLocalhost || ALLOWED_ORIGINS.includes(origin)) ? origin : ALLOWED_ORIGINS[0];
+
     return {
         "Access-Control-Allow-Origin": allowedOrigin,
         "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-bravita-secret",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
     };
 }
 
@@ -71,8 +75,12 @@ const WELCOME_HTML = `<!DOCTYPE html>
 
     <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #FFFBF7;">
         <tr>
-            <td align="center" style="padding: 40px 0;">
-
+            <td align="center" style="padding: 20px 0;">
+                <p style="margin: 0; color: #9CA3AF; font-size: 12px;">E-postayı görüntülemekte sorun mu yaşıyorsunuz? <a href="{{BROWSER_LINK}}" style="color: #F97316; text-decoration: none;">Browserda açın</a></p>
+            </td>
+        </tr>
+        <tr>
+            <td align="center">
                 <table class="container" width="600" border="0" cellspacing="0" cellpadding="0"
                     style="background-color: #ffffff; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); overflow: hidden;">
 
@@ -162,12 +170,60 @@ const WELCOME_HTML = `<!DOCTYPE html>
 
 </html>`;
 
+/**
+ * Generates a secure signature for a given ID to prevent unauthorized viewing.
+ */
+async function generateSignature(id: string) {
+    const secret = SUPABASE_SERVICE_ROLE_KEY;
+    const msgUint8 = new TextEncoder().encode(id + secret);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/**
+ * Validates the signature for a given ID and token.
+ */
+async function validateSignature(id: string, token: string) {
+    const expected = await generateSignature(id);
+    return expected === token;
+}
+
 serve(async (req: Request) => {
     if (req.method === "OPTIONS") {
         return new Response("ok", { headers: getCorsHeaders(req) });
     }
 
     try {
+        const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+        const url = new URL(req.url);
+
+        // --- BROWSER VIEW (GET) ---
+        if (req.method === "GET") {
+            const user_id = url.searchParams.get("id");
+            const token = url.searchParams.get("token");
+
+            if (!user_id || !token) {
+                return new Response("Geçersiz istek.", { status: 400 });
+            }
+
+            // Secure validation
+            const isValid = await validateSignature(user_id, token);
+            if (!isValid) {
+                return new Response("Yetkisiz erişim.", { status: 403 });
+            }
+
+            // Render Welcome Email
+            const html = WELCOME_HTML
+                .replace("{{UnsubscribeURL}}", "https://www.bravita.com.tr/unsubscribe")
+                .replace("{{BROWSER_LINK}}", "#");
+
+            return new Response(html, {
+                headers: { "Content-Type": "text/html; charset=utf-8" },
+            });
+        }
+
+        // --- SEND EMAIL (POST) ---
         const secret = req.headers.get("x-bravita-secret");
         if (secret !== APP_WEBHOOK_SECRET) {
             console.error("Unauthorized Secret attempt");
@@ -181,9 +237,8 @@ serve(async (req: Request) => {
         const body = await req.json();
         const { user_id, email: directEmail } = body;
 
-        const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
         let recipientEmail = directEmail;
+        let finalUserId = user_id;
 
         if (user_id) {
             const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(user_id);
@@ -198,6 +253,12 @@ serve(async (req: Request) => {
             throw new Error("Recipient email is required");
         }
 
+        // Generate secure browser link
+        // If user_id is missing (guest?), we use email as ID for signature
+        const idForSignature = finalUserId || recipientEmail;
+        const signature = await generateSignature(idForSignature);
+        const browserLink = `${url.origin}/functions/v1/send-welcome-email?id=${encodeURIComponent(idForSignature)}&token=${signature}`;
+
         console.log(`Sending welcome email to ${recipientEmail}`);
 
         const res = await fetch("https://api.resend.com/emails", {
@@ -210,28 +271,27 @@ serve(async (req: Request) => {
                 from: "Bravita <noreply@bravita.com.tr>",
                 to: [recipientEmail],
                 subject: "Bravita'ya Hoş Geldiniz! 🌿",
-                html: WELCOME_HTML.replace("{{UnsubscribeURL}}", "https://www.bravita.com.tr/unsubscribe"),
+                html: WELCOME_HTML
+                    .replace("{{UnsubscribeURL}}", "https://www.bravita.com.tr/unsubscribe")
+                    .replace("{{BROWSER_LINK}}", browserLink),
                 text: `Aramıza Hoş Geldiniz!\n\nBravita ailesine katıldığınız için çok mutluyuz.\n\nKoleksiyonu Keşfet: https://www.bravita.com.tr/shop`,
             }),
         });
 
         const data = await res.json();
-
-        if (!res.ok) {
-            throw new Error(`Resend API Error: ${JSON.stringify(data)}`);
-        }
+        if (!res.ok) throw new Error(`Resend API Error: ${JSON.stringify(data)}`);
 
         return new Response(JSON.stringify({ success: true, id: data.id }), {
             headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
             status: 200,
         });
 
-    } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    } catch (error: any) {
+        const errorMessage = error.message || "Unknown error";
         console.error("Error in send-welcome-email:", errorMessage);
         return new Response(JSON.stringify({ error: errorMessage }), {
             headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
-            status: 400,
+            status: errorMessage === "Unauthorized" ? 401 : (errorMessage.includes("Forbidden") ? 403 : 400),
         });
     }
 });

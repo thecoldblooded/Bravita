@@ -7,7 +7,8 @@ import { ProfileSidebar } from "@/components/profile/ProfileSidebar";
 import { ProfileInfo } from "@/components/profile/ProfileInfo";
 import { AddressBook } from "@/components/profile/AddressBook";
 import { OrderHistory } from "@/components/profile/OrderHistory";
-import { Settings } from "@/components/profile/Settings";
+import { Settings as SettingsPanel } from "@/components/profile/Settings";
+import { SupportCenter } from "@/components/profile/SupportCenter";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Loader from "@/components/ui/Loader";
@@ -40,6 +41,23 @@ export default function Profile() {
 
     if (!user) return null;
 
+    const renderContent = () => {
+        switch (activeTab) {
+            case "profile":
+                return <ProfileInfo />;
+            case "addresses":
+                return <AddressBook />;
+            case "orders":
+                return <OrderHistory />;
+            case "support":
+                return <SupportCenter />;
+            case "settings":
+                return <SettingsPanel />;
+            default:
+                return <ProfileInfo />;
+        }
+    };
+
     return (
         <div className="min-h-screen bg-[#FFFBF4] flex flex-col">
             <Header />
@@ -54,10 +72,7 @@ export default function Profile() {
 
                     {/* Main Content Area */}
                     <div className="flex-1 min-w-0">
-                        {activeTab === "profile" && <ProfileInfo />}
-                        {activeTab === "addresses" && <AddressBook />}
-                        {activeTab === "orders" && <OrderHistory />}
-                        {activeTab === "settings" && <Settings />}
+                        {renderContent()}
                     </div>
                 </div>
             </main>

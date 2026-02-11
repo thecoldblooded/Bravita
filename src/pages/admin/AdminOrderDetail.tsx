@@ -151,6 +151,12 @@ function AdminOrderDetailContent() {
         try {
             await confirmPayment(orderId);
             toast.success("Ödeme onaylandı. Sipariş işleniyor aşamasına geçti.");
+
+            // Trigger confirmation email
+            supabase.functions.invoke("send-order-email", {
+                body: { order_id: orderId, type: "order_confirmation" }
+            }).catch(err => console.error("Payment confirmation email failed:", err));
+
             await loadOrder();
         } catch (error) {
             console.error("Failed to confirm payment:", error);

@@ -12,7 +12,9 @@ import AdminUsers from "@/pages/admin/AdminUsers";
 import AdminProducts from "@/pages/admin/AdminProducts";
 import AdminPromoCodes from "@/pages/admin/AdminPromoCodes";
 import AdminAuditLogs from "@/pages/admin/AdminAuditLogs";
+import AdminSupport from "@/pages/admin/AdminSupport";
 import NotFound from "@/pages/NotFound";
+import { AdminThemeProvider } from "@/contexts/AdminThemeContext";
 
 const queryClient = new QueryClient();
 
@@ -20,20 +22,23 @@ export default function AdminApp() {
     return (
         <QueryClientProvider client={queryClient}>
             <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-                    <Routes>
-                        <Route path="/admin" element={<AdminDashboard />} />
-                        <Route path="/admin/orders" element={<AdminOrders />} />
-                        <Route path="/admin/orders/:orderId" element={<AdminOrderDetail />} />
-                        <Route path="/admin/products" element={<AdminProducts />} />
-                        <Route path="/admin/promotions" element={<AdminPromoCodes />} />
-                        <Route path="/admin/admins" element={<AdminUsers />} />
-                        <Route path="/admin/logs" element={<AdminAuditLogs />} />
-                        <Route path="*" element={<NotFound />} />
-                    </Routes>
-                </BrowserRouter>
+                <AdminThemeProvider>
+                    <Toaster />
+                    <Sonner />
+                    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                        <Routes>
+                            <Route path="/admin" element={<AdminDashboard />} />
+                            <Route path="/admin/orders" element={<AdminOrders />} />
+                            <Route path="/admin/orders/:orderId" element={<AdminOrderDetail />} />
+                            <Route path="/admin/products" element={<AdminProducts />} />
+                            <Route path="/admin/promotions" element={<AdminPromoCodes />} />
+                            <Route path="/admin/support" element={<AdminSupport />} />
+                            <Route path="/admin/admins" element={<AdminUsers />} />
+                            <Route path="/admin/logs" element={<AdminAuditLogs />} />
+                            <Route path="*" element={<NotFound />} />
+                        </Routes>
+                    </BrowserRouter>
+                </AdminThemeProvider>
             </TooltipProvider>
         </QueryClientProvider>
     );

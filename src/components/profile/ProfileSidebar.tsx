@@ -1,4 +1,4 @@
-import { User, MapPin, ShoppingBag, Settings } from "lucide-react";
+import { User, MapPin, ShoppingBag, Settings, LifeBuoy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
@@ -16,6 +16,7 @@ export function ProfileSidebar({ activeTab, setActiveTab }: ProfileSidebarProps)
         { id: "profile", label: t("profile.sidebar.info"), icon: User },
         { id: "addresses", label: t("profile.sidebar.addresses"), icon: MapPin },
         { id: "orders", label: t("profile.sidebar.orders"), icon: ShoppingBag },
+        { id: "support", label: t("profile.sidebar.support"), icon: LifeBuoy },
         { id: "settings", label: t("profile.sidebar.settings"), icon: Settings },
     ];
 

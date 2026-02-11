@@ -25,6 +25,7 @@ import AdminUsers from "@/pages/admin/AdminUsers";
 import AdminProducts from "@/pages/admin/AdminProducts";
 import AdminPromoCodes from "@/pages/admin/AdminPromoCodes";
 import AdminAuditLogs from "@/pages/admin/AdminAuditLogs";
+import AdminSupport from "@/pages/admin/AdminSupport";
 
 /**
  * 🚧 MAINTENANCE MODE FLAG
@@ -44,6 +45,7 @@ const queryClient = new QueryClient();
 import { useAuth } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import Loader from "@/components/ui/Loader";
+import { AdminThemeProvider } from "@/contexts/AdminThemeContext";
 
 // Separate component to use useLocation inside BrowserRouter
 const AppContent = () => {
@@ -67,6 +69,7 @@ const AppContent = () => {
         <Route path="/admin/orders/:orderId" element={<AdminOrderDetail />} />
         <Route path="/admin/products" element={<AdminProducts />} />
         <Route path="/admin/promotions" element={<AdminPromoCodes />} />
+        <Route path="/admin/support" element={<AdminSupport />} />
         <Route path="/admin/admins" element={<AdminUsers />} />
         <Route path="/admin/logs" element={<AdminAuditLogs />} />
 
@@ -103,32 +106,34 @@ const App = () => {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <Toaster />
-          <Sonner />
+          <AdminThemeProvider>
+            <Toaster />
+            <Sonner />
 
-          {isSplashScreenActive ? (
-            <div className="fixed inset-0 bg-[#FFFBF7] z-50 flex flex-col items-center justify-center">
-              <Loader size="280px" noMargin />
-              <motion.p
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1 }}
-                className="text-orange-900/40 font-medium text-sm tracking-widest uppercase mt-4"
-              >
-                Yükleniyor
-              </motion.p>
-            </div>
-          ) : isPasswordRecovery ? (
-            <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-              <Routes>
-                <Route path="*" element={<UpdatePassword />} />
-              </Routes>
-            </BrowserRouter>
-          ) : (
-            <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-              <AppContent />
-            </BrowserRouter>
-          )}
+            {isSplashScreenActive ? (
+              <div className="fixed inset-0 bg-[#FFFBF7] z-50 flex flex-col items-center justify-center">
+                <Loader size="280px" noMargin />
+                <motion.p
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 1 }}
+                  className="text-orange-900/40 font-medium text-sm tracking-widest uppercase mt-4"
+                >
+                  Yükleniyor
+                </motion.p>
+              </div>
+            ) : isPasswordRecovery ? (
+              <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                <Routes>
+                  <Route path="*" element={<UpdatePassword />} />
+                </Routes>
+              </BrowserRouter>
+            ) : (
+              <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                <AppContent />
+              </BrowserRouter>
+            )}
+          </AdminThemeProvider>
         </TooltipProvider>
       </QueryClientProvider>
     </ErrorBoundary>

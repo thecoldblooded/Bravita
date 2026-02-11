@@ -5,11 +5,12 @@ import bravitaGif from "@/assets/bravita.gif";
 interface LoaderProps {
   size?: string;
   noMargin?: boolean;
+  className?: string;
 }
 
-export default function Loader({ size = "240px", noMargin = false }: LoaderProps) {
+export default function Loader({ size = "240px", noMargin = false, className }: LoaderProps) {
   return (
-    <StyledWrapper $size={size} $noMargin={noMargin}>
+    <StyledWrapper $size={size} $noMargin={noMargin} className={className}>
       <div className="loader-container">
         <img
           src={bravitaGif}

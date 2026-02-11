@@ -22,7 +22,7 @@
             "phospho": "Phosphatidilserine",
             "choline": "Choline",
             "carnitine": "L-Carnitine",
-            "arginine": "L-Arginine",
+            "arginine": "L-Arjinin",
             "multivitamin": "Multivitamin",
             "multimineral": "Multimineral"
         }
@@ -296,7 +296,7 @@
             "very_weak": "Very weak",
             "weak": "Weak",
             "medium": "Medium",
-            "strong": "Strong password ✓",
+            "strong": "Strong password \u2713",
             "rules": {
                 "min_chars": "At least 12 characters",
                 "uppercase": "Uppercase letter (A-Z)",
@@ -540,6 +540,7 @@
             "info": "My Information",
             "addresses": "My Addresses",
             "orders": "My Orders",
+            "support": "Support Center",
             "settings": "Settings"
         },
         "info": {
@@ -598,8 +599,8 @@
             "sort_oldest": "Oldest",
             "sort_price_desc": "Price: High to Low",
             "sort_price_asc": "Price: Low to High",
-            "filter_min": "Min ₺",
-            "filter_max": "Max ₺",
+            "filter_min": "Min \u20BA",
+            "filter_max": "Max \u20BA",
             "filter_btn": "Filter",
             "filter_clear": "Clear",
             "empty_state": "No orders yet",
@@ -661,5 +662,45 @@
             "preferences_saved": "Preferences saved",
             "preferences_failed": "Failed to update settings"
         }
+    },
+    "support": {
+        "name": "Full Name",
+        "name_placeholder": "Enter your name",
+        "email": "Email Address",
+        "email_placeholder": "email@example.com",
+        "category": "Category",
+        "category_placeholder": "Select a category",
+        "category_general": "General Questions",
+        "category_order_issue": "Order Issue",
+        "category_product_info": "Product Information",
+        "category_delivery": "About Delivery",
+        "category_other": "Other",
+        "subject": "Subject",
+        "subject_placeholder": "Subject title",
+        "message": "Your Message",
+        "message_placeholder": "Write your message here...",
+        "submit": "Send",
+        "success_message": "Your message has been successfully sent. We will get back to you as soon as possible.",
+        "reply_button": "Reply",
+        "reply_placeholder": "Type your reply here...",
+        "reply_submit": "Send Reply",
+        "reply_success": "Your reply has been sent successfully.",
+        "original_message": "Original Message",
+        "error_message": "An error occurred while sending the message.",
+        "history_title": "My Support Tickets",
+        "status_open": "Waiting",
+        "status_answered": "Answered",
+        "status_closed": "Closed",
+        "validation": {
+            "name_min": "Name must be at least 2 characters",
+            "email_invalid": "Please enter a valid email address",
+            "category_required": "Please select a category",
+            "subject_min": "Subject must be at least 5 characters",
+            "message_min": "Message must be at least 10 characters"
+        }
+    },
+    "landing": {
+        "support_title": "Contact Us",
+        "support_subtitle": "You can write to us for any questions you want to ask or problems you are experiencing."
     }
 }
