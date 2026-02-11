@@ -52,7 +52,7 @@ Bravita, estetik ve fonksiyonelliği bir araya getiren **"Premium Health"** tasa
 
 1. Depoyu klonlayın:
    ```bash
-   git clone https://github.com/thecoldblooded/bravita-revamp-2025.git
+   git clone [https://github.com/thecoldblooded/bravita-revamp-2025.git](https://github.com/thecoldblooded/Bravita.git)
    ```
 2. Bağımlılıkları yükleyin:
    ```bash
