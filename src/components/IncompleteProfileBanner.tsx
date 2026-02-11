@@ -42,34 +42,35 @@ export function IncompleteProfileBanner() {
   };
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:max-w-md z-50 overflow-hidden bg-linear-to-br from-orange-500/95 via-red-500/95 to-pink-500/95 backdrop-blur-md text-white shadow-2xl rounded-3xl border border-white/20">
+    <div className="fixed top-20 md:top-24 left-1/2 -translate-x-1/2 w-[90%] md:max-w-2xl z-50 overflow-hidden bg-linear-to-r from-orange-600/95 via-red-600/95 to-orange-600/95 backdrop-blur-xl text-white shadow-[0_20px_50px_rgba(249,115,22,0.3)] rounded-3xl border border-white/30 animate-in fade-in slide-in-from-top-4 duration-500">
       <div className="absolute inset-0 bg-black/5 backdrop-blur-sm pointer-events-none"></div>
-      <div className="relative flex items-center gap-4 px-6 py-4 z-10">
-        <div className="shrink-0">
+      <div className="relative flex flex-col md:flex-row items-center gap-4 px-6 py-4 z-10">
+        <div className="shrink-0 flex items-center gap-3">
           <div className="relative">
-            <div className="absolute inset-0 bg-white/20 blur-xl rounded-full animate-pulse pointer-events-none"></div>
-            <AlertCircle className="relative h-8 w-8 text-white drop-shadow-lg animate-bounce" />
+            <div className="absolute inset-0 bg-white/40 blur-2xl rounded-full animate-pulse pointer-events-none"></div>
+            <div className="relative bg-white/20 p-2 rounded-2xl backdrop-blur-md border border-white/40">
+              <AlertCircle className="h-6 w-6 text-white drop-shadow-lg animate-[bounce_2s_infinite]" />
+            </div>
           </div>
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm md:text-base font-bold leading-relaxed">
-            <span className="inline-flex items-center gap-2">
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-              {t("auth.profile_incomplete_warning")}
-            </span>
+          <p className="text-base md:text-lg font-black tracking-tight leading-relaxed">
+            {t("auth.profile_incomplete_warning")}
           </p>
+        </div>
+
+        <div className="flex-1 flex justify-center md:justify-end w-full">
           <button
             onClick={handleNavigate}
-            className="mt-2 inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-md px-4 py-2 rounded-xl font-bold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl border border-white/40 hover:border-white/60 relative z-20"
+            className="group relative overflow-hidden inline-flex items-center gap-2 bg-white text-orange-600 px-6 py-2.5 rounded-2xl font-black text-sm shadow-[0_10px_20px_rgba(255,255,255,0.2)] transition-all duration-300 hover:scale-105 active:scale-95 border border-white/10"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            {/* Shimmer effect */}
+            <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] pointer-events-none"></div>
+
+            <svg className="w-5 h-5 transition-transform group-hover:rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
-            {t("auth.complete_your_profile")}
-            <svg className="w-4 h-4 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            <span className="relative z-10">{t("auth.complete_your_profile")}</span>
+            <svg className="w-4 h-4 animate-pulse group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
             </svg>
           </button>
         </div>

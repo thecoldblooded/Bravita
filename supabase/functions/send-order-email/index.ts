@@ -99,7 +99,11 @@ serve(async (req: Request) => {
 
             const { html } = await prepareEmailContent(supabase, order, type);
             return new Response(html, {
-                headers: { "Content-Type": "text/html; charset=utf-8" },
+                status: 200,
+                headers: {
+                    "Content-Type": "text/html; charset=UTF-8",
+                    "X-Content-Type-Options": "nosniff"
+                },
             });
         }
 
@@ -240,7 +244,7 @@ async function fetchOrderData(supabase: any, order_id: string) {
 }
 
 /**
- * Prepares email subject, html, and text content.
+ * Prepares email subject, html, and text content using database templates.
  */
 async function prepareEmailContent(
     supabase: any,
@@ -251,12 +255,44 @@ async function prepareEmailContent(
     cancellation_reason?: string,
     browserLink?: string
 ) {
+    // Map internal types to DB slugs
+    const slugMap: Record<string, string> = {
+        "order_confirmation": "order_confirmation",
+        "shipped": "order_shipped",
+        "delivered": "order_delivered",
+        "cancelled": "order_cancelled",
+        "processing": "order_processing",
+        "preparing": "order_preparing"
+    };
+
+    let slug = slugMap[type] || "order_confirmation";
+
+    // Handle special case for awaiting payment
+    if (type === "order_confirmation" && order.payment_method === "bank_transfer" && order.payment_status === "pending") {
+        slug = "order_awaiting_payment";
+    }
+
+    // 1. Fetch Template
+    const { data: template, error: tErr } = await supabase
+        .from("email_templates")
+        .select("*")
+        .eq("slug", slug)
+        .single();
+
+    if (tErr || !template) throw new Error(`Template not found for slug: ${slug}`);
+
+    // 2. Fetch Config
+    const { data: config } = await supabase
+        .from("email_configs")
+        .select("*")
+        .eq("template_slug", slug)
+        .limit(1)
+        .maybeSingle();
+
+    // 3. Prepare Logic Data (from original code)
     const orderDate = new Date(order.created_at).toLocaleDateString("tr-TR", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
+        day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit",
+        timeZone: "Europe/Istanbul"
     });
 
     const items: OrderItem[] = order.order_details.items;
@@ -275,7 +311,6 @@ async function prepareEmailContent(
     const paymentMethod = order.payment_method === "credit_card" ? "Kredi Kartı" : "Havale / EFT";
 
     if (!browserLink) {
-        // Fallback for GET request view Link construction (can't point to itself easily without req)
         const signature = await generateSignature(order.id);
         browserLink = `/functions/v1/send-order-email?id=${order.id}&token=${signature}&type=${type}`;
     }
@@ -291,16 +326,16 @@ async function prepareEmailContent(
             const imgUrl = "https://xpmbnznsmsujjuwumfiw.supabase.co/storage/v1/object/public/public-assets/bravita-bottle.webp";
             itemsHtml += `
             <tr class="item-row">
-                <td width="80" style="padding: 16px 0;">
+                <td width="80" style="padding: 16px 0; border-bottom: 1px solid #F3F4F6;">
                     <div style="width: 60px; height: 60px; background-color: #F3F4F6; border-radius: 8px; overflow: hidden;">
                         <img src="${imgUrl}" alt="${sanitize(item.product_name)}" style="width: 100%; height: 100%; object-fit: contain;" />
                     </div>
                 </td>
-                <td style="padding: 16px 0;">
+                <td style="padding: 16px 0; border-bottom: 1px solid #F3F4F6;">
                     <p style="margin: 0; color: #111827; font-size: 14px; font-weight: 600;">${sanitize(item.product_name)}</p>
                     <p style="margin: 4px 0 0; color: #6B7280; font-size: 13px;">Adet: ${item.quantity}</p>
                 </td>
-                <td align="right" style="padding: 16px 0;">
+                <td align="right" style="padding: 16px 0; border-bottom: 1px solid #F3F4F6;">
                     <p style="margin: 0; color: #111827; font-size: 14px; font-weight: 600;">₺${(item.unit_price * item.quantity).toFixed(2)}</p>
                 </td>
             </tr>`;
@@ -308,59 +343,49 @@ async function prepareEmailContent(
     }
 
     let bankDetailsHtml = "";
-    let bankDetailsText = "";
-
     if (order.payment_method === "bank_transfer") {
-        const { data: settings } = await supabase.from("site_settings").select("*").eq("id", 1).single();
+        const { data: settings } = await supabase.from("site_settings").select("*").eq("id", 1).maybeSingle();
         if (settings) {
             bankDetailsHtml = `
             <div style="margin-top: 20px; padding: 20px; background-color: #F0F9FF; border-radius: 12px; border: 1px solid #BAE6FD;">
-                <h3 style="margin: 0 0 10px; color: #0369A1; font-size: 14px; font-weight: 700; text-transform: uppercase;">Havale/EFT Bilgileri</h3>
-                <p style="margin: 0 5px 0 0; color: #0C4A6E; font-size: 14px;"><strong>Banka:</strong> ${sanitize(settings.bank_name)}</p>
+                <h3 style="margin: 0 0 10px; color: #0369A1; font-size: 14px; font-weight: 700;">Havale/EFT Bilgileri</h3>
+                <p style="margin: 0; color: #0C4A6E; font-size: 14px;"><strong>Banka:</strong> ${sanitize(settings.bank_name)}</p>
                 <p style="margin: 5px 0 0; color: #0C4A6E; font-size: 14px;"><strong>IBAN:</strong> ${sanitize(settings.bank_iban)}</p>
                 <p style="margin: 5px 0 0; color: #0C4A6E; font-size: 14px;"><strong>Hesap Sahibi:</strong> ${sanitize(settings.bank_account_holder)}</p>
-                <p style="margin: 10px 0 0; color: #0369A1; font-size: 12px; font-style: italic;">* Açıklama kısmına sipariş numaranızı (<strong>#${order.id.substring(0, 8).toUpperCase()}</strong>) yazmayı unutmayınız.</p>
+                <p style="margin: 10px 0 0; color: #0369A1; font-size: 12px; font-style: italic;">* Açıklama: #${order.id.substring(0, 8).toUpperCase()}</p>
             </div>`;
-            bankDetailsText = `\nHavale/EFT Bilgileri:\nBanka: ${settings.bank_name}\nIBAN: ${settings.bank_iban}\nHesap Sahibi: ${settings.bank_account_holder}\n`;
         }
     }
 
-    const commonTextInfo = `Sipariş No: #${order.id.substring(0, 8).toUpperCase()}\nTarih: ${orderDate}\nTeslimat Adresi: ${addressString}${bankDetailsText}`;
+    // 4. Ingest variables
+    const variables: Record<string, string> = {
+        "ORDER_ID": order.id.substring(0, 8).toUpperCase(),
+        "ORDER_DATE": orderDate,
+        "NAME": order.user.full_name || "Müşterimiz",
+        "ITEMS_LIST": itemsHtml,
+        "SUBTOTAL": totals.subtotal.toFixed(2),
+        "DISCOUNT": totals.discount.toFixed(2),
+        "TAX": totals.vat.toFixed(2),
+        "TOTAL": totals.total.toFixed(2),
+        "SHIPPING_ADDRESS": sanitize(addressString),
+        "PAYMENT_METHOD": paymentMethod,
+        "BANK_DETAILS": bankDetailsHtml,
+        "SHIPPING_COMPANY": sanitize(shipping_company || order.shipping_company || "Kargo Firması"),
+        "TRACKING_NUMBER": sanitize(tracking_number || order.tracking_number || "Takip numarası girilmedi"),
+        "CANCELLATION_REASON": sanitize(cancellation_reason || order.cancellation_reason || "Belirtilmedi"),
+        "BROWSER_LINK": browserLink
+    };
 
-    let html = "";
-    let subject = "";
-    let textContent = "";
+    let html = template.content_html;
+    let subject = template.subject;
 
-    if (type === "shipped") {
-        const validTrackingNumber = sanitize(tracking_number || order.tracking_number || "");
-        const validShippingCompany = sanitize(shipping_company || order.shipping_company || "Kargo Firması");
-        subject = `Siparişiniz Kargoya Verildi 🚚 #${order.id.substring(0, 8).toUpperCase()}`;
-        html = SHIPPED_HTML.replace("{{ORDER_ID}}", order.id.substring(0, 8).toUpperCase()).replace("{{ORDER_DATE}}", orderDate).replace("{{ITEMS_LIST}}", itemsHtml).replace("{{SHIPPING_ADDRESS}}", sanitize(addressString)).replace("{{SHIPPING_COMPANY}}", validShippingCompany).replace("{{TRACKING_NUMBER}}", validTrackingNumber || "Takip numarası girilmedi").replace("{{BROWSER_LINK}}", browserLink);
-        textContent = `Siparişiniz Kargoya Verildi!\n\nKargo Firması: ${validShippingCompany}\nTakip Numarası: ${validTrackingNumber}\n\n${commonTextInfo}`;
-    } else if (type === "delivered") {
-        subject = `Siparişiniz Teslim Edildi ✅ #${order.id.substring(0, 8).toUpperCase()}`;
-        html = DELIVERED_HTML.replace("{{ORDER_ID}}", order.id.substring(0, 8).toUpperCase()).replace("{{ORDER_DATE}}", orderDate).replace("{{ITEMS_LIST}}", itemsHtml).replace("{{SHIPPING_ADDRESS}}", sanitize(addressString)).replace("{{BROWSER_LINK}}", browserLink);
-        textContent = `Siparişiniz Teslim Edildi!\n\n${commonTextInfo}`;
-    } else if (type === "cancelled") {
-        subject = `Siparişiniz İptal Edildi ❌ #${order.id.substring(0, 8).toUpperCase()}`;
-        const reason = sanitize(cancellation_reason || order.cancellation_reason || "Belirtilmedi");
-        html = CANCELLED_HTML.replace("{{ORDER_ID}}", order.id.substring(0, 8).toUpperCase()).replace("{{ORDER_DATE}}", orderDate).replace("{{CANCELLATION_REASON}}", reason).replace("{{BROWSER_LINK}}", browserLink);
-        textContent = `Siparişiniz İptal Edildi!\n\nİptal Nedeni: ${reason}\n\n${commonTextInfo}`;
-    } else if (type === "processing") {
-        subject = `Siparişiniz İşleniyor ⚙️ #${order.id.substring(0, 8).toUpperCase()}`;
-        html = PROCESSING_HTML.replace("{{ORDER_ID}}", order.id.substring(0, 8).toUpperCase()).replace("{{ORDER_DATE}}", orderDate).replace("{{BROWSER_LINK}}", browserLink);
-        textContent = `Siparişiniz İşleniyor!\n\n${commonTextInfo}`;
-    } else if (type === "preparing") {
-        subject = `Siparişiniz Hazırlanıyor 📋 #${order.id.substring(0, 8).toUpperCase()}`;
-        html = PREPARING_HTML.replace("{{ORDER_ID}}", order.id.substring(0, 8).toUpperCase()).replace("{{ORDER_DATE}}", orderDate).replace("{{BROWSER_LINK}}", browserLink);
-        textContent = `Siparişiniz Hazırlanıyor!\n\n${commonTextInfo}`;
-    } else {
-        const isInitialBankTransfer = type === "order_confirmation" && order.payment_method === "bank_transfer" && order.payment_status === "pending";
-        subject = isInitialBankTransfer ? `Siparişiniz Alındı (Ödeme Bekleniyor) #${order.id.substring(0, 8).toUpperCase()}` : `Siparişiniz Onaylandı #${order.id.substring(0, 8).toUpperCase()}`;
-        const baseTemplate = isInitialBankTransfer ? AWAITING_PAYMENT_HTML : ORDER_CONFIRMATION_HTML;
-        html = baseTemplate.replace("{{ORDER_ID}}", order.id.substring(0, 8).toUpperCase()).replace("{{ORDER_DATE}}", orderDate).replace("{{ITEMS_LIST}}", itemsHtml).replace("{{SUBTOTAL}}", totals.subtotal.toFixed(2)).replace("{{DISCOUNT}}", totals.discount.toFixed(2)).replace("{{TAX}}", totals.vat.toFixed(2)).replace("{{TOTAL}}", totals.total.toFixed(2)).replace("{{SHIPPING_ADDRESS}}", sanitize(addressString)).replace("{{BANK_DETAILS}}", bankDetailsHtml).replace("{{PAYMENT_METHOD}}", paymentMethod).replace("{{BROWSER_LINK}}", browserLink);
-        textContent = isInitialBankTransfer ? `Siparişiniz Alındı! Ödemeniz onaylandıktan sonra hazırlanmaya başlanacaktır.\n\n${commonTextInfo}\n\nToplam Tutar: ₺${totals.total.toFixed(2)}` : `Siparişiniz Onaylandı!\n\n${commonTextInfo}\n\nToplam Tutar: ₺${totals.total.toFixed(2)}`;
-    }
+    Object.entries(variables).forEach(([key, val]) => {
+        subject = subject.replaceAll(`{{${key}}}`, val);
+        html = html.replaceAll(`{{${key}}}`, val);
+        html = html.replaceAll(`{{ ${key} }}`, val);
+    });
+
+    const textContent = `Bravita Sipariş: ${subject}\nSipariş No: #${variables.ORDER_ID}`;
 
     return { subject, html, textContent };
 }

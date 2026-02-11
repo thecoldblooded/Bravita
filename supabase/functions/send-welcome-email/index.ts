@@ -36,6 +36,7 @@ const WELCOME_HTML = `<!DOCTYPE html>
     <meta name="color-scheme" content="light">
     <meta name="supported-color-schemes" content="light">
     <title>Bravita'ya Hoş Geldiniz!</title>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         /* Force Light Mode */
         :root {
@@ -45,7 +46,7 @@ const WELCOME_HTML = `<!DOCTYPE html>
         body {
             background-color: #FFFBF7 !important;
             color: #1F2937 !important;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Baloo 2', 'Nunito', sans-serif;
             margin: 0;
             padding: 0;
             -webkit-font-smoothing: antialiased;
@@ -100,7 +101,7 @@ const WELCOME_HTML = `<!DOCTYPE html>
                     <!-- Emoji Icon -->
                     <tr>
                         <td align="center" style="padding: 0 0 20px;">
-                            <div style="font-size: 64px; line-height: 1;">🌿</div>
+                            <div style="font-size: 64px; line-height: 1;">🦙</div>
                         </td>
                     </tr>
 
@@ -121,7 +122,7 @@ const WELCOME_HTML = `<!DOCTYPE html>
                                     <td align="center" style="border-radius: 50px; background-color: #F97316;">
                                         <a href="https://www.bravita.com.tr/shop" class="button"
                                             style="display: inline-block; padding: 16px 48px; font-family: sans-serif; font-size: 16px; color: #ffffff; text-decoration: none; font-weight: 600; border-radius: 50px; background-color: #F97316; border: 1px solid #F97316;">
-                                            Koleksiyonu Keşfet
+                                            Bravita'yı Keşfet
                                         </a>
                                     </td>
                                 </tr>
@@ -213,10 +214,19 @@ serve(async (req: Request) => {
                 return new Response("Yetkisiz erişim.", { status: 403 });
             }
 
-            // Render Welcome Email
-            const html = WELCOME_HTML
-                .replace("{{UnsubscribeURL}}", "https://www.bravita.com.tr/unsubscribe")
-                .replace("{{BROWSER_LINK}}", "#");
+            // Fetch Template from DB for viewing
+            const { data: template, error: tErr } = await supabase
+                .from("email_templates")
+                .select("*")
+                .eq("slug", "welcome_template")
+                .single();
+
+            if (tErr || !template) return new Response("Şablon bulunamadı.", { status: 404 });
+
+            let html = template.content_html;
+            html = html.replaceAll("{{NAME}}", "Müşterimiz"); // Sample for preview
+            html = html.replaceAll("{{BROWSER_LINK}}", "#");
+            html = html.replaceAll("{{UNSUBSCRIBE_URL}}", "https://www.bravita.com.tr/unsubscribe");
 
             return new Response(html, {
                 headers: { "Content-Type": "text/html; charset=utf-8" },
@@ -230,34 +240,73 @@ serve(async (req: Request) => {
             return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: getCorsHeaders(req) });
         }
 
-        if (!RESEND_API_KEY) {
-            throw new Error("RESEND_API_KEY is missing");
-        }
+        // Fetch Template from DB
+        const { data: template, error: tErr } = await supabase
+            .from("email_templates")
+            .select("*")
+            .eq("slug", "welcome_template")
+            .single();
+
+        if (tErr || !template) throw new Error("Welcome template not found in database");
+
+        // Fetch Config
+        const { data: config } = await supabase
+            .from("email_configs")
+            .select("*")
+            .eq("template_slug", "welcome_template")
+            .limit(1)
+            .maybeSingle();
 
         const body = await req.json();
         const { user_id, email: directEmail } = body;
 
         let recipientEmail = directEmail;
-        let finalUserId = user_id;
+        let recipientName = "Müşterimiz";
 
         if (user_id) {
-            const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(user_id);
-            if (authError || !authUser.user) {
-                console.error("Auth User fetch error:", authError);
-                throw new Error("User not found");
+            // Get profile for name
+            const { data: profile } = await supabase
+                .from("profiles")
+                .select("full_name, email")
+                .eq("id", user_id)
+                .single();
+
+            if (profile) {
+                recipientEmail = profile.email;
+                recipientName = profile.full_name || recipientName;
+            } else {
+                // Fallback to auth
+                const { data: authUser } = await supabase.auth.admin.getUserById(user_id);
+                if (authUser.user) recipientEmail = authUser.user.email;
             }
-            recipientEmail = authUser.user.email;
         }
 
-        if (!recipientEmail) {
-            throw new Error("Recipient email is required");
-        }
+        if (!recipientEmail) throw new Error("Recipient email is required");
 
         // Generate secure browser link
-        // If user_id is missing (guest?), we use email as ID for signature
-        const idForSignature = finalUserId || recipientEmail;
+        const idForSignature = user_id || recipientEmail;
         const signature = await generateSignature(idForSignature);
         const browserLink = `${url.origin}/functions/v1/send-welcome-email?id=${encodeURIComponent(idForSignature)}&token=${signature}`;
+
+        // Prepare Variables
+        const variables: Record<string, string> = {
+            "NAME": recipientName,
+            "EMAIL": recipientEmail,
+            "BROWSER_LINK": browserLink,
+            "UNSUBSCRIBE_URL": "https://www.bravita.com.tr/unsubscribe"
+        };
+
+        let html = template.content_html;
+        let subject = template.subject;
+
+        Object.entries(variables).forEach(([key, val]) => {
+            subject = subject.replaceAll(`{{${key}}}`, val);
+            html = html.replaceAll(`{{${key}}}`, val);
+            html = html.replaceAll(`{{ ${key} }}`, val);
+        });
+
+        const fromName = config?.sender_name || "Bravita";
+        const fromEmail = config?.sender_email || "noreply@bravita.com.tr";
 
         console.log(`Sending welcome email to ${recipientEmail}`);
 
@@ -268,13 +317,11 @@ serve(async (req: Request) => {
                 Authorization: `Bearer ${RESEND_API_KEY}`,
             },
             body: JSON.stringify({
-                from: "Bravita <noreply@bravita.com.tr>",
+                from: `${fromName} <${fromEmail}>`,
                 to: [recipientEmail],
-                subject: "Bravita'ya Hoş Geldiniz! 🌿",
-                html: WELCOME_HTML
-                    .replace("{{UnsubscribeURL}}", "https://www.bravita.com.tr/unsubscribe")
-                    .replace("{{BROWSER_LINK}}", browserLink),
-                text: `Aramıza Hoş Geldiniz!\n\nBravita ailesine katıldığınız için çok mutluyuz.\n\nKoleksiyonu Keşfet: https://www.bravita.com.tr/shop`,
+                subject: subject,
+                html: html,
+                text: `Bravita'ya Hoş Geldiniz!\n\nAramıza Hoş Geldiniz, ${recipientName}.\n\nBravita'yı Keşfet: https://www.bravita.com.tr/shop`,
             }),
         });
 

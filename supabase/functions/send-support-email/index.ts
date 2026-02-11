@@ -32,8 +32,9 @@ const getBaseTemplate = (title: string, content: string, emoji: string = "✉️
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #FFFBF7; color: #1F2937; font-family: sans-serif; margin: 0; padding: 0; }
+        body { background-color: #FFFBF7; color: #1F2937; font-family: 'Baloo 2', 'Nunito', sans-serif; margin: 0; padding: 0; }
         .container { max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); overflow: hidden; }
         .top-bar { height: 6px; background-color: #F97316; }
         .content { padding: 40px 60px; text-align: center; }
@@ -42,7 +43,7 @@ const getBaseTemplate = (title: string, content: string, emoji: string = "✉️
         h1 { font-size: 24px; color: #111827; margin-bottom: 20px; }
         .message-box { background: #F9FAF7; border: 1px solid #E5E7EB; border-radius: 12px; padding: 20px; text-align: left; color: #374151; line-height: 1.6; margin: 20px 0; }
         .footer { background-color: #FFF8F0; padding: 30px; text-align: center; color: #9CA3AF; font-size: 12px; line-height: 1.6; }
-        .btn { display: inline-block; padding: 12px 32px; background: #F97316; color: #ffffff; text-decoration: none; border-radius: 50px; font-weight: 600; margin-top: 20px; }
+        .btn { display: inline-block; padding: 12px 32px; background: #F97316; color: #ffffff; text-decoration: none; border-radius: 50px; font-weight: 600; margin-top: 20px; font-family: 'Baloo 2', 'Nunito', sans-serif; }
         .legal { margin-top: 20px; font-size: 10px; color: #D1D5DB; }
     </style>
 </head>
@@ -130,13 +131,21 @@ serve(async (req: Request) => {
                 .maybeSingle();
 
             if (ticketError || !ticket) {
-                return new Response("Destek talebi bulunamadı.", { status: 404 });
+                return new Response("Destek talebi bulunamadı.", {
+                    status: 404,
+                    headers: { ...getCorsHeaders(req), "Content-Type": "text/plain; charset=utf-8" }
+                });
             }
 
             const SUPPORT_EMAIL = Deno.env.get("SUPPORT_EMAIL_NOTIFY") || "support@bravita.com.tr";
-            const { html } = prepareSupportEmail(ticket, type, "", SUPPORT_EMAIL); // No link needed for view
+            const { html } = await prepareSupportEmail(supabase, ticket, type, "", SUPPORT_EMAIL); // No link needed for view
+
             return new Response(html, {
-                headers: { "Content-Type": "text/html; charset=utf-8" },
+                status: 200,
+                headers: {
+                    "Content-Type": "text/html; charset=UTF-8",
+                    "X-Content-Type-Options": "nosniff"
+                },
             });
         }
 
@@ -232,7 +241,7 @@ serve(async (req: Request) => {
         // 4. Prepare Email Content
         const signature = await generateSignature(ticket_id);
         const browserLink = `${url.origin}/functions/v1/send-support-email?id=${ticket_id}&token=${signature}&type=${type}`;
-        const { subject, html, text, to, fromEmail } = prepareSupportEmail(ticket, type, browserLink, SUPPORT_EMAIL);
+        const { subject, html, text, to, fromEmail } = await prepareSupportEmail(supabase, ticket, type, browserLink, SUPPORT_EMAIL);
 
         const resendPayload = {
             from: fromEmail,
@@ -277,88 +286,75 @@ serve(async (req: Request) => {
 });
 
 /**
- * Prepares support email content.
+ * Prepares support email content using database templates.
  */
-function prepareSupportEmail(ticket: any, type: string, browserLink: string, supportEmail: string) {
-    let subject = "";
-    let html = "";
-    let text = "";
-    let to = [supportEmail];
-    const footerText = "\n\n---\nBu e-posta, Bravita müşteri destek sistemi üzerinden otomatik olarak gönderilmiştir.";
+async function prepareSupportEmail(supabase: any, ticket: any, type: string, browserLink: string, supportEmail: string) {
+    // Map internal types to DB slugs
+    const slugMap: Record<string, string> = {
+        "ticket_created": "support_ticket",
+        "ticket_replied": "support_ticket_replied",
+        "ticket_closed": "support_ticket_closed"
+    };
 
-    if (type === "ticket_replied") {
-        subject = `Destek Talebiniz Yanıtlandı 🧡 #${ticket.id.substring(0, 8).toUpperCase()}`;
-        to = [ticket.email];
-        const hasUser = !!ticket.user_id;
+    // Use type directly if not in map, or default to support_ticket_replied
+    const slug = slugMap[type] || "support_ticket_replied";
 
-        text = `Merhaba ${ticket.name},\n\nDestek talebiniz için ekibimiz tarafından bir yanıt paylaşıldı:\n\n"${ticket.admin_reply}"\n\nOrijinal Mesajınız: "${ticket.message}"${footerText}`;
+    // 1. Fetch Template
+    const { data: template, error: tErr } = await supabase
+        .from("email_templates")
+        .select("*")
+        .eq("slug", slug)
+        .single();
 
-        html = getBaseTemplate(
-            "Talebiniz Yanıtlandı",
-            `
-            <p>Merhaba <strong>${ticket.name}</strong>,</p>
-            <p>Destek talebiniz için ekibimiz tarafından bir yanıt paylaşıldı:</p>
-            <div class="message-box">
-                ${ticket.admin_reply}
-            </div>
-            <p style="font-size: 13px; color: #6B7280; margin-top: 20px;">
-                Orijinal Mesajınız: <br/>
-                <i>"${ticket.message}"</i>
-            </p>
-            ${hasUser ? `
-            <div style="margin-top: 30px;">
-                <a href="https://www.bravita.com.tr/profile/support" class="btn">Taleplerimi Görüntüle</a>
-            </div>
-            ` : ""}
-            `,
-            "💬"
-        ).replace("{{BROWSER_LINK}}", browserLink);
+    if (tErr || !template) throw new Error(`Template not found for slug: ${slug}`);
 
-    } else if (type === "ticket_closed") {
-        subject = `Destek Talebiniz Çözümlendi ✅ #${ticket.id.substring(0, 8).toUpperCase()}`;
-        to = [ticket.email];
-        text = `Merhaba ${ticket.name},\n\nDestek talebiniz sonuçlandırılmış ve kapatılmıştır.\n\n${ticket.admin_reply ? `Not: ${ticket.admin_reply}` : ""}${footerText}`;
+    // 2. Fetch Config
+    const { data: config } = await supabase
+        .from("email_configs")
+        .select("*")
+        .eq("template_slug", slug)
+        .limit(1)
+        .maybeSingle();
 
-        html = getBaseTemplate(
-            "Talebiniz Sonuçlandırıldı",
-            `
-            <p>Merhaba <strong>${ticket.name}</strong>,</p>
-            <p>Bravita destek ekibiyle paylaştığınız talebiniz sonuçlandırılmış ve kapatılmıştır.</p>
-            ${ticket.admin_reply ? `
-            <div style="text-align: left; margin: 20px 0;">
-                <p style="font-size: 14px; font-weight: bold; color: #374151; margin-bottom: 8px;">Kapatılma Notu / Özet:</p>
-                <div class="message-box">
-                    ${ticket.admin_reply}
-                </div>
-            </div>
-            ` : ""}
-            `,
-            "✅"
-        ).replace("{{BROWSER_LINK}}", browserLink);
-    } else {
-        subject = `Yeni Destek Talebi ✉️ #${ticket.id.substring(0, 8).toUpperCase()}`;
-        text = `Yeni Destek Talebi\n\nMüşteri: ${ticket.name} (${ticket.email})\nKategori: ${ticket.category}\nKonu: ${ticket.subject}\n\nMesaj: ${ticket.message}${footerText}`;
+    // 3. Prepare Variables
+    const variables: Record<string, string> = {
+        "NAME": ticket.name || "Müşteri",
+        "EMAIL": ticket.email,
+        "SUBJECT": ticket.subject || "Destek Talebi",
+        "TICKET_ID": ticket.id.substring(0, 8).toUpperCase(),
+        "CATEGORY": ticket.category || "Genel",
+        "USER_MESSAGE": ticket.message || "",
+        "ADMIN_REPLY": ticket.admin_reply || "",
+        "BROWSER_LINK": browserLink || "#"
+    };
 
-        html = getBaseTemplate(
-            "Yeni Destek Talebi",
-            `
-            <div style="text-align: left;">
-                <p><strong>Müşteri:</strong> ${ticket.name} (${ticket.email})</p>
-                <p><strong>Kategori:</strong> ${ticket.category}</p>
-                <p><strong>Konu:</strong> ${ticket.subject}</p>
-                <div class="message-box">
-                    ${ticket.message}
-                </div>
-            </div>
-            <a href="https://www.bravita.com.tr/profile?tab=support" class="btn">Talebi Görüntüle</a>
-            `,
-            "📩"
-        ).replace("{{BROWSER_LINK}}", browserLink);
-    }
+    let html = template.content_html;
+    let subject = template.subject;
 
-    const fromEmail = type === "ticket_replied"
-        ? `Bravita Destek <support@bravita.com.tr>`
-        : "Bravita Sistem <noreply@bravita.com.tr>";
+    // Replace in subject
+    Object.entries(variables).forEach(([key, val]) => {
+        subject = subject.replaceAll(`{{${key}}}`, val);
+    });
 
-    return { subject, html, text, to, fromEmail };
+    // Replace in HTML
+    Object.entries(variables).forEach(([key, val]) => {
+        html = html.replaceAll(`{{${key}}}`, val);
+        html = html.replaceAll(`{{ ${key} }}`, val); // Handles spaces
+    });
+
+    // 4. Set recipient and sender
+    const to = (type === "ticket_created") ? [supportEmail] : [ticket.email];
+
+    const fromName = config?.sender_name || (type === "ticket_created" ? "Bravita Sistem" : "Bravita Destek");
+    const fromEmail = config?.sender_email || (type === "ticket_created" ? "noreply@bravita.com.tr" : "support@bravita.com.tr");
+
+    const text = `Bravita Destek: ${subject}\n\n${variables.ADMIN_REPLY || variables.USER_MESSAGE}`;
+
+    return {
+        subject,
+        html,
+        text,
+        to,
+        fromEmail: `${fromName} <${fromEmail}>`
+    };
 }

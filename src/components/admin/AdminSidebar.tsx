@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Package, Users, LogOut, ChevronRight, Tags, Ticket, Home, Sun, Moon, Shield, LifeBuoy } from "lucide-react";
+import { LayoutDashboard, Package, Users, LogOut, ChevronRight, Tags, Ticket, Home, Sun, Moon, Shield, LifeBuoy, Mail } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminTheme } from "@/contexts/AdminThemeContext";
 import { supabase } from "@/lib/supabase";
@@ -11,6 +11,7 @@ const menuItems = [
     { path: "/admin/products", label: "Ürünler & Stok", icon: Tags },
     { path: "/admin/promotions", label: "Promosyonlar", icon: Ticket },
     { path: "/admin/support", label: "Destek Talepleri", icon: LifeBuoy },
+    { path: "/admin/emails", label: "E-posta Yönetimi", icon: Mail },
 ];
 
 export function AdminSidebar() {

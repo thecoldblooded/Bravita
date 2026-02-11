@@ -13,6 +13,7 @@ import AdminProducts from "@/pages/admin/AdminProducts";
 import AdminPromoCodes from "@/pages/admin/AdminPromoCodes";
 import AdminAuditLogs from "@/pages/admin/AdminAuditLogs";
 import AdminSupport from "@/pages/admin/AdminSupport";
+import AdminEmails from "@/pages/admin/AdminEmails";
 import NotFound from "@/pages/NotFound";
 import { AdminThemeProvider } from "@/contexts/AdminThemeContext";
 
@@ -33,6 +34,7 @@ export default function AdminApp() {
                             <Route path="/admin/products" element={<AdminProducts />} />
                             <Route path="/admin/promotions" element={<AdminPromoCodes />} />
                             <Route path="/admin/support" element={<AdminSupport />} />
+                            <Route path="/admin/emails" element={<AdminEmails />} />
                             <Route path="/admin/admins" element={<AdminUsers />} />
                             <Route path="/admin/logs" element={<AdminAuditLogs />} />
                             <Route path="*" element={<NotFound />} />

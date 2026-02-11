@@ -528,7 +528,7 @@
         "iban": "IBAN:",
         "account_holder": "Hesap Sahibi:",
         "amount": "Tutar:",
-        "bank_reference_note": "Önemli: Açıklama kısmına sipariş numaranızı ({{orderId}}) yazmayı unutmayın.",
+        "bank_reference_note": "Açıklama kısmına sipariş numaranızı ({{orderId}}) yazmayı unutmayın.",
         "details": "Sipariş Detayları",
         "quantity_label": "Adet:",
         "my_orders_btn": "Siparişlerim",

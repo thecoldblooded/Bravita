@@ -278,10 +278,8 @@ const Header = () => {
         </div>
       </header>
 
-      {/* Incomplete Profile Banner - Right aligned */}
-      <div className="fixed top-16 md:top-20 right-4 z-40 max-w-sm">
-        <IncompleteProfileBanner />
-      </div>
+      {/* Incomplete Profile Banner */}
+      <IncompleteProfileBanner />
 
       {/* Mobile NavBar (Fixed bottom - above marquee) */}
       {!isProfilePage && !isCheckoutPage && (
