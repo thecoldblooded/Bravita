@@ -1,4 +1,4 @@
-# 🏔️ Bravita | Geleceğe Odaklı Büyüme & Sağlık
+# 🦙 Bravita | Geleceğe Odaklı Büyüme & Sağlık
 
 ![Bravita Hero](https://xpmbnznsmsujjuwumfiw.supabase.co/storage/v1/object/public/public-assets/bravita-logo.webp)
 
