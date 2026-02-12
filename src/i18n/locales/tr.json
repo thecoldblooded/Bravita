@@ -157,7 +157,14 @@
         "title": "Çerez Kullanımı",
         "description": "Size daha iyi bir deneyim sunmak ve site trafiğini analiz etmek için çerezleri kullanıyoruz.",
         "accept": "Kabul Et",
-        "reject": "Reddet"
+        "reject": "Şimdilik Hayır",
+        "customize": "Özelleştir",
+        "preferences_title": "Çerez Tercihleri",
+        "necessary": "Zorunlu Çerezler",
+        "analytics": "Analitik Çerezler",
+        "marketing": "Pazarlama Çerezleri",
+        "always_on": "Her zaman açık",
+        "save_preferences": "Tercihleri Kaydet"
     },
     "auth": {
         "login": "Giriş Yap",

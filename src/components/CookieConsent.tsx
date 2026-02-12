@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button";
 const CookieConsent = () => {
     const { t } = useTranslation();
     const [isVisible, setIsVisible] = useState(false);
+    const [showCustomize, setShowCustomize] = useState(false);
+    const [analyticsEnabled, setAnalyticsEnabled] = useState(true);
+    const [marketingEnabled, setMarketingEnabled] = useState(false);
 
     useEffect(() => {
         // Check if user has already made a choice
@@ -20,12 +23,43 @@ const CookieConsent = () => {
 
     const handleAccept = () => {
         localStorage.setItem("cookie_consent", "accepted");
+        localStorage.setItem(
+            "cookie_preferences",
+            JSON.stringify({
+                necessary: true,
+                analytics: true,
+                marketing: true,
+            })
+        );
         setIsVisible(false);
+        window.dispatchEvent(new CustomEvent("cookie-consent-updated", { detail: { pending: false } }));
     };
 
     const handleReject = () => {
-        localStorage.setItem("cookie_consent", "rejected");
+        // Keep this as a temporary dismissal only.
+        // On next page load, banner should be shown again.
+        localStorage.removeItem("cookie_consent");
+        localStorage.removeItem("cookie_preferences");
         setIsVisible(false);
+        window.dispatchEvent(new CustomEvent("cookie-consent-updated", { detail: { pending: false } }));
+    };
+
+    const handleCustomize = () => {
+        setShowCustomize((prev) => !prev);
+    };
+
+    const handleSavePreferences = () => {
+        localStorage.setItem("cookie_consent", "customized");
+        localStorage.setItem(
+            "cookie_preferences",
+            JSON.stringify({
+                necessary: true,
+                analytics: analyticsEnabled,
+                marketing: marketingEnabled,
+            })
+        );
+        setIsVisible(false);
+        window.dispatchEvent(new CustomEvent("cookie-consent-updated", { detail: { pending: false } }));
     };
 
     return (
@@ -36,43 +70,107 @@ const CookieConsent = () => {
                     animate={{ y: 0, opacity: 1 }}
                     exit={{ y: 100, opacity: 0 }}
                     transition={{ duration: 0.5, ease: "easeOut" }}
-                    className="fixed bottom-14 left-0 right-0 z-998 p-4 md:p-6"
+                    className="fixed z-998 left-3 right-3 sm:left-4 sm:right-4 md:left-6 md:right-auto lg:left-8 w-auto md:w-[min(780px,calc(100vw-28rem))]"
+                    style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 5.5rem)" }}
                 >
-                    <div className="max-w-7xl mx-auto w-full">
-                        <div className="bg-white/90 dark:bg-black/90 backdrop-blur-md rounded-2xl shadow-2xl p-6 border border-white/20 dark:border-white/10 flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div className="w-full">
+                        <div className="relative overflow-hidden rounded-[26px] border border-orange-300/20 bg-[#171821]/96 backdrop-blur-xl shadow-2xl p-5 md:p-6">
+                            <div
+                                className="pointer-events-none absolute inset-y-0 left-0 w-[66%] bg-gradient-to-br from-[#22232d]/95 via-[#1c1f29]/92 to-[#15171f]/88"
+                                style={{ clipPath: "polygon(0 0, 82% 0, 62% 100%, 0 100%)" }}
+                            />
+                            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_100%_0%,rgba(246,139,40,0.18)_0%,rgba(246,139,40,0)_42%),radial-gradient(circle_at_18%_100%,rgba(253,184,19,0.14)_0%,rgba(253,184,19,0)_45%)]" />
+                            <Cookie className="pointer-events-none absolute right-5 top-4 w-11 h-11 text-orange-200/20" />
 
-                            {/* Text Content */}
-                            <div className="flex items-start gap-4 flex-1">
-                                <div className="p-3 bg-bravita-orange/10 rounded-full shrink-0">
-                                    <Cookie className="w-6 h-6 text-bravita-orange" />
-                                </div>
-                                <div className="space-y-1">
-                                    <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">
+                            <div className="relative z-10 grid grid-cols-1 xl:grid-cols-12 gap-5 xl:gap-6 items-start">
+                                <div className="xl:col-span-7 space-y-3">
+                                    <h3 className="font-extrabold text-2xl sm:text-3xl md:text-4xl leading-tight text-zinc-100">
                                         {t('cookie_consent.title')}
                                     </h3>
-                                    <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed max-w-2xl">
+                                    <p className="text-sm md:text-[15px] leading-relaxed text-zinc-300">
                                         {t('cookie_consent.description')}
                                     </p>
+                                    <a href="#" className="inline-block font-semibold text-orange-200 underline underline-offset-4 hover:text-orange-100 transition-colors">
+                                        {t('footer.privacy')}
+                                    </a>
+                                </div>
+
+                                <div className="xl:col-span-5 flex flex-col gap-3 xl:items-end">
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 md:gap-3 w-full xl:w-auto">
+                                        <Button
+                                            variant="ghost"
+                                            onClick={handleCustomize}
+                                            className="h-11 px-4 rounded-xl text-zinc-100 hover:bg-orange-500/15 hover:text-orange-100 whitespace-nowrap"
+                                        >
+                                            {t('cookie_consent.customize')}
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            onClick={handleReject}
+                                            className="h-11 px-4 rounded-xl text-zinc-100 hover:bg-orange-500/15 hover:text-orange-100 whitespace-nowrap"
+                                        >
+                                            {t('cookie_consent.reject')}
+                                        </Button>
+                                        <Button
+                                            onClick={handleAccept}
+                                            className="h-11 px-6 rounded-xl bg-gradient-to-r from-orange-500 to-amber-400 text-white hover:from-orange-400 hover:to-amber-300 shadow-lg shadow-orange-500/30 col-span-2 sm:col-span-1 whitespace-nowrap"
+                                        >
+                                            {t('cookie_consent.accept')}
+                                        </Button>
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* Actions */}
-                            <div className="flex flex-row gap-3 w-full md:w-auto shrink-0">
-                                <Button
-                                    variant="outline"
-                                    onClick={handleReject}
-                                    className="flex-1 md:flex-none border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
-                                >
-                                    {t('cookie_consent.reject')}
-                                </Button>
-                                <Button
-                                    onClick={handleAccept}
-                                    className="flex-1 md:flex-none bg-bravita-orange hover:bg-bravita-orange/90 text-white shadow-lg shadow-bravita-orange/20"
-                                >
-                                    {t('cookie_consent.accept')}
-                                </Button>
-                            </div>
+                            <AnimatePresence>
+                                {showCustomize && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: 10 }}
+                                        className="relative z-10 mt-4 rounded-xl border border-orange-200/20 bg-[#11131a]/85 p-3 md:p-4"
+                                    >
+                                        <p className="text-sm font-semibold text-white mb-3">
+                                            {t("cookie_consent.preferences_title")}
+                                        </p>
 
+                                        <div className="space-y-2">
+                                            <label className="flex items-center justify-between text-sm text-zinc-100">
+                                                <span>{t("cookie_consent.necessary")}</span>
+                                                <span className="text-xs px-2 py-1 rounded-md bg-white/20">{t("cookie_consent.always_on")}</span>
+                                            </label>
+
+                                            <label className="flex items-center justify-between text-sm text-zinc-100">
+                                                <span>{t("cookie_consent.analytics")}</span>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={analyticsEnabled}
+                                                    onChange={(event) => setAnalyticsEnabled(event.target.checked)}
+                                                    className="h-4 w-4 accent-orange-500"
+                                                />
+                                            </label>
+
+                                            <label className="flex items-center justify-between text-sm text-zinc-100">
+                                                <span>{t("cookie_consent.marketing")}</span>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={marketingEnabled}
+                                                    onChange={(event) => setMarketingEnabled(event.target.checked)}
+                                                    className="h-4 w-4 accent-orange-500"
+                                                />
+                                            </label>
+                                        </div>
+
+                                        <div className="mt-3 flex justify-end">
+                                            <Button
+                                                onClick={handleSavePreferences}
+                                                className="h-10 px-5 rounded-xl bg-white text-zinc-900 hover:bg-zinc-100"
+                                            >
+                                                {t("cookie_consent.save_preferences")}
+                                            </Button>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
                     </div>
                 </motion.div>

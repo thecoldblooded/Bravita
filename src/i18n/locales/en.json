@@ -157,7 +157,14 @@
         "title": "Cookie Usage",
         "description": "We use cookies to provide you with a better experience and analyze site traffic.",
         "accept": "Accept",
-        "reject": "Reject"
+        "reject": "Not now",
+        "customize": "Customize",
+        "preferences_title": "Cookie Preferences",
+        "necessary": "Necessary Cookies",
+        "analytics": "Analytics Cookies",
+        "marketing": "Marketing Cookies",
+        "always_on": "Always on",
+        "save_preferences": "Save Preferences"
     },
     "auth": {
         "login": "Log In",

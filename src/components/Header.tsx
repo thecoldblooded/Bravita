@@ -80,6 +80,7 @@ const Header = () => {
   const [activeTab, setActiveTab] = useState('home');
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [isCookieConsentPending, setIsCookieConsentPending] = useState(false);
   const { isCartOpen, openCart, setIsCartOpen } = useCart();
 
   const isProfilePage = location.pathname === "/profile";
@@ -150,6 +151,40 @@ const Header = () => {
     handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
   }, [t, navItems]); // Re-run when translation changes to update activeTab names if needed, though we use ID now
+
+  useEffect(() => {
+    const resolvePendingConsent = () => {
+      try {
+        setIsCookieConsentPending(!localStorage.getItem("cookie_consent"));
+      } catch {
+        setIsCookieConsentPending(false);
+      }
+    };
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === "cookie_consent") {
+        resolvePendingConsent();
+      }
+    };
+
+    const handleCookieConsentUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent<{ pending?: boolean }>;
+      if (typeof customEvent.detail?.pending === "boolean") {
+        setIsCookieConsentPending(customEvent.detail.pending);
+        return;
+      }
+      resolvePendingConsent();
+    };
+
+    resolvePendingConsent();
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("cookie-consent-updated", handleCookieConsentUpdate as EventListener);
+
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("cookie-consent-updated", handleCookieConsentUpdate as EventListener);
+    };
+  }, []);
 
   const toggleLanguage = () => {
     const currentLanguage = currentLang || 'tr';
@@ -294,7 +329,12 @@ const Header = () => {
       )}
 
       {/* Floating Action Buttons Container */}
-      <div className="fixed bottom-36 right-6 md:bottom-20 md:right-10 z-9999 flex flex-col gap-4 items-end pointer-events-none">
+      <div
+        className={cn(
+          "fixed z-9999 flex flex-col gap-4 items-end pointer-events-none md:bottom-20 md:right-10",
+          isCookieConsentPending ? "bottom-60 right-4" : "bottom-36 right-6"
+        )}
+      >
         {/* Support Button - Now part of floating actions */}
         {!isProfilePage && !isCheckoutPage && (
           <div className="pointer-events-auto">
