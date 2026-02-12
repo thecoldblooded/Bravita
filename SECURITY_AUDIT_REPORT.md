@@ -108,9 +108,10 @@ Ek olarak:
 - Mimari gecis fazli oldugu icin frontend hala Supabase JS auth state ile birlikte calisiyor.
 - Nihai sertlesme icin bir sonraki fazda tam BFF session orchestration + frontend token gorunurlugunu minimuma indiren model tamamlanmali.
 
-### R-02 (Dusuk) - Migration list ciktisinda local-only eski versiyon satirlari
-- `supabase migration list --linked` komutu geciyor; ancak tabloda `20260206`, `20260208`, `20260210`, `20260211`, `20260212` gibi local-only eski naming satirlari goruluyor.
-- Operasyonel hijyen icin migration naming standardizasyonu ayrica temizlenmeli.
+### R-02 (Dusuk) - Migration naming standardizasyonu (Kapatildi)
+- `supabase/migrations` altindaki 8 haneli legacy migration dosyalari `supabase/migrations_legacy/` klasorune tasindi.
+- `supabase migration list --linked` cikti tablosunda `20260206`, `20260208`, `20260210`, `20260211`, `20260212` local-only satirlari temizlendi.
+- Aktif migration seti yalnizca 14 haneli timestamp standardini kullaniyor.
 
 ---
 
@@ -140,6 +141,7 @@ Build/CI:
 - `scripts/check-linked-migrations.mjs`
 - `.github/workflows/security-gate.yml`
 - `.env.local.example`
+- `supabase/migrations_legacy/*`
 
 ---
 
