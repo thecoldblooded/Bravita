@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useState, ReactNode, useCallback,
 import { Session } from "@supabase/supabase-js";
 import { supabase, UserProfile } from "@/lib/supabase";
 import { billionMail } from "@/lib/billionmail";
-import { isBffAuthEnabled, refreshBffSession, restoreBffSession } from "@/lib/bffAuth";
+import { getBffRefreshDelayMs, isBffAuthEnabled, refreshBffSession, restoreBffSession, toSupabaseSessionInput } from "@/lib/bffAuth";
 
 declare global {
   interface Window {
@@ -165,16 +165,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       if (bffAuthEnabled) {
         const bffSession = await refreshBffSession();
-        if (!bffSession?.access_token || !bffSession?.refresh_token) {
+        if (!bffSession?.access_token) {
           setSession(null);
           setUserDebug(null);
           return;
         }
 
-        const { data, error } = await supabase.auth.setSession({
-          access_token: bffSession.access_token,
-          refresh_token: bffSession.refresh_token,
-        });
+        const { data, error } = await supabase.auth.setSession(toSupabaseSessionInput(bffSession));
 
         if (error) {
           throw error;
@@ -510,14 +507,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       void (async () => {
         try {
           const bffSession = await restoreBffSession();
-          if (!mounted || !bffSession?.access_token || !bffSession?.refresh_token) {
+          if (!mounted || !bffSession?.access_token) {
             return;
           }
 
-          const { error } = await supabase.auth.setSession({
-            access_token: bffSession.access_token,
-            refresh_token: bffSession.refresh_token,
-          });
+          const { error } = await supabase.auth.setSession(toSupabaseSessionInput(bffSession));
 
           if (error) {
             console.warn("BFF bootstrap session apply failed:", error);
@@ -585,20 +579,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []); // Run only on mount
 
   const activeUserId = session?.user?.id;
+  const activeSessionExpiry = session?.expires_at ?? null;
 
   useEffect(() => {
     if (!bffAuthEnabled || !activeUserId) {
       return;
     }
 
-    const intervalId = window.setInterval(() => {
+    const timeoutMs = getBffRefreshDelayMs(activeSessionExpiry);
+    const timeoutId = window.setTimeout(() => {
       void refreshSession();
-    }, 10 * 60 * 1000);
+    }, timeoutMs);
 
     return () => {
-      window.clearInterval(intervalId);
+      window.clearTimeout(timeoutId);
     };
-  }, [bffAuthEnabled, activeUserId, refreshSession]);
+  }, [bffAuthEnabled, activeUserId, activeSessionExpiry, refreshSession]);
 
   const value: AuthContextType = {
     session,

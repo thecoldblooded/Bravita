@@ -71,40 +71,45 @@ function buildClearRefreshCookie(req) {
 }
 
 async function exchangePasswordForSession(email, password, captchaToken) {
-  const { url, anonKey } = getSupabaseConfig();
-
   const payload = { email, password };
   if (captchaToken) {
     payload.gotrue_meta_security = { captcha_token: captchaToken };
   }
 
-  const response = await fetch(`${url}/auth/v1/token?grant_type=password`, {
+  return callSupabaseAuth("/auth/v1/token?grant_type=password", {
     method: "POST",
-    headers: {
-      apikey: anonKey,
-      Authorization: `Bearer ${anonKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
+    body: payload,
   });
-
-  const data = await response.json().catch(() => null);
-  return { response, data };
 }
 
 async function refreshSessionFromToken(refreshToken) {
-  const { url, anonKey } = getSupabaseConfig();
-
-  const response = await fetch(`${url}/auth/v1/token?grant_type=refresh_token`, {
+  return callSupabaseAuth("/auth/v1/token?grant_type=refresh_token", {
     method: "POST",
+    body: { refresh_token: refreshToken },
+  });
+}
+
+async function callSupabaseAuth(path, options = {}) {
+  const { url, anonKey } = getSupabaseConfig();
+  const method = options.method ?? "POST";
+  const accessToken = typeof options.accessToken === "string" && options.accessToken.length > 0
+    ? options.accessToken
+    : anonKey;
+
+  const requestInit = {
+    method,
     headers: {
       apikey: anonKey,
-      Authorization: `Bearer ${anonKey}`,
+      Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ refresh_token: refreshToken }),
-  });
+  };
 
+  if (options.body !== undefined) {
+    requestInit.body = JSON.stringify(options.body);
+  }
+
+  const response = await fetch(`${url}${path}`, requestInit);
   const data = await response.json().catch(() => null);
   return { response, data };
 }
@@ -113,20 +118,23 @@ function sendJson(res, statusCode, payload) {
   res.status(statusCode).setHeader("Cache-Control", "no-store").json(payload);
 }
 
-function sanitizeSessionResponse(sessionPayload, options = {}) {
-  const sanitized = {
+function sanitizeSessionResponse(sessionPayload) {
+  return {
     access_token: sessionPayload?.access_token ?? null,
     expires_at: sessionPayload?.expires_at ?? null,
     expires_in: sessionPayload?.expires_in ?? null,
     token_type: sessionPayload?.token_type ?? "bearer",
     user: sessionPayload?.user ?? null,
   };
+}
 
-  if (options.includeRefreshToken) {
-    sanitized.refresh_token = sessionPayload?.refresh_token ?? null;
-  }
+function sanitizeSignupResponse(signupPayload) {
+  const hasSessionToken = typeof signupPayload?.access_token === "string" && signupPayload.access_token.length > 0;
 
-  return sanitized;
+  return {
+    user: signupPayload?.user ?? null,
+    session: hasSessionToken ? sanitizeSessionResponse(signupPayload) : null,
+  };
 }
 
 function extractAuthErrorMessage(payload, fallbackMessage) {
@@ -151,7 +159,9 @@ export {
   buildClearRefreshCookie,
   exchangePasswordForSession,
   refreshSessionFromToken,
+  callSupabaseAuth,
   sendJson,
   sanitizeSessionResponse,
+  sanitizeSignupResponse,
   extractAuthErrorMessage,
 };

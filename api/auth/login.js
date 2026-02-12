@@ -31,7 +31,7 @@ export default async function handler(req, res) {
     }
 
     res.setHeader("Set-Cookie", buildRefreshCookie(data.refresh_token, req));
-    return sendJson(res, 200, sanitizeSessionResponse(data, { includeRefreshToken: true }));
+    return sendJson(res, 200, sanitizeSessionResponse(data));
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected login error";
     return sendJson(res, 500, { error: message });

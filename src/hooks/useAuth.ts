@@ -1,7 +1,15 @@
 import { useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import { isBffAuthEnabled, loginWithBff, logoutBffSession } from "@/lib/bffAuth";
+import {
+  isBffAuthEnabled,
+  loginWithBff,
+  logoutBffSession,
+  requestPasswordRecoveryWithBff,
+  resendSignupConfirmationWithBff,
+  signupWithBff,
+  toSupabaseSessionInput,
+} from "@/lib/bffAuth";
 // BillionMail sync moved to AuthContext - only after email confirmation
 
 export interface SignupData {
@@ -32,13 +40,41 @@ export function useAuthOperations() {
     setError(null);
 
     try {
+      const profileData = {
+        phone: data.phone,
+        full_name: data.fullName || null,
+        user_type: data.userType,
+        company_name: data.userType === "company" ? data.companyName : null,
+      };
+
+      if (isBffAuthEnabled()) {
+        const signupData = await signupWithBff({
+          email: data.email,
+          password: data.password,
+          captchaToken: data.captchaToken,
+          profileData,
+        });
+
+        if (!signupData?.user) {
+          throw new Error("No user returned from signup");
+        }
+
+        let bridgedSession = null;
+        if (signupData.session?.access_token) {
+          const { data: sessionData, error: sessionError } = await supabase.auth.setSession(
+            toSupabaseSessionInput(signupData.session)
+          );
+          if (sessionError) throw sessionError;
+
+          bridgedSession = sessionData.session;
+          await refreshUserProfile();
+        }
+
+        return { user: signupData.user, session: bridgedSession };
+      }
+
       const options = {
-        data: {
-          phone: data.phone,
-          full_name: data.fullName || null,
-          user_type: data.userType,
-          company_name: data.userType === "company" ? data.companyName : null,
-        },
+        data: profileData,
         ...(data.captchaToken ? { captchaToken: data.captchaToken } : {})
       };
 
@@ -107,14 +143,13 @@ export function useAuthOperations() {
     try {
       if (isBffAuthEnabled()) {
         const bffSession = await loginWithBff(data.email!, data.password!, data.captchaToken);
-        if (!bffSession?.access_token || !bffSession?.refresh_token) {
+        if (!bffSession?.access_token) {
           throw new Error("BFF auth did not return a valid session");
         }
 
-        const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
-          access_token: bffSession.access_token,
-          refresh_token: bffSession.refresh_token,
-        });
+        const { data: sessionData, error: sessionError } = await supabase.auth.setSession(
+          toSupabaseSessionInput(bffSession)
+        );
 
         if (sessionError) throw sessionError;
 
@@ -162,14 +197,13 @@ export function useAuthOperations() {
       // Sign in with the company's email
       if (isBffAuthEnabled()) {
         const bffSession = await loginWithBff(companyUser.email, data.password!, data.captchaToken);
-        if (!bffSession?.access_token || !bffSession?.refresh_token) {
+        if (!bffSession?.access_token) {
           throw new Error("BFF auth did not return a valid company session");
         }
 
-        const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
-          access_token: bffSession.access_token,
-          refresh_token: bffSession.refresh_token,
-        });
+        const { data: sessionData, error: sessionError } = await supabase.auth.setSession(
+          toSupabaseSessionInput(bffSession)
+        );
 
         if (sessionError) throw sessionError;
 
@@ -233,6 +267,11 @@ export function useAuthOperations() {
     setError(null);
 
     try {
+      if (isBffAuthEnabled()) {
+        await resendSignupConfirmationWithBff(email);
+        return { success: true };
+      }
+
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email,
@@ -258,17 +297,27 @@ export function useAuthOperations() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || !user.email) throw new Error("Kullanıcı bulunamadı");
 
-      // Verify old password by attempting a sign in
-      const { error: verifyError } = await supabase.auth.signInWithPassword({
-        email: user.email,
-        password: oldPassword,
-        options: {
-          captchaToken: captchaToken
+      if (isBffAuthEnabled()) {
+        const bffSession = await loginWithBff(user.email, oldPassword, captchaToken);
+        if (!bffSession?.access_token) {
+          throw new Error("Mevcut şifreniz hatalı. Lütfen tekrar deneyin.");
         }
-      });
 
-      if (verifyError) {
-        throw new Error("Mevcut şifreniz hatalı. Lütfen tekrar deneyin.");
+        const { error: sessionError } = await supabase.auth.setSession(toSupabaseSessionInput(bffSession));
+        if (sessionError) throw sessionError;
+      } else {
+        // Verify old password by attempting a sign in
+        const { error: verifyError } = await supabase.auth.signInWithPassword({
+          email: user.email,
+          password: oldPassword,
+          options: {
+            captchaToken: captchaToken
+          }
+        });
+
+        if (verifyError) {
+          throw new Error("Mevcut şifreniz hatalı. Lütfen tekrar deneyin.");
+        }
       }
 
       // Update password
@@ -293,6 +342,11 @@ export function useAuthOperations() {
     setError(null);
 
     try {
+      if (isBffAuthEnabled()) {
+        await requestPasswordRecoveryWithBff(email, `${window.location.origin}/update-password`, captchaToken);
+        return { success: true };
+      }
+
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/update-password`,
         captchaToken,

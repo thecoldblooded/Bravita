@@ -10,7 +10,7 @@
 
 Bu turda onceki rapordaki kalan 3 ana adim uygulandi:
 
-1. Auth modeli icin BFF + `httpOnly` cookie gecisinin calisan ilk fazi eklendi (feature-flagli).  
+1. Auth modeli icin BFF + `httpOnly` cookie akisi faz-2 seviyesinde sertlestirildi (feature-flagli).  
 2. `svgo` eksigi giderildi, build pipeline warning debt temizlendi.  
 3. CI guvenlik kapisi (`audit + lint + build + migration list`) repo icine sabitlendi.
 
@@ -35,13 +35,16 @@ Ek olarak:
 ## 3) Kapatilan Bulgular (Bu Tur)
 
 ### F-13 (Orta) - Auth modelinde BFF + httpOnly cookie eksigi
-**Durum:** Kapatildi (faz-1 gecis)  
+**Durum:** Kapatildi (faz-2 gecis)  
 **Kanit Dosyalari:**
 - `api/auth/_shared.js`
 - `api/auth/login.js`
 - `api/auth/refresh.js`
 - `api/auth/session.js`
 - `api/auth/logout.js`
+- `api/auth/signup.js`
+- `api/auth/resend.js`
+- `api/auth/recover.js`
 - `src/lib/bffAuth.ts`
 - `src/hooks/useAuth.ts`
 - `src/contexts/AuthContext.tsx`
@@ -53,6 +56,10 @@ Ek olarak:
 - `VITE_USE_BFF_AUTH=true` ile acilan kontrollu BFF auth modu eklendi.
 - Frontend login/logout/refresh akisi BFF endpointleriyle koordine edildi.
 - BFF modda Supabase session persistence tarayici storage yerine memory odakli calisacak sekilde sertlestirildi.
+- BFF endpoint response'larindan `refresh_token` alani kaldirildi (frontend'e refresh token acilmiyor).
+- Frontend tarafinda Supabase session bridge icin placeholder refresh token + zamanlanmis access token yenileme (expiry-aware) uygulandi.
+- Signup, resend-confirmation ve password-recovery-request akislari da BFF endpointlerine alindi.
+- BFF modda password-change oncesi eski sifre dogrulamasi `supabase.auth.signInWithPassword` yerine server-side login dogrulamasiyla yapiliyor.
 
 ### F-14 (Orta) - LordIcon runtime crash
 **Durum:** Kapatildi  
@@ -104,9 +111,9 @@ Ek olarak:
 
 ## 4) Residual Riskler
 
-### R-01 (Orta) - BFF faz-1 hibrit gecis
-- Mimari gecis fazli oldugu icin frontend hala Supabase JS auth state ile birlikte calisiyor.
-- Nihai sertlesme icin bir sonraki fazda tam BFF session orchestration + frontend token gorunurlugunu minimuma indiren model tamamlanmali.
+### R-01 (Dusuk) - OAuth callback akisi icin Supabase auth state bagimliligi
+- Core email/password login-restore-refresh-logout + signup/resend/recover-request + password-change verify akislari BFF + `httpOnly` cookie modeline alindi.
+- Kalan risk esas olarak OAuth ve recovery callback token exchange aninda Supabase client event modeline bagli kisimda; bu bolum faz-3'te tam server-driven callback ile kapatilabilir.
 
 ### R-02 (Dusuk) - Migration naming standardizasyonu (Kapatildi)
 - `supabase/migrations` altindaki 8 haneli legacy migration dosyalari `supabase/migrations_legacy/` klasorune tasindi.
@@ -123,6 +130,9 @@ Auth/API:
 - `api/auth/refresh.js`
 - `api/auth/session.js`
 - `api/auth/logout.js`
+- `api/auth/signup.js`
+- `api/auth/resend.js`
+- `api/auth/recover.js`
 - `src/lib/bffAuth.ts`
 - `src/hooks/useAuth.ts`
 - `src/contexts/AuthContext.tsx`
@@ -149,7 +159,7 @@ Build/CI:
 
 Bu tur itibariyla kullanici tarafindan istenen 3 adim teknik olarak uygulandi ve kanit komutlariyla dogrulandi:
 
-1. BFF + `httpOnly` cookie auth gecis fazi aktif  
+1. BFF + `httpOnly` cookie auth gecisi faz-2 sertlestirme seviyesinde aktif  
 2. `svgo` eksigi giderildi ve build warning debt kapatildi  
 3. CI guvenlik kapisi repo seviyesinde sabitlendi
 
