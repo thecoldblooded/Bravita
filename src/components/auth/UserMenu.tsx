@@ -10,8 +10,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuthOperations } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { User, LogOut, MapPin, ShoppingBag, Settings, ChevronRight, Shield } from "lucide-react";
-import { LordIcon } from "@/components/ui/LordIcon";
+import { User, UserRound, LogOut, MapPin, ShoppingBag, Settings, ChevronRight, Shield } from "lucide-react";
 import { translateError } from "@/lib/errorTranslator";
 
 interface MenuItemProps {
@@ -107,14 +106,7 @@ export function UserMenu() {
           aria-label={t("auth.user_menu")}
         >
           <div className="relative w-11 h-11 flex items-center justify-center bg-linear-to-br from-orange-100 to-orange-50 rounded-full overflow-hidden shadow-sm hover:shadow-orange-200 transition-all duration-300 border border-orange-200">
-            <LordIcon
-              src="https://cdn.lordicon.com/hhljfoaj.json"
-              trigger="hover"
-              stroke="bold"
-              state="hover-looking-around"
-              colors="primary:#121331,secondary:#913710,tertiary:#c74b16"
-              size={32}
-            />
+            <UserRound className="w-6 h-6 text-orange-600" />
           </div>
         </motion.button>
       </DropdownMenuTrigger>
@@ -134,16 +126,9 @@ export function UserMenu() {
               className="bg-linear-to-br from-orange-500 via-orange-400 to-amber-400 p-4"
             >
               <div className="flex items-center gap-3">
-                {/* LordIcon Avatar */}
+                {/* Profile Avatar */}
                 <div className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center border-2 border-white/50 overflow-hidden">
-                  <LordIcon
-                    src="https://cdn.lordicon.com/hhljfoaj.json"
-                    trigger="hover"
-                    stroke="bold"
-                    state="hover-looking-around"
-                    colors="primary:#121331,secondary:#913710,tertiary:#c74b16"
-                    size={45}
-                  />
+                  <UserRound className="w-8 h-8 text-orange-600" />
                 </div>
                 {/* User Info */}
                 <div className="flex-1 min-w-0">
