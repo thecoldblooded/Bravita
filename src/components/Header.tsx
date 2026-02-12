@@ -1,8 +1,7 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import bravitaLogo from "@/assets/bravita-logo.webp";
 import { NavBar } from "@/components/ui/tubelight-navbar";
-import { Home, Heart, List, HelpCircle, Info, ChevronUp, Languages } from "lucide-react";
+import { Home, Heart, List, HelpCircle, Info, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
@@ -13,6 +12,8 @@ import { IncompleteProfileBanner } from "@/components/IncompleteProfileBanner";
 import { CartModal } from "@/components/ui/CartModal";
 import { useCart } from "@/contexts/CartContext";
 import FloatingSupport from "@/components/FloatingSupport";
+import trFlag from "flag-icons/flags/4x3/tr.svg";
+import usFlag from "flag-icons/flags/4x3/us.svg";
 
 const BravitaLogo = ({ isScrolled }: { isScrolled: boolean }) => {
   const letters = [
@@ -81,6 +82,9 @@ const Header = () => {
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [isCookieConsentPending, setIsCookieConsentPending] = useState(false);
+  const sectionTopOffsetsRef = useRef<Array<{ id: string; top: number }>>([]);
+  const scrollFrameRef = useRef<number | null>(null);
+  const measureFrameRef = useRef<number | null>(null);
   const { isCartOpen, openCart, setIsCartOpen } = useCart();
 
   const isProfilePage = location.pathname === "/profile";
@@ -118,39 +122,96 @@ const Header = () => {
   ], [t]);
 
   useEffect(() => {
-    const handleScroll = () => {
-      // Header and Back to Top visibility
-      setIsScrolled(window.scrollY > 50);
-      setShowBackToTop(window.scrollY > 400);
-
-      // Active section detection
-      const scrollPosition = window.scrollY + 150;
-
-      let currentSectionId = 'home';
-
-      for (const item of navItems) {
-        if (item.id === 'home') continue;
-
-        const element = document.getElementById(item.id);
-        if (element) {
-          const top = element.getBoundingClientRect().top + window.scrollY;
-          if (scrollPosition >= top) {
-            currentSectionId = item.id;
+    const refreshSectionOffsets = () => {
+      sectionTopOffsetsRef.current = navItems
+        .filter((item) => item.id !== "home")
+        .map((item) => {
+          const sectionElement = document.getElementById(item.id);
+          if (!sectionElement) {
+            return null;
           }
+
+          return {
+            id: item.id,
+            top: sectionElement.offsetTop,
+          };
+        })
+        .filter((section): section is { id: string; top: number } => section !== null)
+        .sort((a, b) => a.top - b.top);
+    };
+
+    const updateHeaderState = () => {
+      const currentScrollY = window.scrollY;
+      const shouldShowCompactHeader = currentScrollY > 50;
+      const shouldShowBackToTopButton = currentScrollY > 400;
+
+      setIsScrolled((previousValue) =>
+        previousValue === shouldShowCompactHeader ? previousValue : shouldShowCompactHeader
+      );
+      setShowBackToTop((previousValue) =>
+        previousValue === shouldShowBackToTopButton ? previousValue : shouldShowBackToTopButton
+      );
+
+      const scrollPosition = currentScrollY + 150;
+      let currentSectionId = "home";
+
+      for (const section of sectionTopOffsetsRef.current) {
+        if (scrollPosition >= section.top) {
+          currentSectionId = section.id;
+        } else {
+          break;
         }
       }
 
-      if (window.scrollY < 100) {
-        currentSectionId = 'home';
+      if (currentScrollY < 100) {
+        currentSectionId = "home";
       }
 
-      setActiveTab(currentSectionId);
+      setActiveTab((previousValue) =>
+        previousValue === currentSectionId ? previousValue : currentSectionId
+      );
+      scrollFrameRef.current = null;
     };
 
-    window.addEventListener("scroll", handleScroll);
-    handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [t, navItems]); // Re-run when translation changes to update activeTab names if needed, though we use ID now
+    const requestScrollUpdate = () => {
+      if (scrollFrameRef.current !== null) {
+        return;
+      }
+
+      scrollFrameRef.current = window.requestAnimationFrame(updateHeaderState);
+    };
+
+    const requestSectionMeasure = () => {
+      if (measureFrameRef.current !== null) {
+        window.cancelAnimationFrame(measureFrameRef.current);
+      }
+
+      measureFrameRef.current = window.requestAnimationFrame(() => {
+        refreshSectionOffsets();
+        requestScrollUpdate();
+        measureFrameRef.current = null;
+      });
+    };
+
+    requestSectionMeasure();
+    window.addEventListener("scroll", requestScrollUpdate, { passive: true });
+    window.addEventListener("resize", requestSectionMeasure);
+    window.addEventListener("load", requestSectionMeasure);
+
+    return () => {
+      window.removeEventListener("scroll", requestScrollUpdate);
+      window.removeEventListener("resize", requestSectionMeasure);
+      window.removeEventListener("load", requestSectionMeasure);
+
+      if (scrollFrameRef.current !== null) {
+        window.cancelAnimationFrame(scrollFrameRef.current);
+      }
+
+      if (measureFrameRef.current !== null) {
+        window.cancelAnimationFrame(measureFrameRef.current);
+      }
+    };
+  }, [navItems]);
 
   useEffect(() => {
     const resolvePendingConsent = () => {
@@ -195,6 +256,12 @@ const Header = () => {
 
   // Find active name for NavBar
   const activeName = navItems.find(item => item.id === activeTab)?.name || navItems[0].name;
+  const isTurkishSelected = currentLang?.startsWith("tr");
+  const currentFlagSrc = isTurkishSelected ? trFlag : usFlag;
+  const currentFlagAlt = isTurkishSelected ? "Turkiye" : "United States";
+  const languageToggleLabel = isTurkishSelected
+    ? "Switch language to English"
+    : "Dili Turkceye cevir";
 
   return (
     <>
@@ -222,31 +289,24 @@ const Header = () => {
             {/* Language Toggle */}
             <motion.button
               onClick={toggleLanguage}
-              initial="closed"
-              whileHover="open"
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
+              aria-label={languageToggleLabel}
+              title={languageToggleLabel}
               className={cn(
-                "flex items-center justify-center p-2 rounded-full transition-all duration-300 active:scale-95 border overflow-hidden",
+                "flex items-center justify-center p-2 rounded-full transition-all duration-300 border overflow-hidden",
                 isScrolled
                   ? "bg-orange-50 border-orange-100 hover:bg-orange-100 text-orange-600"
                   : "bg-white/80 border-white/50 hover:bg-white shadow-sm backdrop-blur-md text-neutral-800"
               )}
             >
-              <motion.span
-                variants={{
-                  open: { width: "auto", opacity: 1, marginRight: 8 },
-                  closed: { width: 0, opacity: 0, marginRight: 0 }
-                }}
-                transition={{ duration: 0.3, ease: "easeInOut" }}
-                className="overflow-hidden whitespace-nowrap text-xs font-bold"
-              >
-                {currentLang?.startsWith('tr') ? 'Türkçe' : 'English'}
-              </motion.span>
-
-              {currentLang?.startsWith('tr') ? (
-                <span className="fi fi-tr fis rounded-full text-xl shrink-0" />
-              ) : (
-                <span className="fi fi-us fis rounded-full text-xl shrink-0" />
-              )}
+              <img
+                src={currentFlagSrc}
+                alt={currentFlagAlt}
+                className="h-5 w-7 rounded-[3px] shrink-0 object-cover shadow-sm"
+                loading="eager"
+                decoding="sync"
+              />
             </motion.button>
 
             {/* Buy Button & User Menu Container */}

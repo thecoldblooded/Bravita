@@ -1,0 +1,193 @@
+# Bakiyem Canli Odeme Entegrasyonu - Projeye Uyumlu Master Plan (Docs-Aligned)
+
+Tarih: 2026-02-12  
+Ortam: `bravita-future-focused-growth-main`
+
+Referans (source of truth):
+- `https://dev.bakiyem.com/#genel_bilgiler`
+- `https://dev.bakiyem.com/3dli-odeme`
+- `https://dev.bakiyem.com/iptal-islemi`
+- `https://dev.bakiyem.com/odeme-detay-listesi`
+- `https://dev.bakiyem.com/odeme-listesi`
+- `https://dev.bakiyem.com/ortak-odeme`
+- `https://dev.bakiyem.com/hata-kodlari`
+
+## 1. Objective
+Mevcut test-odakli kart odeme akisini, Bakiyem/Moka 3D Secure ile canli odeme alacak ve stok/odeme tutarliligini bozmayacak sekilde uretime tasimak.  
+Kart akisinda order olusturma, sadece 3D callback + provider dogrulamasi sonrasinda atomik finalize ile yapilacak.
+
+## 2. Tech Strategy
+- Pattern: `PaymentIntent + StockReservation + Callback Finalize` (order-last).
+- State truth: finansal dogruluk kaynagi `payment_intents.status`.
+- Capture mode:
+  - Primary: `direct_3d` (`/PaymentDealer/DoDirectPaymentThreeD`).
+  - Optional fallback: `shared_page` (`/ortak-odeme`) yalniz feature flag ile.
+  - Sprint 0'da `Gateway Capability Decision Record (GCDR)` ile tek aktif mod kilitlenir.
+- Constraints:
+  - Installment: docs'a gore pesin `0/1`, taksit `2..9`.
+  - Tutarlar DB tarafinda `*_cents` olarak saklanacak.
+  - Callback'te hash/signature field dokumanda zorunlu degil; dogrulama detail-query ile tamamlanacak.
+
+## 3. Provider Contract (Docs Lock)
+| Use Case | Endpoint | Kritik Alanlar |
+|:--|:--|:--|
+| 3D init | `/PaymentDealer/DoDirectPaymentThreeD` | `Amount`, `InstallmentNumber`, `RedirectUrl`, `OtherTrxCode`, `IsPreAuth`, `CardToken` opsiyonel |
+| 3D callback | `RedirectUrl` POST | `isSuccessful`, `resultCode`, `resultMessage`, `trxCode` |
+| Void | `/PaymentDealer/DoVoid` | `VirtualPosOrderId=trxCode`, `VoidRefundReason`, `ClientIP` |
+| Refund (opsiyonel, dokuman teyidi) | `/PaymentDealer/DoRefund` | `VirtualPosOrderId=trxCode`, `Amount`, `ClientIP` |
+| Capture (opsiyonel) | `/PaymentDealer/DoCapture` | `VirtualPosOrderId` veya `OtherTrxCode`, `Amount` |
+| Detail inquiry | `/PaymentDealer/GetDealerPaymentTrxDetailList` | `DealerPaymentId` veya `OtherTrxCode` |
+| Reconciliation list | `/PaymentDealer/GetPaymentList` | `PaymentStartDate`, `PaymentEndDate`, `PaymentStatus`, `TrxStatus` |
+
+Ek notlar:
+- `InstallmentNumber` hatali degerlerde provider hata doner; backend 2..9 disi taksiti en basta reddedecek.
+- `GetPaymentList` tek istekte 500 kayit limitine sahip; gunluk uzlastirma parcali zaman penceresiyle calisacak.
+- `ortak-odeme` modu hosted-field degil; base64 URL yonlendirmesi + `durumu/aciklama/ozel1/ozel2` callback donusu var.
+- Payload kontratlari:
+  - `direct_3d`: Edge input kart alanlari icerir (`cardNumber`, `expMonth`, `expYear`, `cvc`), strict redaction zorunlu.
+  - `shared_page`: Edge input kart alani icermez; sadece provider yonlendirme token/nonce veya URL payload tasinir.
+
+## 4. Blast Radius (Breaking Changes)
+1. `create_order` kartta `payment_status='paid'` yapiyor; bu davranis kaldirilmazsa fake-paid order olusur.
+2. `trigger_deduct_stock` aktif oldugu icin reserve/finalize modeliyle cift stok hareketi olur.
+3. `admin_update_order_status` iptalde `refunded` yazabiliyor; gateway-dogrulanmis finansal state ile drift yaratir.
+4. Checkout UI test modu metni ve kart formu davranisi canli akisla uyumsuz.
+5. `supabase/config.toml` icinde yeni edge function auth posture tanimlanmamis.
+
+## 5. File Changes
+| Action | File Path | Brief Purpose |
+|:--|:--|:--|
+| MOD | `src/pages/Checkout.tsx` | Kartta `createOrder` yerine `bakiyem-init-3d` akisini cagir |
+| MOD | `src/components/checkout/PaymentMethodSelector.tsx` | Test metinlerini kaldir, taksit secimi (1,2..9) ve capture mode davranisi ekle |
+| MOD | `src/components/checkout/OrderSummary.tsx` | Komisyon ve paid total kirilimi |
+| MOD | `src/pages/OrderConfirmation.tsx` | Intent/order uzerinden odeme sonucu + taksit/komisyon gosterimi |
+| NEW | `src/pages/ThreeDSRedirect.tsx` | Same-tab 3D yonlendirme route'u |
+| NEW | `src/pages/PaymentFailed.tsx` | Hata kodu cevirisi + retry UX |
+| MOD | `nginx.conf` | `/3d-redirect` icin dar kapsamli CSP (`form-action`, `frame-src`) |
+| MOD | `src/lib/checkout.ts` | `initiateCardPayment`, `getInstallmentRates`, bank transfer ayrimi |
+| MOD | `src/App.tsx` | `/3d-redirect` ve `/payment-failed` route ekleme |
+| NEW | `supabase/migrations/<ts>_payment_intents_foundation.sql` | `payment_intents`, `stock_reservations`, `payment_transactions`, `payment_webhook_events(processing_status)`, `payment_manual_review_queue`, `installment_rates` |
+| NEW | `supabase/migrations/<ts>_orders_intent_columns.sql` | `orders.payment_intent_id` FK+UNIQUE, `*_cents` kolonlari |
+| NEW | `supabase/migrations/<ts>_disable_legacy_stock_trigger.sql` | `trigger_deduct_stock` devreden cikarma |
+| NEW | `supabase/migrations/<ts>_rpc_quote_reserve_finalize.sql` | `calculate_order_quote_v1`, `reserve_stock_for_intent_v1`, `finalize_intent_create_order_v1` |
+| NEW | `supabase/migrations/<ts>_rpc_cleanup_scheduler.sql` | `release_expired_reservations_v1`, `expire_abandoned_intents_v1` |
+| NEW | `supabase/migrations/<ts>_rls_payment_tables.sql` | payment tablolari RLS + service_role disi write kapatma |
+| MOD | `supabase/functions/create_order.sql` | Kart yolu kaldir, sadece `bank_transfer` order olustursun |
+| NEW | `supabase/functions/bakiyem-init-3d/index.ts` | Init 3D + intent + reserve + audit |
+| NEW | `supabase/functions/bakiyem-3d-return/index.ts` | Callback + dedupe + detail inquiry + finalize |
+| NEW | `supabase/functions/bakiyem-void/index.ts` | Admin void operasyonu |
+| NEW | `supabase/functions/bakiyem-refund/index.ts` | Admin refund operasyonu (provider destekliyse) |
+| NEW | `supabase/functions/bakiyem-capture/index.ts` | Preauth kullaniminda capture operasyonu |
+| NEW | `supabase/functions/payment-maintenance/index.ts` | Scheduled cleanup (`release_expired_reservations_v1`, `expire_abandoned_intents_v1`) |
+| MOD | `supabase/config.toml` | Yeni function `verify_jwt` posture |
+| MOD | `supabase/migrations/<ts>_admin_status_alignment.sql` | `admin_update_order_status` finansal state driftini engelle |
+
+## 6. Execution Sequence
+1. Sprint 0 - Decision Lock
+- `Gateway Capability Decision Record (GCDR)` olusturulur ve tek aktif yol kilitlenir:
+  - Hosted/tokenization capability probe yapilir; varsa kart alanlari backend'e gelmeyecek kontrat tercih edilir.
+  - `direct_3d` secilirse edge payload kart alanlariyla calisir, Direct hardening checklist zorunlu.
+  - `shared_page` secilirse edge payload kart alani icermez, yalniz yonlendirme payload'i tasinir.
+- `PAYMENT_CAPTURE_MODE=direct_3d` varsayilan olarak kilitlenir.
+- `shared_page` sadece fallback flag olarak tanimlanir (`payment_shared_page_enabled`).
+- Redirect URL kontrati netlenir: `/functions/v1/bakiyem-3d-return?intentId=<uuid>`.
+- Go-live kill-switch davranisi netlenir: kart akisi kapaninca checkout'ta kibar fail + bank transfer onerisi.
+
+2. Sprint 1 - DB Foundation
+- `installment_rates` baslangicta `1..9` (1 pesin, 2..9 taksit) ile olusturulur.
+- `payment_intents` icinde `idempotency_key`, `idempotency_expires_at`, `paid_total_cents`, `merchant_ref`, `gateway_trx_code`.
+- `payment_webhook_events` icinde `processing_status` (`received/ignored/processed/failed`) zorunlu olur.
+- `orders.payment_intent_id UUID UNIQUE NOT NULL` + FK zorunlu.
+- Legacy stok trigger kapatilir.
+- `orders.payment_status` minimal tutulur (`paid/failed/refunded`), operasyonel finansal state intent tarafinda kalir.
+- RLS politikasi migration ile kilitlenir: user sadece kendi intent'ini read eder; payment audit tablolarinda user read/write yoktur.
+
+3. Sprint 2 - RPC Atomics
+- `calculate_order_quote_v1` frontend tutarini yok sayar, server-side hesaplar; cikta `rate_version` + `effective_from` doner.
+- `reserve_stock_for_intent_v1` TTL rezervasyon olusturur.
+- `idempotency_key` stratejisi sabitlenir:
+  - `sha256(user_id + cart_hash + shippingAddressId + installmentCount + quote_version + day_bucket)`
+  - 30 saniye icinde ayni payload tekrarinda ayni intent doner.
+  - 10 dakika sonra yeni intent uretilir.
+- `finalize_intent_create_order_v1`:
+  - `SELECT ... FOR UPDATE` ile intent satiri kilidi.
+  - Intent zaten `paid` ise mevcut order id doner.
+  - Stock hard decrement + order create + intent paid tek transaction.
+- `expire_abandoned_intents_v1` ile `expires_at < now()` intent'ler `expired` yapilir.
+- Cleanup RPC'leri `Supabase Scheduled Function` ile her 5 dakikada bir cagrilir (`payment-maintenance`).
+
+4. Sprint 3 - Edge Functions
+- `bakiyem-init-3d`:
+  - `DoDirectPaymentThreeD` cagrisi.
+  - `OtherTrxCode=intent_id` set edilir.
+  - `correlation_id` frontend -> init -> provider alanlarinda (mumkunse `merchant_ref`) tasinir.
+  - `RedirectUrl` query'sine `intentId` yazilir.
+  - Risk limit: user basina `init-3d` dakikada `N` (oneri: 5) deneme ile sinirlanir.
+- `bakiyem-3d-return`:
+  - Callback body: `isSuccessful`, `resultCode`, `resultMessage`, `trxCode`.
+  - Dedupe key standardi: `sha256(provider + trxCode + resultCode + payload_hash)`.
+  - Amount callback'te yok kabul edilir; her basarili callbackte `GetDealerPaymentTrxDetailList` ile amount/status cekilir.
+  - `provider_amount` ile `intent.paid_total_cents` birebir eslesmiyorsa finalize durdurulur, review queue'ya gider.
+  - `hash_mismatch`, `missing_finalize`, `detail_query_error` durumlari da otomatik `payment_manual_review_queue` kaydi acar.
+- `bakiyem-void`: `DoVoid(VirtualPosOrderId=trxCode)`.
+- `bakiyem-refund`: settlement sonrasi iade gerekiyorsa `DoRefund` (provider kontrati teyitli ise) + `refund_pending` fallback.
+- `bakiyem-capture`: sadece `IsPreAuth=1` kullaniliyorsa aktif edilir.
+
+5. Sprint 4 - Frontend Checkout
+- Kartta order olusturma kaldirilir, 3D baslatma + redirect akisi kullanilir.
+- `ThreeDSRedirect` same-tab route'u kullanilir; `document.write`, popup/new-window ve kontrolsuz iframe kullanilmaz.
+- `/3d-redirect` icin dar kapsamli CSP uygulanir.
+- Taksit secenekleri `1 + 2..9`; provider uyumsuz secenek UI'da pasif.
+- `PaymentFailed` sayfasi `hata-kodlari` map'i ile kullanici dostu mesaj verir.
+- Kill-switch acik degilse kart secenegi disable + bank transfer fallback.
+
+6. Sprint 5 - Ops + Reconciliation
+- Gunluk uzlastirma `GetPaymentList` ile pencereli cekilir.
+- Her liste kaydi `OtherTrxCode` veya internal map ile local intent/order ile eslestirilir.
+- Mismatch durumlari `payment_manual_review_queue` tablosuna dedupe ile yazilir.
+
+7. Sprint 6 - Canary + Go Live
+- `%5 -> %25 -> %100` rollout.
+- Her adimda duplicate callback, stock race, timeout, void fail, detail-query mismatch testleri kosulur.
+
+## 7. Security and Compliance Rules
+- Direct 3D modunda kart verisi sadece edge runtime memory'de kullanilir, DB/log'a yazilmaz.
+- Log redaction zorunlu: PAN/CVC, fullname, email gibi PII maskelenir.
+- Direct modda request body log kapali olur; exception stack'te PAN/CVC sizmasi test edilir.
+- Callback signature dokumanda garanti degil:
+  - Bu nedenle IP allowlist (mumkunse), strict schema, dedupe, rate-limit ve provider detail-query dogrulamasi bir arada zorunlu.
+- Rate limit: `bakiyem-init-3d` user/IP bazli dakika basina `N` (oneri 5) deneme ile sinirli.
+- RLS:
+  - `payment_intents`: user kendi kaydini read.
+  - `payment_transactions`, `payment_webhook_events`, `payment_manual_review_queue`, `stock_reservations`: user read yok.
+  - Tum yazma isleri service role + RPC/Edge.
+- `SECURITY DEFINER` siniri:
+  - `finalize_intent_create_order_v1`, `reserve_stock_for_intent_v1`, `release_expired_reservations_v1`, `expire_abandoned_intents_v1` sadece service role tarafindan cagrilir.
+  - `EXECUTE` izni anon/auth rollerinden kaldirilir, yalniz backend service path kullanir.
+
+## 8. Verification Standards
+- [ ] `src/pages/Checkout.tsx` artik kartta `createOrder` cagirmiyor.
+- [ ] `supabase/functions/create_order.sql` kart odeme yolunu kapatti, sadece bank transfer order aciyor.
+- [ ] `trigger_deduct_stock` devre disi.
+- [ ] Duplicate callback'te tek order olusuyor (`orders.payment_intent_id` unique korumasi).
+- [ ] `payment_webhook_events.processing_status` duplicate callbackte `ignored`a geciyor.
+- [ ] Callback amount olmadan sadece detail query ile finalize karari veriliyor.
+- [ ] Dedupe key standardi `sha256(provider + trxCode + resultCode + payload_hash)` ile uretiliyor.
+- [ ] 2..9 disi taksit backend tarafinda reddediliyor.
+- [ ] `calculate_order_quote_v1` cikisinda `rate_version` + `effective_from` var ve intent snapshot'a yaziliyor.
+- [ ] `DoVoid` `trxCode` ile calisiyor, basarisizlikta `void_pending` review akisi var.
+- [ ] Refund gerekiyorsa `DoRefund` veya esdeger provider kontratiyla isleniyor, basarisizlikta `refund_pending` review akisi var.
+- [ ] `expire_abandoned_intents_v1` pending/awaiting_3d intentleri `expired` yapiyor.
+- [ ] Scheduler gercekte 5 dakikada bir cleanup RPC'lerini tetikliyor.
+- [ ] Reconciliation 500 limitini asmayacak sekilde zaman pencereli calisiyor.
+- [ ] Kill-switch kapaliyken kart akisi baslamiyor, bank transfer akisi bozulmuyor.
+- [ ] `ThreeDSRedirect` same-tab route'u aktif, `document.write`/popup kullanilmiyor ve route-level CSP uygulanmis.
+
+## 9. Locked Decisions
+1. Kart akisi source-of-truth: `payment_intents`, order-last finalize.
+2. Provider inquiry kontrati: `GetDealerPaymentTrxDetailList` (`OtherTrxCode=intent_id` ana anahtar).
+3. Installment policy: `1` (pesin) + `2..9` (taksit).
+4. GCDR sonucu tek capture mode kilitlenir; diger yol sadece feature flag fallback olarak kalir.
+5. Hosted/shared-page modunda kart alanlari backend payload'ina girmez; direct modda hardening checklist zorunludur.
+6. Finansal drift onleme: order state gorunumsel, finansal gercek durum intent + transactions timeline.
+7. Cleanup altyapisi: Supabase Scheduled Function her 5 dakikada `release_expired_reservations_v1` + `expire_abandoned_intents_v1` cagirir.

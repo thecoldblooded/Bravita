@@ -3,19 +3,21 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { lazy, Suspense } from "react";
 import "@/i18n/config";
 
-import AdminDashboard from "@/pages/admin/AdminDashboard";
-import AdminOrders from "@/pages/admin/AdminOrders";
-import AdminOrderDetail from "@/pages/admin/AdminOrderDetail";
-import AdminUsers from "@/pages/admin/AdminUsers";
-import AdminProducts from "@/pages/admin/AdminProducts";
-import AdminPromoCodes from "@/pages/admin/AdminPromoCodes";
-import AdminAuditLogs from "@/pages/admin/AdminAuditLogs";
-import AdminSupport from "@/pages/admin/AdminSupport";
-import AdminEmails from "@/pages/admin/AdminEmails";
-import NotFound from "@/pages/NotFound";
 import { AdminThemeProvider } from "@/contexts/AdminThemeContext";
+
+const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
+const AdminOrders = lazy(() => import("@/pages/admin/AdminOrders"));
+const AdminOrderDetail = lazy(() => import("@/pages/admin/AdminOrderDetail"));
+const AdminUsers = lazy(() => import("@/pages/admin/AdminUsers"));
+const AdminProducts = lazy(() => import("@/pages/admin/AdminProducts"));
+const AdminPromoCodes = lazy(() => import("@/pages/admin/AdminPromoCodes"));
+const AdminAuditLogs = lazy(() => import("@/pages/admin/AdminAuditLogs"));
+const AdminSupport = lazy(() => import("@/pages/admin/AdminSupport"));
+const AdminEmails = lazy(() => import("@/pages/admin/AdminEmails"));
+const NotFound = lazy(() => import("@/pages/NotFound"));
 
 const queryClient = new QueryClient();
 
@@ -27,18 +29,20 @@ export default function AdminApp() {
                     <Toaster />
                     <Sonner />
                     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-                        <Routes>
-                            <Route path="/admin" element={<AdminDashboard />} />
-                            <Route path="/admin/orders" element={<AdminOrders />} />
-                            <Route path="/admin/orders/:orderId" element={<AdminOrderDetail />} />
-                            <Route path="/admin/products" element={<AdminProducts />} />
-                            <Route path="/admin/promotions" element={<AdminPromoCodes />} />
-                            <Route path="/admin/support" element={<AdminSupport />} />
-                            <Route path="/admin/emails" element={<AdminEmails />} />
-                            <Route path="/admin/admins" element={<AdminUsers />} />
-                            <Route path="/admin/logs" element={<AdminAuditLogs />} />
-                            <Route path="*" element={<NotFound />} />
-                        </Routes>
+                        <Suspense fallback={null}>
+                            <Routes>
+                                <Route path="/admin" element={<AdminDashboard />} />
+                                <Route path="/admin/orders" element={<AdminOrders />} />
+                                <Route path="/admin/orders/:orderId" element={<AdminOrderDetail />} />
+                                <Route path="/admin/products" element={<AdminProducts />} />
+                                <Route path="/admin/promotions" element={<AdminPromoCodes />} />
+                                <Route path="/admin/support" element={<AdminSupport />} />
+                                <Route path="/admin/emails" element={<AdminEmails />} />
+                                <Route path="/admin/admins" element={<AdminUsers />} />
+                                <Route path="/admin/logs" element={<AdminAuditLogs />} />
+                                <Route path="*" element={<NotFound />} />
+                            </Routes>
+                        </Suspense>
                     </BrowserRouter>
                 </AdminThemeProvider>
             </TooltipProvider>

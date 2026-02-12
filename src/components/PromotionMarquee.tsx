@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Tag, Calendar, Info, Copy, Check } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { format, isAfter, isBefore } from "date-fns";
-import { tr, enUS } from "date-fns/locale";
+import { format } from "date-fns";
+import { tr } from "date-fns/locale/tr";
+import { enUS } from "date-fns/locale/en-US";
 import { toast } from "sonner";
 
 interface PromoCode {

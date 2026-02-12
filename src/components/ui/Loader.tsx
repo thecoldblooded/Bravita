@@ -1,6 +1,4 @@
-import React from "react";
-import styled from "styled-components";
-import bravitaGif from "@/assets/bravita.gif";
+import { cn } from "@/lib/utils";
 
 interface LoaderProps {
   size?: string;
@@ -8,69 +6,32 @@ interface LoaderProps {
   className?: string;
 }
 
+const LOADER_IMAGE_SRC = "/bravita-bottle.webp";
+
 export default function Loader({ size = "240px", noMargin = false, className }: LoaderProps) {
   return (
-    <StyledWrapper $size={size} $noMargin={noMargin} className={className}>
-      <div className="loader-container">
+    <div
+      className={cn("flex w-full items-center justify-center", noMargin ? "m-0" : "my-8", className)}
+      role="status"
+      aria-live="polite"
+      aria-label="Yukleniyor"
+    >
+      <div
+        className={cn(
+          "relative flex items-center justify-center overflow-hidden rounded-full",
+          noMargin ? "bg-transparent shadow-none" : "bg-white shadow-[0_10px_30px_-10px_rgba(246,139,40,0.2)]"
+        )}
+        style={{ width: size, height: size }}
+      >
         <img
-          src={bravitaGif}
+          src={LOADER_IMAGE_SRC}
           alt="Bravita Loader"
-          className="bravita-gif"
+          loading="eager"
+          decoding="async"
+          className="h-[88%] w-[88%] object-contain animate-pulse"
         />
-        <div className="shimmer"></div>
+        <span className="pointer-events-none absolute inset-0 bg-white/10" />
       </div>
-    </StyledWrapper>
+    </div>
   );
 }
-
-const StyledWrapper = styled.div<{ $size: string; $noMargin: boolean }>`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: ${props => props.$noMargin ? "0" : "2rem 0"};
-  width: 100%;
-  
-  .loader-container {
-    position: relative;
-    width: ${props => props.$size};
-    height: ${props => props.$size};
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border-radius: 50%;
-    /* Subtle glow effect only if NOT in a button/noMargin context */
-    box-shadow: ${props => props.$noMargin ? "none" : "0 10px 30px -10px rgba(246, 139, 40, 0.2)"};
-    background: ${props => props.$noMargin ? "transparent" : "white"};
-    overflow: hidden;
-  }
-
-  .bravita-gif {
-    width: 90%;
-    height: 90%;
-    object-fit: contain;
-    z-index: 2;
-  }
-
-  /* Premium shimmer effect over the loader */
-  .shimmer {
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgba(255, 255, 255, 0.2),
-      transparent
-    );
-    animation: shimmer 1.5s infinite;
-    z-index: 3;
-  }
-
-  @keyframes shimmer {
-    100% {
-      left: 100%;
-    }
-  }
-`;

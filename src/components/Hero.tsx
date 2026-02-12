@@ -4,8 +4,8 @@ import { motion } from "framer-motion";
 import TextCursorProximity from "./ui/text-cursor-proximity";
 import { useTranslation } from "react-i18next";
 
-// Preload critical hero image
-const bravitaBottle = new URL("@/assets/bravita-bottle.webp", import.meta.url).href;
+// Keep source stable so it can be preloaded from index.html
+const HERO_LCP_IMAGE_SRC = "/bravita-bottle.webp";
 
 const Hero = () => {
   const { t } = useTranslation();
@@ -307,7 +307,7 @@ const Hero = () => {
 
               <div className="relative animate-float">
                 <img
-                  src={bravitaBottle}
+                  src={HERO_LCP_IMAGE_SRC}
                   alt="Bravita Sıvı Takviye"
                   loading="eager"
                   decoding="async"

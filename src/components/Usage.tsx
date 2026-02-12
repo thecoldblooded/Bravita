@@ -2,9 +2,9 @@ import { Clock, Thermometer, AlertTriangle, Baby } from "lucide-react";
 import HeroScrollVideo from "@/components/ui/scroll-animated-video";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTranslation } from "react-i18next";
+import usageVideo from "@/assets/Generated video 1.mp4";
 
-// Lazy load video URL
-const usageVideo = new URL("@/assets/Generated video 1.mp4", import.meta.url).href;
+// Keep as a static import so Vite resolves a valid production/dev URL.
 
 const Usage = () => {
   const { t } = useTranslation();
@@ -17,6 +17,7 @@ const Usage = () => {
         subtitle={t('usage.video_subtitle')}
         meta="2025"
         media={usageVideo}
+        poster="/bravita-bottle.webp"
         mediaType="video"
         targetSize="fullscreen"
         scrollHeightVh={isMobile ? 120 : 200}
