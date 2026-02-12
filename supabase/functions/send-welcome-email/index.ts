@@ -5,7 +5,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const APP_WEBHOOK_SECRET = Deno.env.get("APP_WEBHOOK_SECRET") || "bravita-welcome-secret-2026";
+const APP_WEBHOOK_SECRET = Deno.env.get("APP_WEBHOOK_SECRET");
 
 const ALLOWED_ORIGINS = [
     'https://bravita.com.tr',
@@ -15,15 +15,30 @@ const ALLOWED_ORIGINS = [
     'http://localhost:8080',
 ];
 
+function isAllowedOrigin(origin: string): boolean {
+    if (!origin) return false;
+    if (ALLOWED_ORIGINS.includes(origin)) return true;
+
+    try {
+        const parsedOrigin = new URL(origin);
+        const hostname = parsedOrigin.hostname.toLowerCase();
+        const isLocalHost = hostname === "localhost" || hostname === "127.0.0.1";
+        const isHttpProtocol = parsedOrigin.protocol === "http:" || parsedOrigin.protocol === "https:";
+        return isLocalHost && isHttpProtocol;
+    } catch {
+        return false;
+    }
+}
+
 function getCorsHeaders(req: Request) {
     const origin = req.headers.get('Origin') || '';
-    const isLocalhost = origin.includes('localhost') || origin.includes('127.0.0.1');
-    const allowedOrigin = (isLocalhost || ALLOWED_ORIGINS.includes(origin)) ? origin : ALLOWED_ORIGINS[0];
+    const allowedOrigin = isAllowedOrigin(origin) ? origin : ALLOWED_ORIGINS[0];
 
     return {
         "Access-Control-Allow-Origin": allowedOrigin,
         "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-bravita-secret",
         "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+        "Vary": "Origin",
     };
 }
 
@@ -190,9 +205,29 @@ async function validateSignature(id: string, token: string) {
     return expected === token;
 }
 
+function escapeHtml(value: string): string {
+    return String(value).replace(/[&<>"']/g, (char) => {
+        const entityMap: Record<string, string> = {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;",
+        };
+        return entityMap[char] ?? char;
+    });
+}
+
 serve(async (req: Request) => {
     if (req.method === "OPTIONS") {
         return new Response("ok", { headers: getCorsHeaders(req) });
+    }
+
+    if (req.method !== "GET" && req.method !== "POST") {
+        return new Response(JSON.stringify({ error: "Method not allowed" }), {
+            headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+            status: 405,
+        });
     }
 
     try {
@@ -234,10 +269,21 @@ serve(async (req: Request) => {
         }
 
         // --- SEND EMAIL (POST) ---
+        if (!APP_WEBHOOK_SECRET) {
+            return new Response(
+                JSON.stringify({ error: "Server configuration error: Missing APP_WEBHOOK_SECRET" }),
+                { status: 500, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } },
+            );
+        }
+
         const secret = req.headers.get("x-bravita-secret");
         if (secret !== APP_WEBHOOK_SECRET) {
             console.error("Unauthorized Secret attempt");
             return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: getCorsHeaders(req) });
+        }
+
+        if (!RESEND_API_KEY) {
+            throw new Error("Server configuration error: Missing RESEND_API_KEY");
         }
 
         // Fetch Template from DB
@@ -290,8 +336,8 @@ serve(async (req: Request) => {
 
         // Prepare Variables
         const variables: Record<string, string> = {
-            "NAME": recipientName,
-            "EMAIL": recipientEmail,
+            "NAME": escapeHtml(recipientName),
+            "EMAIL": escapeHtml(recipientEmail),
             "BROWSER_LINK": browserLink,
             "UNSUBSCRIBE_URL": "https://www.bravita.com.tr/unsubscribe"
         };
@@ -334,11 +380,24 @@ serve(async (req: Request) => {
         });
 
     } catch (error: any) {
-        const errorMessage = error.message || "Unknown error";
+        const errorMessage = error?.message || "Unknown error";
         console.error("Error in send-welcome-email:", errorMessage);
-        return new Response(JSON.stringify({ error: errorMessage }), {
+
+        const status = errorMessage === "Unauthorized"
+            ? 401
+            : (errorMessage.includes("Forbidden")
+                ? 403
+                : (errorMessage.includes("Server configuration error") ? 500 : 400));
+
+        const clientError = status === 401
+            ? "Yetkisiz erişim."
+            : (status === 403
+                ? "Bu işlem için yetkiniz yok."
+                : (status === 500 ? "Sunucu yapılandırma hatası." : "İstek işlenemedi."));
+
+        return new Response(JSON.stringify({ error: clientError }), {
             headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
-            status: errorMessage === "Unauthorized" ? 401 : (errorMessage.includes("Forbidden") ? 403 : 400),
+            status,
         });
     }
 });

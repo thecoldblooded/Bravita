@@ -70,7 +70,18 @@ export default function Checkout() {
             case 2:
                 if (checkoutData.paymentMethod === "credit_card") {
                     const card = checkoutData.cardDetails;
-                    return card && card.number && card.expiry && card.cvv && card.name;
+                    if (!card) return false;
+
+                    const cleanNumber = card.number.replace(/\s/g, "");
+                    const isNumberValid = cleanNumber.length === 16;
+                    const isExpiryValid = card.expiry.length === 5; // MM/YY
+                    const isCvvValid = card.cvv.length === 3;
+
+                    // Name must contain at least two words (Name + Surname)
+                    const nameParts = card.name.trim().split(/\s+/);
+                    const isNameValid = nameParts.length >= 2 && nameParts.every(part => part.length >= 2);
+
+                    return isNumberValid && isExpiryValid && isCvvValid && isNameValid;
                 }
                 return true; // Bank transfer doesn't need card details
             case 3:

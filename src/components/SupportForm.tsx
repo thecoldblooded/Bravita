@@ -65,30 +65,28 @@ export default function SupportForm() {
 
         setIsSubmitting(true);
         try {
-            // 1. Insert into database
-            const { data, error: dbError } = await supabase
-                .from("support_tickets")
-                .insert([
-                    {
-                        name: values.name,
-                        email: values.email,
-                        category: values.category,
-                        subject: values.subject,
-                        message: values.message,
-                        status: "open",
-                    },
-                ])
-                .select()
-                .single();
+            // 1. Insert via secure RPC
+            const { data: rpcResult, error: dbError } = await supabase.rpc("create_support_ticket_v1", {
+                p_name: values.name,
+                p_email: values.email,
+                p_category: values.category,
+                p_subject: values.subject,
+                p_message: values.message,
+                p_user_id: null,
+            });
 
             if (dbError) throw dbError;
+            const ticket = Array.isArray(rpcResult) ? rpcResult[0] : rpcResult;
+            if (!ticket?.id) {
+                throw new Error("Bilet oluşturuldu ancak ID alınamadı.");
+            }
 
             // 2. Call Edge Function for email notification (we will implement this next)
             // We don't await this to keep the UI responsive, or we can await it if we want to ensure it sent
             try {
                 await supabase.functions.invoke("send-support-email", {
                     body: {
-                        ticket_id: data.id,
+                        ticket_id: ticket.id,
                         type: "ticket_created",
                         captchaToken: captchaToken,
                     },
@@ -102,9 +100,10 @@ export default function SupportForm() {
             form.reset();
             captchaRef.current?.resetCaptcha();
             setCaptchaToken(null);
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Support form error:", error);
-            toast.error(error.message || t("support.error_message") || "Mesaj gönderilirken bir hata oluştu.");
+            const errorMessage = error instanceof Error ? error.message : "";
+            toast.error(errorMessage || t("support.error_message") || "Mesaj gönderilirken bir hata oluştu.");
         } finally {
             setIsSubmitting(false);
         }

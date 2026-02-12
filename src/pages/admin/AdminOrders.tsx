@@ -131,13 +131,13 @@ function OrdersContent() {
     ];
 
     // Dark mode styles
-    const textPrimary = isDark ? "text-white" : "text-gray-900";
-    const textSecondary = isDark ? "text-gray-400" : "text-gray-500";
-    const cardClass = isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-100";
-    const inputClass = isDark ? "bg-gray-700 border-gray-600 text-white placeholder:text-gray-400" : "";
-    const tableHeaderClass = isDark ? "bg-gray-700 border-gray-600" : "bg-gray-50 border-gray-100";
-    const rowHoverClass = isDark ? "hover:bg-gray-700" : "hover:bg-gray-50";
-    const dividerClass = isDark ? "divide-gray-700" : "divide-gray-50";
+    const textPrimary = isDark ? "text-slate-100" : "text-gray-900";
+    const textSecondary = isDark ? "text-slate-400" : "text-gray-500";
+    const cardClass = isDark ? "bg-slate-800 border-slate-700 shadow-sm" : "bg-white border-gray-100 shadow-sm";
+    const inputClass = isDark ? "bg-slate-900 border-slate-700 text-slate-100 placeholder:text-slate-500 focus:ring-orange-500/50" : "";
+    const tableHeaderClass = isDark ? "bg-slate-800/50 border-slate-700" : "bg-gray-50 border-gray-100";
+    const rowHoverClass = isDark ? "hover:bg-slate-800/50" : "hover:bg-gray-50";
+    const dividerClass = isDark ? "divide-slate-700" : "divide-gray-50";
 
     return (
         <div className="max-w-7xl mx-auto">

@@ -12,7 +12,7 @@ interface AdminLayoutProps {
 
 import { CommandPalette } from "./CommandPalette";
 
-function AdminLayoutInner({ children }: AdminLayoutProps) {
+export function AdminLayout({ children }: AdminLayoutProps) {
     const location = useLocation();
     const navigate = useNavigate();
     const { theme } = useAdminTheme();
@@ -54,8 +54,8 @@ function AdminLayoutInner({ children }: AdminLayoutProps) {
 
     return (
         <div className={`min-h-screen flex transition-colors duration-300 ${theme === "dark"
-                ? "bg-gray-900"
-                : "bg-[#FFFBF7]"
+            ? "bg-gray-900 admin-dark"
+            : "bg-[#FFFBF7]"
             }`}>
             <AdminSidebar />
             <main className="flex-1 p-8 overflow-auto">
@@ -63,13 +63,5 @@ function AdminLayoutInner({ children }: AdminLayoutProps) {
             </main>
             <CommandPalette />
         </div>
-    );
-}
-
-export function AdminLayout({ children }: AdminLayoutProps) {
-    return (
-        <AdminThemeProvider>
-            <AdminLayoutInner>{children}</AdminLayoutInner>
-        </AdminThemeProvider>
     );
 }

@@ -15,21 +15,57 @@ const ALLOWED_ORIGINS = [
     'http://localhost:8080',
 ];
 
+const ORDER_EMAIL_TYPES = new Set([
+    "order_confirmation",
+    "shipped",
+    "delivered",
+    "cancelled",
+    "processing",
+    "preparing",
+] as const);
+
+type OrderEmailType =
+    | "order_confirmation"
+    | "shipped"
+    | "delivered"
+    | "cancelled"
+    | "processing"
+    | "preparing";
+
+function isAllowedOrigin(origin: string): boolean {
+    if (!origin) return false;
+    if (ALLOWED_ORIGINS.includes(origin)) return true;
+
+    try {
+        const parsedOrigin = new URL(origin);
+        const hostname = parsedOrigin.hostname.toLowerCase();
+        const isLocalHost = hostname === "localhost" || hostname === "127.0.0.1";
+        const isHttpProtocol = parsedOrigin.protocol === "http:" || parsedOrigin.protocol === "https:";
+        return isLocalHost && isHttpProtocol;
+    } catch {
+        return false;
+    }
+}
+
+function isAllowedOrderEmailType(value: string): value is OrderEmailType {
+    return ORDER_EMAIL_TYPES.has(value as OrderEmailType);
+}
+
 function getCorsHeaders(req: Request) {
     const origin = req.headers.get('Origin') || '';
-    const isLocalhost = origin.includes('localhost') || origin.includes('127.0.0.1');
-    const allowedOrigin = (isLocalhost || ALLOWED_ORIGINS.includes(origin)) ? origin : ALLOWED_ORIGINS[0];
+    const allowedOrigin = isAllowedOrigin(origin) ? origin : ALLOWED_ORIGINS[0];
 
     return {
         "Access-Control-Allow-Origin": allowedOrigin,
         "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
         "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+        "Vary": "Origin",
     };
 }
 
 interface OrderEmailRequest {
     order_id: string;
-    type?: "order_confirmation" | "shipped" | "delivered" | "cancelled" | "processing" | "preparing";
+    type?: OrderEmailType;
     tracking_number?: string;
     shipping_company?: string;
     cancellation_reason?: string;
@@ -66,6 +102,13 @@ serve(async (req: Request) => {
         return new Response("ok", { headers: getCorsHeaders(req) });
     }
 
+    if (req.method !== "GET" && req.method !== "POST") {
+        return new Response(JSON.stringify({ error: "Method not allowed" }), {
+            headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+            status: 405,
+        });
+    }
+
     try {
         if (!RESEND_API_KEY) {
             console.error("RESEND_API_KEY is missing");
@@ -79,11 +122,15 @@ serve(async (req: Request) => {
         if (req.method === "GET") {
             const order_id = url.searchParams.get("id");
             const token = url.searchParams.get("token");
-            const type = (url.searchParams.get("type") || "order_confirmation") as any;
+            const requestedType = url.searchParams.get("type") || "order_confirmation";
 
             if (!order_id || !token) {
                 return new Response("Geçersiz istek.", { status: 400 });
             }
+            if (!isAllowedOrderEmailType(requestedType)) {
+                return new Response("Geçersiz istek.", { status: 400 });
+            }
+            const type: OrderEmailType = requestedType;
 
             // Secure validation
             const isValid = await validateSignature(order_id, token);
@@ -109,8 +156,6 @@ serve(async (req: Request) => {
 
         // --- SEND EMAIL (POST) ---
         // 1. JWT Verification & Authorization
-        // We manually verify the token here since we disabled the platform-level verify_jwt
-        // to avoid 401 errors during session refresh/handoffs.
         const authHeader = req.headers.get("Authorization");
         if (!authHeader) {
             throw new Error("Missing Authorization header");
@@ -125,7 +170,18 @@ serve(async (req: Request) => {
         }
 
         // Parse Request Body
-        const { order_id, type = "order_confirmation", tracking_number, shipping_company, cancellation_reason }: OrderEmailRequest = await req.json();
+        const {
+            order_id,
+            type: incomingType = "order_confirmation",
+            tracking_number,
+            shipping_company,
+            cancellation_reason,
+        }: OrderEmailRequest = await req.json();
+
+        if (!isAllowedOrderEmailType(incomingType)) {
+            throw new Error("Invalid email type");
+        }
+        const type: OrderEmailType = incomingType;
 
         if (!order_id) {
             throw new Error("Order ID is required");
@@ -140,33 +196,54 @@ serve(async (req: Request) => {
         }
 
         // 3. SECURE AUTHORIZATION CHECK
-        const isAdmin = requestingUser.app_metadata?.is_admin === true || order.user.is_admin === true;
-        const isOwner = requestingUser.id === order.user_id;
+        const { data: requesterProfile } = await supabase
+            .from("profiles")
+            .select("is_admin, is_superadmin")
+            .eq("id", requestingUser.id)
+            .maybeSingle();
 
-        if (!isOwner && !isAdmin) {
+        const isAdmin =
+            requestingUser.app_metadata?.is_admin === true ||
+            requestingUser.app_metadata?.is_superadmin === true ||
+            requesterProfile?.is_admin === true ||
+            requesterProfile?.is_superadmin === true;
+        const isOwner = requestingUser.id === order.user_id;
+        const adminOnlyEmailTypes = new Set<OrderEmailType>([
+            "shipped",
+            "delivered",
+            "cancelled",
+            "processing",
+            "preparing",
+        ]);
+
+        if (adminOnlyEmailTypes.has(type) && !isAdmin) {
+            console.error(`Access Denied: User ${requestingUser.id} tried to send admin-only email type ${type}`);
+            throw new Error("Forbidden: Admin permission is required for this email type.");
+        }
+
+        if (type === "order_confirmation" && !isOwner && !isAdmin) {
             console.error(`Access Denied: User ${requestingUser.id} tried to access order ${order_id} owned by ${order.user_id}`);
             throw new Error("Forbidden: You do not have permission to access this order.");
         }
 
         // 3.5 RATE LIMIT CHECK
-        if (type === "order_confirmation") {
-            const { data: recentLogs } = await supabase
-                .from("email_logs")
-                .select("sent_at")
-                .eq("order_id", order_id)
-                .eq("email_type", type)
-                .gt("sent_at", new Date(Date.now() - 2 * 60 * 1000).toISOString())
-                .limit(1);
+        const rateLimitWindowMs = type === "order_confirmation" ? 2 * 60 * 1000 : 60 * 1000;
+        const { data: recentLogs } = await supabase
+            .from("email_logs")
+            .select("sent_at")
+            .eq("order_id", order_id)
+            .eq("email_type", type)
+            .gt("sent_at", new Date(Date.now() - rateLimitWindowMs).toISOString())
+            .limit(1);
 
-            if (recentLogs && recentLogs.length > 0) {
-                return new Response(JSON.stringify({
-                    message: "Rate limit exceeded. Email already sent recently.",
-                    skipped: true
-                }), {
-                    headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
-                    status: 429,
-                });
-            }
+        if (recentLogs && recentLogs.length > 0) {
+            return new Response(JSON.stringify({
+                message: "Rate limit exceeded. Email already sent recently.",
+                skipped: true
+            }), {
+                headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+                status: 429,
+            });
         }
 
         if (type !== "order_confirmation" && order.user.order_notifications === false) {
@@ -221,9 +298,16 @@ serve(async (req: Request) => {
     } catch (error: any) {
         const errorMessage = error.message || "Unknown error";
         console.error(`Edge Function Error: ${errorMessage}`);
-        return new Response(JSON.stringify({ error: "İşlem sırasında bir hata oluştu.", details: errorMessage }), {
+        const status = errorMessage === "Unauthorized: Invalid token"
+            ? 401
+            : (errorMessage.includes("Forbidden") ? 403 : 400);
+        const clientError = status === 401
+            ? "Yetkisiz erişim."
+            : (status === 403 ? "Bu işlem için yetkiniz yok." : "İşlem sırasında bir hata oluştu.");
+
+        return new Response(JSON.stringify({ error: clientError }), {
             headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
-            status: errorMessage === "Unauthorized: Invalid token" ? 401 : (errorMessage.includes("Forbidden") ? 403 : 400),
+            status,
         });
     }
 });
@@ -361,7 +445,7 @@ async function prepareEmailContent(
     const variables: Record<string, string> = {
         "ORDER_ID": order.id.substring(0, 8).toUpperCase(),
         "ORDER_DATE": orderDate,
-        "NAME": order.user.full_name || "Müşterimiz",
+        "NAME": sanitize(order.user.full_name || "Müşterimiz"),
         "ITEMS_LIST": itemsHtml,
         "SUBTOTAL": totals.subtotal.toFixed(2),
         "DISCOUNT": totals.discount.toFixed(2),

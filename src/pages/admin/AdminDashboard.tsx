@@ -71,13 +71,13 @@ function DashboardContent() {
 
     // Dark mode styles
     const cardClass = isDark
-        ? "bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-sm"
+        ? "bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-sm"
         : "bg-white p-6 rounded-2xl border border-gray-100 shadow-sm";
 
-    const textPrimary = isDark ? "text-white" : "text-gray-900";
-    const textSecondary = isDark ? "text-gray-400" : "text-gray-500";
-    const gridColor = isDark ? "#374151" : "#f3f4f6";
-    const axisColor = isDark ? "#9ca3af" : "#9ca3af";
+    const textPrimary = isDark ? "text-slate-100" : "text-gray-900";
+    const textSecondary = isDark ? "text-slate-400" : "text-gray-500";
+    const gridColor = isDark ? "#1e293b" : "#f3f4f6"; // Slate 800
+    const axisColor = isDark ? "#64748b" : "#9ca3af"; // Slate 500
 
     return (
         <div className="max-w-7xl mx-auto">

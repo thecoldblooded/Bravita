@@ -1,0 +1,18 @@
+# Explicit Edge Function auth posture.
+# Functions with public GET links or secret-header guest flows keep verify_jwt disabled.
+# Admin/authenticated-only functions enforce verify_jwt at platform level.
+
+[functions.send-order-email]
+verify_jwt = false
+
+[functions.send-support-email]
+verify_jwt = false
+
+[functions.send-welcome-email]
+verify_jwt = false
+
+[functions.send-test-email]
+verify_jwt = true
+
+[functions.sync-to-billionmail]
+verify_jwt = true

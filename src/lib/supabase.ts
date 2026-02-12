@@ -2,6 +2,40 @@ import { createClient, Session } from "@supabase/supabase-js";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const useBffAuth = import.meta.env.VITE_USE_BFF_AUTH === "true";
+
+const authMemoryStore = new Map<string, string>();
+
+const inMemoryAuthStorage = {
+  getItem: (key: string): string | null => authMemoryStore.get(key) ?? null,
+  setItem: (key: string, value: string): void => {
+    authMemoryStore.set(key, value);
+  },
+  removeItem: (key: string): void => {
+    authMemoryStore.delete(key);
+  },
+};
+
+function resolveAuthStorage() {
+  if (typeof window === "undefined") {
+    return inMemoryAuthStorage;
+  }
+
+  if (useBffAuth) {
+    return inMemoryAuthStorage;
+  }
+
+  try {
+    const probeKey = "__bravita_auth_storage_probe__";
+    window.sessionStorage.setItem(probeKey, "1");
+    window.sessionStorage.removeItem(probeKey);
+    return window.sessionStorage;
+  } catch {
+    return inMemoryAuthStorage;
+  }
+}
+
+const authStorage = resolveAuthStorage();
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error(
@@ -11,12 +45,12 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    persistSession: true,
-    autoRefreshToken: true,
+    persistSession: !useBffAuth,
+    autoRefreshToken: !useBffAuth,
     detectSessionInUrl: true,
     flowType: 'pkce',
-    storage: window.localStorage,
-    storageKey: 'bravita-stable-token',
+    storage: authStorage,
+    storageKey: 'bravita-session-token',
   }
 });
 

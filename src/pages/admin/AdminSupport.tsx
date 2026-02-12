@@ -126,7 +126,7 @@ export default function AdminSupport() {
             const { data, error } = await query;
             if (error) throw error;
             setTickets(data || []);
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error fetching tickets:", error);
             toast.error("Talepler yüklenirken hata oluştu");
         } finally {
@@ -209,7 +209,9 @@ export default function AdminSupport() {
                     try {
                         const errorBody = await funcError.context?.json();
                         console.error("Edge Function error body:", errorBody);
-                    } catch (bodyErr) { }
+                    } catch (bodyErr) {
+                        console.error("Reply email error body parse failed:", bodyErr);
+                    }
                 } else {
                     console.log("Reply email sent successfully:", funcData);
                 }
@@ -221,7 +223,8 @@ export default function AdminSupport() {
             setSelectedTicket(null);
             setReplyMessage("");
             fetchTickets();
-        } catch (error: any) {
+        } catch (error: unknown) {
+            console.error("Reply handling error:", error);
             toast.error("Yanıt gönderilirken hata oluştu");
         } finally {
             setIsReplying(false);
@@ -307,10 +310,10 @@ export default function AdminSupport() {
         }
     };
 
-    const cardClass = "bg-card border-border shadow-sm";
-    const textPrimary = "text-foreground";
-    const textSecondary = "text-muted-foreground";
-    const rowHover = "hover:bg-muted/50";
+    const cardClass = isDark ? "bg-slate-800 border-slate-700 shadow-sm" : "bg-card border-border shadow-sm";
+    const textPrimary = isDark ? "text-slate-100" : "text-foreground";
+    const textSecondary = isDark ? "text-slate-400" : "text-muted-foreground";
+    const rowHover = isDark ? "hover:bg-slate-800/50" : "hover:bg-muted/50";
 
     return (
         <AdminGuard>
@@ -362,7 +365,7 @@ export default function AdminSupport() {
                                 </Select>
 
                                 {/* Sort Order */}
-                                <Select value={sortOrder} onValueChange={(v: any) => setSortOrder(v)}>
+                                <Select value={sortOrder} onValueChange={(value) => setSortOrder(value as "newest" | "oldest")}>
                                     <SelectTrigger className="w-40 bg-background border-input h-9 rounded-xl">
                                         <div className="flex items-center gap-2">
                                             <ArrowUpDown className="w-3 h-3 text-muted-foreground" />
@@ -398,7 +401,7 @@ export default function AdminSupport() {
 
                     {/* Table */}
                     <div className={`rounded-2xl border overflow-hidden ${cardClass}`}>
-                        <div className="grid grid-cols-12 gap-4 px-6 py-4 border-b text-xs font-bold uppercase tracking-wider bg-muted/50 text-muted-foreground">
+                        <div className={`grid grid-cols-12 gap-4 px-6 py-4 border-b text-xs font-bold uppercase tracking-wider ${isDark ? "bg-slate-800/50 text-slate-400 border-slate-700" : "bg-muted/50 text-muted-foreground"}`}>
                             <div className="col-span-3">Müşteri</div>
                             <div className="col-span-4">Konu / Mesaj</div>
                             <div className="col-span-2">Kategori</div>

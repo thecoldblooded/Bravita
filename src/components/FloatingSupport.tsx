@@ -144,7 +144,7 @@ export default function FloatingSupport({ className }: FloatingSupportProps) {
                 captchaRef.current?.resetCaptcha();
                 setOpen(false);
             }, 1800);
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Support form error:", error);
             toast.error(t("support.error_message") || "Bir hata oluştu. Lütfen tekrar deneyiniz.");
         } finally {

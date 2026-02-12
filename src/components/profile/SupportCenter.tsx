@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
@@ -75,11 +75,7 @@ export function SupportCenter() {
         return messages;
     };
 
-    useEffect(() => {
-        fetchTickets();
-    }, [user]);
-
-    const fetchTickets = async () => {
+    const fetchTickets = useCallback(async () => {
         if (!user) return;
         setIsLoading(true);
         try {
@@ -97,7 +93,11 @@ export function SupportCenter() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [user, t]);
+
+    useEffect(() => {
+        fetchTickets();
+    }, [fetchTickets]);
 
     const handleReply = async (ticket: Ticket) => {
         if (!replyValue.trim()) return;
@@ -162,31 +162,27 @@ export function SupportCenter() {
 
         setIsSubmitting(true);
         try {
-            const { data, error } = await supabase
-                .from("support_tickets")
-                .insert([
-                    {
-                        user_id: user.id,
-                        name: user.full_name,
-                        email: user.email,
-                        subject: formData.subject,
-                        category: formData.category,
-                        message: formData.message,
-                        status: "open",
-                    },
-                ])
-                .select()
-                .single();
+            const { data: rpcResult, error } = await supabase.rpc("create_support_ticket_v1", {
+                p_name: user.full_name || user.email || "Müşteri",
+                p_email: user.email || "",
+                p_category: formData.category,
+                p_subject: formData.subject,
+                p_message: formData.message,
+                p_user_id: user.id,
+            });
 
             if (error) throw error;
+            const ticket = Array.isArray(rpcResult) ? rpcResult[0] : rpcResult;
+            if (!ticket?.id) throw new Error("Ticket ID alınamadı.");
 
             toast.success(t("support.success_message"));
-            setTickets([data, ...tickets]);
             setFormData({ category: "general", subject: "", message: "" });
             setShowForm(false);
+            fetchTickets();
 
             // Email notification call could go here (similar to visitor form)
-        } catch (error: any) {
+        } catch (error: unknown) {
+            console.error("Create ticket error:", error);
             toast.error(t("support.error_message"));
         } finally {
             setIsSubmitting(false);

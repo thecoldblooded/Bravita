@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import loginVideo from "@/assets/login.mp4";
+import logoImg from "@/assets/bravita-logo.webp";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -21,6 +22,7 @@ import Loader from "@/components/ui/Loader";
 import { translateError } from "@/lib/errorTranslator";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
+import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthIndicator";
 
 export default function UpdatePassword() {
     const { t } = useTranslation();
@@ -95,10 +97,12 @@ export default function UpdatePassword() {
             <Card className="w-full max-w-4xl grid lg:grid-cols-2 overflow-hidden shadow-xl border-none">
                 <div className="p-8 lg:p-12 flex flex-col justify-center bg-white order-2 lg:order-1">
                     <div className="w-full max-w-sm mx-auto space-y-6">
-                        <div className="text-center space-y-2">
-                            <h1 className="text-2xl font-bold tracking-tight text-orange-600">
-                                Bravita
-                            </h1>
+                        <div className="text-center space-y-4 flex flex-col items-center">
+                            <img
+                                src={logoImg}
+                                alt="Bravita"
+                                className="h-12 w-auto object-contain mb-2"
+                            />
                             <h2 className="text-xl font-semibold tracking-tight text-gray-900">
                                 {t("auth.update_password") || "Şifrenizi Güncelleyin"}
                             </h2>
@@ -118,6 +122,7 @@ export default function UpdatePassword() {
                                             <FormControl>
                                                 <Input type="password" placeholder="••••••••" {...field} />
                                             </FormControl>
+                                            <PasswordStrengthIndicator password={field.value} />
                                             <FormMessage />
                                         </FormItem>
                                     )}

@@ -135,10 +135,14 @@ BEGIN
     
 EXCEPTION
     WHEN OTHERS THEN
+        RAISE LOG 'validate_checkout failed for user %, product_slug %, error %',
+            COALESCE(v_user_id::text, 'anonymous'),
+            COALESCE(p_product_slug, 'unknown'),
+            SQLERRM;
         RETURN json_build_object(
             'success', false,
             'error', 'SERVER_ERROR',
-            'message', 'Bir hata oluştu: ' || SQLERRM
+            'message', 'Checkout doğrulaması sırasında beklenmeyen bir hata oluştu. Lütfen tekrar deneyiniz.'
         );
 END;
 $$;

@@ -1,0 +1,294 @@
+-- Security Audit Fixes - 2026-02-08
+
+-- 1. Fix create_order for Race Conditions, IDOR, and Negative Quantity
+CREATE OR REPLACE FUNCTION create_order(
+    p_items JSONB,
+    p_shipping_address_id UUID,
+    p_payment_method TEXT,
+    p_promo_code TEXT DEFAULT NULL
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_user_id UUID;
+    v_item JSONB;
+    v_product_id UUID;
+    v_product_name TEXT;
+    v_product_price DECIMAL(10,2);
+    v_product_stock INT;
+    v_qty INT;
+    v_item_subtotal DECIMAL(10,2);
+    v_total_subtotal DECIMAL(10,2) := 0;
+    v_total_vat DECIMAL(10,2) := 0;
+    v_shipping_cost DECIMAL(10,2);
+    v_final_total DECIMAL(10,2);
+    v_discount DECIMAL(10,2) := 0;
+    v_order_id UUID;
+    v_valid_items JSONB := '[]'::JSONB;
+    v_item_detail JSONB;
+    v_order_details JSONB;
+    v_bank_ref TEXT := NULL;
+    v_address_owner UUID;
+    v_promo_result JSON;
+BEGIN
+    -- 1. Get User ID
+    v_user_id := auth.uid();
+    IF v_user_id IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Oturum açmanız gerekiyor');
+    END IF;
+
+    -- 2. Address Ownership Check (IDOR Security Fix)
+    SELECT user_id INTO v_address_owner FROM addresses WHERE id = p_shipping_address_id;
+    IF v_address_owner IS NULL OR v_address_owner != v_user_id THEN
+         RETURN jsonb_build_object('success', false, 'message', 'Geçersiz adres seçimi: Adres size ait değil.');
+    END IF;
+
+    -- 3. Iterate input items
+    FOR v_item IN SELECT * FROM jsonb_array_elements(p_items)
+    LOOP
+        v_product_id := (v_item->>'product_id')::UUID;
+        v_qty := (v_item->>'quantity')::INT;
+
+        -- Negative Quantity Check (Logic Security Fix)
+        IF v_qty <= 0 THEN
+             RETURN jsonb_build_object('success', false, 'message', 'Geçersiz ürün miktarı: 0 veya negatif olamaz.');
+        END IF;
+
+        -- Get product from DB WITH LOCK (Race Condition Fix)
+        SELECT id, name, price, stock 
+        INTO v_product_id, v_product_name, v_product_price, v_product_stock
+        FROM products 
+        WHERE id = v_product_id
+        FOR UPDATE; -- Critical: Locks the row
+        
+        IF NOT FOUND THEN
+             RETURN jsonb_build_object('success', false, 'message', 'Ürün bulunamadı: ID ' || v_product_id);
+        END IF;
+
+        -- Check stock validity
+        IF v_product_stock < v_qty THEN
+             RETURN jsonb_build_object('success', false, 'message', 'Yetersiz stok: ' || v_product_name);
+        END IF;
+
+        -- Calculate item totals using DB price
+        v_item_subtotal := v_product_price * v_qty;
+        v_total_subtotal := v_total_subtotal + v_item_subtotal;
+        
+        -- Build item detail
+        v_item_detail := jsonb_build_object(
+            'product_id', v_product_id,
+            'product_name', v_product_name,
+            'quantity', v_qty,
+            'unit_price', v_product_price,
+            'subtotal', v_item_subtotal
+        );
+        
+        v_valid_items := v_valid_items || v_item_detail;
+        
+    END LOOP;
+
+    -- 4. VAT (20%)
+    v_total_vat := v_total_subtotal * 0.20;
+
+    -- 5. Shipping
+    IF v_total_subtotal >= 1500 THEN
+        v_shipping_cost := 0;
+    ELSE
+        v_shipping_cost := 49.90;
+    END IF;
+
+    -- 6. Promo Code (Backend Logic using verify_promo_code)
+    v_discount := 0; 
+    IF p_promo_code IS NOT NULL AND length(p_promo_code) > 0 THEN
+        BEGIN
+            -- Attempt to call verify_promo_code
+            SELECT verify_promo_code(p_promo_code) INTO v_promo_result;
+            
+            IF (v_promo_result->>'valid')::boolean = true THEN
+                -- Check min order amount logic if applicable
+                 IF (v_promo_result->>'discount_type') = 'percentage' THEN
+                     v_discount := (v_total_subtotal + v_total_vat) * ((v_promo_result->>'discount_value')::decimal / 100);
+                     -- Max discount check
+                     IF (v_promo_result->>'max_discount_amount') IS NOT NULL AND v_discount > (v_promo_result->>'max_discount_amount')::decimal THEN
+                         v_discount := (v_promo_result->>'max_discount_amount')::decimal;
+                     END IF;
+                 ELSE
+                     v_discount := (v_promo_result->>'discount_value')::decimal;
+                 END IF;
+            END IF;
+        EXCEPTION WHEN OTHERS THEN
+            v_discount := 0;
+        END;
+    END IF;
+
+    -- 7. Final Total
+    v_final_total := v_total_subtotal + v_total_vat + v_shipping_cost - v_discount;
+    IF v_final_total < 0 THEN v_final_total := 0; END IF;
+
+    -- Bank Reference
+    IF p_payment_method = 'bank_transfer' THEN
+        v_bank_ref := 'BRV-' || to_char(NOW(), 'YYMMDD') || '-' || upper(substring(md5(random()::text) from 1 for 4));
+    END IF;
+
+    -- 8. Construct final order_details
+    v_order_details := jsonb_build_object(
+        'items', v_valid_items,
+        'subtotal', v_total_subtotal,
+        'vat_rate', 0.20,
+        'vat_amount', v_total_vat,
+        'shipping_cost', v_shipping_cost,
+        'total', v_final_total,
+        'promo_code', p_promo_code,
+        'discount', v_discount,
+        'bank_reference', v_bank_ref
+    );
+
+    -- 9. Insert Order
+    INSERT INTO orders (
+        user_id,
+        shipping_address_id,
+        payment_method,
+        status,
+        payment_status,
+        order_details
+    ) VALUES (
+        v_user_id,
+        p_shipping_address_id,
+        p_payment_method,
+        'pending', 
+        CASE WHEN p_payment_method = 'credit_card' THEN 'paid' ELSE 'pending' END,
+        v_order_details
+    ) RETURNING id INTO v_order_id;
+    
+    -- 10. Insert Status History
+    BEGIN
+        INSERT INTO order_status_history (order_id, status, note, created_at)
+        VALUES (
+            v_order_id,
+            'pending',
+            CASE WHEN p_payment_method = 'credit_card' THEN 'Sipariş alındı (Kredi Kartı)' ELSE 'Sipariş alındı (Havale/EFT Bekleniyor)' END,
+            NOW()
+        );
+    EXCEPTION WHEN OTHERS THEN NULL; END;
+
+    RETURN jsonb_build_object(
+        'success', true, 
+        'order_id', v_order_id,
+        'total', v_final_total,
+        'shipping_cost', v_shipping_cost,
+        'bank_reference', v_bank_ref,
+        'message', 'Sipariş başarıyla oluşturuldu'
+    );
+
+EXCEPTION WHEN OTHERS THEN
+    RETURN jsonb_build_object(
+        'success', false, 
+        'message', 'Bir hata oluştu: ' || SQLERRM
+    );
+END;
+$$;
+
+-- 2. Fix manage_inventory for Overflow/Underflow
+CREATE OR REPLACE FUNCTION manage_inventory() RETURNS TRIGGER AS $$
+DECLARE
+    item jsonb;
+    qty int;
+    prod_id uuid;
+    prod_name text;
+    target_pid uuid;
+    old_status text;
+    new_status text;
+    is_new_active boolean;
+    is_old_active boolean;
+    is_new_delivered boolean;
+    is_old_delivered boolean;
+    is_new_neutral boolean;
+    is_old_neutral boolean;
+BEGIN
+    IF (TG_OP = 'INSERT') THEN
+        old_status := NULL;
+        new_status := NEW.status;
+    ELSE
+        old_status := OLD.status;
+        new_status := NEW.status;
+    END IF;
+
+    -- Logic Groups
+    is_new_active := lower(new_status) IN ('pending', 'processing', 'preparing', 'shipped', 'beklemede', 'işleniyor', 'hazırlanıyor', 'kargoda');
+    is_old_active := lower(old_status) IN ('pending', 'processing', 'preparing', 'shipped', 'beklemede', 'işleniyor', 'hazırlanıyor', 'kargoda');
+    is_new_delivered := lower(new_status) IN ('delivered', 'teslim edildi');
+    is_old_delivered := lower(old_status) IN ('delivered', 'teslim edildi');
+    is_new_neutral := NOT is_new_active AND NOT is_new_delivered;
+    is_old_neutral := NOT is_old_active AND NOT is_old_delivered;
+
+    IF NEW.order_details->'items' IS NOT NULL THEN
+        FOR item IN SELECT * FROM jsonb_array_elements(NEW.order_details->'items')
+        LOOP
+            qty := (item->>'quantity')::int;
+            prod_id := (item->>'product_id')::uuid;
+            prod_name := item->>'product_name';
+
+            -- Find Product
+            target_pid := NULL;
+            IF prod_id IS NOT NULL THEN
+                SELECT id FROM products WHERE id = prod_id INTO target_pid;
+            END IF; 
+            IF target_pid IS NULL AND prod_name IS NOT NULL THEN
+                SELECT id FROM products WHERE name = prod_name LIMIT 1 INTO target_pid;
+            END IF;
+
+            IF target_pid IS NOT NULL THEN
+                
+                IF (TG_OP = 'INSERT') THEN
+                    -- Insert (Active)
+                    IF is_new_active THEN
+                        -- Check stock before update to prevent negative stock
+                        UPDATE products 
+                        SET reserved_stock = COALESCE(reserved_stock, 0) + qty,
+                            stock = stock - qty
+                        WHERE id = target_pid AND stock >= qty;
+                        
+                        -- If update failed (row not found due to stock < qty), raise error
+                        IF NOT FOUND THEN
+                            RAISE EXCEPTION 'Stok yetersiz: %', prod_name;
+                        END IF;
+                    
+                    ELSIF is_new_delivered THEN
+                        UPDATE products SET stock = stock - qty WHERE id = target_pid AND stock >= qty;
+                        IF NOT FOUND THEN RAISE EXCEPTION 'Stok yetersiz: %', prod_name; END IF;
+                    END IF;
+
+                ELSIF (TG_OP = 'UPDATE') THEN
+                    IF new_status IS DISTINCT FROM old_status THEN
+                        -- Active -> Delivered
+                        IF is_old_active AND is_new_delivered THEN
+                            UPDATE products SET reserved_stock = GREATEST(0, COALESCE(reserved_stock, 0) - qty) WHERE id = target_pid;
+                        -- Active -> Cancelled
+                        ELSIF is_old_active AND is_new_neutral THEN
+                            UPDATE products SET reserved_stock = GREATEST(0, COALESCE(reserved_stock, 0) - qty), stock = stock + qty WHERE id = target_pid;
+                        -- Delivered -> Cancelled
+                        ELSIF is_old_delivered AND is_new_neutral THEN
+                            UPDATE products SET stock = stock + qty WHERE id = target_pid;
+                        -- Cancelled -> Active
+                        ELSIF is_old_neutral AND is_new_active THEN
+                             UPDATE products SET reserved_stock = COALESCE(reserved_stock, 0) + qty, stock = stock - qty WHERE id = target_pid AND stock >= qty;
+                             IF NOT FOUND THEN RAISE EXCEPTION 'Stok yetersiz: %', prod_name; END IF;
+                        -- Cancelled -> Delivered
+                        ELSIF is_old_neutral AND is_new_delivered THEN
+                             UPDATE products SET stock = stock - qty WHERE id = target_pid AND stock >= qty;
+                             IF NOT FOUND THEN RAISE EXCEPTION 'Stok yetersiz: %', prod_name; END IF;
+                        -- Delivered -> Active
+                        ELSIF is_old_delivered AND is_new_active THEN
+                             UPDATE products SET reserved_stock = COALESCE(reserved_stock, 0) + qty WHERE id = target_pid;
+                        END IF;
+                    END IF;
+                END IF;
+            END IF;
+        END LOOP;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;;

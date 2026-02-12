@@ -48,15 +48,12 @@
   <!-- Security Headers (Note: Some headers must be set via HTTP response headers for full protection) -->
   <!-- CSP Policy: unsafe-inline required for Vite HMR in dev, external scripts for analytics -->
   <meta http-equiv="Content-Security-Policy"
-    content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' 'unsafe-eval' blob: https://*.contentsquare.net https://cdn.lordicon.com https://js.hcaptcha.com https://*.hcaptcha.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.contentsquare.net https://*.hcaptcha.com; img-src 'self' data: https: blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cdn.lordicon.com https://*.contentsquare.net https://cdn.jsdelivr.net https://unpkg.com https://*.hcaptcha.com https://hcaptcha.com; frame-src 'self' https://*.hcaptcha.com https://hcaptcha.com; worker-src 'self' blob:; form-action 'self'; base-uri 'self'; upgrade-insecure-requests;">
+    content="default-src 'self'; script-src 'self' blob: https://*.contentsquare.net https://js.hcaptcha.com https://*.hcaptcha.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.contentsquare.net https://*.hcaptcha.com; img-src 'self' data: https: blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cdn.lordicon.com https://*.contentsquare.net https://cdn.jsdelivr.net https://unpkg.com https://*.hcaptcha.com https://hcaptcha.com; frame-src 'self' https://*.hcaptcha.com https://hcaptcha.com; worker-src 'self' blob:; object-src 'none'; form-action 'self'; base-uri 'self'; upgrade-insecure-requests;">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <meta name="referrer" content="strict-origin-when-cross-origin">
 
   <!-- Contentsquare Analytics -->
   <script src="https://t.contentsquare.net/uxa/294f4fa696437.js" async></script>
-
-  <!-- LordIcon -->
-  <script src="https://cdn.lordicon.com/lordicon.js"></script>
 </head>
 
 <body>

@@ -71,9 +71,21 @@ interface EmailLog {
     error_message: string | null;
 }
 
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+
 export default function AdminEmails() {
     const { theme } = useAdminTheme();
+    const { isSuperAdmin, isLoading: authLoading } = useAuth();
+    const navigate = useNavigate();
     const isDark = theme === "dark";
+
+    useEffect(() => {
+        if (!authLoading && !isSuperAdmin) {
+            toast.error("Bu sayfaya erişim yetkiniz yok.");
+            navigate("/admin");
+        }
+    }, [isSuperAdmin, authLoading, navigate]);
 
     const [templates, setTemplates] = useState<EmailTemplate[]>([]);
     const [configs, setConfigs] = useState<EmailConfig[]>([]);
@@ -180,20 +192,24 @@ export default function AdminEmails() {
             toast.success("Test e-postası gönderildi");
             setIsTestModalOpen(false);
             setTestRecipient("");
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Test send error:", error);
-            toast.error(`Gönderim başarısız: ${error.message || "Bilinmeyen hata"}`);
+            const errorMessage = error instanceof Error ? error.message : "Bilinmeyen hata";
+            toast.error(`Gönderim başarısız: ${errorMessage}`);
         } finally {
             setIsSendingTest(false);
         }
     };
 
-    const cardClass = isDark
-        ? "bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-sm"
-        : "bg-white p-6 rounded-2xl border border-gray-100 shadow-sm";
+    const cardClass = `p-6 rounded-2xl border transition-all duration-300 shadow-sm hover:shadow-md ${isDark
+        ? "bg-slate-800/50 border-slate-700 hover:border-orange-500/30"
+        : "bg-white border-gray-100 hover:border-orange-500/20"
+        }`;
 
-    const textPrimary = isDark ? "text-white" : "text-gray-900";
-    const textSecondary = isDark ? "text-gray-400" : "text-gray-500";
+    const textPrimary = isDark ? "text-slate-100" : "text-gray-900";
+    const textSecondary = isDark ? "text-slate-400" : "text-gray-500";
+    const tableHeaderClass = isDark ? "text-slate-400 border-slate-700" : "text-gray-500 border-gray-100";
+    const tableRowClass = isDark ? "border-slate-800 hover:bg-slate-800/30" : "border-gray-50 hover:bg-gray-50/50";
 
     return (
         <AdminGuard>
@@ -211,7 +227,7 @@ export default function AdminEmails() {
                     </div>
 
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                        <TabsList className={isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-100"}>
+                        <TabsList className={`p-1 rounded-xl ${isDark ? "bg-slate-800 border-slate-700" : "bg-white border-gray-200"}`}>
                             <TabsTrigger value="templates" className="flex items-center gap-2">
                                 <Mail className="w-4 h-4" />
                                 Şablonlar
@@ -271,28 +287,29 @@ export default function AdminEmails() {
                         </TabsContent>
 
                         <TabsContent value="configs">
-                            <div className={cardClass}>
+                            <div className={`${cardClass} overflow-hidden p-0`}>
                                 <Table>
                                     <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Şablon Slug</TableHead>
-                                            <TableHead>Gönderici Adı</TableHead>
-                                            <TableHead>Gönderici E-posta</TableHead>
-                                            <TableHead>Yanıt Adresi (Reply-To)</TableHead>
-                                            <TableHead className="text-right">İşlemler</TableHead>
+                                        <TableRow className={tableRowClass}>
+                                            <TableHead className={tableHeaderClass}>Şablon Slug</TableHead>
+                                            <TableHead className={tableHeaderClass}>Gönderici Adı</TableHead>
+                                            <TableHead className={tableHeaderClass}>Gönderici E-posta</TableHead>
+                                            <TableHead className={tableHeaderClass}>Yanıt Adresi (Reply-To)</TableHead>
+                                            <TableHead className={`text-right ${tableHeaderClass}`}>İşlemler</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {configs.map((config) => (
-                                            <TableRow key={config.id}>
-                                                <TableCell className="font-mono text-xs">{config.template_slug}</TableCell>
-                                                <TableCell>{config.sender_name}</TableCell>
-                                                <TableCell>{config.sender_email}</TableCell>
-                                                <TableCell>{config.reply_to || "-"}</TableCell>
+                                            <TableRow key={config.id} className={tableRowClass}>
+                                                <TableCell className={`font-mono text-xs ${isDark ? "text-slate-300" : "text-gray-600"}`}>{config.template_slug}</TableCell>
+                                                <TableCell className={textPrimary}>{config.sender_name}</TableCell>
+                                                <TableCell className={textPrimary}>{config.sender_email}</TableCell>
+                                                <TableCell className={textPrimary}>{config.reply_to || "-"}</TableCell>
                                                 <TableCell className="text-right">
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
+                                                        className={isDark ? "text-slate-400 hover:text-white hover:bg-slate-700" : ""}
                                                         onClick={() => {
                                                             setEditingConfig(config);
                                                             setIsConfigEditorOpen(true);
@@ -309,23 +326,23 @@ export default function AdminEmails() {
                         </TabsContent>
 
                         <TabsContent value="logs">
-                            <div className={cardClass}>
+                            <div className={`${cardClass} overflow-hidden p-0`}>
                                 <Table>
                                     <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Tarih</TableHead>
-                                            <TableHead>Alıcı</TableHead>
-                                            <TableHead>Şablon</TableHead>
-                                            <TableHead>Durum</TableHead>
-                                            <TableHead className="text-right">Detay</TableHead>
+                                        <TableRow className={tableRowClass}>
+                                            <TableHead className={tableHeaderClass}>Tarih</TableHead>
+                                            <TableHead className={tableHeaderClass}>Alıcı</TableHead>
+                                            <TableHead className={tableHeaderClass}>Şablon</TableHead>
+                                            <TableHead className={tableHeaderClass}>Durum</TableHead>
+                                            <TableHead className={`text-right ${tableHeaderClass}`}>Detay</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {logs.map((log) => (
-                                            <TableRow key={log.id}>
-                                                <TableCell className="text-xs">{new Date(log.sent_at).toLocaleString("tr-TR")}</TableCell>
-                                                <TableCell>{log.recipient_email}</TableCell>
-                                                <TableCell className="font-mono text-[10px]">{log.template_slug}</TableCell>
+                                            <TableRow key={log.id} className={tableRowClass}>
+                                                <TableCell className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}>{new Date(log.sent_at).toLocaleString("tr-TR")}</TableCell>
+                                                <TableCell className={textPrimary}>{log.recipient_email}</TableCell>
+                                                <TableCell className={`font-mono text-[10px] ${isDark ? "text-slate-300" : "text-gray-600"}`}>{log.template_slug}</TableCell>
                                                 <TableCell>
                                                     {log.status === "sent" ? (
                                                         <Badge className="bg-green-500/10 text-green-500 border-green-500/20">
@@ -338,7 +355,7 @@ export default function AdminEmails() {
                                                     )}
                                                 </TableCell>
                                                 <TableCell className="text-right">
-                                                    <Button variant="ghost" size="icon">
+                                                    <Button variant="ghost" size="icon" className={isDark ? "text-slate-400 hover:text-white hover:bg-slate-700" : ""}>
                                                         <Eye className="w-4 h-4" />
                                                     </Button>
                                                 </TableCell>
@@ -412,7 +429,7 @@ export default function AdminEmails() {
                                             <Label className={`text-sm font-bold uppercase tracking-wider ${isDark ? "text-gray-500" : "text-gray-400"}`}>Şablon Adı</Label>
                                             <Input
                                                 className={`h-12 rounded-xl border-none ring-1 transition-all focus:ring-2 focus:ring-orange-500/50 ${isDark
-                                                    ? "bg-gray-800 text-white ring-gray-700 focus:bg-gray-700"
+                                                    ? "bg-slate-800 text-slate-100 ring-slate-700 focus:bg-slate-700"
                                                     : "bg-gray-50 text-gray-950 ring-gray-200 focus:bg-white"
                                                     }`}
                                                 value={editingTemplate.name}
@@ -420,10 +437,10 @@ export default function AdminEmails() {
                                             />
                                         </div>
                                         <div className="space-y-3">
-                                            <Label className={`text-sm font-bold uppercase tracking-wider ${isDark ? "text-gray-500" : "text-gray-400"}`}>Konu (Subject)</Label>
+                                            <Label className={`text-sm font-bold uppercase tracking-wider ${isDark ? "text-slate-500" : "text-gray-400"}`}>Konu (Subject)</Label>
                                             <Input
                                                 className={`h-12 rounded-xl border-none ring-1 transition-all focus:ring-2 focus:ring-orange-500/50 ${isDark
-                                                    ? "bg-gray-800 text-white ring-gray-700 focus:bg-gray-700"
+                                                    ? "bg-slate-800 text-slate-100 ring-slate-700 focus:bg-slate-700"
                                                     : "bg-gray-50 text-gray-950 ring-gray-200 focus:bg-white"
                                                     }`}
                                                 value={editingTemplate.subject}
@@ -434,8 +451,8 @@ export default function AdminEmails() {
 
                                     {editorView === "raw" ? (
                                         <div className="space-y-3">
-                                            <Label className={`text-sm font-bold uppercase tracking-wider ${isDark ? "text-gray-500" : "text-gray-400"}`}>HTML İçeriği</Label>
-                                            <div className={`p-1 rounded-2xl ring-1 ${isDark ? "ring-gray-700 bg-gray-800" : "ring-gray-200 bg-gray-50"}`}>
+                                            <Label className={`text-sm font-bold uppercase tracking-wider ${isDark ? "text-slate-500" : "text-gray-400"}`}>HTML İçeriği</Label>
+                                            <div className={`p-1 rounded-2xl ring-1 ${isDark ? "ring-slate-700 bg-slate-800" : "ring-gray-200 bg-gray-50"}`}>
                                                 <Textarea
                                                     className={`font-mono text-[13px] h-125 border-none bg-transparent resize-none leading-relaxed focus:ring-0 p-4 ${isDark ? "text-orange-100" : "text-gray-800"
                                                         }`}
@@ -497,8 +514,8 @@ export default function AdminEmails() {
                             )}
                         </div>
 
-                        <div className={`p-6 border-t flex gap-4 justify-end ${isDark ? "border-gray-800 bg-gray-900/50" : "border-gray-100 bg-gray-50/50"}`}>
-                            <Button variant="outline" className={`px-8 h-12 rounded-xl font-semibold ${isDark ? "border-gray-700 hover:bg-gray-800" : ""}`} onClick={() => setIsEditorOpen(false)}>İptal</Button>
+                        <div className={`p-6 border-t flex gap-4 justify-end ${isDark ? "border-slate-800 bg-slate-900/50" : "border-gray-100 bg-gray-50/50"}`}>
+                            <Button variant="outline" className={`px-8 h-12 rounded-xl font-semibold ${isDark ? "border-slate-700 hover:bg-slate-800 text-slate-300" : ""}`} onClick={() => setIsEditorOpen(false)}>İptal</Button>
                             <Button className="bg-orange-600 hover:bg-orange-700 px-10 h-12 rounded-xl font-bold text-white shadow-xl shadow-orange-600/20 active:scale-95 transition-all" onClick={handleSaveTemplate}>Güncelle ve Kaydet</Button>
                         </div>
                     </DialogContent>
@@ -506,10 +523,10 @@ export default function AdminEmails() {
 
                 {/* Config Editor Dialog */}
                 <Dialog open={isConfigEditorOpen} onOpenChange={setIsConfigEditorOpen}>
-                    <DialogContent className={`max-w-xl border-none ${isDark ? "bg-gray-900 text-white" : "bg-white text-gray-900"}`}>
+                    <DialogContent className={`max-w-xl border-none ${isDark ? "bg-slate-900 text-slate-100 shadow-2xl ring-1 ring-slate-800" : "bg-white text-gray-900"}`}>
                         <DialogHeader>
                             <DialogTitle className="text-xl font-bold">Yapılandırmayı Düzenle</DialogTitle>
-                            <DialogDescription className={isDark ? "text-gray-400" : "text-gray-500"}>
+                            <DialogDescription className={isDark ? "text-slate-400" : "text-gray-500"}>
                                 <strong>{editingConfig?.template_slug}</strong> şablonu için gönderen bilgilerini güncelleyin.
                             </DialogDescription>
                         </DialogHeader>
@@ -517,27 +534,27 @@ export default function AdminEmails() {
                         {editingConfig && (
                             <div className="space-y-6 py-4">
                                 <div className="space-y-2">
-                                    <Label className={`text-xs font-bold uppercase tracking-wider ${isDark ? "text-gray-500" : "text-gray-400"}`}>Gönderici Adı</Label>
+                                    <Label className={`text-xs font-bold uppercase tracking-wider ${isDark ? "text-slate-500" : "text-gray-400"}`}>Gönderici Adı</Label>
                                     <Input
-                                        className={`h-11 rounded-xl border-none ring-1 ${isDark ? "bg-gray-800 ring-gray-700" : "bg-gray-50 ring-gray-100"}`}
+                                        className={`h-11 rounded-xl border-none ring-1 ${isDark ? "bg-slate-800 ring-slate-700 text-slate-100" : "bg-gray-50 ring-gray-100"}`}
                                         value={editingConfig.sender_name}
                                         onChange={(e) => setEditingConfig({ ...editingConfig, sender_name: e.target.value })}
                                         placeholder="Örn: Bravita Destek"
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label className={`text-xs font-bold uppercase tracking-wider ${isDark ? "text-gray-500" : "text-gray-400"}`}>Gönderici E-posta</Label>
+                                    <Label className={`text-xs font-bold uppercase tracking-wider ${isDark ? "text-slate-500" : "text-gray-400"}`}>Gönderici E-posta</Label>
                                     <Input
-                                        className={`h-11 rounded-xl border-none ring-1 ${isDark ? "bg-gray-800 ring-gray-700" : "bg-gray-50 ring-gray-100"}`}
+                                        className={`h-11 rounded-xl border-none ring-1 ${isDark ? "bg-slate-800 ring-slate-700 text-slate-100" : "bg-gray-50 ring-gray-100"}`}
                                         value={editingConfig.sender_email}
                                         onChange={(e) => setEditingConfig({ ...editingConfig, sender_email: e.target.value })}
                                         placeholder="noreply@bravita.com.tr"
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label className={`text-xs font-bold uppercase tracking-wider ${isDark ? "text-gray-500" : "text-gray-400"}`}>Yanıt Adresi (Reply-To)</Label>
+                                    <Label className={`text-xs font-bold uppercase tracking-wider ${isDark ? "text-slate-500" : "text-gray-400"}`}>Yanıt Adresi (Reply-To)</Label>
                                     <Input
-                                        className={`h-11 rounded-xl border-none ring-1 ${isDark ? "bg-gray-800 ring-gray-700" : "bg-gray-50 ring-gray-100"}`}
+                                        className={`h-11 rounded-xl border-none ring-1 ${isDark ? "bg-slate-800 ring-slate-700 text-slate-100" : "bg-gray-50 ring-gray-100"}`}
                                         value={editingConfig.reply_to || ""}
                                         onChange={(e) => setEditingConfig({ ...editingConfig, reply_to: e.target.value })}
                                         placeholder="support@bravita.com.tr (Opsiyonel)"
@@ -546,8 +563,8 @@ export default function AdminEmails() {
                             </div>
                         )}
 
-                        <DialogFooter className={`pt-6 border-t mt-4 flex gap-3 ${isDark ? "border-gray-800" : "border-gray-100"}`}>
-                            <Button variant="outline" className="px-6 rounded-xl" onClick={() => setIsConfigEditorOpen(false)}>İptal</Button>
+                        <DialogFooter className={`pt-6 border-t mt-4 flex gap-3 ${isDark ? "border-slate-800" : "border-gray-100"}`}>
+                            <Button variant="outline" className={`px-6 rounded-xl ${isDark ? "border-slate-700 hover:bg-slate-800 text-slate-300" : ""}`} onClick={() => setIsConfigEditorOpen(false)}>İptal</Button>
                             <Button className="bg-orange-600 hover:bg-orange-700 px-8 rounded-xl font-bold text-white shadow-xl shadow-orange-600/20" onClick={handleSaveConfig}>Değişiklikleri Kaydet</Button>
                         </DialogFooter>
                     </DialogContent>
@@ -555,24 +572,28 @@ export default function AdminEmails() {
 
                 {/* Test Email Dialog */}
                 <Dialog open={isTestModalOpen} onOpenChange={setIsTestModalOpen}>
-                    <DialogContent>
+                    <DialogContent className={`border-none ${isDark ? "bg-slate-900 text-slate-100 shadow-2xl ring-1 ring-slate-800" : ""}`}>
                         <DialogHeader>
                             <DialogTitle>Test E-posta Gönder</DialogTitle>
-                            <DialogDescription>
+                            <DialogDescription className={isDark ? "text-slate-400" : ""}>
                                 <strong>{testTemplate?.name}</strong> şablonunu test etmek için bir alıcı adresi girin.
                             </DialogDescription>
                         </DialogHeader>
-                        <div className="space-y-4 py-4">
+                        <div className={`space-y-6 py-4 ${isDark ? "bg-slate-900/50" : "bg-white"}`}>
                             <div className="space-y-2">
-                                <Label>Alıcı E-posta</Label>
+                                <Label className={isDark ? "text-slate-300" : ""}>Alıcı E-posta</Label>
                                 <Input
                                     type="email"
                                     placeholder="ornek@mail.com"
                                     value={testRecipient}
                                     onChange={(e) => setTestRecipient(e.target.value)}
+                                    className={`h-12 rounded-xl border-none ring-1 transition-all ${isDark
+                                        ? "bg-slate-800 text-slate-100 ring-slate-700 focus:ring-orange-500"
+                                        : "bg-gray-50 text-gray-900 ring-gray-200 focus:ring-orange-500"
+                                        }`}
                                 />
                             </div>
-                            <p className="text-[10px] text-muted-foreground italic">
+                            <p className={`text-[11px] italic ${isDark ? "text-slate-500" : "text-gray-400"}`}>
                                 * Test e-postası dummy (sahte) verilerle doldurularak gönderilecektir.
                             </p>
                         </div>

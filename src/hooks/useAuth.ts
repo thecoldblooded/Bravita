@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { isBffAuthEnabled, loginWithBff, logoutBffSession } from "@/lib/bffAuth";
 // BillionMail sync moved to AuthContext - only after email confirmation
 
 export interface SignupData {
@@ -104,6 +105,23 @@ export function useAuthOperations() {
     setError(null);
 
     try {
+      if (isBffAuthEnabled()) {
+        const bffSession = await loginWithBff(data.email!, data.password!, data.captchaToken);
+        if (!bffSession?.access_token || !bffSession?.refresh_token) {
+          throw new Error("BFF auth did not return a valid session");
+        }
+
+        const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+          access_token: bffSession.access_token,
+          refresh_token: bffSession.refresh_token,
+        });
+
+        if (sessionError) throw sessionError;
+
+        await refreshUserProfile();
+        return { user: sessionData.user, session: sessionData.session };
+      }
+
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: data.email!,
         password: data.password!,
@@ -142,6 +160,23 @@ export function useAuthOperations() {
       }
 
       // Sign in with the company's email
+      if (isBffAuthEnabled()) {
+        const bffSession = await loginWithBff(companyUser.email, data.password!, data.captchaToken);
+        if (!bffSession?.access_token || !bffSession?.refresh_token) {
+          throw new Error("BFF auth did not return a valid company session");
+        }
+
+        const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+          access_token: bffSession.access_token,
+          refresh_token: bffSession.refresh_token,
+        });
+
+        if (sessionError) throw sessionError;
+
+        await refreshUserProfile();
+        return { user: sessionData.user, session: sessionData.session };
+      }
+
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: companyUser.email,
         password: data.password!,
@@ -174,20 +209,14 @@ export function useAuthOperations() {
       localStorage.removeItem("profile_in_progress");
       localStorage.removeItem("oauth_provider");
 
-      // Clear Supabase session from localStorage immediately for instant UI feedback
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const urlMatch = supabaseUrl?.match(/https:\/\/([^.]+)\.supabase\.co/);
-      if (urlMatch) {
-        const projectRef = urlMatch[1];
-        const storageKey = `sb-${projectRef}-auth-token`;
-        localStorage.removeItem(storageKey);
+      sessionStorage.removeItem("bravita-session-token");
+      localStorage.removeItem("bravita-session-token");
+
+      if (isBffAuthEnabled()) {
+        await logoutBffSession();
       }
 
-      // Sign out from server (don't await to make logout faster)
-      // Use local scope to avoid slow network request
-      supabase.auth.signOut({ scope: 'local' }).catch((err) => {
-        console.warn("Background signOut error (ignorable):", err);
-      });
+      await supabase.auth.signOut({ scope: "local" });
 
     } catch (err) {
       console.error("Logout error details:", err);
@@ -221,7 +250,7 @@ export function useAuthOperations() {
     }
   };
 
-  const changePassword = async (oldPassword: string, newPassword: string) => {
+  const changePassword = async (oldPassword: string, newPassword: string, captchaToken?: string) => {
     setIsLoading(true);
     setError(null);
 
@@ -233,6 +262,9 @@ export function useAuthOperations() {
       const { error: verifyError } = await supabase.auth.signInWithPassword({
         email: user.email,
         password: oldPassword,
+        options: {
+          captchaToken: captchaToken
+        }
       });
 
       if (verifyError) {

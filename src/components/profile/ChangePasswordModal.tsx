@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
     Dialog,
     DialogContent,
@@ -14,6 +14,8 @@ import { Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useAuthOperations } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import HCaptcha from "@hcaptcha/react-hcaptcha";
+import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthIndicator";
 
 interface ChangePasswordModalProps {
     children?: React.ReactNode;
@@ -29,6 +31,9 @@ export function ChangePasswordModal({ children, open, onOpenChange }: ChangePass
     const [confirmPassword, setConfirmPassword] = useState("");
     const [showOld, setShowOld] = useState(false);
     const [showNew, setShowNew] = useState(false);
+    const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+    const captchaRef = useRef<HCaptcha>(null);
+    const HCAPTCHA_SITE_KEY = "203039b0-ee5c-48ba-aa2c-390a43ecaae0";
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -38,19 +43,32 @@ export function ChangePasswordModal({ children, open, onOpenChange }: ChangePass
             return;
         }
 
-        if (newPassword.length < 6) {
-            toast.error(t("profile.settings.security.password_too_short"));
+        // Stricter password validation
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*]).{12,}$/;
+        if (!passwordRegex.test(newPassword)) {
+            toast.error(t("auth.password_requirements"));
             return;
         }
 
         try {
-            await changePassword(oldPassword, newPassword);
+            const skipCaptcha = import.meta.env.VITE_SKIP_CAPTCHA === "true";
+
+            if (!captchaToken && !skipCaptcha) {
+                toast.error(t("auth.captcha_required"));
+                return;
+            }
+
+            await changePassword(oldPassword, newPassword, captchaToken!);
             toast.success(t("profile.settings.security.password_success"));
             if (onOpenChange) onOpenChange(false);
             setOldPassword("");
             setNewPassword("");
             setConfirmPassword("");
+            setCaptchaToken(null);
+            captchaRef.current?.resetCaptcha();
         } catch (err) {
+            captchaRef.current?.resetCaptcha();
+            setCaptchaToken(null);
             const error = err as Error;
             toast.error(error.message || t("profile.settings.security.password_error"));
         }
@@ -115,6 +133,8 @@ export function ChangePasswordModal({ children, open, onOpenChange }: ChangePass
                                 {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                             </button>
                         </div>
+                        {/* Password Strength Indicator */}
+                        <PasswordStrengthIndicator password={newPassword} />
                     </div>
 
                     <div className="space-y-2">
@@ -126,6 +146,16 @@ export function ChangePasswordModal({ children, open, onOpenChange }: ChangePass
                             onChange={(e) => setConfirmPassword(e.target.value)}
                             placeholder="••••••••"
                             required
+                        />
+                    </div>
+
+                    <div className="flex justify-center py-4">
+                        <HCaptcha
+                            sitekey={HCAPTCHA_SITE_KEY}
+                            onVerify={(token) => setCaptchaToken(token)}
+                            onError={(err) => console.error("hCaptcha Error:", err)}
+                            onExpire={() => setCaptchaToken(null)}
+                            ref={captchaRef}
                         />
                     </div>
 

@@ -11,7 +11,6 @@ const menuItems = [
     { path: "/admin/products", label: "Ürünler & Stok", icon: Tags },
     { path: "/admin/promotions", label: "Promosyonlar", icon: Ticket },
     { path: "/admin/support", label: "Destek Talepleri", icon: LifeBuoy },
-    { path: "/admin/emails", label: "E-posta Yönetimi", icon: Mail },
 ];
 
 export function AdminSidebar() {
@@ -24,6 +23,7 @@ export function AdminSidebar() {
 
     const displayMenuItems = [...menuItems];
     if (isSuperAdmin) {
+        displayMenuItems.push({ path: "/admin/emails", label: "E-posta Yönetimi", icon: Mail });
         displayMenuItems.push({ path: "/admin/admins", label: "Admin Yönetimi", icon: Users });
         displayMenuItems.push({ path: "/admin/logs", label: "Sistem Logları", icon: Shield });
     }
@@ -99,14 +99,14 @@ export function AdminSidebar() {
 
     return (
         <aside className={`w-64 h-screen sticky top-0 flex flex-col transition-colors duration-300 ${isDark
-            ? "bg-gray-800 border-r border-gray-700"
+            ? "bg-slate-900 border-r border-slate-800"
             : "bg-white border-r border-gray-100"
             }`}>
             {/* Logo */}
-            <div className={`p-6 border-b ${isDark ? "border-gray-700" : "border-gray-100"}`}>
+            <div className={`p-6 border-b ${isDark ? "border-slate-800" : "border-gray-100"}`}>
                 <div className="flex items-center justify-between">
                     <Link to="/admin" className="block">
-                        <h1 className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
+                        <h1 className={`text-xl font-bold ${isDark ? "text-slate-50" : "text-gray-900"}`}>
                             <span className="text-orange-500">Bravita</span> Admin
                         </h1>
                     </Link>
@@ -114,7 +114,7 @@ export function AdminSidebar() {
                     <button
                         onClick={toggleTheme}
                         className={`p-2 rounded-lg transition-all ${isDark
-                            ? "bg-gray-700 text-yellow-400 hover:bg-gray-600"
+                            ? "bg-slate-800 text-yellow-400 hover:bg-slate-700"
                             : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                             }`}
                         title={isDark ? "Açık Mod" : "Koyu Mod"}
@@ -133,7 +133,7 @@ export function AdminSidebar() {
                             ? "bg-orange-500/20 text-orange-400 shadow-sm ring-1 ring-orange-500/30"
                             : "bg-orange-50 text-orange-600 shadow-sm ring-1 ring-orange-100"
                         : isDark
-                            ? "text-gray-300 hover:bg-gray-700 hover:text-white"
+                            ? "text-slate-400 hover:bg-slate-800 hover:text-white"
                             : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                         }`}
                 >
@@ -197,8 +197,8 @@ export function AdminSidebar() {
             </nav>
 
             {/* User section */}
-            <div className={`p-4 border-t ${isDark ? "border-gray-700" : "border-gray-100"}`}>
-                <div className={`flex items-center gap-3 px-4 py-3 rounded-xl mb-3 ${isDark ? "bg-gray-700" : "bg-gray-50"
+            <div className={`p-4 border-t ${isDark ? "border-slate-800" : "border-gray-100"}`}>
+                <div className={`flex items-center gap-3 px-4 py-3 rounded-xl mb-3 ${isDark ? "bg-slate-800" : "bg-gray-50"
                     }`}>
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isDark ? "bg-orange-500/20" : "bg-orange-100"
                         }`}>
@@ -207,16 +207,16 @@ export function AdminSidebar() {
                         </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-medium truncate ${isDark ? "text-white" : "text-gray-900"}`}>
+                        <p className={`text-sm font-medium truncate ${isDark ? "text-slate-100" : "text-gray-900"}`}>
                             {user?.full_name || "Admin"}
                         </p>
-                        <p className={`text-xs truncate ${isDark ? "text-gray-400" : "text-gray-500"}`}>{user?.email}</p>
+                        <p className={`text-xs truncate ${isDark ? "text-slate-400" : "text-gray-500"}`}>{user?.email}</p>
                     </div>
                 </div>
                 <button
                     onClick={() => window.location.href = '/'}
                     className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl transition-colors mb-2 ${isDark
-                        ? "text-gray-300 hover:bg-gray-700"
+                        ? "text-slate-300 hover:bg-slate-800"
                         : "text-gray-600 hover:bg-gray-100"
                         }`}
                 >

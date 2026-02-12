@@ -1,144 +1,149 @@
-import { useEffect, useRef, useState, useCallback, memo } from "react";
+import Lottie, { LottieRefCurrentProps } from "lottie-react";
+import { UserRound } from "lucide-react";
+import { memo, useEffect, useRef, useState } from "react";
 
 interface LordIconProps {
-    src: string;
-    trigger?: string;
-    stroke?: string;
-    state?: string;
-    colors?: string;
-    size?: number;
-    className?: string;
+  src: string;
+  trigger?: string;
+  stroke?: string;
+  state?: string;
+  colors?: string;
+  size?: number;
+  className?: string;
 }
 
-// Global flag to track if lord-icon is ready (shared across all instances)
-let globalIsReady = false;
-let globalReadyPromise: Promise<void> | null = null;
+const animationCache = new Map<string, object>();
 
-const waitForLordIcon = (): Promise<void> => {
-    if (globalIsReady) return Promise.resolve();
+const isInteractiveTrigger = (trigger: string) => trigger === "hover" || trigger === "click";
 
-    if (globalReadyPromise) return globalReadyPromise;
-
-    globalReadyPromise = new Promise((resolve) => {
-        // Check if already defined
-        if (typeof customElements !== "undefined" && customElements.get("lord-icon")) {
-            globalIsReady = true;
-            resolve();
-            return;
-        }
-
-        // Wait for definition
-        if (typeof customElements !== "undefined") {
-            customElements.whenDefined("lord-icon").then(() => {
-                globalIsReady = true;
-                resolve();
-            }).catch(() => {
-                // Fallback: check periodically for 5 seconds max
-                let attempts = 0;
-                const check = setInterval(() => {
-                    attempts++;
-                    if (customElements.get("lord-icon")) {
-                        globalIsReady = true;
-                        clearInterval(check);
-                        resolve();
-                    } else if (attempts > 50) {
-                        clearInterval(check);
-                        resolve(); // Give up but don't block
-                    }
-                }, 100);
-            });
-        } else {
-            resolve(); // No customElements support
-        }
-    });
-
-    return globalReadyPromise;
-};
-
-// Memoized component to prevent unnecessary re-renders
 export const LordIcon = memo(function LordIcon({
-    src,
-    trigger = "hover",
-    stroke = "bold",
-    state,
-    colors,
-    size = 45,
-    className = "",
+  src,
+  trigger = "hover",
+  size = 45,
+  className = "",
 }: LordIconProps) {
-    const containerRef = useRef<HTMLDivElement>(null);
-    const [isReady, setIsReady] = useState(globalIsReady);
-    const mountedRef = useRef(true);
+  const lottieRef = useRef<LottieRefCurrentProps | null>(null);
+  const [animationData, setAnimationData] = useState<object | null>(() => animationCache.get(src) ?? null);
+  const [hasError, setHasError] = useState(false);
 
-    // Initialize once
-    useEffect(() => {
-        mountedRef.current = true;
+  useEffect(() => {
+    let isActive = true;
 
-        if (!isReady) {
-            waitForLordIcon().then(() => {
-                if (mountedRef.current) {
-                    setIsReady(true);
-                }
-            });
+    const cachedAnimation = animationCache.get(src);
+    if (cachedAnimation) {
+      setAnimationData(cachedAnimation);
+      setHasError(false);
+      return () => {
+        isActive = false;
+      };
+    }
+
+    setAnimationData(null);
+    setHasError(false);
+
+    fetch(src, { cache: "force-cache" })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`Failed to load animation (${response.status})`);
+        }
+        return response.json();
+      })
+      .then((json: object) => {
+        if (!isActive) {
+          return;
         }
 
-        return () => {
-            mountedRef.current = false;
-        };
-    }, [isReady]); // Re-run if isReady changes
-
-    // Create or update lord-icon element
-    const updateIcon = useCallback(() => {
-        if (!containerRef.current || !isReady) return;
-
-        // Check if icon already exists
-        let lordIcon = containerRef.current.querySelector("lord-icon") as (HTMLElement & { setAttribute: (name: string, value: string) => void }) | null;
-
-        if (!lordIcon) {
-            // Create lord-icon element
-            const el = document.createElement("lord-icon");
-            lordIcon = el as unknown as (HTMLElement & { setAttribute: (name: string, value: string) => void });
-            containerRef.current.appendChild(el);
+        animationCache.set(src, json);
+        setAnimationData(json);
+      })
+      .catch((error) => {
+        console.error("LordIcon animation load failed:", error);
+        if (isActive) {
+          setHasError(true);
         }
+      });
 
-        if (!lordIcon) return; // Should not happen
+    return () => {
+      isActive = false;
+    };
+  }, [src]);
 
-        // Update attributes if they changed
-        if (lordIcon.getAttribute("src") !== src) lordIcon.setAttribute("src", src);
-        if (lordIcon.getAttribute("trigger") !== trigger) lordIcon.setAttribute("trigger", trigger);
-        if (lordIcon.getAttribute("stroke") !== stroke) lordIcon.setAttribute("stroke", stroke);
-        if (state && lordIcon.getAttribute("state") !== state) lordIcon.setAttribute("state", state);
-        if (colors && lordIcon.getAttribute("colors") !== colors) lordIcon.setAttribute("colors", colors);
+  const handleMouseEnter = () => {
+    if (trigger === "hover") {
+      lottieRef.current?.goToAndPlay(0, true);
+    }
+  };
 
-        lordIcon.style.width = `${size}px`;
-        lordIcon.style.height = `${size}px`;
-        lordIcon.style.display = "block";
-    }, [src, trigger, stroke, state, colors, size, isReady]);
+  const handleMouseLeave = () => {
+    if (trigger === "hover") {
+      lottieRef.current?.stop();
+    }
+  };
 
-    useEffect(() => {
-        updateIcon();
-    }, [updateIcon]);
+  const handleClick = () => {
+    if (trigger === "click") {
+      lottieRef.current?.goToAndPlay(0, true);
+    }
+  };
 
-    // Cleanup to prevent LordIcon player from accessing destroyed elements
-    useEffect(() => {
-        const currentContainer = containerRef.current;
-        return () => {
-            if (currentContainer) {
-                currentContainer.innerHTML = "";
-            }
-        };
-    }, []);
-
+  if (hasError) {
     return (
-        <div
-            ref={containerRef}
-            className={className}
-            style={{
-                width: size,
-                height: size,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center"
-            }}
-        />
+      <div
+        className={className}
+        style={{
+          width: size,
+          height: size,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <UserRound className="text-gray-500" style={{ width: size * 0.55, height: size * 0.55 }} />
+      </div>
     );
+  }
+
+  if (!animationData) {
+    return (
+      <div
+        className={className}
+        style={{
+          width: size,
+          height: size,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <div
+          className="animate-pulse rounded-full bg-gray-200/80"
+          style={{ width: size * 0.8, height: size * 0.8 }}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={className}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onClick={handleClick}
+      style={{
+        width: size,
+        height: size,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Lottie
+        lottieRef={lottieRef}
+        animationData={animationData}
+        loop={!isInteractiveTrigger(trigger)}
+        autoplay={!isInteractiveTrigger(trigger)}
+        className="w-full h-full pointer-events-none"
+      />
+    </div>
+  );
 });

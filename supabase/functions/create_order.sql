@@ -187,9 +187,13 @@ BEGIN
     );
 
 EXCEPTION WHEN OTHERS THEN
+    RAISE LOG 'create_order failed for user %, payment_method %, error %',
+        COALESCE(v_user_id::text, 'anonymous'),
+        COALESCE(p_payment_method, 'unknown'),
+        SQLERRM;
     RETURN jsonb_build_object(
         'success', false, 
-        'message', 'Bir hata oluştu: ' || SQLERRM
+        'message', 'Sipariş oluşturulurken beklenmeyen bir hata oluştu. Lütfen tekrar deneyiniz.'
     );
 END;
 $$;

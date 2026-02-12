@@ -399,15 +399,14 @@ function AdminOrderDetailContent() {
                                 disabled={
                                     isUpdatingStatus ||
                                     order.status === "cancelled" ||
-                                    index < currentStatusIndex ||
+                                    index <= currentStatusIndex ||
                                     (order.payment_status !== "paid" && status !== "pending" && status !== "cancelled")
                                 }
-                                className={`flex flex-col items-center gap-2 relative z-10 ${isUpdatingStatus ||
-                                    order.status === "cancelled" ||
-                                    index < currentStatusIndex ||
-                                    (order.payment_status !== "paid" && status !== "pending" && status !== "cancelled")
-                                    ? "opacity-60 cursor-not-allowed"
-                                    : "cursor-pointer hover:scale-105 transition-transform"
+                                className={`flex flex-col items-center gap-2 relative z-10 ${isCurrent
+                                    ? "cursor-default"
+                                    : (isUpdatingStatus || order.status === "cancelled" || index < currentStatusIndex || (order.payment_status !== "paid" && status !== "pending" && status !== "cancelled"))
+                                        ? "opacity-60 cursor-not-allowed"
+                                        : "cursor-pointer hover:scale-105 transition-transform"
                                     }`}
                             >
                                 <motion.div
@@ -470,19 +469,19 @@ function AdminOrderDetailContent() {
                                 <span>₺{order.order_details?.subtotal?.toLocaleString("tr-TR")}</span>
                             </div>
 
-                            {order.order_details?.discount && order.order_details.discount > 0 && (
+                            {order.order_details?.discount ? order.order_details.discount > 0 && (
                                 <div className="flex justify-between text-green-600">
                                     <span>İndirim {order.order_details.promo_code ? `(${order.order_details.promo_code})` : ''}</span>
                                     <span>-₺{order.order_details.discount.toLocaleString("tr-TR")}</span>
                                 </div>
-                            )}
+                            ) : null}
 
-                            {order.order_details?.shipping_cost && order.order_details.shipping_cost > 0 && (
+                            {order.order_details?.shipping_cost ? order.order_details.shipping_cost > 0 && (
                                 <div className={`flex justify-between ${textSecondary}`}>
                                     <span>Kargo Ücreti</span>
                                     <span>₺{order.order_details.shipping_cost.toLocaleString("tr-TR")}</span>
                                 </div>
-                            )}
+                            ) : null}
 
                             <div className={`flex justify-between ${textSecondary}`}>
                                 <span>KDV</span>

@@ -1,153 +1,185 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const ALLOWED_ORIGINS = [
-    'https://bravita.com.tr',
-    'https://www.bravita.com.tr',
+    "https://bravita.com.tr",
+    "https://www.bravita.com.tr",
 ];
 
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const BILLIONMAIL_API_URL = Deno.env.get("BILLIONMAIL_API_URL");
+const BILLIONMAIL_API_KEY = Deno.env.get("BILLIONMAIL_API_KEY");
+
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
+const RATE_LIMIT_MAX_REQUESTS = 5;
+
 function getCorsHeaders(req: Request) {
-    const origin = req.headers.get('Origin') || '';
+    const origin = req.headers.get("Origin") || "";
     const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
     return {
-        'Access-Control-Allow-Origin': allowedOrigin,
-        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        "Access-Control-Allow-Origin": allowedOrigin,
+        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
     };
 }
 
+function jsonResponse(req: Request, payload: unknown, status: number) {
+    return new Response(JSON.stringify(payload), {
+        status,
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+    });
+}
+
+function normalizeEmail(value: unknown): string | null {
+    if (typeof value !== "string") return null;
+    const normalized = value.trim().toLowerCase();
+    if (!normalized || !normalized.includes("@")) return null;
+    return normalized;
+}
+
 serve(async (req: Request) => {
-    if (req.method === 'OPTIONS') {
-        return new Response('ok', { headers: getCorsHeaders(req) })
+    if (req.method === "OPTIONS") {
+        return new Response("ok", { headers: getCorsHeaders(req) });
+    }
+
+    if (req.method !== "POST") {
+        return jsonResponse(req, { success: false, error: "Method not allowed" }, 405);
     }
 
     try {
-        const body = await req.json();
-        const { contact } = body;
-
-        const BILLIONMAIL_API_URL = Deno.env.get('BILLIONMAIL_API_URL')
-        const BILLIONMAIL_API_KEY = Deno.env.get('BILLIONMAIL_API_KEY')
-
-        if (!BILLIONMAIL_API_URL || !BILLIONMAIL_API_KEY) {
-            console.error("Configuration Missing in Supabase Secrets");
-            return new Response(JSON.stringify({
-                success: false,
-                error: 'Server Configuration Error'
-            }), {
-                status: 200,
-                headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' }
-            })
+        if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !BILLIONMAIL_API_URL || !BILLIONMAIL_API_KEY) {
+            console.error("Missing required environment variables for sync-to-billionmail");
+            return jsonResponse(req, { success: false, error: "Server configuration error" }, 500);
         }
+
+        const authHeader = req.headers.get("Authorization");
+        if (!authHeader?.startsWith("Bearer ")) {
+            return jsonResponse(req, { success: false, error: "Unauthorized" }, 401);
+        }
+
+        const authToken = authHeader.replace("Bearer ", "");
+        const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+        const { data: authData, error: authError } = await supabase.auth.getUser(authToken);
+
+        if (authError || !authData?.user) {
+            return jsonResponse(req, { success: false, error: "Unauthorized" }, 401);
+        }
+
+        const user = authData.user;
+        const userEmail = normalizeEmail(user.email);
+        if (!userEmail) {
+            return jsonResponse(req, { success: false, error: "User email is missing" }, 400);
+        }
+
+        let body: { contact?: { email?: string } };
+        try {
+            body = await req.json();
+        } catch {
+            return jsonResponse(req, { success: false, error: "Invalid JSON body" }, 400);
+        }
+
+        const contactEmail = normalizeEmail(body?.contact?.email);
+        if (!contactEmail) {
+            return jsonResponse(req, { success: false, error: "contact.email is required" }, 400);
+        }
+
+        // Prevent syncing arbitrary third-party emails from the client
+        if (contactEmail !== userEmail) {
+            return jsonResponse(req, { success: false, error: "Forbidden" }, 403);
+        }
+
+        // Server-side rate limit per user
+        const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString();
+        const { data: recentAttempts, error: rateLimitError } = await supabase
+            .from("integration_rate_limits")
+            .select("id")
+            .eq("integration_name", "billionmail")
+            .eq("action", "sync_contact")
+            .eq("actor_id", user.id)
+            .gt("created_at", windowStart)
+            .limit(RATE_LIMIT_MAX_REQUESTS);
+
+        if (rateLimitError) {
+            console.error("Rate limit lookup error:", rateLimitError.message);
+        }
+
+        if (recentAttempts && recentAttempts.length >= RATE_LIMIT_MAX_REQUESTS) {
+            return jsonResponse(req, { success: false, error: "Too many requests, try again later" }, 429);
+        }
+
+        await supabase.from("integration_rate_limits").insert({
+            integration_name: "billionmail",
+            action: "sync_contact",
+            actor_id: user.id,
+            actor_email: userEmail,
+        });
 
         const headers = {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${BILLIONMAIL_API_KEY}`,
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${BILLIONMAIL_API_KEY}`,
+        };
+
+        // 1. Find target group
+        const searchUrl = `${BILLIONMAIL_API_URL}/contact/group/all?keyword=Smarter_Signup`;
+        const groupsResponse = await fetch(searchUrl, { headers });
+        if (!groupsResponse.ok) {
+            return jsonResponse(req, { success: false, error: "External API error (group lookup)" }, 502);
         }
 
-        // 1. Get Group ID
-        console.log("Searching Group: Smarter_Signup...");
-        const searchUrl = `${BILLIONMAIL_API_URL}/contact/group/all?keyword=Smarter_Signup`;
-
-        const groupsResponse = await fetch(searchUrl, { headers })
         const groupsText = await groupsResponse.text();
-
-        let groupsData;
+        let groupsData: any;
         try {
             groupsData = JSON.parse(groupsText);
-        } catch (e) {
-            console.error("Invalid JSON from Group Search:", groupsText);
-            return new Response(JSON.stringify({
-                success: false,
-                error: "External API Error (Invalid JSON)"
-            }), {
-                status: 200,
-                headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' }
-            })
+        } catch {
+            return jsonResponse(req, { success: false, error: "External API invalid JSON (group lookup)" }, 502);
         }
 
-        if (groupsData.success === false) { // Check explicit false, sometimes it's omitted
-            console.error("API Logic Error (Group Search):", groupsData);
-            return new Response(JSON.stringify({
-                success: false,
-                error: `API Error: ${groupsData.msg || 'Unknown'}`
-            }), {
-                status: 200,
-                headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' }
-            })
+        if (groupsData.success === false) {
+            return jsonResponse(req, { success: false, error: "External API rejected group lookup" }, 502);
         }
 
-        // Safe Access
         const groupList = (groupsData.data?.list || []) as Array<{ id: string; name: string }>;
-        const group = groupList.find((g) => g.name === 'Smarter_Signup');
-
+        const group = groupList.find((g) => g.name === "Smarter_Signup");
         if (!group) {
-            console.error("Group Not Found. Available:", groupList.map((g) => g.name));
-            return new Response(JSON.stringify({
-                success: false,
-                error: `Group 'Smarter_Signup' configuration missing in BillionMail`
-            }), {
-                status: 200,
-                headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' }
-            })
+            return jsonResponse(req, { success: false, error: "BillionMail target group not found" }, 502);
         }
 
-        // 2. Import Contact
+        // 2. Import contact
         const importPayload = {
             group_ids: [group.id],
-            contacts: contact.email,
+            contacts: contactEmail,
             import_type: 2,
             default_active: 1,
             status: 1,
-            overwrite: 1
+            overwrite: 1,
         };
 
-        const response = await fetch(`${BILLIONMAIL_API_URL}/contact/group/import`, {
-            method: 'POST',
+        const importResponse = await fetch(`${BILLIONMAIL_API_URL}/contact/group/import`, {
+            method: "POST",
             headers,
             body: JSON.stringify(importPayload),
-        })
+        });
 
-        const importText = await response.text();
-        let importData;
+        if (!importResponse.ok) {
+            return jsonResponse(req, { success: false, error: "External API error (contact import)" }, 502);
+        }
 
+        const importText = await importResponse.text();
+        let importData: any;
         try {
             importData = JSON.parse(importText);
-        } catch (e) {
-            console.error("Invalid JSON from Import:", importText);
-            return new Response(JSON.stringify({
-                success: false,
-                error: "External API Error (Import Invalid JSON)"
-            }), {
-                status: 200,
-                headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' }
-            })
+        } catch {
+            return jsonResponse(req, { success: false, error: "External API invalid JSON (contact import)" }, 502);
         }
 
         if (importData.success === false) {
-            console.error("API Logic Error (Import):", importData);
-            return new Response(JSON.stringify({
-                success: false,
-                error: `Import Failed: ${importData.msg || 'Unknown'}`
-            }), {
-                status: 200,
-                headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' }
-            })
+            return jsonResponse(req, { success: false, error: "External API rejected contact import" }, 502);
         }
 
-        // Success!
-        console.log("Import Successful:", importData);
-        return new Response(JSON.stringify({ success: true, data: importData }), {
-            headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
-            status: 200,
-        })
-
+        return jsonResponse(req, { success: true }, 200);
     } catch (error: unknown) {
-        console.error("Unhandled Exception:", error);
-        return new Response(JSON.stringify({
-            success: false,
-            error: "Internal Server Error" // Generic user-facing message
-        }), {
-            headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
-            status: 200,
-        })
+        console.error("Unhandled exception in sync-to-billionmail:", error);
+        return jsonResponse(req, { success: false, error: "Internal server error" }, 500);
     }
-})
+});

@@ -14,15 +14,43 @@ const ALLOWED_ORIGINS = [
     'http://localhost:8080',
 ];
 
+const SUPPORT_EMAIL_TYPES = new Set([
+    "ticket_created",
+    "ticket_replied",
+    "ticket_closed",
+    "user_replied",
+] as const);
+
+type SupportEmailType = "ticket_created" | "ticket_replied" | "ticket_closed" | "user_replied";
+
+function isAllowedOrigin(origin: string): boolean {
+    if (!origin) return false;
+    if (ALLOWED_ORIGINS.includes(origin)) return true;
+
+    try {
+        const parsedOrigin = new URL(origin);
+        const hostname = parsedOrigin.hostname.toLowerCase();
+        const isLocalHost = hostname === "localhost" || hostname === "127.0.0.1";
+        const isHttpProtocol = parsedOrigin.protocol === "http:" || parsedOrigin.protocol === "https:";
+        return isLocalHost && isHttpProtocol;
+    } catch {
+        return false;
+    }
+}
+
+function isAllowedSupportEmailType(value: string): value is SupportEmailType {
+    return SUPPORT_EMAIL_TYPES.has(value as SupportEmailType);
+}
+
 function getCorsHeaders(req: Request) {
     const origin = req.headers.get('Origin') || '';
-    const isLocalhost = origin.includes('localhost') || origin.includes('127.0.0.1');
-    const allowedOrigin = (isLocalhost || ALLOWED_ORIGINS.includes(origin)) ? origin : ALLOWED_ORIGINS[0];
+    const allowedOrigin = isAllowedOrigin(origin) ? origin : ALLOWED_ORIGINS[0];
 
     return {
         "Access-Control-Allow-Origin": allowedOrigin,
         "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-bravita-secret",
         "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+        "Vary": "Origin",
     };
 }
 
@@ -94,9 +122,29 @@ async function validateSignature(id: string, token: string) {
     return expected === token;
 }
 
+function escapeHtml(value: string): string {
+    return String(value).replace(/[&<>"']/g, (char) => {
+        const entityMap: Record<string, string> = {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;",
+        };
+        return entityMap[char] ?? char;
+    });
+}
+
 serve(async (req: Request) => {
     if (req.method === "OPTIONS") {
         return new Response("ok", { headers: getCorsHeaders(req) });
+    }
+
+    if (req.method !== "GET" && req.method !== "POST") {
+        return new Response(JSON.stringify({ error: "Method not allowed" }), {
+            headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+            status: 405,
+        });
     }
 
     try {
@@ -111,11 +159,15 @@ serve(async (req: Request) => {
         if (req.method === "GET") {
             const ticket_id = url.searchParams.get("id");
             const token = url.searchParams.get("token");
-            const type = (url.searchParams.get("type") || "ticket_created") as any;
+            const requestedType = url.searchParams.get("type") || "ticket_created";
 
             if (!ticket_id || !token) {
                 return new Response("Geçersiz istek.", { status: 400 });
             }
+            if (!isAllowedSupportEmailType(requestedType)) {
+                return new Response("Geçersiz istek.", { status: 400 });
+            }
+            const type: SupportEmailType = requestedType;
 
             // Secure validation
             const isValid = await validateSignature(ticket_id, token);
@@ -152,19 +204,24 @@ serve(async (req: Request) => {
         // --- SEND EMAIL (POST) ---
         const body = await req.json();
         const { ticket_id, type, captchaToken } = body;
+        const requestedType = String(type || "ticket_created");
 
-        console.log(`[POST] Request received: type=${type}, ticket_id=${ticket_id}`);
+        console.log(`[POST] Request received: type=${requestedType}, ticket_id=${ticket_id}`);
         const authHeader = req.headers.get("Authorization");
-        console.log(`Authorization header present: ${!!authHeader}`);
 
         if (!ticket_id) {
             console.error("Missing ticket_id in request body");
             throw new Error("Ticket ID is required");
         }
 
+        if (!isAllowedSupportEmailType(requestedType)) {
+            throw new Error("Invalid notification type");
+        }
+        const normalizedType: SupportEmailType = requestedType;
+
         // 0. Authorization Context
         let isAdmin = false;
-        let requestingUserId = null;
+        let requestingUserId: string | null = null;
 
         if (authHeader && authHeader !== "Bearer anon") {
             try {
@@ -176,7 +233,6 @@ serve(async (req: Request) => {
                 } else {
                     const requestingUser = authData?.user;
                     requestingUserId = requestingUser?.id || null;
-                    console.log(`Requesting user ID: ${requestingUserId}`);
 
                     if (requestingUserId) {
                         const { data: profile, error: profileError } = await supabase
@@ -189,44 +245,15 @@ serve(async (req: Request) => {
                             console.error("Error fetching profile:", profileError.message);
                         } else {
                             isAdmin = !!(profile?.is_admin || profile?.is_superadmin);
-                            console.log(`Admin status for ${requestingUserId}: ${isAdmin}`);
                         }
                     }
                 }
             } catch (authCatch) {
                 console.error("Catch in auth logic:", authCatch);
             }
-        } else {
-            console.log("No valid Auth header, treating as guest");
         }
 
-        // 1. Only allow admins to send 'replied' or 'closed' notifications
-        if ((type === "ticket_replied" || type === "ticket_closed") && !isAdmin) {
-            console.error(`Forbidden: isAdmin=${isAdmin}, UserId=${requestingUserId}, Type=${type}`);
-            throw new Error("Forbidden: Admin access required for this action");
-        }
-
-        // 2. CAPTCHA Validation for guest ticket creation
-        if (type === "ticket_created" && !isAdmin) {
-            const hCaptchaSecret = Deno.env.get("HCAPTCHA_SECRET_KEY");
-            if (hCaptchaSecret) {
-                if (!captchaToken) throw new Error("Captcha token is required for guest submission");
-
-                const verifyRes = await fetch("https://hcaptcha.com/siteverify", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                    body: `response=${captchaToken}&secret=${hCaptchaSecret}`
-                });
-                const verifyData = await verifyRes.json();
-                if (!verifyData.success) {
-                    throw new Error("Invalid Captcha Token");
-                }
-            }
-        }
-
-        const SUPPORT_EMAIL = Deno.env.get("SUPPORT_EMAIL_NOTIFY") || "support@bravita.com.tr";
-
-        // 3. Get Ticket Data
+        // 1. Get Ticket Data early for ownership checks
         const { data: ticket, error: ticketError } = await supabase
             .from("support_tickets")
             .select("*")
@@ -238,21 +265,57 @@ serve(async (req: Request) => {
             throw new Error(`Ticket not found: ${ticket_id}`);
         }
 
+        // 2. Authorization matrix by action type
+        if ((normalizedType === "ticket_replied" || normalizedType === "ticket_closed") && !isAdmin) {
+            throw new Error("Forbidden: Admin access required for this action");
+        }
+
+        if (normalizedType === "user_replied") {
+            if (!requestingUserId) {
+                throw new Error("Unauthorized");
+            }
+            const isOwner = ticket.user_id && ticket.user_id === requestingUserId;
+            if (!isOwner && !isAdmin) {
+                throw new Error("Forbidden: Ticket ownership required");
+            }
+        }
+
+        // 3. CAPTCHA validation (fail-close) for non-admin ticket creation flow
+        if (normalizedType === "ticket_created" && !isAdmin) {
+            const hCaptchaSecret = Deno.env.get("HCAPTCHA_SECRET_KEY");
+            if (!hCaptchaSecret) {
+                throw new Error("Server configuration error: captcha secret missing");
+            }
+            if (!captchaToken) {
+                throw new Error("Captcha token is required for guest submission");
+            }
+
+            const verifyRes = await fetch("https://hcaptcha.com/siteverify", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: `response=${captchaToken}&secret=${hCaptchaSecret}`
+            });
+            const verifyData = await verifyRes.json();
+            if (!verifyData.success) {
+                throw new Error("Invalid Captcha Token");
+            }
+        }
+
+        const SUPPORT_EMAIL = Deno.env.get("SUPPORT_EMAIL_NOTIFY") || "support@bravita.com.tr";
+
         // 4. Prepare Email Content
         const signature = await generateSignature(ticket_id);
-        const browserLink = `${url.origin}/functions/v1/send-support-email?id=${ticket_id}&token=${signature}&type=${type}`;
-        const { subject, html, text, to, fromEmail } = await prepareSupportEmail(supabase, ticket, type, browserLink, SUPPORT_EMAIL);
+        const browserLink = `${url.origin}/functions/v1/send-support-email?id=${ticket_id}&token=${signature}&type=${normalizedType}`;
+        const { subject, html, text, to, fromEmail } = await prepareSupportEmail(supabase, ticket, normalizedType, browserLink, SUPPORT_EMAIL);
 
         const resendPayload = {
             from: fromEmail,
             to: to,
-            reply_to: type === "ticket_replied" ? SUPPORT_EMAIL : ticket.email,
+            reply_to: normalizedType === "ticket_replied" ? SUPPORT_EMAIL : ticket.email,
             subject: subject,
             html: html,
             text: text,
         };
-
-        console.log("Resend Payload:", JSON.stringify(resendPayload));
 
         // 5. Send via Resend
         const res = await fetch("https://api.resend.com/emails", {
@@ -277,10 +340,26 @@ serve(async (req: Request) => {
         });
 
     } catch (error: any) {
-        console.error("Function error:", error.message);
-        return new Response(JSON.stringify({ error: error.message }), {
+        const errorMessage = error?.message || "Unknown error";
+        console.error("Function error:", errorMessage);
+
+        const status =
+            errorMessage === "Unauthorized"
+                ? 401
+                : (errorMessage.includes("Forbidden")
+                    ? 403
+                    : (errorMessage.includes("Server configuration error") ? 500 : 400));
+
+        const clientError =
+            status === 401
+                ? "Yetkisiz erişim."
+                : (status === 403
+                    ? "Bu işlem için yetkiniz yok."
+                    : (status === 500 ? "Sunucu yapılandırma hatası." : "İstek işlenemedi."));
+
+        return new Response(JSON.stringify({ error: clientError }), {
             headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
-            status: error.message === "Unauthorized" ? 401 : (error.message.includes("Forbidden") ? 403 : 400),
+            status,
         });
     }
 });
@@ -293,7 +372,8 @@ async function prepareSupportEmail(supabase: any, ticket: any, type: string, bro
     const slugMap: Record<string, string> = {
         "ticket_created": "support_ticket",
         "ticket_replied": "support_ticket_replied",
-        "ticket_closed": "support_ticket_closed"
+        "ticket_closed": "support_ticket_closed",
+        "user_replied": "support_ticket"
     };
 
     // Use type directly if not in map, or default to support_ticket_replied
@@ -318,13 +398,13 @@ async function prepareSupportEmail(supabase: any, ticket: any, type: string, bro
 
     // 3. Prepare Variables
     const variables: Record<string, string> = {
-        "NAME": ticket.name || "Müşteri",
-        "EMAIL": ticket.email,
-        "SUBJECT": ticket.subject || "Destek Talebi",
+        "NAME": escapeHtml(ticket.name || "Müşteri"),
+        "EMAIL": escapeHtml(ticket.email || ""),
+        "SUBJECT": escapeHtml(ticket.subject || "Destek Talebi"),
         "TICKET_ID": ticket.id.substring(0, 8).toUpperCase(),
-        "CATEGORY": ticket.category || "Genel",
-        "USER_MESSAGE": ticket.message || "",
-        "ADMIN_REPLY": ticket.admin_reply || "",
+        "CATEGORY": escapeHtml(ticket.category || "Genel"),
+        "USER_MESSAGE": escapeHtml(ticket.message || ""),
+        "ADMIN_REPLY": escapeHtml(ticket.admin_reply || ""),
         "BROWSER_LINK": browserLink || "#"
     };
 
@@ -343,7 +423,7 @@ async function prepareSupportEmail(supabase: any, ticket: any, type: string, bro
     });
 
     // 4. Set recipient and sender
-    const to = (type === "ticket_created") ? [supportEmail] : [ticket.email];
+    const to = (type === "ticket_created" || type === "user_replied") ? [supportEmail] : [ticket.email];
 
     const fromName = config?.sender_name || (type === "ticket_created" ? "Bravita Sistem" : "Bravita Destek");
     const fromEmail = config?.sender_email || (type === "ticket_created" ? "noreply@bravita.com.tr" : "support@bravita.com.tr");

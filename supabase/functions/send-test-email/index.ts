@@ -14,15 +14,30 @@ const ALLOWED_ORIGINS = [
     'http://localhost:8080',
 ];
 
+function isAllowedOrigin(origin: string): boolean {
+    if (!origin) return false;
+    if (ALLOWED_ORIGINS.includes(origin)) return true;
+
+    try {
+        const parsedOrigin = new URL(origin);
+        const hostname = parsedOrigin.hostname.toLowerCase();
+        const isLocalHost = hostname === "localhost" || hostname === "127.0.0.1";
+        const isHttpProtocol = parsedOrigin.protocol === "http:" || parsedOrigin.protocol === "https:";
+        return isLocalHost && isHttpProtocol;
+    } catch {
+        return false;
+    }
+}
+
 function getCorsHeaders(req: Request) {
     const origin = req.headers.get('Origin') || '';
-    const isLocalhost = origin.includes('localhost') || origin.includes('127.0.0.1');
-    const allowedOrigin = (isLocalhost || ALLOWED_ORIGINS.includes(origin)) ? origin : ALLOWED_ORIGINS[0];
+    const allowedOrigin = isAllowedOrigin(origin) ? origin : ALLOWED_ORIGINS[0];
 
     return {
         "Access-Control-Allow-Origin": allowedOrigin,
         "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
         "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+        "Vary": "Origin",
     };
 }
 
@@ -31,7 +46,18 @@ serve(async (req: Request) => {
         return new Response("ok", { headers: getCorsHeaders(req) });
     }
 
+    if (req.method !== "POST") {
+        return new Response(JSON.stringify({ error: "Method not allowed" }), {
+            headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+            status: 405,
+        });
+    }
+
     try {
+        if (!RESEND_API_KEY) {
+            throw new Error("Server configuration error: Missing RESEND_API_KEY");
+        }
+
         const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
         // 1. Verify Admin
@@ -124,9 +150,15 @@ serve(async (req: Request) => {
         });
 
     } catch (error: any) {
-        return new Response(JSON.stringify({ error: error.message }), {
+        const errorMessage = error?.message || "Unknown error";
+        const status = errorMessage === "Unauthorized" ? 401 : (errorMessage.includes("Forbidden") ? 403 : 400);
+        const clientError = status === 401
+            ? "Yetkisiz erişim."
+            : (status === 403 ? "Bu işlem için yetkiniz yok." : "İstek işlenemedi.");
+
+        return new Response(JSON.stringify({ error: clientError }), {
             headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
-            status: error.message === "Unauthorized" ? 401 : 400,
+            status,
         });
     }
 });

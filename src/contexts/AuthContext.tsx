@@ -1,8 +1,9 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useRef } from "react";
 import { Session } from "@supabase/supabase-js";
-import { supabase, UserProfile, getSessionSafe } from "@/lib/supabase";
+import { supabase, UserProfile } from "@/lib/supabase";
 import { billionMail } from "@/lib/billionmail";
+import { isBffAuthEnabled, refreshBffSession, restoreBffSession } from "@/lib/bffAuth";
 
 declare global {
   interface Window {
@@ -27,26 +28,24 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const bffAuthEnabled = isBffAuthEnabled();
+
   // Try to get initial session from localStorage immediately (synchronous)
   const getInitialSession = () => {
+    if (bffAuthEnabled) {
+      return null;
+    }
+
     try {
-      // Supabase stores session in localStorage with key format: sb-{project-ref}-auth-token
-      // Extract project ref from VITE_SUPABASE_URL
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      if (!supabaseUrl) return null;
-
-      const urlMatch = supabaseUrl.match(/https:\/\/([^.]+)\.supabase\.co/);
-      if (!urlMatch) return null;
-
-      const projectRef = urlMatch[1];
-      const storageKey = `sb-${projectRef}-auth-token`;
-
-      const storedSession = localStorage.getItem(storageKey);
-      if (storedSession) {
-        const parsed = JSON.parse(storedSession);
-        // Supabase stores the session in a nested structure
-        return parsed as Session | null;
+      const storageKey = "bravita-session-token";
+      const storedSession = sessionStorage.getItem(storageKey) ?? localStorage.getItem(storageKey);
+      if (!storedSession) {
+        return null;
       }
+
+      const parsed = JSON.parse(storedSession);
+      const candidateSession = parsed?.currentSession ?? parsed?.session ?? parsed;
+      return (candidateSession as Session | null) ?? null;
     } catch (e) {
       console.error("Initial session error:", e);
     }
@@ -56,9 +55,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const getInitialUser = (session: Session | null) => {
     if (!session?.user) return null;
 
-    // Check for admin/superadmin status in session metadata (securely signed by Supabase)
-    const isAdminFromMetadata = !!session.user.app_metadata?.is_admin || !!session.user.user_metadata?.is_admin;
-    const isSuperAdminFromMetadata = !!session.user.app_metadata?.is_superadmin || !!session.user.user_metadata?.is_superadmin;
+    // Trust only signed app_metadata for privilege hints.
+    const isAdminFromMetadata = !!session.user.app_metadata?.is_admin;
+    const isSuperAdminFromMetadata = !!session.user.app_metadata?.is_superadmin;
 
     // Create a minimal stub user - will be replaced by actual profile from DB
     return {
@@ -164,6 +163,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshSession = useCallback(async () => {
     try {
+      if (bffAuthEnabled) {
+        const bffSession = await refreshBffSession();
+        if (!bffSession?.access_token || !bffSession?.refresh_token) {
+          setSession(null);
+          setUserDebug(null);
+          return;
+        }
+
+        const { data, error } = await supabase.auth.setSession({
+          access_token: bffSession.access_token,
+          refresh_token: bffSession.refresh_token,
+        });
+
+        if (error) {
+          throw error;
+        }
+
+        setSession(data.session);
+        return;
+      }
+
       const {
         data: { session: newSession },
       } = await supabase.auth.refreshSession();
@@ -171,7 +191,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error("Refresh session error:", error);
     }
-  }, []);
+  }, [bffAuthEnabled, setUserDebug]);
 
   const syncPendingProfile = useCallback(async (userId: string, profileData: { full_name?: string; phone?: string; street?: string; city?: string; postal_code?: string }) => {
     // Singleton guard to prevent duplicate syncs
@@ -379,13 +399,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Auto-complete stub if we've seen this user complete their profile before
         const knownComplete = localStorage.getItem("profile_known_complete") === "true";
-        if (initialStub) {
-          if (knownComplete) {
-            initialStub.profile_complete = true;
-          } else {
-            // Fail-open for new logins too to prevent stuck states
-            initialStub.profile_complete = true;
-          }
+        if (initialStub && knownComplete) {
+          initialStub.profile_complete = true;
         }
 
         setUserDebug(initialStub);
@@ -490,6 +505,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
+    if (bffAuthEnabled) {
+      // BFF mode keeps refresh token in httpOnly cookie and restores an in-memory Supabase session on load.
+      void (async () => {
+        try {
+          const bffSession = await restoreBffSession();
+          if (!mounted || !bffSession?.access_token || !bffSession?.refresh_token) {
+            return;
+          }
+
+          const { error } = await supabase.auth.setSession({
+            access_token: bffSession.access_token,
+            refresh_token: bffSession.refresh_token,
+          });
+
+          if (error) {
+            console.warn("BFF bootstrap session apply failed:", error);
+          }
+        } catch (error) {
+          console.warn("BFF bootstrap skipped:", error);
+        }
+      })();
+    }
+
     const safetyTimer = setTimeout(() => {
       if (mounted && isSplashScreenActiveRef.current) {
         // Session loading took too long, close splash screen anyway
@@ -545,6 +583,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Run only on mount
+
+  const activeUserId = session?.user?.id;
+
+  useEffect(() => {
+    if (!bffAuthEnabled || !activeUserId) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      void refreshSession();
+    }, 10 * 60 * 1000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [bffAuthEnabled, activeUserId, refreshSession]);
 
   const value: AuthContextType = {
     session,
