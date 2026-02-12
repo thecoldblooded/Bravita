@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import loginVideo from "@/assets/login.mp4";
+import loginVideo from "@/assets/optimized/login-compressed.mp4";
 import logoImg from "@/assets/bravita-logo.webp";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";

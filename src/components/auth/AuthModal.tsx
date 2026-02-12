@@ -2,7 +2,7 @@ import { useState } from "react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
-import loginVideo from "@/assets/login.mp4";
+import loginVideo from "@/assets/optimized/login-compressed.mp4";
 import bravitaLogo from "@/assets/bravita-logo.png";
 import {
   Dialog,

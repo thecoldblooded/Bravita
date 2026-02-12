@@ -91,7 +91,21 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       chunkSizeWarningLimit: 10000,
+      // Improved code splitting for better caching
       rollupOptions: {
+        output: {
+          manualChunks: {
+            // Core vendor libraries
+            "vendor-core": ["react", "react-dom", "react-router-dom"],
+            // UI libraries  
+            "vendor-ui": ["@radix-ui/react-dialog", "@radix-ui/react-dropdown-menu", "@radix-ui/react-select"],
+            // Heavy dependencies
+            "vendor-charts": ["recharts"],
+            "vendor-animation": ["gsap", "framer-motion", "motion"],
+            // External integrations
+            "vendor-external": ["@supabase/supabase-js", "@hcaptcha/react-hcaptcha"],
+          },
+        },
         onwarn(warning, warn) {
           const warningMessage = typeof warning === "string" ? warning : warning.message;
           const warningCode = typeof warning === "string" ? "" : warning.code;

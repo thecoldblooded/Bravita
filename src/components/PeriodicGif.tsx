@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 
 interface PeriodicGifProps {
   gifSrc: string;
+  videoSrc?: string; // Optional optimized video (MP4 H.265)
   intervalMs?: number; // Default: 60000 (1 minute)
   initialDelayMs?: number;
   alt?: string;
@@ -10,12 +11,17 @@ interface PeriodicGifProps {
 
 const PeriodicGif = ({
   gifSrc,
+  videoSrc,
   intervalMs = 60000, // 1 minute
   initialDelayMs,
   alt = "Periodic animation",
 }: PeriodicGifProps) => {
   const [isVisible, setIsVisible] = useState(false);
   const DISPLAY_DURATION = 8000; // Fixed 8 seconds
+  const videoRef = useCallback((ref: HTMLVideoElement | null) => {
+    if (ref) ref.muted = true;
+  }, []);
+
   useEffect(() => {
     let hideTimeout: ReturnType<typeof setTimeout> | undefined;
     let intervalTimeout: ReturnType<typeof setTimeout> | undefined;
@@ -45,22 +51,51 @@ const PeriodicGif = ({
       className={`fixed bottom-24 left-0 z-90 pointer-events-none transition-opacity duration-500 md:bottom-20 md:left-0 ${isVisible ? "opacity-100" : "opacity-0"}`}
       aria-hidden={!isVisible}
     >
-      <img
-        src={gifSrc}
-        alt={alt}
-        loading="eager"
-        decoding="sync"
-        className="
-          w-24 h-24
-          sm:w-32 sm:h-32
-          md:w-36 md:h-36
-          lg:w-40 lg:h-40
-          object-contain object-left
-          -translate-x-[30%] sm:-translate-x-[32%] md:-translate-x-[34%] lg:-translate-x-[36%]
-          transition-transform duration-300
-          will-change-transform
-        "
-      />
+      {videoSrc ? (
+        <video
+          ref={videoRef}
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="
+            w-24 h-24
+            sm:w-32 sm:h-32
+            md:w-36 md:h-36
+            lg:w-40 lg:h-40
+            object-contain object-left
+            translate-x-0
+            transition-transform duration-300
+            will-change-transform
+          "
+        >
+          <source src={videoSrc} type="video/mp4" />
+          <img
+            src={gifSrc}
+            alt={alt}
+            loading="eager"
+            decoding="sync"
+            className="w-full h-full"
+          />
+        </video>
+      ) : (
+        <img
+          src={gifSrc}
+          alt={alt}
+          loading="eager"
+          decoding="sync"
+          className="
+            w-24 h-24
+            sm:w-32 sm:h-32
+            md:w-36 md:h-36
+            lg:w-40 lg:h-40
+            object-contain object-left
+            translate-x-0
+            transition-transform duration-300
+            will-change-transform
+          "
+        />
+      )}
     </div>
   );
 };

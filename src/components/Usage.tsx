@@ -2,7 +2,7 @@ import { Clock, Thermometer, AlertTriangle, Baby } from "lucide-react";
 import HeroScrollVideo from "@/components/ui/scroll-animated-video";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTranslation } from "react-i18next";
-import usageVideo from "@/assets/Generated video 1.mp4";
+import usageVideo from "@/assets/optimized/Generated video 1-compressed.mp4";
 
 // Keep as a static import so Vite resolves a valid production/dev URL.
 
