@@ -36,3 +36,6 @@ bravita_prd.md
 checklist_full.txt
 code_summary.json
 lint_output.txt
+
+# Temporary Supabase migration workspace
+.tmp-supabase-migrate/
