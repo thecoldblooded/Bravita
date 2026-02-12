@@ -39,3 +39,7 @@ lint_output.txt
 
 # Temporary Supabase migration workspace
 .tmp-supabase-migrate/
+
+# Temporary files
+.tmp/
+.tmp-lighthouse-desktop.json
