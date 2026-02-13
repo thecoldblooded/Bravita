@@ -123,7 +123,15 @@ const Header = () => {
         .filter((item) => item.id !== "home")
         .map((item) => {
           const sectionElement = document.getElementById(item.id);
-          return sectionElement ? { id: item.id, top: sectionElement.offsetTop } : null;
+          if (!sectionElement) return null;
+          // Calculate absolute offset by walking offsetParents
+          let top = sectionElement.offsetTop;
+          let parent = sectionElement.offsetParent as HTMLElement | null;
+          while (parent) {
+            top += parent.offsetTop;
+            parent = parent.offsetParent as HTMLElement | null;
+          }
+          return { id: item.id, top };
         })
         .filter((section): section is { id: string; top: number } => section !== null)
         .sort((a, b) => a.top - b.top);
@@ -137,7 +145,10 @@ const Header = () => {
       setIsScrolled(shouldShowCompactHeader);
       setShowBackToTop(shouldShowBackToTopButton);
 
-      const scrollPosition = currentScrollY + 110;
+      // Re-measure offsets periodically as lazy sections load and change layout
+      refreshSectionOffsets();
+
+      const scrollPosition = currentScrollY + 200;
       let currentSectionId = "home";
 
       for (const section of sectionTopOffsetsRef.current) {
@@ -151,7 +162,7 @@ const Header = () => {
       if (currentScrollY < 100) currentSectionId = "home";
       const activeItem = navItems.find((item) => item.id === currentSectionId);
       if (activeItem) {
-        setActiveTab(activeItem.name);
+        setActiveTab(activeItem.id);
       }
       scrollFrameRef.current = null;
     };

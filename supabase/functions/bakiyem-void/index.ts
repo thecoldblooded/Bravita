@@ -12,11 +12,41 @@ const BAKIYEM_DEALER_CODE = Deno.env.get("BAKIYEM_DEALER_CODE") ?? "";
 const BAKIYEM_API_USERNAME = Deno.env.get("BAKIYEM_API_USERNAME") ?? "";
 const BAKIYEM_API_PASSWORD = Deno.env.get("BAKIYEM_API_PASSWORD") ?? "";
 
+const DEFAULT_ALLOWED_ORIGINS = [
+  "https://bravita.com.tr",
+  "https://www.bravita.com.tr",
+  "http://localhost:5173",
+  "http://localhost:8080",
+];
+
+const ALLOWED_ORIGINS = (Deno.env.get("PAYMENT_ALLOWED_ORIGINS") ?? "")
+  .split(",")
+  .map((value) => value.trim())
+  .filter((value) => value.length > 0);
+
+const ACTIVE_ALLOWED_ORIGINS = ALLOWED_ORIGINS.length > 0 ? ALLOWED_ORIGINS : DEFAULT_ALLOWED_ORIGINS;
+
+function isAllowedOrigin(origin: string): boolean {
+  if (!origin) return false;
+  if (ACTIVE_ALLOWED_ORIGINS.includes(origin)) return true;
+
+  try {
+    const parsed = new URL(origin);
+    return (
+      (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") &&
+      (parsed.protocol === "http:" || parsed.protocol === "https:")
+    );
+  } catch {
+    return false;
+  }
+}
+
 function corsHeaders(req: Request): HeadersInit {
-  const origin = req.headers.get("Origin") ?? "*";
+  const origin = req.headers.get("Origin") ?? "";
+  const allowed = isAllowedOrigin(origin) ? origin : ACTIVE_ALLOWED_ORIGINS[0] ?? "*";
   return {
     "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Origin": allowed,
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-user-jwt",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     Vary: "Origin",

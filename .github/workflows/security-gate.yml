@@ -58,4 +58,8 @@ jobs:
       - name: Check linked migrations
         env:
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-        run: npm run supabase:migration:list
+        run: |
+          # F-03: Detect drift between local schema and remote DB
+          # This ensures all DB changes are tracked in migrations
+          npx supabase db diff --use-migra --check
+

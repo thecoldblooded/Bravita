@@ -78,22 +78,50 @@ interface OrderItem {
 }
 
 /**
- * Generates a secure signature for a given ID to prevent unauthorized viewing.
+ * Generates a secure signature with expiration for a given ID.
+ * Format: expiration_timestamp.hmac_signature
+ * Default: 7 days validity
  */
 async function generateSignature(id: string) {
     const secret = SUPABASE_SERVICE_ROLE_KEY;
-    const msgUint8 = new TextEncoder().encode(id + secret);
+    const expiration = Date.now() + (7 * 24 * 60 * 60 * 1000); // 7 days
+    const data = `${id}:${expiration}`; // data to sign
+
+    const msgUint8 = new TextEncoder().encode(data + secret);
     const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+    const signature = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+
+    return `${expiration}.${signature}`;
 }
 
 /**
- * Validates the signature for a given ID and token.
+ * Validates the secure expiring signature.
  */
 async function validateSignature(id: string, token: string) {
-    const expected = await generateSignature(id);
-    return expected === token;
+    try {
+        const [expirationStr, signature] = token.split(".");
+        if (!expirationStr || !signature) return false;
+
+        const expiration = parseInt(expirationStr, 10);
+        if (isNaN(expiration)) return false;
+
+        // Check Expiration
+        if (Date.now() > expiration) return false;
+
+        // Re-compute Signature
+        const secret = SUPABASE_SERVICE_ROLE_KEY;
+        const data = `${id}:${expiration}`;
+
+        const msgUint8 = new TextEncoder().encode(data + secret);
+        const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const expectedSignature = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+
+        return signature === expectedSignature;
+    } catch {
+        return false;
+    }
 }
 
 serve(async (req: Request) => {

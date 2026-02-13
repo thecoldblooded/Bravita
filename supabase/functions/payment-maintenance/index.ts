@@ -3,11 +3,23 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 type JsonPrimitive = string | number | boolean | null;
-type JsonRecord = Record<string, JsonPrimitive | JsonRecord | JsonRecord[] | JsonPrimitive[]>;
+type JsonValue = JsonPrimitive | JsonObject | JsonArray;
+interface JsonObject { [key: string]: JsonValue }
+interface JsonArray extends Array<JsonValue> { }
+type JsonRecord = JsonObject;
 
 interface ReconciliationWindow {
   start: Date;
   end: Date;
+}
+
+interface PaymentIntent {
+  id: string;
+  paid_total_cents: number | string;
+  currency: string;
+  status: string;
+  created_at: string;
+  updated_at?: string;
 }
 
 interface ProviderWindowResult {
@@ -297,7 +309,8 @@ async function runReconciliation(
     };
   }
 
-  const localById = new Map((localIntents ?? []).map((intent) => [intent.id, intent]));
+  const validIntents = (localIntents as unknown as PaymentIntent[]) ?? [];
+  const localById = new Map<string, PaymentIntent>(validIntents.map((intent) => [intent.id, intent]));
   const matchedLocalIds = new Set<string>();
   let queueUpserts = 0;
 
@@ -395,11 +408,13 @@ serve(async (req: Request) => {
   }
 
   const expectedSecret = PAYMENT_MAINTENANCE_SECRET.trim();
-  if (expectedSecret.length > 0) {
-    const providedSecret = (req.headers.get("x-maintenance-secret") ?? "").trim();
-    if (providedSecret !== expectedSecret) {
-      return jsonResponse(401, { success: false, message: "Unauthorized" });
-    }
+  if (expectedSecret.length === 0) {
+    return jsonResponse(500, { success: false, message: "Maintenance secret not configured" });
+  }
+
+  const providedSecret = (req.headers.get("x-maintenance-secret") ?? "").trim();
+  if (providedSecret !== expectedSecret) {
+    return jsonResponse(401, { success: false, message: "Unauthorized" });
   }
 
   try {
@@ -434,7 +449,7 @@ serve(async (req: Request) => {
     ]);
 
     let queuedCount = 0;
-    const candidates = [...(stuckVoid.data ?? []), ...(stuckRefund.data ?? [])];
+    const candidates = [...(stuckVoid.data ?? []) as unknown as PaymentIntent[], ...(stuckRefund.data ?? []) as unknown as PaymentIntent[]];
 
     for (const intent of candidates) {
       const reason = intent.status === "void_pending" ? "stuck_void_pending" : "stuck_refund_pending";

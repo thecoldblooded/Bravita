@@ -125,7 +125,7 @@ function Footer() {
                 {section.links.map((link) => (
                   <li key={link.label} className="relative">
                     <a
-                      href={link.href}
+                      href={encodeURI(link.href)}
                       onClick={(e) => {
                         if (link.href.startsWith("#") && document.querySelector(link.href)) {
                           e.preventDefault();
@@ -200,7 +200,7 @@ function Footer() {
             {socialLinks.map(({ icon, label, href }) => (
               <a
                 key={label}
-                href={href}
+                href={encodeURI(href)}
                 aria-label={label}
                 className="hover:text-bravita-orange transition-colors"
                 target={href.startsWith("http") ? "_blank" : undefined}

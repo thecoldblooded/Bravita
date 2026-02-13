@@ -187,15 +187,79 @@ function parseThreeDPayload(rawData: unknown): ThreeDPayload {
   };
 }
 
-function encodeBase64Utf8(value: string): string {
-  const bytes = new TextEncoder().encode(value);
+// --- Encryption Helpers (AES-GCM) ---
+
+async function getEncryptionKey(): Promise<CryptoKey> {
+  const secret = Deno.env.get("PAYMENT_ENCRYPTION_KEY") || SUPABASE_SERVICE_ROLE_KEY;
+  const encoder = new TextEncoder();
+  const options = { name: "PBKDF2" };
+  const rawKey = await crypto.subtle.importKey("raw", encoder.encode(secret), options, false, ["deriveKey"]);
+
+  return crypto.subtle.deriveKey(
+    {
+      name: "PBKDF2",
+      salt: encoder.encode("bravita_payment_salt"), // Static salt for determinstic derivation
+      iterations: 100000,
+      hash: "SHA-256",
+    },
+    rawKey,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"]
+  );
+}
+
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
   let binary = "";
-  for (const byte of bytes) {
-    binary += String.fromCharCode(byte);
+  const bytes = new Uint8Array(buffer);
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
   }
   return btoa(binary);
 }
 
+function base64ToArrayBuffer(base64: string): ArrayBuffer {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
+
+async function encryptGcm(plaintext: string): Promise<string> {
+  const key = await getEncryptionKey();
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encoded = new TextEncoder().encode(plaintext);
+
+  const cipherBuffer = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv },
+    key,
+    encoded
+  );
+
+  // Format: iv_base64:ciphertext_base64
+  return `${arrayBufferToBase64(iv.buffer)}:${arrayBufferToBase64(cipherBuffer)}`;
+}
+
+async function decryptGcm(encryptedCombined: string): Promise<string> {
+  const parts = encryptedCombined.split(":");
+  if (parts.length !== 2) throw new Error("Invalid encrypted format");
+
+  const iv = base64ToArrayBuffer(parts[0]);
+  const cipherText = base64ToArrayBuffer(parts[1]);
+  const key = await getEncryptionKey();
+
+  const decryptedBuffer = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv: new Uint8Array(iv) },
+    key,
+    cipherText
+  );
+
+  return new TextDecoder().decode(decryptedBuffer);
+}
+
+// Backward compatibility helper
 function decodeBase64Utf8(value: string): string {
   const binary = atob(value);
   const bytes = Uint8Array.from(binary, (ch) => ch.charCodeAt(0));
@@ -330,7 +394,16 @@ serve(async (req: Request) => {
     ) {
       if (typeof existingIntent.threed_payload_encrypted === "string" && existingIntent.threed_payload_encrypted.length > 0) {
         try {
-          const reusedPayload = JSON.parse(decodeBase64Utf8(existingIntent.threed_payload_encrypted));
+          let reusedPayload;
+          const keyVersion = (existingIntent as any).encryption_key_version;
+
+          if (keyVersion === "aes_gcm_v1") {
+            const decrypted = await decryptGcm(existingIntent.threed_payload_encrypted);
+            reusedPayload = JSON.parse(decrypted);
+          } else {
+            reusedPayload = JSON.parse(decodeBase64Utf8(existingIntent.threed_payload_encrypted));
+          }
+
           return jsonResponse(req, 200, {
             success: true,
             intentId: existingIntent.id,
@@ -407,7 +480,17 @@ serve(async (req: Request) => {
         typeof raceIntent.threed_payload_encrypted === "string"
       ) {
         try {
-          const reusedPayload = JSON.parse(decodeBase64Utf8(raceIntent.threed_payload_encrypted));
+          let reusedPayload;
+          const keyVersion = (raceIntent as any).encryption_key_version; // Safely access if exists
+
+          if (keyVersion === "aes_gcm_v1") {
+            const decrypted = await decryptGcm(raceIntent.threed_payload_encrypted);
+            reusedPayload = JSON.parse(decrypted);
+          } else {
+            // Fallback for plain_v1
+            reusedPayload = JSON.parse(decodeBase64Utf8(raceIntent.threed_payload_encrypted));
+          }
+
           return jsonResponse(req, 200, {
             success: true,
             intentId: raceIntent.id,
@@ -535,8 +618,8 @@ serve(async (req: Request) => {
         merchant_ref: intentId,
         gateway_status: String(gatewayResponseJson.ResultCode),
         gateway_trx_code: String(providerRoot.TrxCode ?? ""),
-        threed_payload_encrypted: encodeBase64Utf8(JSON.stringify(threeDPayload)),
-        encryption_key_version: "plain_v1",
+        threed_payload_encrypted: await encryptGcm(JSON.stringify(threeDPayload)),
+        encryption_key_version: "aes_gcm_v1",
       })
       .eq("id", intentId);
 

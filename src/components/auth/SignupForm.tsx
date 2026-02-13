@@ -408,6 +408,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
                         <a
                           href="/terms"
                           target="_blank"
+                          rel="noopener noreferrer"
                           className="text-orange-600 hover:underline"
                         >
                           {t("auth.terms_link")}
@@ -436,6 +437,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
                         <a
                           href="/privacy"
                           target="_blank"
+                          rel="noopener noreferrer"
                           className="text-orange-600 hover:underline"
                         >
                           {t("auth.privacy_link")}
@@ -464,6 +466,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
                         <a
                           href="/kvkk"
                           target="_blank"
+                          rel="noopener noreferrer"
                           className="text-orange-600 hover:underline"
                         >
                           {t("auth.kvkk_link")}
@@ -679,6 +682,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
                         <a
                           href="/terms"
                           target="_blank"
+                          rel="noopener noreferrer"
                           className="text-orange-600 hover:underline"
                         >
                           {t("auth.terms_link")}
@@ -707,6 +711,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
                         <a
                           href="/privacy"
                           target="_blank"
+                          rel="noopener noreferrer"
                           className="text-orange-600 hover:underline"
                         >
                           {t("auth.privacy_link")}
@@ -735,6 +740,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
                         <a
                           href="/kvkk"
                           target="_blank"
+                          rel="noopener noreferrer"
                           className="text-orange-600 hover:underline"
                         >
                           {t("auth.kvkk_link")}
