@@ -394,9 +394,10 @@ serve(async (req: Request) => {
     return jsonResponse(500, { success: false, message: "Server config missing" });
   }
 
-  if (PAYMENT_MAINTENANCE_SECRET.length > 0) {
-    const providedSecret = req.headers.get("x-maintenance-secret") ?? "";
-    if (providedSecret !== PAYMENT_MAINTENANCE_SECRET) {
+  const expectedSecret = PAYMENT_MAINTENANCE_SECRET.trim();
+  if (expectedSecret.length > 0) {
+    const providedSecret = (req.headers.get("x-maintenance-secret") ?? "").trim();
+    if (providedSecret !== expectedSecret) {
       return jsonResponse(401, { success: false, message: "Unauthorized" });
     }
   }
