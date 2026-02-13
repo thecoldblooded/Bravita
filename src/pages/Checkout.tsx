@@ -95,7 +95,7 @@ export default function Checkout() {
 
                     const cleanNumber = card.number.replace(/\s/g, "");
                     const isNumberValid = cleanNumber.length === 16;
-                    const isExpiryValid = card.expiry.length === 5; // MM/YY
+                    const isExpiryValid = /^(\d{2})\/(\d{2}|\d{4})$/.test(card.expiry.trim()); // MM/YY or MM/YYYY
                     const isCvvValid = card.cvv.length === 3;
 
                     // Name must contain at least two words (Name + Surname)
@@ -142,18 +142,20 @@ export default function Checkout() {
 
                 let cardToken: string | undefined;
                 if (PAYMENT_USE_TOKENIZATION) {
-                    const expiryMatch = /^(\d{2})\/(\d{2})$/.exec(checkoutData.cardDetails.expiry.trim());
+                    const expiryMatch = /^(\d{2})\/(\d{2}|\d{4})$/.exec(checkoutData.cardDetails.expiry.trim());
                     if (!expiryMatch) {
                         toast.error("Kart son kullanma tarihi gecersiz");
                         return;
                     }
 
+                    const expYearRaw = expiryMatch[2];
+                    const expYear = expYearRaw.length === 2 ? `20${expYearRaw}` : expYearRaw;
                     const tokenizeResult = await tokenizeCardForPayment({
                         customerCode: user.id,
                         cardHolderFullName: checkoutData.cardDetails.name.trim(),
                         cardNumber: checkoutData.cardDetails.number.replace(/\s/g, ""),
                         expMonth: expiryMatch[1],
-                        expYear: `20${expiryMatch[2]}`,
+                        expYear,
                         cvcNumber: checkoutData.cardDetails.cvv,
                     });
 

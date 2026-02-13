@@ -66,11 +66,13 @@ export function PaymentMethodSelector({
     };
 
     const formatExpiry = (value: string) => {
-        const v = value.replace(/\s+/g, "").replace(/[^0-9]/gi, "");
-        if (v.length >= 2) {
-            return v.substring(0, 2) + "/" + v.substring(2, 4);
-        }
-        return v;
+        // Allow both MM/YY and MM/YYYY (Bakiyem docs include 12/2022).
+        const digits = value.replace(/\D/g, "").slice(0, 6);
+        if (digits.length <= 2) return digits;
+
+        const month = digits.slice(0, 2);
+        const year = digits.slice(2);
+        return `${month}/${year}`;
     };
 
     const handleCardChange = (field: keyof CardDetails, value: string) => {
@@ -79,7 +81,7 @@ export function PaymentMethodSelector({
         if (field === "number") {
             formattedValue = formatCardNumber(value);
         } else if (field === "expiry") {
-            formattedValue = formatExpiry(value.replace("/", ""));
+            formattedValue = formatExpiry(value);
         } else if (field === "cvv") {
             formattedValue = value.replace(/[^0-9]/g, "").substring(0, 3);
         }
@@ -202,8 +204,8 @@ export function PaymentMethodSelector({
                                     id="expiry"
                                     value={localCardDetails.expiry}
                                     onChange={(e) => handleCardChange("expiry", e.target.value)}
-                                    placeholder="AA/YY"
-                                    maxLength={5}
+                                    placeholder="AA/YY veya AA/YYYY"
+                                    maxLength={7}
                                     autoComplete="off"
                                     className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 font-mono"
                                 />
