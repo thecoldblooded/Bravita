@@ -568,15 +568,17 @@ serve(async (req: Request) => {
     });
 
     const gatewayResponseJson = await gatewayResponseRaw.json().catch(() => ({}));
+    const gatewayResultCode = String((gatewayResponseJson as JsonRecord)?.ResultCode ?? "").trim();
+    const gatewayResultMessage = String((gatewayResponseJson as JsonRecord)?.ResultMessage ?? "").trim();
 
     await supabase.from("payment_transactions").insert({
       intent_id: intentId,
       operation: "init_3d",
       request_payload: maskGatewayRequest(gatewayRequest),
       response_payload: gatewayResponseJson,
-      success: gatewayResponseRaw.ok && gatewayResponseJson?.ResultCode === "Success",
-      error_code: gatewayResponseJson?.ResultCode ?? null,
-      error_message: gatewayResponseJson?.ResultMessage ?? null,
+      success: gatewayResponseRaw.ok && gatewayResultCode === "Success",
+      error_code: gatewayResultCode || null,
+      error_message: gatewayResultMessage || null,
     });
 
     if (!gatewayResponseRaw.ok || gatewayResponseJson?.ResultCode !== "Success" || !gatewayResponseJson?.Data) {
@@ -585,13 +587,15 @@ serve(async (req: Request) => {
         .from("payment_intents")
         .update({
           status: "failed",
-          gateway_status: String(gatewayResponseJson?.ResultCode ?? "gateway_error"),
+          gateway_status: gatewayResultCode || "gateway_error",
         })
         .eq("id", intentId);
 
+      const fallbackMessage = gatewayResultCode ? `3D baslatma basarisiz (${gatewayResultCode})` : "3D baslatma basarisiz";
       return jsonResponse(req, 400, {
         success: false,
-        message: gatewayResponseJson?.ResultMessage ?? "3D baslatma basarisiz",
+        code: gatewayResultCode || undefined,
+        message: gatewayResultMessage || fallbackMessage,
       });
     }
 

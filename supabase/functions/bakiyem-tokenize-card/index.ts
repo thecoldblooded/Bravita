@@ -153,9 +153,16 @@ serve(async (req: Request) => {
       return response(req, 200, { success: true, cardToken: addCustomerToken });
     }
 
+    const addCardCode = String(addCardJson?.ResultCode ?? "").trim();
+    const addCardMessage = String(addCardJson?.ResultMessage ?? "").trim();
+    const addCustomerCode = String(addCustomerJson?.ResultCode ?? "").trim();
+    const addCustomerMessage = String(addCustomerJson?.ResultMessage ?? "").trim();
+    const fallbackCode = addCustomerCode || addCardCode;
+    const fallbackMessage = fallbackCode ? `Card token olusturulamadi (${fallbackCode})` : "Card token olusturulamadi";
     return response(req, 400, {
       success: false,
-      message: addCustomerJson?.ResultMessage ?? addCardJson?.ResultMessage ?? "Card token olusturulamadi",
+      code: fallbackCode || undefined,
+      message: addCustomerMessage || addCardMessage || fallbackMessage,
     });
   } catch (error) {
     console.error("bakiyem-tokenize-card failed", error);
