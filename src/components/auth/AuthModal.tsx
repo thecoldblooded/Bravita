@@ -10,8 +10,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { LoginForm } from "./LoginForm";
-import { SignupForm } from "./SignupForm";
+const LoginForm = React.lazy(() => import("./LoginForm").then(module => ({ default: module.LoginForm })));
+const SignupForm = React.lazy(() => import("./SignupForm").then(module => ({ default: module.SignupForm })));
 
 interface AuthModalProps {
   open: boolean;
@@ -135,24 +135,26 @@ export function AuthModal({
               </DialogHeader>
             </div>
 
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              {activeTab === "login" ? (
-                <LoginForm
-                  onSuccess={handleSuccess}
-                  onSwitchToSignup={() => setActiveTab("signup")}
-                />
-              ) : (
-                <SignupForm
-                  onSuccess={handleSuccess}
-                  onSwitchToLogin={() => setActiveTab("login")}
-                />
-              )}
-            </motion.div>
+            <React.Suspense fallback={<div className="min-h-75 flex items-center justify-center text-gray-400 capitalize">{t("common.loading") || "Yükleniyor..."}</div>}>
+              <motion.div
+                key={activeTab}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                {activeTab === "login" ? (
+                  <LoginForm
+                    onSuccess={handleSuccess}
+                    onSwitchToSignup={() => setActiveTab("signup")}
+                  />
+                ) : (
+                  <SignupForm
+                    onSuccess={handleSuccess}
+                    onSwitchToLogin={() => setActiveTab("login")}
+                  />
+                )}
+              </motion.div>
+            </React.Suspense>
           </motion.div>
 
           {/* Right Section - Video (Hidden on mobile) */}

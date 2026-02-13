@@ -24,8 +24,7 @@ dist-ssr
 *.sw?
 
 # TestSprite
-testsprite_tests/tmp/
-testsprite_tests/test_results/
+testsprite_tests/
 testsprite_output_final.txt
 
 # Environment
@@ -39,7 +38,21 @@ lint_output.txt
 
 # Temporary Supabase migration workspace
 .tmp-supabase-migrate/
+supabase/.temp/
 
-# Temporary files
+# MCP configuration
+.roo/
+
+# Reports and temporary files
+*.txt
+*.json
+!package.json
+!tsconfig.app.json
+!tsconfig.json
+!tsconfig.node.json
+!components.json
+!vercel.json
+*.bak
 .tmp/
 .tmp-lighthouse-desktop.json
+git-push-and-fix.md

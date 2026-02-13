@@ -12,12 +12,16 @@ const Usage = lazy(() => import("@/components/Usage"));
 const About = lazy(() => import("@/components/About"));
 const Footer = lazy(() => import("@/components/Footer"));
 
+import bravitaGif from "@/assets/bravita.gif";
+
 const SectionFallback = ({ minHeight }: { minHeight: string }) => (
-  <div className="w-full bg-orange-50/45 animate-pulse" style={{ minHeight }} aria-hidden="true">
-    <div className="container mx-auto px-4 py-10">
-      <div className="h-8 w-40 rounded-full bg-orange-100/80" />
-      <div className="mt-4 h-4 w-full max-w-xl rounded-full bg-orange-100/70" />
-      <div className="mt-2 h-4 w-full max-w-lg rounded-full bg-orange-100/60" />
+  <div className="w-full bg-[#FFFBF7]/50 flex items-center justify-center overflow-hidden" style={{ minHeight }} aria-hidden="true">
+    <div className="relative w-24 h-24 opacity-40">
+      <img
+        src={bravitaGif}
+        alt="Loading"
+        className="w-full h-full object-contain"
+      />
     </div>
   </div>
 );

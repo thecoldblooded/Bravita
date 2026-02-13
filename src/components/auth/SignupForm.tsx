@@ -1,5 +1,6 @@
-import { useState, useRef } from "react";
-import HCaptcha from "@hcaptcha/react-hcaptcha";
+import { useState, useRef, lazy, Suspense } from "react";
+import type HCaptcha from "@hcaptcha/react-hcaptcha";
+const HCaptchaComponent = lazy(() => import("@hcaptcha/react-hcaptcha"));
 import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -475,13 +476,15 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
             </div>
 
             <div className="flex justify-center py-4">
-              <HCaptcha
-                sitekey={HCAPTCHA_SITE_KEY}
-                onVerify={(token) => setCaptchaToken(token)}
-                onError={(err) => console.error("hCaptcha Error:", err)}
-                onExpire={() => setCaptchaToken(null)}
-                ref={captchaRef}
-              />
+              <Suspense fallback={<div className="h-19.5 w-75 bg-gray-50 animate-pulse rounded-lg border border-gray-100 flex items-center justify-center text-[10px] text-gray-400">hCaptcha Yükleniyor...</div>}>
+                <HCaptchaComponent
+                  sitekey={HCAPTCHA_SITE_KEY}
+                  onVerify={(token) => setCaptchaToken(token)}
+                  onError={(err) => console.error("hCaptcha Error:", err)}
+                  onExpire={() => setCaptchaToken(null)}
+                  ref={captchaRef}
+                />
+              </Suspense>
             </div>
 
             <Button type="submit" className="w-full" disabled={isLoading}>
@@ -744,17 +747,19 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
             </div>
 
             <div className="flex justify-center py-4">
-              <HCaptcha
-                sitekey={HCAPTCHA_SITE_KEY}
-                onVerify={(token) => setCaptchaToken(token)}
-                onError={(err) => console.error("hCaptcha Error:", err)}
-                onExpire={() => setCaptchaToken(null)}
-                // We share the ref, but since tabs unmount content, it might be tricky. 
-                // However, usually only one is mounted or visible.
-                // Re-using ref for simplicity as tabs implementation might keep both mounted or unmount.
-                // Ideally we should use separate refs but let's test.
-                ref={captchaRef}
-              />
+              <Suspense fallback={<div className="h-19.5 w-75 bg-gray-50 animate-pulse rounded-lg border border-gray-100 flex items-center justify-center text-[10px] text-gray-400">hCaptcha Yükleniyor...</div>}>
+                <HCaptchaComponent
+                  sitekey={HCAPTCHA_SITE_KEY}
+                  onVerify={(token) => setCaptchaToken(token)}
+                  onError={(err) => console.error("hCaptcha Error:", err)}
+                  onExpire={() => setCaptchaToken(null)}
+                  // We share the ref, but since tabs unmount content, it might be tricky. 
+                  // However, usually only one is mounted or visible.
+                  // Re-using ref for simplicity as tabs implementation might keep both mounted or unmount.
+                  // Ideally we should use separate refs but let's test.
+                  ref={captchaRef}
+                />
+              </Suspense>
             </div>
 
             <Button type="submit" className="w-full" disabled={isLoading}>

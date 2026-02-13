@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, lazy, Suspense } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { NavBar } from "@/components/ui/tubelight-navbar";
 import { Home, Heart, List, HelpCircle, Info, ChevronUp } from "lucide-react";
@@ -6,14 +6,16 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
-import { AuthModal } from "@/components/auth/AuthModal";
 import { UserMenu } from "@/components/auth/UserMenu";
 import { IncompleteProfileBanner } from "@/components/IncompleteProfileBanner";
-import { CartModal } from "@/components/ui/CartModal";
 import { useCart } from "@/contexts/CartContext";
-import FloatingSupport from "@/components/FloatingSupport";
+const FloatingSupport = lazy(() => import("@/components/FloatingSupport"));
 import trFlag from "flag-icons/flags/4x3/tr.svg";
 import usFlag from "flag-icons/flags/4x3/us.svg";
+
+// Lazy load heavy modals
+const AuthModal = lazy(() => import("@/components/auth/AuthModal").then(module => ({ default: module.AuthModal })));
+const CartModal = lazy(() => import("@/components/ui/CartModal").then(module => ({ default: module.CartModal })));
 
 const BravitaLogo = ({ isScrolled }: { isScrolled: boolean }) => {
   const letters = [
@@ -61,7 +63,6 @@ const BravitaLogo = ({ isScrolled }: { isScrolled: boolean }) => {
           }}
         >
           {letter.char === "i" ? (
-            // 'i' needs special centering to look like the logo
             <span className="relative inline-block">
               i
             </span>
@@ -89,11 +90,8 @@ const Header = () => {
 
   const isProfilePage = location.pathname === "/profile";
   const isCheckoutPage = location.pathname === "/checkout";
-
-  // Show UI once user object exists (stub or real) and auth is initialized
   const isUserReady = isAuthenticated && user;
 
-  // Get current language immediately from localStorage to avoid flash
   const getCurrentLanguage = () => {
     const storedLang = localStorage.getItem('i18nextLng');
     return storedLang || i18n.language || 'tr';
@@ -101,12 +99,10 @@ const Header = () => {
 
   const [currentLang, setCurrentLang] = useState(getCurrentLanguage());
 
-  // Update currentLang when i18n language changes
   useEffect(() => {
     const handleLanguageChange = () => {
       setCurrentLang(i18n.language || 'tr');
     };
-
     i18n.on('languageChanged', handleLanguageChange);
     return () => {
       i18n.off('languageChanged', handleLanguageChange);
@@ -127,14 +123,7 @@ const Header = () => {
         .filter((item) => item.id !== "home")
         .map((item) => {
           const sectionElement = document.getElementById(item.id);
-          if (!sectionElement) {
-            return null;
-          }
-
-          return {
-            id: item.id,
-            top: sectionElement.offsetTop,
-          };
+          return sectionElement ? { id: item.id, top: sectionElement.offsetTop } : null;
         })
         .filter((section): section is { id: string; top: number } => section !== null)
         .sort((a, b) => a.top - b.top);
@@ -145,12 +134,8 @@ const Header = () => {
       const shouldShowCompactHeader = currentScrollY > 50;
       const shouldShowBackToTopButton = currentScrollY > 400;
 
-      setIsScrolled((previousValue) =>
-        previousValue === shouldShowCompactHeader ? previousValue : shouldShowCompactHeader
-      );
-      setShowBackToTop((previousValue) =>
-        previousValue === shouldShowBackToTopButton ? previousValue : shouldShowBackToTopButton
-      );
+      setIsScrolled(shouldShowCompactHeader);
+      setShowBackToTop(shouldShowBackToTopButton);
 
       const scrollPosition = currentScrollY + 150;
       let currentSectionId = "home";
@@ -163,29 +148,21 @@ const Header = () => {
         }
       }
 
-      if (currentScrollY < 100) {
-        currentSectionId = "home";
-      }
-
-      setActiveTab((previousValue) =>
-        previousValue === currentSectionId ? previousValue : currentSectionId
-      );
+      if (currentScrollY < 100) currentSectionId = "home";
+      setActiveTab(currentSectionId);
       scrollFrameRef.current = null;
     };
 
     const requestScrollUpdate = () => {
-      if (scrollFrameRef.current !== null) {
-        return;
+      if (scrollFrameRef.current === null) {
+        scrollFrameRef.current = window.requestAnimationFrame(updateHeaderState);
       }
-
-      scrollFrameRef.current = window.requestAnimationFrame(updateHeaderState);
     };
 
     const requestSectionMeasure = () => {
       if (measureFrameRef.current !== null) {
         window.cancelAnimationFrame(measureFrameRef.current);
       }
-
       measureFrameRef.current = window.requestAnimationFrame(() => {
         refreshSectionOffsets();
         requestScrollUpdate();
@@ -202,14 +179,8 @@ const Header = () => {
       window.removeEventListener("scroll", requestScrollUpdate);
       window.removeEventListener("resize", requestSectionMeasure);
       window.removeEventListener("load", requestSectionMeasure);
-
-      if (scrollFrameRef.current !== null) {
-        window.cancelAnimationFrame(scrollFrameRef.current);
-      }
-
-      if (measureFrameRef.current !== null) {
-        window.cancelAnimationFrame(measureFrameRef.current);
-      }
+      if (scrollFrameRef.current !== null) window.cancelAnimationFrame(scrollFrameRef.current);
+      if (measureFrameRef.current !== null) window.cancelAnimationFrame(measureFrameRef.current);
     };
   }, [navItems]);
 
@@ -221,26 +192,20 @@ const Header = () => {
         setIsCookieConsentPending(false);
       }
     };
-
     const handleStorage = (event: StorageEvent) => {
-      if (event.key === "cookie_consent") {
-        resolvePendingConsent();
-      }
+      if (event.key === "cookie_consent") resolvePendingConsent();
     };
-
     const handleCookieConsentUpdate = (event: Event) => {
       const customEvent = event as CustomEvent<{ pending?: boolean }>;
       if (typeof customEvent.detail?.pending === "boolean") {
         setIsCookieConsentPending(customEvent.detail.pending);
-        return;
+      } else {
+        resolvePendingConsent();
       }
-      resolvePendingConsent();
     };
-
     resolvePendingConsent();
     window.addEventListener("storage", handleStorage);
     window.addEventListener("cookie-consent-updated", handleCookieConsentUpdate as EventListener);
-
     return () => {
       window.removeEventListener("storage", handleStorage);
       window.removeEventListener("cookie-consent-updated", handleCookieConsentUpdate as EventListener);
@@ -248,20 +213,16 @@ const Header = () => {
   }, []);
 
   const toggleLanguage = () => {
-    const currentLanguage = currentLang || 'tr';
-    const nextLang = currentLanguage.startsWith('tr') ? 'en' : 'tr';
+    const nextLang = currentLang?.startsWith('tr') ? 'en' : 'tr';
     i18n.changeLanguage(nextLang);
     setCurrentLang(nextLang);
   };
 
-  // Find active name for NavBar
   const activeName = navItems.find(item => item.id === activeTab)?.name || navItems[0].name;
   const isTurkishSelected = currentLang?.startsWith("tr");
   const currentFlagSrc = isTurkishSelected ? trFlag : usFlag;
   const currentFlagAlt = isTurkishSelected ? "Turkiye" : "United States";
-  const languageToggleLabel = isTurkishSelected
-    ? "Switch language to English"
-    : "Dili Turkceye cevir";
+  const languageToggleLabel = isTurkishSelected ? "Switch language to English" : "Dili Turkceye cevir";
 
   return (
     <>
@@ -272,21 +233,17 @@ const Header = () => {
         )}
       >
         <div className="container mx-auto px-4 flex items-center justify-between">
-          {/* Logo Container */}
           <div className="shrink-0">
             <Link to="/" className="inline-block">
               <BravitaLogo isScrolled={isScrolled} />
             </Link>
           </div>
 
-          {/* Center NavBar (Desktop) */}
           <div className="hidden lg:flex absolute left-1/2 -translate-x-1/2">
             {!isProfilePage && !isCheckoutPage && <NavBar items={navItems} activeTab={activeName} layoutId="desktop-nav" />}
           </div>
 
-          {/* Controls Container */}
           <div className="flex items-center gap-2 md:gap-4 shrink-0">
-            {/* Language Toggle */}
             <motion.button
               onClick={toggleLanguage}
               whileHover={{ scale: 1.04 }}
@@ -309,23 +266,18 @@ const Header = () => {
               />
             </motion.button>
 
-            {/* Buy Button & User Menu Container */}
             <div className="flex items-center gap-2 md:gap-4">
-              {/* Buy Button - Show when authenticated or not authenticated */}
               {isUserReady || !isAuthenticated ? (
                 <a
                   href={!isAuthenticated ? "#contact" : undefined}
                   onClick={(e) => {
-                    // If authenticated but profile not complete, prevent navigation
                     if (isAuthenticated && user && !user?.profile_complete) {
                       e.preventDefault();
                     }
-                    // If authenticated and profile complete, open cart
                     if (isAuthenticated && user?.profile_complete) {
                       e.preventDefault();
                       openCart();
                     }
-                    // If not authenticated, open signup modal instead
                     if (!isAuthenticated) {
                       e.preventDefault();
                       setAuthModalOpen(true);
@@ -334,12 +286,10 @@ const Header = () => {
                   className={cn(
                     "px-4 md:px-6 py-2.5 rounded-full font-black text-sm transition-all duration-300 active:scale-95 shadow-lg whitespace-nowrap",
                     isUserReady && !user?.profile_complete
-                      ? // Profile incomplete - inactive state
-                      isScrolled
+                      ? isScrolled
                         ? "bg-gray-400 text-gray-600 shadow-gray-200/50 cursor-not-allowed opacity-60"
                         : "bg-gray-200 text-gray-500 shadow-gray-200/30 cursor-not-allowed opacity-60"
-                      : // Profile complete or not authenticated - active state
-                      isScrolled
+                      : isScrolled
                         ? "bg-orange-600 text-white shadow-orange-200/50 hover:bg-orange-700 cursor-pointer"
                         : "bg-white text-orange-600 shadow-gray-200/30 hover:bg-gray-50 cursor-pointer"
                   )}
@@ -349,10 +299,8 @@ const Header = () => {
                 </a>
               ) : null}
 
-              {/* User Menu - Show when user is ready */}
               {isUserReady && <UserMenu />}
 
-              {/* Login Button - Only show if not authenticated */}
               {!isAuthenticated && (
                 <motion.button
                   whileHover={{ scale: 1.05 }}
@@ -373,10 +321,8 @@ const Header = () => {
         </div>
       </header>
 
-      {/* Incomplete Profile Banner */}
       <IncompleteProfileBanner />
 
-      {/* Mobile NavBar (Fixed bottom - above marquee) */}
       {!isProfilePage && !isCheckoutPage && (
         <div className="lg:hidden">
           <NavBar
@@ -388,21 +334,20 @@ const Header = () => {
         </div>
       )}
 
-      {/* Floating Action Buttons Container */}
       <div
         className={cn(
           "fixed z-9999 flex flex-col gap-4 items-end pointer-events-none md:bottom-20 md:right-10",
           isCookieConsentPending ? "bottom-60 right-4" : "bottom-36 right-6"
         )}
       >
-        {/* Support Button - Now part of floating actions */}
         {!isProfilePage && !isCheckoutPage && (
           <div className="pointer-events-auto">
-            <FloatingSupport />
+            <Suspense fallback={null}>
+              <FloatingSupport />
+            </Suspense>
           </div>
         )}
 
-        {/* Back to Top Button */}
         <AnimatePresence>
           {showBackToTop && (
             <motion.button
@@ -422,17 +367,20 @@ const Header = () => {
         </AnimatePresence>
       </div>
 
-      {/* Auth Modal */}
-      <AuthModal
-        open={authModalOpen}
-        onOpenChange={setAuthModalOpen}
-        defaultTab="login"
-      />
+      <Suspense fallback={null}>
+        {!isAuthenticated && (
+          <AuthModal
+            open={authModalOpen}
+            onOpenChange={setAuthModalOpen}
+            defaultTab="login"
+          />
+        )}
 
-      <CartModal
-        open={isCartOpen}
-        onOpenChange={setIsCartOpen}
-      />
+        <CartModal
+          open={isCartOpen}
+          onOpenChange={setIsCartOpen}
+        />
+      </Suspense>
     </>
   );
 };

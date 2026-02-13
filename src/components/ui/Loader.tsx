@@ -1,12 +1,11 @@
 import { cn } from "@/lib/utils";
+import bravitaGif from "@/assets/bravita.gif";
 
 interface LoaderProps {
   size?: string;
   noMargin?: boolean;
   className?: string;
 }
-
-const LOADER_IMAGE_SRC = "/bravita-bottle.webp";
 
 export default function Loader({ size = "240px", noMargin = false, className }: LoaderProps) {
   return (
@@ -24,11 +23,11 @@ export default function Loader({ size = "240px", noMargin = false, className }: 
         style={{ width: size, height: size }}
       >
         <img
-          src={LOADER_IMAGE_SRC}
+          src={bravitaGif}
           alt="Bravita Loader"
           loading="eager"
           decoding="async"
-          className="h-[88%] w-[88%] object-contain animate-pulse"
+          className="h-[88%] w-[88%] object-contain"
         />
         <span className="pointer-events-none absolute inset-0 bg-white/10" />
       </div>

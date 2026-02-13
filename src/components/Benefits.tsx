@@ -17,8 +17,8 @@ const Benefits = () => {
       icon: Brain,
       title: t('benefits.items.nervous.title'),
       description: t('benefits.items.nervous.desc'),
-      color: "bravita-purple",
-      hex: ["#a855f7", "#9333ea"]
+      color: "bravita-teal",
+      hex: ["#2dd4bf", "#0d9488"]
     },
     {
       icon: Zap,

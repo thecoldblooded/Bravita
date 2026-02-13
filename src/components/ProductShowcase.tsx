@@ -45,10 +45,10 @@ const ProductShowcase = () => {
 
         <div ref={containerRef} className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Product Images */}
-          <div className="relative flex justify-center items-end min-h-[300px]">
+          <div className="relative flex justify-center items-end min-h-75">
             <div className="relative group z-20 -mr-12 md:-mr-24">
               <div className="absolute inset-0 bg-linear-to-br from-bravita-yellow/30 to-bravita-orange/30 rounded-3xl blur-2xl opacity-60 group-hover:opacity-80 transition-opacity" />
-              {!bottleLoaded && <div className="w-44 md:w-54 h-64 bg-gradient-to-br from-bravita-yellow/20 to-bravita-orange/20 rounded-2xl animate-pulse" />}
+              {!bottleLoaded && <div className="w-44 md:w-54 h-64 bg-linear-to-br from-bravita-yellow/20 to-bravita-orange/20 rounded-2xl animate-pulse" />}
               {isInView && (
                 <img
                   src={bravitaBottle}
@@ -62,7 +62,7 @@ const ProductShowcase = () => {
             </div>
             <div className="relative group z-10">
               <div className="absolute inset-0 bg-linear-to-br from-bravita-orange/30 to-bravita-red/30 rounded-3xl blur-2xl opacity-60 group-hover:opacity-80 transition-opacity" />
-              {!boxLoaded && <div className="w-60 md:w-80 h-72 bg-gradient-to-br from-bravita-orange/20 to-bravita-red/20 rounded-2xl animate-pulse" />}
+              {!boxLoaded && <div className="w-60 md:w-80 h-72 bg-linear-to-br from-bravita-orange/20 to-bravita-red/20 rounded-2xl animate-pulse" />}
               {isInView && (
                 <img
                   src={bravitaBox}
@@ -104,7 +104,7 @@ const ProductShowcase = () => {
 
             <div className="bg-card rounded-2xl p-6 border border-border hover:border-primary/30 transition-colors">
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-full bg-bravita-purple/10 flex items-center justify-center shrink-0">
+                <div className="w-12 h-12 rounded-full bg-bravita-teal/10 flex items-center justify-center shrink-0">
                   <span className="text-2xl">🧪</span>
                 </div>
                 <div>

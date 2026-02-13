@@ -215,7 +215,7 @@ const Hero = () => {
               <span className="text-[11px] font-bold text-gray-500 uppercase tracking-tight">{t('hero.badge')}</span>
             </div>
 
-            <h1 className="text-4xl md:text-[84px] font-black text-[#2D334A] mb-8 leading-[1.05] tracking-tight animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+            <h1 className="text-4xl md:text-[84px] font-black text-[#2D334A] mb-8 leading-[1.05] tracking-tight animate-fade-in-up min-h-35 md:min-h-45" style={{ animationDelay: '0.2s' }}>
               <TextCursorProximity
                 key={t('hero.title_part1')} // Force remount when text changes to prevent hook mismatches
                 label={t('hero.title_part1')}

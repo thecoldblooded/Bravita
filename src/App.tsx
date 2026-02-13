@@ -11,7 +11,6 @@ import UnderConstruction from "@/components/UnderConstruction";
 import { initializeConsentAwareAnalytics } from "@/lib/performance/loadContentSquare";
 import bravitaGif from "@/assets/bravita.gif";
 import periodicAlpacaGif from "@/assets/alpaca.gif";
-import periodicAlpacaVideo from "@/assets/optimized/alpaca-optimized.mp4";
 
 // Admin pages
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -116,7 +115,6 @@ const AppContent = () => {
         <Suspense fallback={null}>
           <PeriodicGif
             gifSrc={PERIODIC_IMAGE_URL}
-            videoSrc={periodicAlpacaVideo}
             intervalMs={60000}
             initialDelayMs={0}
             alt="Alpaca animation"
@@ -158,9 +156,9 @@ const App = () => {
             {isSplashScreenActive ? (
               <div className="fixed inset-0 bg-[#FFFBF7] z-50 flex flex-col items-center justify-center">
                 <div className="relative w-32 h-32 mb-4 flex items-center justify-center">
-                  <img 
-                    src={bravitaGif} 
-                    alt="Loading" 
+                  <img
+                    src={bravitaGif}
+                    alt="Loading"
                     className="w-full h-full object-contain"
                     onError={(e) => {
                       // Fallback if GIF doesn't load

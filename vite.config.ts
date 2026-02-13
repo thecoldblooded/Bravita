@@ -66,6 +66,43 @@ export default defineConfig(({ mode }) => {
       react(),
       svgr(),
       mode === "development" && componentTagger(),
+      // Debug plugin: validate API route assumptions during local debugging
+      mode === "development" && {
+        name: "debug-api-route-logger",
+        configureServer(server: ViteDevServer) {
+          server.httpServer?.once("listening", () => {
+            const address = server.httpServer?.address();
+            if (address && typeof address === "object") {
+              console.info(`[API DEBUG][server] listening on ${address.address}:${address.port}`);
+            }
+          });
+
+          server.middlewares.use((req: IncomingMessage, res: ServerResponse, next: () => void) => {
+            const requestUrl = req.url ?? "";
+            if (!requestUrl.startsWith("/api/")) {
+              return next();
+            }
+
+            const method = req.method ?? "GET";
+            const startedAt = Date.now();
+
+            console.info(`[API DEBUG][request] ${method} ${requestUrl}`);
+
+            res.once("finish", () => {
+              const elapsedMs = Date.now() - startedAt;
+              const statusCode = res.statusCode ?? 0;
+
+              console.info(`[API DEBUG][response] ${method} ${requestUrl} -> ${statusCode} (${elapsedMs}ms)`);
+
+              if (statusCode === 404) {
+                console.warn(`[API DEBUG][missing-route] ${requestUrl} is not handled by Vite dev server/API handlers.`);
+              }
+            });
+
+            next();
+          });
+        },
+      },
       // Custom plugin to handle admin routes in dev
       {
         name: "admin-spa-fallback",

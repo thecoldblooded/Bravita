@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, lazy, Suspense } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -24,7 +24,8 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import HCaptcha from "@hcaptcha/react-hcaptcha";
+import type HCaptcha from "@hcaptcha/react-hcaptcha";
+const HCaptchaComponent = lazy(() => import("@hcaptcha/react-hcaptcha"));
 import Loader from "@/components/ui/Loader";
 import { Mail, User, MessageSquare, Tag, LifeBuoy, X } from "lucide-react";
 import {
@@ -57,12 +58,19 @@ export default function FloatingSupport({ className }: FloatingSupportProps) {
     const { user } = useAuth();
     const authUser = user as UserProfile | null;
     const [open, setOpen] = useState(false);
+    const [hasOpened, setHasOpened] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [captchaToken, setCaptchaToken] = useState<string | null>(null);
     const captchaRef = useRef<HCaptcha>(null);
     const confettiRef = useRef<ConfettiRef>(null);
 
-    const form = useForm<SupportFormValues>({
+    useEffect(() => {
+        if (open && !hasOpened) {
+            setHasOpened(true);
+        }
+    }, [open, hasOpened]);
+
+    const form = useForm<z.infer<typeof supportFormSchema>>({
         resolver: zodResolver(supportFormSchema),
         defaultValues: {
             name: "",
@@ -177,7 +185,8 @@ export default function FloatingSupport({ className }: FloatingSupportProps) {
                 side="top"
                 align="end"
                 sideOffset={15}
-                className="w-[calc(100vw-2rem)] sm:w-96 p-0 overflow-hidden rounded-3xl border-none shadow-2xl bg-[#FFFBF7] z-60 animate-in slide-in-from-bottom-2 duration-300"
+                collisionPadding={{ top: 20, bottom: 120, left: 16, right: 16 }}
+                className="w-[calc(100vw-2rem)] sm:w-96 p-0 overflow-hidden rounded-3xl border-none shadow-2xl bg-[#FFFBF7] z-10001 animate-in slide-in-from-bottom-2 duration-300 flex flex-col max-h-[72dvh] sm:max-h-[85vh]"
             >
                 <div className="bg-orange-500 p-5 text-white relative">
                     <div className="space-y-1">
@@ -202,7 +211,7 @@ export default function FloatingSupport({ className }: FloatingSupportProps) {
                     </div>
                 </div>
 
-                <div className="p-5 bg-white max-h-[60vh] overflow-y-auto custom-scrollbar">
+                <div className="p-4 pb-8 bg-white overflow-y-auto custom-scrollbar flex-1 min-h-0">
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
                             <FormField
@@ -256,7 +265,7 @@ export default function FloatingSupport({ className }: FloatingSupportProps) {
                                 )}
                             />
 
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="grid grid-cols-1 gap-2">
                                 <FormField
                                     control={form.control}
                                     name="category"
@@ -316,7 +325,7 @@ export default function FloatingSupport({ className }: FloatingSupportProps) {
                                         <FormControl>
                                             <Textarea
                                                 placeholder={t("support.message_placeholder") || "Mesajınızı buraya yazınız..."}
-                                                className="bg-orange-50/30 border-orange-100 focus:border-orange-500 min-h-16 rounded-lg resize-none text-xs"
+                                                className="bg-orange-50/30 border-orange-100 focus:border-orange-500 min-h-12 rounded-lg resize-none text-xs"
                                                 {...field}
                                             />
                                         </FormControl>
@@ -326,13 +335,17 @@ export default function FloatingSupport({ className }: FloatingSupportProps) {
                             />
 
                             <div className="flex flex-col items-center space-y-3 pt-1">
-                                <div className="scale-[0.65] origin-center -my-3">
-                                    <HCaptcha
-                                        sitekey={HCAPTCHA_SITE_KEY}
-                                        onVerify={(token) => setCaptchaToken(token)}
-                                        onExpire={() => setCaptchaToken(null)}
-                                        ref={captchaRef}
-                                    />
+                                <div className="scale-[0.6] origin-center -my-4 min-h-11.5">
+                                    {hasOpened && (
+                                        <Suspense fallback={<div className="h-19.5 w-75 bg-gray-50 animate-pulse rounded-lg border border-gray-100 flex items-center justify-center text-[10px] text-gray-400">Captcha Yükleniyor...</div>}>
+                                            <HCaptchaComponent
+                                                sitekey={HCAPTCHA_SITE_KEY}
+                                                onVerify={(token) => setCaptchaToken(token)}
+                                                onExpire={() => setCaptchaToken(null)}
+                                                ref={captchaRef}
+                                            />
+                                        </Suspense>
+                                    )}
                                 </div>
 
                                 <Button
