@@ -29,7 +29,7 @@ const Ingredients = () => {
   const { t } = useTranslation();
 
   return (
-    <section id="ingredients" className="py-20 md:py-32 bg-bravita-cream/50">
+    <section className="py-20 md:py-32 bg-bravita-cream/50">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <span className="text-primary font-bold text-sm uppercase tracking-wider">{t('ingredients.badge')}</span>

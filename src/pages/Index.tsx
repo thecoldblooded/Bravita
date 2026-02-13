@@ -36,7 +36,7 @@ const Index = () => {
       <main>
         <Hero />
 
-        <LazySection placeholder={<SectionFallback minHeight="70vh" />} rootMargin="500px 0px">
+        <LazySection id="benefits" className="scroll-mt-25 w-full" placeholder={<SectionFallback minHeight="70vh" />} rootMargin="500px 0px">
           <Suspense fallback={<SectionFallback minHeight="70vh" />}>
             <ScrollReveal delay={0.1}>
               <Benefits />
@@ -44,7 +44,7 @@ const Index = () => {
           </Suspense>
         </LazySection>
 
-        <LazySection placeholder={<SectionFallback minHeight="70vh" />} rootMargin="450px 0px">
+        <LazySection id="showcase" className="scroll-mt-25 w-full" placeholder={<SectionFallback minHeight="70vh" />} rootMargin="450px 0px">
           <Suspense fallback={<SectionFallback minHeight="70vh" />}>
             <ScrollReveal delay={0.2}>
               <ProductShowcase />
@@ -52,7 +52,7 @@ const Index = () => {
           </Suspense>
         </LazySection>
 
-        <LazySection placeholder={<SectionFallback minHeight="70vh" />} rootMargin="450px 0px">
+        <LazySection id="ingredients" className="scroll-mt-25 w-full" placeholder={<SectionFallback minHeight="70vh" />} rootMargin="450px 0px">
           <Suspense fallback={<SectionFallback minHeight="70vh" />}>
             <ScrollReveal delay={0.1}>
               <Ingredients />
@@ -60,7 +60,7 @@ const Index = () => {
           </Suspense>
         </LazySection>
 
-        <LazySection placeholder={<SectionFallback minHeight="90vh" />} rootMargin="350px 0px">
+        <LazySection id="usage" className="scroll-mt-25 w-full" placeholder={<SectionFallback minHeight="90vh" />} rootMargin="350px 0px">
           <Suspense fallback={<SectionFallback minHeight="90vh" />}>
             <ScrollReveal delay={0.1}>
               <Usage />
@@ -68,7 +68,7 @@ const Index = () => {
           </Suspense>
         </LazySection>
 
-        <LazySection placeholder={<SectionFallback minHeight="70vh" />} rootMargin="350px 0px">
+        <LazySection id="about" className="scroll-mt-25 w-full" placeholder={<SectionFallback minHeight="70vh" />} rootMargin="350px 0px">
           <Suspense fallback={<SectionFallback minHeight="70vh" />}>
             <ScrollReveal delay={0.1}>
               <About />

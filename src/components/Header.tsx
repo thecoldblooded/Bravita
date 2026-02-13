@@ -137,7 +137,7 @@ const Header = () => {
       setIsScrolled(shouldShowCompactHeader);
       setShowBackToTop(shouldShowBackToTopButton);
 
-      const scrollPosition = currentScrollY + 150;
+      const scrollPosition = currentScrollY + 110;
       let currentSectionId = "home";
 
       for (const section of sectionTopOffsetsRef.current) {
@@ -149,7 +149,10 @@ const Header = () => {
       }
 
       if (currentScrollY < 100) currentSectionId = "home";
-      setActiveTab(currentSectionId);
+      const activeItem = navItems.find((item) => item.id === currentSectionId);
+      if (activeItem) {
+        setActiveTab(activeItem.name);
+      }
       scrollFrameRef.current = null;
     };
 
@@ -234,7 +237,16 @@ const Header = () => {
       >
         <div className="container mx-auto px-4 flex items-center justify-between">
           <div className="shrink-0">
-            <Link to="/" className="inline-block">
+            <Link
+              to="/"
+              className="inline-block"
+              onClick={(e) => {
+                if (location.pathname === '/') {
+                  e.preventDefault();
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+              }}
+            >
               <BravitaLogo isScrolled={isScrolled} />
             </Link>
           </div>

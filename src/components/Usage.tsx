@@ -29,7 +29,7 @@ const Usage = () => {
         <div style={{ height: "10vh" }}></div>
       </div>
 
-      <div id="usage" className="container mx-auto px-4 relative z-10 scroll-mt-32">
+      <div id="usage-content" className="container mx-auto px-4 relative z-10 scroll-mt-32">
         <div className="bg-white/90 backdrop-blur-xl rounded-[2.5rem] shadow-2xl border border-white/50 p-6 md:p-12 max-w-7xl mx-auto">
           <div className="text-center mb-12">
             <span className="text-bravita-orange font-bold tracking-wider text-sm uppercase mb-2 block">
@@ -137,9 +137,9 @@ const Usage = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Bottom dissolved gradient for smooth transition - full width */}
-      <div 
+      <div
         className="absolute bottom-0 left-0 right-0 h-96 pointer-events-none z-0"
         style={{
           background: `linear-gradient(to bottom, 

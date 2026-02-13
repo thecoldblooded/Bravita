@@ -7,6 +7,7 @@ interface LazySectionProps {
   threshold?: number;
   className?: string;
   once?: boolean;
+  id?: string;
 }
 
 const LazySection = ({
@@ -16,6 +17,7 @@ const LazySection = ({
   threshold = 0.01,
   className,
   once = true,
+  id,
 }: LazySectionProps) => {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -63,7 +65,7 @@ const LazySection = ({
     };
   }, [isVisible, once, rootMargin, threshold]);
 
-  return <div ref={hostRef} className={className}>{isVisible ? children : placeholder}</div>;
+  return <div ref={hostRef} id={id} className={className}>{isVisible ? children : placeholder}</div>;
 };
 
 export default LazySection;

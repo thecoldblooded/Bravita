@@ -51,7 +51,7 @@ const Benefits = () => {
   ];
 
   return (
-    <section id="benefits" className="py-20 md:py-32 bg-background">
+    <section className="py-20 md:py-32 bg-background">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <span className="text-primary font-bold text-sm uppercase tracking-wider">{t('benefits.badge')}</span>

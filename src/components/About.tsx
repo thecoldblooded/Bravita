@@ -11,9 +11,9 @@ const About = () => {
   const { t } = useTranslation();
 
   return (
-    <section id="about" className="relative pt-32 md:pt-8 pb-20 md:pb-2 overflow-x-hidden overflow-y-visible">
+    <section className="relative pt-32 md:pt-8 pb-20 md:pb-2 overflow-x-hidden overflow-y-visible">
       {/* Soft dissolved gradient background */}
-      <div 
+      <div
         className="absolute inset-0 -z-10"
         style={{
           background: `linear-gradient(180deg, 
@@ -32,7 +32,7 @@ const About = () => {
           <div className="order-2 md:order-1">
             <span className="text-bravita-orange font-bold tracking-wider text-sm uppercase mb-2 block">{t('about.badge')}</span>
             <h2 className="text-3xl md:text-5xl font-extrabold text-foreground mt-2 mb-4">
-              {t('about.title')} <span className="text-transparent bg-clip-text bg-gradient-to-r from-bravita-yellow via-bravita-orange to-bravita-red">{t('about.title_accent')}</span>
+              {t('about.title')} <span className="text-transparent bg-clip-text bg-linear-to-r from-bravita-yellow via-bravita-orange to-bravita-red">{t('about.title_accent')}</span>
             </h2>
             <p className="text-muted-foreground text-lg leading-relaxed mb-6">
               {t('about.description')}

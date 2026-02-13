@@ -8,6 +8,7 @@ import { LucideIcon } from "lucide-react"
 
 interface NavItem {
     name: string
+    id?: string
     url: string
     icon: LucideIcon
     onClick?: () => void
@@ -40,18 +41,82 @@ export function NavBar({ items, className, activeTab: externalActiveTab, layoutI
         return () => window.removeEventListener("resize", handleResize)
     }, [])
 
+    const resolveTargetElement = (item: NavItem): Element | null => {
+        // Prefer item.id (matches LazySection wrapper), then fall back to url hash
+        if (item.id) {
+            const el = document.getElementById(item.id)
+            if (el) return el
+        }
+
+        if (item.url?.startsWith("#")) {
+            const el = document.querySelector(item.url)
+            if (el) return el
+        }
+
+        return null
+    }
+
+    const HEADER_OFFSET = 160 // header height + breathing room so badge+heading are fully visible
+
+    const getOffset = (item: NavItem) => item.id === "about" ? 80 : HEADER_OFFSET
+
+    const scrollToSectionHeading = (container: Element, offset: number, behavior: ScrollBehavior = "smooth"): boolean => {
+        // Find the badge span (uppercase label above h2), fall back to h2
+        const badge = container.querySelector<HTMLElement>('[class*="tracking-wider"], [class*="uppercase"]')
+        const heading = container.querySelector<HTMLElement>('h2')
+        const target = badge ?? heading
+        if (target) {
+            const targetTop = target.getBoundingClientRect().top + window.scrollY
+            window.scrollTo({ top: targetTop - offset, behavior })
+            return true
+        }
+        return false
+    }
+
     const handleClick = (e: React.MouseEvent<HTMLAnchorElement>, item: NavItem) => {
         e.preventDefault()
         setActiveTab(item.name)
 
         if (item.onClick) {
             item.onClick()
-        } else {
-            const element = document.querySelector(item.url)
-            if (element) {
-                element.scrollIntoView({ behavior: "smooth" })
-            }
+            return
         }
+
+        const element = resolveTargetElement(item)
+        if (!element) return
+
+        const offset = getOffset(item)
+
+        // For "about", use stable offsetTop (avoids scroll-animated layout shifts)
+        if (item.id === "about") {
+            const el = element as HTMLElement
+            let absoluteTop = el.offsetTop
+            let parent = el.offsetParent as HTMLElement | null
+            while (parent) {
+                absoluteTop += parent.offsetTop
+                parent = parent.offsetParent as HTMLElement | null
+            }
+            window.scrollTo({ top: absoluteTop - offset, behavior: "smooth" })
+            return
+        }
+
+        // Try scrolling to heading immediately
+        if (scrollToSectionHeading(element, offset)) return
+
+        // Content not loaded yet (lazy section) — scroll near wrapper to trigger IntersectionObserver
+        const elementTop = element.getBoundingClientRect().top + window.scrollY
+        window.scrollTo({ top: elementTop, behavior: "smooth" })
+
+        // Watch for lazy content to appear, then re-scroll precisely
+        const observer = new MutationObserver(() => {
+            if (scrollToSectionHeading(element, offset)) {
+                observer.disconnect()
+            }
+        })
+        observer.observe(element, { childList: true, subtree: true })
+
+        // Safety cleanup
+        setTimeout(() => observer.disconnect(), 4000)
     }
 
     return (
