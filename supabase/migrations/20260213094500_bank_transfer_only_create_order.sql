@@ -1,3 +1,6 @@
+-- create_order is restricted to bank transfer after payment-intent rollout
+BEGIN;
+
 -- ============================================
 -- CREATE ORDER FUNCTION (Backend Logic)
 -- ============================================
@@ -229,3 +232,5 @@ EXCEPTION WHEN OTHERS THEN
     );
 END;
 $$;
+
+COMMIT;

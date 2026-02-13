@@ -1,5 +1,6 @@
 import { supabase, safeQuery } from "./supabase";
 import { Order } from "./admin";
+import { getFunctionAuthHeaders } from "./functionAuth";
 
 // Checkout response tipi
 export interface CheckoutResponse {
@@ -178,7 +179,7 @@ export interface CreateOrderParams {
     userId: string;
     items: CartItem[];
     shippingAddressId: string;
-    paymentMethod: "credit_card" | "bank_transfer";
+    paymentMethod: "bank_transfer";
     subtotal: number;
     vatAmount: number;
     total: number;
@@ -194,6 +195,60 @@ export interface CreateOrderResponse {
     error?: string;
 }
 
+export interface InstallmentRate {
+    installment_number: number;
+    commission_rate: number;
+    is_active: boolean;
+}
+
+export interface CardPaymentInitParams {
+    shippingAddressId: string;
+    installmentNumber: number;
+    items: Array<{ product_id: string; quantity: number }>;
+    cardDetails?: {
+        number: string;
+        expiry: string;
+        cvv: string;
+        name: string;
+    };
+    cardToken?: string;
+    promoCode?: string;
+    correlationId?: string;
+}
+
+export interface CardTokenizeParams {
+    customerCode?: string;
+    cardHolderFullName: string;
+    cardNumber: string;
+    expMonth: string;
+    expYear: string;
+    cvcNumber: string;
+}
+
+export interface CardTokenizeResponse {
+    success: boolean;
+    cardToken?: string;
+    message?: string;
+}
+
+export interface ThreeDPayload {
+    redirectUrl?: string | null;
+    formAction?: string | null;
+    formFields?: Record<string, unknown> | null;
+    html?: string | null;
+    raw?: Record<string, unknown>;
+}
+
+export interface CardPaymentInitResponse {
+    success: boolean;
+    intentId?: string;
+    reused?: boolean;
+    redirectUrl?: string | null;
+    threeD?: ThreeDPayload;
+    message?: string;
+    error?: string;
+}
+
 /**
  * Generate a bank transfer reference number
  */
@@ -201,6 +256,70 @@ export function generateBankReference(): string {
     const timestamp = Date.now().toString(36).toUpperCase();
     const random = Math.random().toString(36).substring(2, 6).toUpperCase();
     return `BRV-${timestamp}-${random}`;
+}
+
+export async function getInstallmentRates(): Promise<InstallmentRate[]> {
+    const { data, error } = await supabase
+        .from("installment_rates")
+        .select("installment_number, commission_rate, is_active")
+        .eq("is_active", true)
+        .order("installment_number", { ascending: true });
+
+    if (error) {
+        console.error("Installment rates fetch error:", error);
+        return [];
+    }
+
+    return (data || []) as InstallmentRate[];
+}
+
+export async function initiateCardPayment(params: CardPaymentInitParams): Promise<CardPaymentInitResponse> {
+    const headers = await getFunctionAuthHeaders();
+    const { data, error } = await supabase.functions.invoke("bakiyem-init-3d", {
+        body: params,
+        headers,
+    });
+
+    if (error) {
+        console.error("Card init function error:", error);
+        return {
+            success: false,
+            message: "Kart odeme baslatilamadi",
+            error: "FUNCTION_ERROR",
+        };
+    }
+
+    return {
+        success: !!data?.success,
+        intentId: data?.intentId,
+        reused: !!data?.reused,
+        redirectUrl: data?.redirectUrl ?? data?.threeD?.redirectUrl ?? null,
+        threeD: data?.threeD || (data?.redirectUrl ? { redirectUrl: data.redirectUrl } : undefined),
+        message: data?.message,
+        error: data?.error,
+    };
+}
+
+export async function tokenizeCardForPayment(params: CardTokenizeParams): Promise<CardTokenizeResponse> {
+    const headers = await getFunctionAuthHeaders();
+    const { data, error } = await supabase.functions.invoke("bakiyem-tokenize-card", {
+        body: params,
+        headers,
+    });
+
+    if (error) {
+        console.error("Card tokenize function error:", error);
+        return {
+            success: false,
+            message: "Kart tokenizasyonu basarisiz",
+        };
+    }
+
+    return {
+        success: !!data?.success,
+        cardToken: data?.cardToken,
+        message: data?.message,
+    };
 }
 
 /**
@@ -213,6 +332,14 @@ export async function createOrder(params: CreateOrderParams): Promise<CreateOrde
         items,
         promoCode,
     } = params;
+
+    if (paymentMethod !== "bank_transfer") {
+        return {
+            success: false,
+            message: "Kart odemesi icin 3D odeme akisina gecis yapilmali",
+            error: "INVALID_PAYMENT_METHOD",
+        };
+    }
 
     // Map items to simplified structure for RPC
     const rpcItems = items.map((item) => ({

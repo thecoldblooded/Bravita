@@ -1,0 +1,46 @@
+name: Payment Maintenance Cron
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: payment-maintenance-cron
+  cancel-in-progress: false
+
+jobs:
+  run-maintenance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Invoke payment-maintenance function
+        env:
+          PAYMENT_MAINTENANCE_URL: ${{ vars.PAYMENT_MAINTENANCE_URL }}
+          PAYMENT_MAINTENANCE_SECRET: ${{ secrets.PAYMENT_MAINTENANCE_SECRET }}
+        run: |
+          set -euo pipefail
+
+          URL="${PAYMENT_MAINTENANCE_URL:-https://xpmbnznsmsujjuwumfiw.supabase.co/functions/v1/payment-maintenance}"
+
+          if [ -z "${PAYMENT_MAINTENANCE_SECRET:-}" ]; then
+            echo "Missing secret: PAYMENT_MAINTENANCE_SECRET"
+            exit 1
+          fi
+
+          response="$(curl -sS -w '\n%{http_code}' -X POST \
+            -H "content-type: application/json" \
+            -H "x-maintenance-secret: ${PAYMENT_MAINTENANCE_SECRET}" \
+            --data '{}' \
+            "${URL}")"
+
+          body="$(echo "${response}" | sed '$d')"
+          status="$(echo "${response}" | tail -n1)"
+
+          echo "HTTP ${status}"
+          echo "${body}"
+
+          if [ "${status}" -lt 200 ] || [ "${status}" -ge 300 ]; then
+            echo "payment-maintenance failed"
+            exit 1
+          fi

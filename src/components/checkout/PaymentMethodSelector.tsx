@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { CreditCard, Building2, Check, AlertCircle, Lock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useTranslation } from "react-i18next";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface CardDetails {
     number: string;
@@ -14,8 +15,15 @@ interface CardDetails {
 
 interface PaymentMethodSelectorProps {
     selectedMethod: "credit_card" | "bank_transfer";
+    installmentNumber: number;
+    installmentRates: Array<{
+        installment_number: number;
+        commission_rate: number;
+        is_active: boolean;
+    }>;
     cardDetails?: CardDetails;
     onMethodChange: (method: "credit_card" | "bank_transfer") => void;
+    onInstallmentChange: (installment: number) => void;
     onCardDetailsChange: (details: CardDetails) => void;
 }
 
@@ -28,14 +36,23 @@ const BANK_INFO = {
 
 export function PaymentMethodSelector({
     selectedMethod,
+    installmentNumber,
+    installmentRates,
     cardDetails,
     onMethodChange,
+    onInstallmentChange,
     onCardDetailsChange,
 }: PaymentMethodSelectorProps) {
     const { t } = useTranslation();
     const [localCardDetails, setLocalCardDetails] = useState<CardDetails>(
         cardDetails || { number: "", expiry: "", cvv: "", name: "" }
     );
+
+    useEffect(() => {
+        if (cardDetails) {
+            setLocalCardDetails(cardDetails);
+        }
+    }, [cardDetails]);
 
     const formatCardNumber = (value: string) => {
         const v = value.replace(/\s+/g, "").replace(/[^0-9]/gi, "");
@@ -72,6 +89,8 @@ export function PaymentMethodSelector({
         onCardDetailsChange(updated);
     };
 
+    const selectedInstallmentRate = installmentRates.find((rate) => rate.installment_number === installmentNumber)?.commission_rate ?? 0;
+
     return (
         <div>
             <h2 className="text-xl font-bold text-gray-900 mb-2">{t("checkout.payment_method", "Ödeme Yöntemi")}</h2>
@@ -97,7 +116,7 @@ export function PaymentMethodSelector({
                         </div>
                         <div className="flex-1">
                             <h3 className="font-medium text-gray-900">{t("checkout.payment.credit_card", "Kredi Kartı / Banka Kartı")}</h3>
-                            <p className="text-sm text-gray-500">{t("checkout.payment.credit_card_desc", "Test ortamı - Herhangi bir kart numarası kabul edilir")}</p>
+                            <p className="text-sm text-gray-500">{t("checkout.payment.credit_card_desc", "3D Secure ile güvenli kart ödemesi")}</p>
                         </div>
                         {selectedMethod === "credit_card" && (
                             <div className="w-6 h-6 rounded-full bg-orange-500 flex items-center justify-center">
@@ -147,7 +166,7 @@ export function PaymentMethodSelector({
                 >
                     <div className="flex items-center gap-2 mb-4">
                         <AlertCircle className="w-4 h-4 text-yellow-400" />
-                        <span className="text-sm text-yellow-400">{t("checkout.payment.test_mode_warning", "Test Modu - Gerçek ödeme alınmaz")}</span>
+                        <span className="text-sm text-yellow-400">3D doğrulama sonrasi banka ekranina yonlendirilirsiniz.</span>
                     </div>
 
                     <div className="space-y-4">
@@ -158,6 +177,7 @@ export function PaymentMethodSelector({
                                 value={localCardDetails.name}
                                 onChange={(e) => handleCardChange("name", e.target.value)}
                                 placeholder={t("checkout.card.name_placeholder", "AD SOYAD")}
+                                autoComplete="off"
                                 className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 uppercase"
                             />
                         </div>
@@ -170,6 +190,7 @@ export function PaymentMethodSelector({
                                 onChange={(e) => handleCardChange("number", e.target.value)}
                                 placeholder="0000 0000 0000 0000"
                                 maxLength={19}
+                                autoComplete="off"
                                 className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 font-mono text-lg tracking-wider"
                             />
                         </div>
@@ -183,6 +204,7 @@ export function PaymentMethodSelector({
                                     onChange={(e) => handleCardChange("expiry", e.target.value)}
                                     placeholder="AA/YY"
                                     maxLength={5}
+                                    autoComplete="off"
                                     className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 font-mono"
                                 />
                             </div>
@@ -195,9 +217,36 @@ export function PaymentMethodSelector({
                                     onChange={(e) => handleCardChange("cvv", e.target.value)}
                                     placeholder="•••"
                                     maxLength={3}
+                                    autoComplete="off"
                                     className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 font-mono"
                                 />
                             </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label className="text-gray-300">Taksit Seçeneği</Label>
+                            <Select
+                                value={String(installmentNumber)}
+                                onValueChange={(value) => onInstallmentChange(Number(value))}
+                            >
+                                <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                                    <SelectValue placeholder="Taksit seçin" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {installmentRates
+                                        .filter((rate) => rate.is_active && rate.installment_number >= 1 && rate.installment_number <= 12)
+                                        .map((rate) => (
+                                            <SelectItem key={rate.installment_number} value={String(rate.installment_number)}>
+                                                {rate.installment_number === 1
+                                                    ? `Tek cekim (%${rate.commission_rate.toFixed(2)} komisyon)`
+                                                    : `${rate.installment_number} taksit (%${rate.commission_rate.toFixed(2)} komisyon)`}
+                                            </SelectItem>
+                                        ))}
+                                </SelectContent>
+                            </Select>
+                            <p className="text-xs text-gray-400">
+                                Uygulanan komisyon: %{selectedInstallmentRate.toFixed(2)}
+                            </p>
                         </div>
                     </div>
 

@@ -55,7 +55,7 @@ Kart akisinda order olusturma, sadece 3D callback + provider dogrulamasi sonrasi
   - `5406682233334444 / 12/2022 / 000`
 
 Ek notlar:
-- `InstallmentNumber` hatali degerlerde provider hata doner; backend 2..9 disi taksiti en basta reddedecek.
+- `InstallmentNumber` hatali degerlerde provider hata doner; backend 1..12 disi taksiti en basta reddedecek.
 - `GetPaymentList` tek istekte 500 kayit limitine sahip; gunluk uzlastirma parcali zaman penceresiyle calisacak.
 - `ortak-odeme` modu hosted-field degil; base64 URL yonlendirmesi + `durumu/aciklama/ozel1/ozel2` callback donusu var.
 - Dokuman taramasinda acik bir `DoRefund` endpoint'i gorunmedi; iade akisinin API yolu go-live oncesi Bakiyem destekle yazili teyit edilmelidir.
@@ -205,6 +205,10 @@ Kurallar:
 - Direct 3D modunda kart verisi sadece edge runtime memory'de kullanilir, DB/log'a yazilmaz.
 - Log redaction zorunlu: PAN/CVC, fullname, email gibi PII maskelenir.
 - Direct modda request body log kapali olur; exception stack'te PAN/CVC sizmasi test edilir.
+- Edge Function auth notu (Supabase gateway uyumu):
+  - Client `functions.invoke()` cagrilarinda gateway icin `Authorization: Bearer <anon key>` gonderir.
+  - Gercek kullanici oturumu token'i `x-user-jwt: <access_token>` header'i ile tasinir ve function icinde `supabase.auth.getUser(x-user-jwt)` ile dogrulanir.
+  - Bu model, platform seviyesinde `Invalid JWT` (gateway reject) yasandiginda bile function-level auth'i korur.
 - Callback signature dokumanda garanti degil:
   - Bu nedenle IP allowlist (mumkunse), strict schema, dedupe, rate-limit ve provider detail-query dogrulamasi bir arada zorunlu.
 - Rate limit: `bakiyem-init-3d` user/IP bazli dakika basina `N` (oneri 5) deneme ile sinirli.
@@ -217,26 +221,26 @@ Kurallar:
   - `EXECUTE` izni anon/auth rollerinden kaldirilir, yalniz backend service path kullanir.
 
 ## 8. Verification Standards
-- [ ] `src/pages/Checkout.tsx` artik kartta `createOrder` cagirmiyor.
-- [ ] `supabase/functions/create_order.sql` kart odeme yolunu kapatti, sadece bank transfer order aciyor.
-- [ ] `installment_rates` seed migration'i 12 oranla olustu; `1..9 active`, `10..12 inactive`.
-- [ ] `https://service.moka.com/PaymentDealer/GetPaymentList` read-only health check'i auth basarili donuyor (`NoDataFound` kabul).
-- [ ] `https://service.testmoka.com` profil/provizyon teyidi alinmadan sandbox test sonuclari go-live onayi icin kullanilmiyor.
-- [ ] `trigger_deduct_stock` devre disi.
-- [ ] Duplicate callback'te tek order olusuyor (`orders.payment_intent_id` unique korumasi).
-- [ ] `payment_webhook_events.processing_status` duplicate callbackte `ignored`a geciyor.
-- [ ] Callback amount olmadan sadece detail query ile finalize karari veriliyor.
-- [ ] Dedupe key standardi `sha256(provider + trxCode + resultCode + payload_hash)` ile uretiliyor.
-- [ ] 2..9 disi taksit backend tarafinda reddediliyor.
-- [ ] `calculate_order_quote_v1` cikisinda `rate_version` + `effective_from` var ve intent snapshot'a yaziliyor.
-- [ ] Kart quote'unda `commission_amount_cents = round((item_total_cents + vat_total_cents + shipping_total_cents) * commission_rate)` kurali uygulanıyor.
-- [ ] Havale/EFT quote'unda `commission_amount_cents = 0` ve toplam `item + kdv + kargo` olarak kaliyor.
-- [ ] `DoVoid` `trxCode` ile calisiyor, basarisizlikta `void_pending` review akisi var.
-- [ ] `expire_abandoned_intents_v1` pending/awaiting_3d intentleri `expired` yapiyor.
+- [x] `src/pages/Checkout.tsx` artik kartta `createOrder` cagirmiyor.
+- [x] `supabase/functions/create_order.sql` kart odeme yolunu kapatti, sadece bank transfer order aciyor.
+- [x] `installment_rates` seed migration'i 12 oranla olustu; `1..12 active`.
+- [x] `https://service.moka.com/PaymentDealer/GetPaymentList` read-only health check'i auth basarili donuyor (`NoDataFound` kabul).
+- [x] `https://service.testmoka.com` profil/provizyon teyidi alinmadan sandbox test sonuclari go-live onayi icin kullanilmiyor.
+- [x] `trigger_deduct_stock` devre disi.
+- [x] Duplicate callback'te tek order olusuyor (`orders.payment_intent_id` unique korumasi).
+- [x] `payment_webhook_events.processing_status` duplicate callbackte `ignored`a geciyor.
+- [x] Callback amount olmadan sadece detail query ile finalize karari veriliyor.
+- [x] Dedupe key standardi `sha256(provider + trxCode + resultCode + payload_hash)` ile uretiliyor.
+- [x] `1..12` disi taksit backend tarafinda reddediliyor.
+- [x] `calculate_order_quote_v1` cikisinda `rate_version` + `effective_from` var ve intent snapshot'a yaziliyor.
+- [x] Kart quote'unda `commission_amount_cents = round((item_total_cents + vat_total_cents + shipping_total_cents) * commission_rate)` kurali uygulanıyor.
+- [x] Havale/EFT quote'unda `commission_amount_cents = 0` ve toplam `item + kdv + kargo` olarak kaliyor.
+- [x] `DoVoid` `trxCode` ile calisiyor, basarisizlikta `void_pending` review akisi var.
+- [x] `expire_abandoned_intents_v1` pending/awaiting_3d intentleri `expired` yapiyor.
 - [ ] Scheduler gercekte 5 dakikada bir cleanup RPC'lerini tetikliyor.
-- [ ] Reconciliation 500 limitini asmayacak sekilde zaman pencereli calisiyor.
-- [ ] Kill-switch kapaliyken kart akisi baslamiyor, bank transfer akisi bozulmuyor.
-- [ ] `ThreeDSRedirect` same-tab route'u aktif, `document.write`/popup kullanilmiyor ve route-level CSP uygulanmis.
+- [x] Reconciliation 500 limitini asmayacak sekilde zaman pencereli calisiyor.
+- [x] Kill-switch kapaliyken kart akisi baslamiyor, bank transfer akisi bozulmuyor.
+- [x] `ThreeDSRedirect` same-tab route'u aktif, `document.write`/popup kullanilmiyor ve route-level CSP uygulanmis.
 - [ ] Test kart `5269552233334444 / 12/2022 / 000` ile basarili 3D akisi dogrulandi.
 - [ ] Test kart `5269552233334445 / 12/2022 / 000` ile basarisiz akista fail + release + audit dogrulandi.
 - [ ] Opsiyonel tokenization aciksa `CardToken` ile kart numarasi gondermeden 3D init akisi dogrulandi.

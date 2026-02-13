@@ -10,7 +10,13 @@ import { toast } from "sonner";
 import { AddressSelector } from "@/components/checkout/AddressSelector";
 import { PaymentMethodSelector } from "@/components/checkout/PaymentMethodSelector";
 import { OrderSummary } from "@/components/checkout/OrderSummary";
-import { createOrder } from "@/lib/checkout";
+import {
+    createOrder,
+    getInstallmentRates,
+    initiateCardPayment,
+    tokenizeCardForPayment,
+    type InstallmentRate
+} from "@/lib/checkout";
 import Header from "@/components/Header";
 
 const getSteps = (t: (key: string, options?: Record<string, unknown>) => string) => [
@@ -19,9 +25,13 @@ const getSteps = (t: (key: string, options?: Record<string, unknown>) => string)
     { id: 3, name: t("checkout.steps.summary"), icon: Package },
 ];
 
+const PAYMENT_USE_TOKENIZATION = String(import.meta.env.VITE_PAYMENT_USE_TOKENIZATION ?? "false").toLowerCase() === "true";
+const PAYMENT_TOKENIZATION_REQUIRED = String(import.meta.env.VITE_PAYMENT_TOKENIZATION_REQUIRED ?? "false").toLowerCase() === "true";
+
 interface CheckoutData {
     addressId: string | null;
     paymentMethod: "credit_card" | "bank_transfer";
+    installmentNumber: number;
     cardDetails?: {
         number: string;
         expiry: string;
@@ -41,7 +51,9 @@ export default function Checkout() {
     const [checkoutData, setCheckoutData] = useState<CheckoutData>({
         addressId: null,
         paymentMethod: "credit_card",
+        installmentNumber: 1,
     });
+    const [installmentRates, setInstallmentRates] = useState<InstallmentRate[]>([]);
 
     const [isAgreed, setIsAgreed] = useState(false);
 
@@ -63,6 +75,15 @@ export default function Checkout() {
         }
     }, [isAuthenticated, cartItems, navigate, orderPlaced, t]);
 
+    useEffect(() => {
+        async function loadInstallmentRates() {
+            const rates = await getInstallmentRates();
+            setInstallmentRates(rates);
+        }
+
+        loadInstallmentRates();
+    }, []);
+
     const canProceed = () => {
         switch (currentStep) {
             case 1:
@@ -80,8 +101,9 @@ export default function Checkout() {
                     // Name must contain at least two words (Name + Surname)
                     const nameParts = card.name.trim().split(/\s+/);
                     const isNameValid = nameParts.length >= 2 && nameParts.every(part => part.length >= 2);
+                    const isInstallmentValid = checkoutData.installmentNumber >= 1 && checkoutData.installmentNumber <= 12;
 
-                    return isNumberValid && isExpiryValid && isCvvValid && isNameValid;
+                    return isNumberValid && isExpiryValid && isCvvValid && isNameValid && isInstallmentValid;
                 }
                 return true; // Bank transfer doesn't need card details
             case 3:
@@ -112,31 +134,90 @@ export default function Checkout() {
 
         setIsProcessing(true);
         try {
-            const result = await createOrder({
+            if (checkoutData.paymentMethod === "credit_card") {
+                if (!checkoutData.cardDetails) {
+                    toast.error("Kart bilgileri eksik");
+                    return;
+                }
+
+                let cardToken: string | undefined;
+                if (PAYMENT_USE_TOKENIZATION) {
+                    const expiryMatch = /^(\d{2})\/(\d{2})$/.exec(checkoutData.cardDetails.expiry.trim());
+                    if (!expiryMatch) {
+                        toast.error("Kart son kullanma tarihi gecersiz");
+                        return;
+                    }
+
+                    const tokenizeResult = await tokenizeCardForPayment({
+                        customerCode: user.id,
+                        cardHolderFullName: checkoutData.cardDetails.name.trim(),
+                        cardNumber: checkoutData.cardDetails.number.replace(/\s/g, ""),
+                        expMonth: expiryMatch[1],
+                        expYear: `20${expiryMatch[2]}`,
+                        cvcNumber: checkoutData.cardDetails.cvv,
+                    });
+
+                    if (tokenizeResult.success && tokenizeResult.cardToken) {
+                        cardToken = tokenizeResult.cardToken;
+                    } else if (PAYMENT_TOKENIZATION_REQUIRED) {
+                        toast.error(tokenizeResult.message || "Kart tokenizasyonu basarisiz");
+                        return;
+                    }
+                }
+
+                const cardInitResult = await initiateCardPayment({
+                    shippingAddressId: checkoutData.addressId,
+                    installmentNumber: checkoutData.installmentNumber,
+                    items: cartItems.map((item) => ({
+                        product_id: item.product_id || item.id,
+                        quantity: item.quantity,
+                    })),
+                    cardDetails: cardToken ? undefined : checkoutData.cardDetails,
+                    cardToken,
+                    promoCode: cartTotal.discount > 0 && typeof contextPromoCode === "string" ? contextPromoCode : undefined,
+                });
+
+                const threeDPayload = cardInitResult.threeD || (cardInitResult.redirectUrl ? { redirectUrl: cardInitResult.redirectUrl } : undefined);
+
+                if (cardInitResult.success && cardInitResult.intentId && threeDPayload) {
+                    sessionStorage.setItem(`threed:${cardInitResult.intentId}`, JSON.stringify(threeDPayload));
+                    sessionStorage.setItem("bravita_pending_card_checkout", "1");
+                    setCheckoutData((prev) => ({
+                        ...prev,
+                        cardDetails: {
+                            number: "",
+                            expiry: "",
+                            cvv: "",
+                            name: "",
+                        },
+                    }));
+                    navigate(`/3d-redirect?intent=${encodeURIComponent(cardInitResult.intentId)}`);
+                    return;
+                }
+
+                toast.error(cardInitResult.message || "3D ödeme başlatılamadı");
+                return;
+            }
+
+            const bankTransferResult = await createOrder({
                 userId: user.id,
                 items: cartItems,
                 shippingAddressId: checkoutData.addressId,
-                paymentMethod: checkoutData.paymentMethod,
+                paymentMethod: "bank_transfer",
                 subtotal: cartTotal.subtotal,
                 vatAmount: cartTotal.vat,
                 total: cartTotal.total,
-                promoCode: cartTotal.discount > 0 && typeof contextPromoCode === 'string' ? contextPromoCode : undefined,
+                promoCode: cartTotal.discount > 0 && typeof contextPromoCode === "string" ? contextPromoCode : undefined,
                 discountAmount: cartTotal.discount,
             });
 
-            if (result.success && result.orderId) {
-                setOrderPlaced(true); // Prevent redirect
+            if (bankTransferResult.success && bankTransferResult.orderId) {
+                setOrderPlaced(true);
                 toast.success(t("order.success_toast", "Siparişiniz başarıyla oluşturuldu!"));
-
-                // Navigate first, then clear cart
-                navigate(`/order-confirmation/${result.orderId}`);
-
-                // Clear cart after navigation (setTimeout to ensure navigation happens first)
-                setTimeout(() => {
-                    clearCart();
-                }, 100);
+                navigate(`/order-confirmation/${bankTransferResult.orderId}`);
+                setTimeout(() => clearCart(), 100);
             } else {
-                toast.error(result.message || t("errors.order_failed", "Sipariş oluşturulamadı"));
+                toast.error(bankTransferResult.message || t("errors.order_failed", "Sipariş oluşturulamadı"));
             }
         } catch (error) {
             console.error("Order creation error:", error);
@@ -220,8 +301,11 @@ export default function Checkout() {
                             >
                                 <PaymentMethodSelector
                                     selectedMethod={checkoutData.paymentMethod}
+                                    installmentNumber={checkoutData.installmentNumber}
+                                    installmentRates={installmentRates}
                                     cardDetails={checkoutData.cardDetails}
                                     onMethodChange={(method) => setCheckoutData({ ...checkoutData, paymentMethod: method })}
+                                    onInstallmentChange={(installmentNumber) => setCheckoutData({ ...checkoutData, installmentNumber })}
                                     onCardDetailsChange={(details) => setCheckoutData({ ...checkoutData, cardDetails: details })}
                                 />
                             </motion.div>
@@ -237,6 +321,8 @@ export default function Checkout() {
                                 <OrderSummary
                                     addressId={checkoutData.addressId}
                                     paymentMethod={checkoutData.paymentMethod}
+                                    installmentNumber={checkoutData.installmentNumber}
+                                    installmentRates={installmentRates}
                                     items={cartItems}
                                     totals={cartTotal}
                                     user={user}

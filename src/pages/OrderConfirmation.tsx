@@ -9,6 +9,7 @@ import bravitaBottle from "@/assets/bravita-bottle.webp";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
+import { useCart } from "@/contexts/CartContext";
 
 interface OrderDetails {
     items: Array<{
@@ -17,9 +18,13 @@ interface OrderDetails {
         quantity: number;
         unit_price: number;
         subtotal: number;
+        line_total?: number;
     }>;
     subtotal: number;
     vat_amount: number;
+    shipping_cost?: number;
+    commission_amount?: number;
+    installment_number?: number;
     total: number;
     discount?: number;
     promo_code?: string;
@@ -48,6 +53,7 @@ interface BankInfo {
 export default function OrderConfirmation() {
     const { t } = useTranslation();
     const { orderId } = useParams<{ orderId: string }>();
+    const { clearCart } = useCart();
     const [order, setOrder] = useState<Order | null>(null);
     const [bankInfo, setBankInfo] = useState<BankInfo | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -67,6 +73,17 @@ export default function OrderConfirmation() {
         }
         fetchData();
     }, [orderId]);
+
+    useEffect(() => {
+        if (!order) return;
+        const pendingCardCheckout = sessionStorage.getItem("bravita_pending_card_checkout");
+        if (pendingCardCheckout === "1") {
+            if (order.payment_method === "credit_card") {
+                clearCart();
+            }
+            sessionStorage.removeItem("bravita_pending_card_checkout");
+        }
+    }, [order, clearCart]);
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
@@ -228,7 +245,7 @@ export default function OrderConfirmation() {
                                 <h4 className="font-medium text-gray-900">{item.product_name}</h4>
                                 <p className="text-sm text-gray-500">{t("order.quantity_label", "Adet:")} {item.quantity} × ₺{item.unit_price}</p>
                             </div>
-                            <span className="font-bold text-gray-900">₺{item.subtotal}</span>
+                            <span className="font-bold text-gray-900">₺{(item.subtotal ?? item.line_total ?? 0).toFixed(2)}</span>
                         </div>
                     ))}
 
@@ -249,6 +266,20 @@ export default function OrderConfirmation() {
                             <span className="text-gray-500">{t("cart.vat", "KDV (%20)")}</span>
                             <span className="text-gray-900">₺{order.order_details.vat_amount}</span>
                         </div>
+                        {(order.order_details.shipping_cost || 0) > 0 && (
+                            <div className="flex justify-between">
+                                <span className="text-gray-500">{t("checkout.shipping", "Kargo")}</span>
+                                <span className="text-gray-900">₺{order.order_details.shipping_cost}</span>
+                            </div>
+                        )}
+                        {(order.order_details.commission_amount || 0) > 0 && (
+                            <div className="flex justify-between">
+                                <span className="text-gray-500">
+                                    Komisyon{order.order_details.installment_number ? ` (${order.order_details.installment_number} taksit)` : ""}
+                                </span>
+                                <span className="text-gray-900">₺{order.order_details.commission_amount}</span>
+                            </div>
+                        )}
                         <div className="flex justify-between font-bold text-lg">
                             <span className="text-gray-900">{t("cart.total", "Toplam")}</span>
                             <span className="text-orange-600">₺{order.order_details.total}</span>

@@ -1,4 +1,5 @@
 import { supabase, getSessionSafe, safeQuery } from "@/lib/supabase";
+import { getFunctionAuthHeaders } from "@/lib/functionAuth";
 
 // Order status types
 export type OrderStatus = "pending" | "processing" | "preparing" | "shipped" | "delivered" | "cancelled";
@@ -34,6 +35,7 @@ export interface Order {
     created_at: string;
     updated_at: string;
     cancellation_reason?: string | null;
+    payment_intent_id?: string | null;
     // Joined data
     profiles?: {
         full_name: string | null;
@@ -55,6 +57,13 @@ export interface OrderStatusHistoryItem {
     created_by: string | null;
     created_at: string;
     updated_at: string;
+}
+
+export interface CardVoidResult {
+    success: boolean;
+    pending: boolean;
+    message: string;
+    error?: string;
 }
 
 export interface OrderStats {
@@ -321,10 +330,9 @@ export async function updateOrderStatus(
     // Atomic RPC call handles:
     // 1. Admin verification
     // 2. Status update
-    // 4. Stock restoration (on cancellation)
-    // 5. Payment status update (refund)
-    // 6. Order status history record
-    // 7. Admin audit logging
+    // 3. Stock restoration (on cancellation)
+    // 4. Order status history record
+    // 5. Admin audit logging
     const { error: rpcError } = await supabase.rpc("admin_update_order_status", {
         p_order_id: orderId,
         p_new_status: status,
@@ -335,6 +343,32 @@ export async function updateOrderStatus(
         console.error("RPC Error (admin_update_order_status):", rpcError);
         throw new Error(rpcError.message || "Sipariş durumu güncellenemedi.");
     }
+}
+
+export async function voidCardPayment(orderId: string): Promise<CardVoidResult> {
+    const headers = await getFunctionAuthHeaders();
+    const { data, error } = await supabase.functions.invoke("bakiyem-void", {
+        body: { orderId },
+        headers,
+    });
+
+    if (error) {
+        return {
+            success: false,
+            pending: false,
+            message: "Void istegi gonderilemedi",
+            error: error.message || "FUNCTION_ERROR",
+        };
+    }
+
+    const success = data?.success === true;
+    const pending = success ? false : true;
+    return {
+        success,
+        pending,
+        message: data?.message || (success ? "Void basarili" : "Void manuel incelemeye alindi"),
+        error: data?.error,
+    };
 }
 
 /**

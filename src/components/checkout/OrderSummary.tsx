@@ -39,6 +39,12 @@ interface Address {
 interface OrderSummaryProps {
     addressId: string | null;
     paymentMethod: "credit_card" | "bank_transfer";
+    installmentNumber: number;
+    installmentRates: Array<{
+        installment_number: number;
+        commission_rate: number;
+        is_active: boolean;
+    }>;
     items: CartItem[];
     totals: Totals;
     user: UserProfile | null;
@@ -46,7 +52,17 @@ interface OrderSummaryProps {
     onAgreementChange: (val: boolean) => void;
 }
 
-export function OrderSummary({ addressId, paymentMethod, items, totals, user, isAgreed, onAgreementChange }: OrderSummaryProps) {
+export function OrderSummary({
+    addressId,
+    paymentMethod,
+    installmentNumber,
+    installmentRates,
+    items,
+    totals,
+    user,
+    isAgreed,
+    onAgreementChange,
+}: OrderSummaryProps) {
     const { t } = useTranslation();
     const [address, setAddress] = useState<Address | null>(null);
     const { applyPromoCode, removePromoCode, promoCode } = useCart();
@@ -60,6 +76,14 @@ export function OrderSummary({ addressId, paymentMethod, items, totals, user, is
     const [lastAttemptTimestamp, setLastAttemptTimestamp] = useState<number | null>(null);
     const MAX_ATTEMPTS = 5;
     const LOCKOUT_TIME = 10 * 60 * 1000; // 10 minutes
+    const commissionRate = paymentMethod === "credit_card"
+        ? (installmentRates.find((rate) => rate.installment_number === installmentNumber)?.commission_rate ?? 0)
+        : 0;
+    const baseForCommission = Number((totals.subtotal + totals.vat + totals.shipping - totals.discount).toFixed(2));
+    const commissionAmount = paymentMethod === "credit_card"
+        ? Number(((baseForCommission * commissionRate) / 100).toFixed(2))
+        : 0;
+    const payableTotal = Number((baseForCommission + commissionAmount).toFixed(2));
 
     useEffect(() => {
         if (promoCode) setInputPromoCode(promoCode);
@@ -286,9 +310,17 @@ export function OrderSummary({ addressId, paymentMethod, items, totals, user, is
                         </div>
 
                         <div className="h-px bg-orange-200 my-2" />
+                        {paymentMethod === "credit_card" && (
+                            <div className="flex justify-between">
+                                <span className="text-gray-600">
+                                    Komisyon ({installmentNumber === 1 ? "Tek çekim" : `${installmentNumber} taksit`} - %{commissionRate.toFixed(2)})
+                                </span>
+                                <span className="font-medium text-gray-900">₺{commissionAmount.toFixed(2)}</span>
+                            </div>
+                        )}
                         <div className="flex justify-between items-center">
-                            <span className="font-bold text-gray-900">{t('cart.total')}</span>
-                            <span className="text-2xl font-black text-orange-600">₺{totals.total.toFixed(2)}</span>
+                            <span className="font-bold text-gray-900">Ödenecek Toplam</span>
+                            <span className="text-2xl font-black text-orange-600">₺{payableTotal.toFixed(2)}</span>
                         </div>
                     </div>
                 </div>
@@ -297,7 +329,7 @@ export function OrderSummary({ addressId, paymentMethod, items, totals, user, is
                     user={user}
                     address={address}
                     items={items}
-                    totals={totals}
+                    totals={{ total: payableTotal }}
                     paymentMethod={paymentMethod}
                 />
 

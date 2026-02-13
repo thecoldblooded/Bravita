@@ -19,6 +19,8 @@ const Profile = lazy(() => import("./pages/Profile"));
 const UpdatePassword = lazy(() => import("./pages/UpdatePassword"));
 const Checkout = lazy(() => import("./pages/Checkout"));
 const OrderConfirmation = lazy(() => import("./pages/OrderConfirmation"));
+const ThreeDSRedirect = lazy(() => import("./pages/ThreeDSRedirect"));
+const PaymentFailed = lazy(() => import("./pages/PaymentFailed"));
 const PeriodicGif = lazy(() => import("@/components/PeriodicGif"));
 const PromotionMarquee = lazy(() => import("@/components/PromotionMarquee"));
 const CookieConsent = lazy(() => import("@/components/CookieConsent"));
@@ -30,6 +32,7 @@ const AdminProducts = lazy(() => import("@/pages/admin/AdminProducts"));
 const AdminPromoCodes = lazy(() => import("@/pages/admin/AdminPromoCodes"));
 const AdminAuditLogs = lazy(() => import("@/pages/admin/AdminAuditLogs"));
 const AdminSupport = lazy(() => import("@/pages/admin/AdminSupport"));
+const AdminEmails = lazy(() => import("@/pages/admin/AdminEmails"));
 
 /**
  * 🚧 MAINTENANCE MODE FLAG
@@ -94,6 +97,8 @@ const AppContent = () => {
           <Route path="/update-password" element={<UpdatePassword />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/checkout" element={<Checkout />} />
+          <Route path="/3d-redirect" element={<ThreeDSRedirect />} />
+          <Route path="/payment-failed" element={<PaymentFailed />} />
           <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
 
           {/* Admin routes */}
@@ -103,6 +108,7 @@ const AppContent = () => {
           <Route path="/admin/products" element={<AdminProducts />} />
           <Route path="/admin/promotions" element={<AdminPromoCodes />} />
           <Route path="/admin/support" element={<AdminSupport />} />
+          <Route path="/admin/emails" element={<AdminEmails />} />
           <Route path="/admin/admins" element={<AdminUsers />} />
           <Route path="/admin/logs" element={<AdminAuditLogs />} />
 
