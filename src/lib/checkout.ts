@@ -249,6 +249,39 @@ export interface CardPaymentInitResponse {
     error?: string;
 }
 
+async function extractEdgeFunctionErrorMessage(error: unknown): Promise<{ message?: string; status?: number }> {
+    const err = error as { context?: Response; response?: Response } | null;
+    const response = err?.context instanceof Response
+        ? err.context
+        : err?.response instanceof Response
+            ? err.response
+            : undefined;
+
+    const status = typeof response?.status === "number" ? response.status : undefined;
+    if (!response) return { status };
+
+    const contentType = response.headers?.get?.("content-type") ?? "";
+    try {
+        if (contentType.includes("application/json")) {
+            const body = await response.clone().json().catch(() => null);
+            if (body && typeof body === "object") {
+                const maybeMessage = (body as { message?: unknown; error?: unknown }).message ??
+                    (body as { error?: unknown }).error;
+                if (typeof maybeMessage === "string" && maybeMessage.trim().length > 0) {
+                    return { status, message: maybeMessage.trim() };
+                }
+            }
+        }
+
+        const text = await response.clone().text().catch(() => "");
+        if (text.trim().length > 0) return { status, message: text.trim() };
+    } catch {
+        // Ignore parse errors - fall back to default message.
+    }
+
+    return { status };
+}
+
 /**
  * Generate a bank transfer reference number
  */
@@ -281,10 +314,11 @@ export async function initiateCardPayment(params: CardPaymentInitParams): Promis
     });
 
     if (error) {
-        console.error("Card init function error:", error);
+        const extracted = await extractEdgeFunctionErrorMessage(error);
+        console.error("Card init function error:", extracted.status, extracted.message, error);
         return {
             success: false,
-            message: "Kart odeme baslatilamadi",
+            message: extracted.message || "Kart odeme baslatilamadi",
             error: "FUNCTION_ERROR",
         };
     }
@@ -308,10 +342,11 @@ export async function tokenizeCardForPayment(params: CardTokenizeParams): Promis
     });
 
     if (error) {
-        console.error("Card tokenize function error:", error);
+        const extracted = await extractEdgeFunctionErrorMessage(error);
+        console.error("Card tokenize function error:", extracted.status, extracted.message, error);
         return {
             success: false,
-            message: "Kart tokenizasyonu basarisiz",
+            message: extracted.message || "Kart tokenizasyonu basarisiz",
         };
     }
 
