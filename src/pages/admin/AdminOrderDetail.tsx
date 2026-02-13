@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Package, User, MapPin, Clock, Truck, CheckCircle, Edit2, Save, X, ClipboardList, RefreshCw, Building2, CreditCard } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminGuard } from "@/components/admin/AdminGuard";
-import { getOrderById, updateOrderStatus, updateTrackingNumber, getOrderStatusHistory, Order, OrderStatus, STATUS_CONFIG, OrderStatusHistoryItem, confirmPayment } from "@/lib/admin";
+import { getOrderById, updateOrderStatus, updateTrackingNumber, getOrderStatusHistory, Order, OrderStatus, STATUS_CONFIG, OrderStatusHistoryItem, confirmPayment, voidCardPayment } from "@/lib/admin";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { OrderDetailSkeleton } from "@/components/admin/skeletons";
@@ -92,8 +92,34 @@ function AdminOrderDetailContent() {
 
         setIsUpdatingStatus(true);
         try {
+            let cardVoidSucceeded = false;
+            const shouldVoidCardPayment =
+                newStatus === "cancelled" &&
+                order.payment_method === "credit_card" &&
+                order.payment_status === "paid";
+
+            if (shouldVoidCardPayment) {
+                const voidResult = await voidCardPayment(orderId);
+                if (!voidResult.success && !voidResult.pending) {
+                    toast.error(voidResult.message || "Kart iade/iptal islemi basarisiz");
+                    return;
+                }
+
+                cardVoidSucceeded = voidResult.success;
+                if (voidResult.success) {
+                    toast.success("Kart odemesi void edildi.");
+                } else if (voidResult.pending) {
+                    toast.warning(voidResult.message || "Void istegi manuel incelemeye alindi.");
+                }
+            }
+
             await updateOrderStatus(orderId, newStatus, note);
-            setOrder({ ...order, status: newStatus, cancellation_reason: note });
+            setOrder({
+                ...order,
+                status: newStatus,
+                cancellation_reason: note,
+                payment_status: cardVoidSucceeded ? "refunded" : order.payment_status,
+            });
             const newHistory = await getOrderStatusHistory(orderId);
             setHistory(newHistory);
 
