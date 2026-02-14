@@ -1,7 +1,6 @@
 -- RPCs for payment intent lifecycle
 
 BEGIN;
-
 CREATE OR REPLACE FUNCTION public.calculate_order_quote_v1(
     p_user_id UUID,
     p_items JSONB,
@@ -219,7 +218,6 @@ BEGIN
     );
 END;
 $$;
-
 CREATE OR REPLACE FUNCTION public.reserve_stock_for_intent_v1(
     p_intent_id UUID,
     p_ttl_minutes INTEGER DEFAULT 15
@@ -328,7 +326,6 @@ BEGIN
     );
 END;
 $$;
-
 CREATE OR REPLACE FUNCTION public.release_intent_reservations_v1(
     p_intent_id UUID,
     p_new_status TEXT DEFAULT 'failed'
@@ -381,7 +378,6 @@ BEGIN
     );
 END;
 $$;
-
 CREATE OR REPLACE FUNCTION public.finalize_intent_create_order_v1(
     p_intent_id UUID,
     p_gateway_result JSONB DEFAULT '{}'::jsonb
@@ -564,7 +560,6 @@ BEGIN
     );
 END;
 $$;
-
 CREATE OR REPLACE FUNCTION public.release_expired_reservations_v1()
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -615,7 +610,6 @@ BEGIN
     );
 END;
 $$;
-
 CREATE OR REPLACE FUNCTION public.expire_abandoned_intents_v1()
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -651,19 +645,16 @@ BEGIN
     );
 END;
 $$;
-
 REVOKE EXECUTE ON FUNCTION public.calculate_order_quote_v1(UUID, JSONB, UUID, TEXT, INTEGER, TEXT) FROM PUBLIC, anon, authenticated;
 REVOKE EXECUTE ON FUNCTION public.reserve_stock_for_intent_v1(UUID, INTEGER) FROM PUBLIC, anon, authenticated;
 REVOKE EXECUTE ON FUNCTION public.release_intent_reservations_v1(UUID, TEXT) FROM PUBLIC, anon, authenticated;
 REVOKE EXECUTE ON FUNCTION public.finalize_intent_create_order_v1(UUID, JSONB) FROM PUBLIC, anon, authenticated;
 REVOKE EXECUTE ON FUNCTION public.release_expired_reservations_v1() FROM PUBLIC, anon, authenticated;
 REVOKE EXECUTE ON FUNCTION public.expire_abandoned_intents_v1() FROM PUBLIC, anon, authenticated;
-
 GRANT EXECUTE ON FUNCTION public.calculate_order_quote_v1(UUID, JSONB, UUID, TEXT, INTEGER, TEXT) TO service_role;
 GRANT EXECUTE ON FUNCTION public.reserve_stock_for_intent_v1(UUID, INTEGER) TO service_role;
 GRANT EXECUTE ON FUNCTION public.release_intent_reservations_v1(UUID, TEXT) TO service_role;
 GRANT EXECUTE ON FUNCTION public.finalize_intent_create_order_v1(UUID, JSONB) TO service_role;
 GRANT EXECUTE ON FUNCTION public.release_expired_reservations_v1() TO service_role;
 GRANT EXECUTE ON FUNCTION public.expire_abandoned_intents_v1() TO service_role;
-
 COMMIT;

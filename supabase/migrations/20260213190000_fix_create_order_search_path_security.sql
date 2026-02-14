@@ -1,3 +1,4 @@
+
 -- Security hardening: Explicitly set search_path for SECURITY DEFINER function
 -- Replaces/Updates the function definition from 20260213094500_bank_transfer_only_create_order.sql
 
@@ -233,3 +234,4 @@ END;
 $$;
 
 COMMIT;
+;

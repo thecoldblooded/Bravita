@@ -1,3 +1,4 @@
+
 -- Phase 1: Email Template Unification Foundation
 -- Adds:
 -- 1) Global variable registry
@@ -437,3 +438,4 @@ WHERE slug IN (
     'confirm-signup',
     'reset_password'
 );
+;

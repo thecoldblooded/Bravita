@@ -1,3 +1,4 @@
+
 -- Migration to capture manual changes made directly to the remote Supabase database and resolve CI drift.
 -- This aligns the local migration history with the remote source of truth.
 
@@ -210,5 +211,4 @@ CREATE TRIGGER trigger_orders_updated_at BEFORE UPDATE ON public.orders FOR EACH
 
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
-
-
+;

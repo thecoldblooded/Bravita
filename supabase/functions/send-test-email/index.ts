@@ -31,16 +31,39 @@ function isAllowedOrigin(origin: string): boolean {
     }
 }
 
+function extractUserJwt(req: Request): string | null {
+    const xUserJwt = req.headers.get("x-user-jwt");
+    if (xUserJwt && xUserJwt.trim().length > 0) {
+        return xUserJwt.replace(/^Bearer\s+/i, "").trim();
+    }
+
+    const authHeader = req.headers.get("Authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+        return authHeader.replace(/^Bearer\s+/i, "").trim();
+    }
+
+    return null;
+}
+
 function getCorsHeaders(req: Request) {
     const origin = req.headers.get('Origin') || '';
     const allowedOrigin = isAllowedOrigin(origin) ? origin : ALLOWED_ORIGINS[0];
 
     return {
         "Access-Control-Allow-Origin": allowedOrigin,
-        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-user-jwt",
         "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
         "Vary": "Origin",
     };
+}
+
+function toTextFromHtml(html: string): string {
+    return String(html ?? "")
+        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, " ")
+        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, " ")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
 }
 
 serve(async (req: Request) => {
@@ -62,27 +85,34 @@ serve(async (req: Request) => {
 
         const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-        // 1. Verify Admin
-        const authHeader = req.headers.get("Authorization");
-        if (!authHeader) throw new Error("Unauthorized");
+        // 1. Verify Superadmin
+        const token = extractUserJwt(req);
+        if (!token) throw new Error("Unauthorized");
 
-        const token = authHeader.replace("Bearer ", "");
         const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
         if (authError || !user) throw new Error("Unauthorized");
 
         const { data: profile } = await supabase
             .from("profiles")
-            .select("is_admin, is_superadmin")
+            .select("is_superadmin")
             .eq("id", user.id)
             .single();
 
-        if (!profile?.is_admin && !profile?.is_superadmin) {
-            throw new Error("Forbidden: Admin only");
+        if (!profile?.is_superadmin) {
+            throw new Error("Forbidden: Superadmin only");
         }
 
         // 2. Parse Body
-        const { template_slug, recipient_email } = await req.json();
+        const body = await req.json();
+        const {
+            template_slug,
+            recipient_email,
+            preview_subject,
+            preview_html,
+            preview_uses_sample_data,
+        } = body || {};
+
         if (!template_slug || !recipient_email) {
             throw new Error("Missing template_slug or recipient_email");
         }
@@ -113,15 +143,22 @@ serve(async (req: Request) => {
             variablePolicies,
         });
 
+        const hasClientPreview = typeof preview_html === "string" && preview_html.trim().length > 0;
+        const effectiveSubject = typeof preview_subject === "string" && preview_subject.trim().length > 0
+            ? preview_subject.trim()
+            : renderResult.subject;
+        const effectiveHtml = hasClientPreview ? preview_html : renderResult.html;
+        const effectiveText = hasClientPreview ? toTextFromHtml(effectiveHtml) : renderResult.text;
+
         // 5. Send via Resend
         const fromName = config?.sender_name || "Bravita Test";
         const fromEmail = config?.sender_email || "noreply@bravita.com.tr";
         const resendPayload: Record<string, unknown> = {
             from: `${fromName} <${fromEmail}>`,
             to: [recipient_email],
-            subject: `[TEST] ${renderResult.subject}`,
-            html: renderResult.html,
-            text: renderResult.text,
+            subject: `[TEST] ${effectiveSubject}`,
+            html: effectiveHtml,
+            text: effectiveText,
         };
 
         if (config?.reply_to) {
@@ -140,6 +177,35 @@ serve(async (req: Request) => {
         const resData = await res.json();
         if (!res.ok) throw new Error(`Resend Error: ${JSON.stringify(resData)}`);
 
+        const { error: logError } = await supabase.from("email_logs").insert({
+            email_type: template_slug,
+            template_slug,
+            recipient: recipient_email,
+            recipient_email,
+            subject: `[TEST] ${effectiveSubject}`,
+            content_snapshot: effectiveHtml,
+            sent_at: new Date().toISOString(),
+            mode: "test",
+            blocked: renderResult.blocked,
+            error_details: renderResult.warnings?.length ? renderResult.warnings.join(" | ") : null,
+            render_warnings: renderResult.warnings || [],
+            unresolved_tokens: renderResult.unresolvedTokens || [],
+            degradation_active: !!renderResult.degradation?.active,
+            degradation_reason: renderResult.degradation?.reason || null,
+            template_version: template?.version || null,
+            metadata: {
+                channel: "admin_test_send",
+                resend_id: resData?.id || null,
+                used_variables: renderResult.usedVariables || [],
+                content_source: hasClientPreview ? "admin_preview" : "server_render",
+                preview_uses_sample_data: !!preview_uses_sample_data,
+            },
+        });
+
+        if (logError) {
+            console.error("Failed to write test email log:", logError.message || logError);
+        }
+
         return new Response(JSON.stringify({
             success: true,
             id: resData.id,
@@ -150,6 +216,7 @@ serve(async (req: Request) => {
                 used_variables: renderResult.usedVariables,
                 degradation: renderResult.degradation,
             },
+            content_source: hasClientPreview ? "admin_preview" : "server_render",
         }), {
             headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
             status: 200,

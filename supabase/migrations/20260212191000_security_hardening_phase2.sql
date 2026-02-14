@@ -4,7 +4,6 @@
 -- ============================================
 
 BEGIN;
-
 -- ------------------------------------------------
 -- 1) Inventory integrity: prevent stock underflow
 -- ------------------------------------------------
@@ -129,12 +128,10 @@ BEGIN
     RETURN NEW;
 END;
 $$;
-
 -- ------------------------------------------------
 -- 2) Missing secure RPC: create_support_ticket_v1
 -- ------------------------------------------------
 DROP FUNCTION IF EXISTS public.create_support_ticket_v1(text, text, text, text, text, uuid);
-
 CREATE OR REPLACE FUNCTION public.create_support_ticket_v1(
     p_name text,
     p_email text,
@@ -222,15 +219,12 @@ BEGIN
     RETURN NEXT;
 END;
 $$;
-
 REVOKE ALL ON FUNCTION public.create_support_ticket_v1(text, text, text, text, text, uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.create_support_ticket_v1(text, text, text, text, text, uuid) TO anon, authenticated;
-
 -- ------------------------------------------------
 -- 3) Missing secure RPC: sync_user_admin_status
 -- ------------------------------------------------
 DROP FUNCTION IF EXISTS public.sync_user_admin_status(uuid, boolean);
-
 CREATE OR REPLACE FUNCTION public.sync_user_admin_status(
     p_user_id uuid,
     p_is_admin boolean
@@ -285,10 +279,8 @@ BEGIN
     END IF;
 END;
 $$;
-
 REVOKE ALL ON FUNCTION public.sync_user_admin_status(uuid, boolean) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.sync_user_admin_status(uuid, boolean) TO authenticated;
-
 -- ------------------------------------------------
 -- 4) SECURITY DEFINER search_path hardening
 -- ------------------------------------------------
@@ -326,5 +318,4 @@ BEGIN
         EXECUTE 'ALTER FUNCTION public.manage_inventory() SET search_path = public, pg_catalog';
     END IF;
 END $$;
-
 COMMIT;

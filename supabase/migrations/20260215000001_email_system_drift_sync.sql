@@ -1,3 +1,4 @@
+
 -- Reconcile email system drift between remote and local migrations
 -- This migration captures schema differences detected by CI and aligns them with the local unification strategy.
 
@@ -109,3 +110,4 @@ CREATE TRIGGER set_updated_at_email_template_variables
     BEFORE UPDATE ON public.email_template_variables
     FOR EACH ROW
     EXECUTE FUNCTION public.handle_updated_at();
+;

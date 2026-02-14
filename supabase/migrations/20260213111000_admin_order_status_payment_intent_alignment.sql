@@ -2,7 +2,6 @@
 -- Credit-card orders must not be marked refunded by status transition alone.
 
 BEGIN;
-
 CREATE OR REPLACE FUNCTION public.admin_update_order_status(
     p_order_id UUID,
     p_new_status TEXT,
@@ -117,5 +116,4 @@ BEGIN
     RETURN FOUND;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_catalog;
-
 COMMIT;

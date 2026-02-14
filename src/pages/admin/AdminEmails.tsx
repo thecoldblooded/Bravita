@@ -79,6 +79,50 @@ import { Helmet } from "react-helmet-async";
 
 const SUPPORT_TICKET_SLUG = "support_ticket";
 
+const PREVIEW_DUMMY_VARS: Record<string, string> = {
+    "ORDER_ID": "TEST-12345",
+    "ORDER_DATE": new Date().toLocaleDateString("tr-TR"),
+    "NAME": "Test Kullanıcı",
+    "EMAIL": "test@ornek.com",
+    "SUBJECT": "Destek Talebiniz Alındı",
+    "TICKET_ID": "TKT-8899",
+    "CATEGORY": "Genel Destek",
+    "USER_MESSAGE": "Test mesajı içeriği.",
+    "ADMIN_REPLY": "Bu bir test yanıtıdır.",
+    "ITEMS_LIST": "<tr><td style='padding:15px; border-bottom:1px solid #eee;'>Bravita Özel Koleksiyon x1</td><td align='right' style='padding:15px; border-bottom:1px solid #eee;'>₺1,450.00</td></tr>",
+    "TOTAL": "1,450.00",
+    "BROWSER_LINK": "#",
+    "SITE_URL": "https://www.bravita.com.tr",
+    "CONFIRMATION_URL": "https://bravita.com.tr/test-confirm",
+    "UNSUBSCRIBE_URL": "https://bravita.com.tr/unsubscribe",
+};
+
+function applyPreviewVariables(content: string, values: Record<string, string>): string {
+    let output = String(content || "");
+
+    Object.entries(values).forEach(([key, val]) => {
+        const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const regex = new RegExp(`{{\\s*\\.?\\s*${escapedKey}\\s*}}`, "g");
+        output = output.replace(regex, val);
+    });
+
+    return output;
+}
+
+function buildTemplatePreview(template: Pick<EmailTemplate, "subject" | "content_html">, useSampleData: boolean): { subject: string; html: string } {
+    if (!useSampleData) {
+        return {
+            subject: template.subject || "",
+            html: template.content_html || "",
+        };
+    }
+
+    return {
+        subject: applyPreviewVariables(template.subject || "", PREVIEW_DUMMY_VARS),
+        html: applyPreviewVariables(template.content_html || "", PREVIEW_DUMMY_VARS),
+    };
+}
+
 function getDefaultConfigForSlug(templateSlug: string): Pick<EmailConfig, "sender_name" | "sender_email" | "reply_to"> {
     if (templateSlug.startsWith("support_ticket")) {
         return {
@@ -125,7 +169,7 @@ function withRequiredConfigs(templateRows: EmailTemplate[], configRows: EmailCon
 
 export default function AdminEmails() {
     const { theme } = useAdminTheme();
-    const { isSuperAdmin, isLoading: authLoading } = useAuth();
+    const { isSuperAdmin, isLoading: authLoading, session, refreshSession } = useAuth();
     const navigate = useNavigate();
     const isDark = theme === "dark";
 
@@ -157,18 +201,30 @@ export default function AdminEmails() {
     const [isSendingTest, setIsSendingTest] = useState(false);
 
     useEffect(() => {
-        loadData();
-    }, []);
+        if (!authLoading && isSuperAdmin) {
+            loadData();
+        }
+    }, [authLoading, isSuperAdmin]);
 
     // ... (keep helper functions: loadData, handleSaveTemplate, handleSaveConfig, handleSendTest)
     const loadData = async () => {
         setIsLoading(true);
         try {
+            if (!isSuperAdmin) {
+                setTemplates([]);
+                setConfigs([]);
+                setLogs([]);
+                return;
+            }
+
             const [tRes, cRes, lRes] = await Promise.all([
                 supabase.from("email_templates").select("*").order("name"),
                 supabase.from("email_configs").select("*").order("template_slug"),
                 supabase.from("email_logs").select("*").order("sent_at", { ascending: false }).limit(50)
             ]);
+
+            if (tRes.error) throw tRes.error;
+            if (cRes.error) throw cRes.error;
 
             const templateRows = tRes.data ?? [];
             const configRows = cRes.data ?? [];
@@ -176,7 +232,22 @@ export default function AdminEmails() {
             setTemplates(templateRows);
             setConfigs(withRequiredConfigs(templateRows, configRows));
 
-            if (lRes.data) setLogs(lRes.data);
+            if (lRes.error) {
+                console.error("Email log load error:", lRes.error);
+                toast.error("Gönderim logları yüklenemedi");
+                setLogs([]);
+            } else {
+                const normalizedLogs: EmailLog[] = (lRes.data ?? []).map((row: any) => ({
+                    id: row.id,
+                    template_slug: row.template_slug || row.email_type || "-",
+                    recipient_email: row.recipient_email || row.recipient || "-",
+                    status: row.status || (row.blocked ? "failed" : "sent"),
+                    sent_at: row.sent_at,
+                    error_message: row.error_message || row.error_details || null,
+                }));
+
+                setLogs(normalizedLogs);
+            }
         } catch (error) {
             toast.error("Veriler yüklenirken bir hata oluştu");
         } finally {
@@ -265,15 +336,40 @@ export default function AdminEmails() {
     };
 
     const handleSendTest = async () => {
+        if (!isSuperAdmin) {
+            toast.error("Bu işlem için superadmin yetkisi gereklidir.");
+            return;
+        }
+
         if (!testTemplate || !testRecipient) return;
 
         setIsSendingTest(true);
         try {
+            let accessToken = session?.access_token ?? null;
+            if (!accessToken) {
+                await refreshSession();
+                const { data: refreshedSessionData } = await supabase.auth.getSession();
+                accessToken = refreshedSessionData.session?.access_token ?? null;
+            }
+
+            if (!accessToken) {
+                throw new Error("Oturum doğrulanamadı. Lütfen çıkış yapıp tekrar giriş yapın.");
+            }
+
+            const previewOutput = buildTemplatePreview(testTemplate, simulateData);
+
             const { data, error } = await supabase.functions.invoke("send-test-email", {
                 body: {
                     template_slug: testTemplate.slug,
-                    recipient_email: testRecipient
-                }
+                    recipient_email: testRecipient,
+                    preview_subject: previewOutput.subject,
+                    preview_html: previewOutput.html,
+                    preview_uses_sample_data: simulateData,
+                },
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    "x-user-jwt": `Bearer ${accessToken}`,
+                },
             });
 
             if (error) throw error;
@@ -281,6 +377,7 @@ export default function AdminEmails() {
             toast.success("Test e-postası gönderildi");
             setIsTestModalOpen(false);
             setTestRecipient("");
+            loadData();
         } catch (error: unknown) {
             console.error("Test send error:", error);
             const errorMessage = error instanceof Error ? error.message : "Bilinmeyen hata";
@@ -570,32 +667,7 @@ export default function AdminEmails() {
                                                 <iframe
                                                     title="Email Preview"
                                                     className="w-full h-full border-none"
-                                                    srcDoc={(() => {
-                                                        let html = editingTemplate.content_html;
-                                                        if (simulateData) {
-                                                            const dummyVars: Record<string, string> = {
-                                                                "ORDER_ID": "TEST-12345",
-                                                                "ORDER_DATE": new Date().toLocaleDateString("tr-TR"),
-                                                                "NAME": "Ahmet Yılmaz",
-                                                                "EMAIL": "ahmet@ornek.com",
-                                                                "SUBJECT": "Siparişiniz Alındı",
-                                                                "TICKET_ID": "TKT-8899",
-                                                                "CATEGORY": "Genel Destek",
-                                                                "USER_MESSAGE": "Destek sistemimiz üzerinden gönderdiğiniz mesaj.",
-                                                                "ADMIN_REPLY": "Size bu konuda yardımcı olmaktan mutluluk duyarız.",
-                                                                "ITEMS_LIST": "<tr><td style='padding:15px; border-bottom:1px solid #eee;'>Bravita Özel Koleksiyon x1</td><td align='right' style='padding:15px; border-bottom:1px solid #eee;'>₺1,450.00</td></tr>",
-                                                                "TOTAL": "1,450.00",
-                                                                "BROWSER_LINK": "#",
-                                                                "SITE_URL": "https://bravita.com.tr",
-                                                                "CONFIRMATION_URL": "https://bravita.com.tr/reset-password?token=test-token"
-                                                            };
-                                                            Object.entries(dummyVars).forEach(([key, val]) => {
-                                                                const regex = new RegExp(`{{ ?${key} ?}}`, 'g');
-                                                                html = html.replace(regex, val);
-                                                            });
-                                                        }
-                                                        return html;
-                                                    })()}
+                                                    srcDoc={buildTemplatePreview(editingTemplate, simulateData).html}
                                                 />
                                             </div>
                                         </div>
@@ -699,7 +771,7 @@ export default function AdminEmails() {
                                 />
                             </div>
                             <p className={`text-[11px] italic ${isDark ? "text-slate-500" : "text-gray-400"}`}>
-                                * Test e-postası dummy (sahte) verilerle doldurularak gönderilecektir.
+                                * Test e-postası, editörde gördüğünüz önizleme çıktısı ile aynı içerikle gönderilir. "Örnek Veri" açıksa dummy veri uygulanır.
                             </p>
                         </div>
                         <DialogFooter>

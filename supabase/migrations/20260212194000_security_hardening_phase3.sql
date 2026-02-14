@@ -26,7 +26,6 @@ BEGIN
         RAISE NOTICE 'create_order already sanitized';
     END IF;
 END $$;
-
 DO $$
 DECLARE
     validate_checkout_reg regprocedure := to_regprocedure('public.validate_checkout(text, integer, text)');

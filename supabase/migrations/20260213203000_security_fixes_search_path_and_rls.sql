@@ -1,3 +1,4 @@
+
 -- Security Fixes:
 -- 1. Explicit search_path for triggers to prevent search_path hijacking
 -- 2. Add RLS policies for internal tables to satisfy warnings and allow admin access
@@ -31,3 +32,4 @@ USING (
 );
 
 COMMIT;
+;

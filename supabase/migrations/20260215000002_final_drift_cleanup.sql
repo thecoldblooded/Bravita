@@ -1,3 +1,4 @@
+
 -- Final Database Drift Cleanup and Consistency Alignment
 -- This migration ensures ALL tables use consistent types and defaults to prevent CI drift detection.
 
@@ -81,3 +82,4 @@ BEGIN
         CREATE TRIGGER set_updated_at_email_templates BEFORE UPDATE ON public.email_templates FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
     END IF;
 END $$;
+;

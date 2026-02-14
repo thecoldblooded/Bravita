@@ -2,9 +2,7 @@
 -- Source of truth: payment_intents + stock_reservations + payment_transactions
 
 BEGIN;
-
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
-
 -- Installment commission rates (percent values)
 CREATE TABLE IF NOT EXISTS public.installment_rates (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -14,7 +12,6 @@ CREATE TABLE IF NOT EXISTS public.installment_rates (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-
 INSERT INTO public.installment_rates (installment_number, commission_rate, is_active)
 VALUES
     (1, 4.50, TRUE),
@@ -34,7 +31,6 @@ DO UPDATE SET
     commission_rate = EXCLUDED.commission_rate,
     is_active = EXCLUDED.is_active,
     updated_at = NOW();
-
 CREATE TABLE IF NOT EXISTS public.payment_intents (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -70,7 +66,6 @@ CREATE TABLE IF NOT EXISTS public.payment_intents (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-
 CREATE TABLE IF NOT EXISTS public.stock_reservations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     intent_id UUID NOT NULL REFERENCES public.payment_intents(id) ON DELETE CASCADE,
@@ -80,11 +75,9 @@ CREATE TABLE IF NOT EXISTS public.stock_reservations (
     released_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-
 CREATE UNIQUE INDEX IF NOT EXISTS idx_stock_reservations_active_unique
     ON public.stock_reservations (intent_id, product_id)
     WHERE released_at IS NULL;
-
 CREATE TABLE IF NOT EXISTS public.payment_transactions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     intent_id UUID REFERENCES public.payment_intents(id) ON DELETE SET NULL,
@@ -97,7 +90,6 @@ CREATE TABLE IF NOT EXISTS public.payment_transactions (
     error_message TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-
 CREATE TABLE IF NOT EXISTS public.payment_webhook_events (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     provider TEXT NOT NULL DEFAULT 'bakiyem',
@@ -113,7 +105,6 @@ CREATE TABLE IF NOT EXISTS public.payment_webhook_events (
     error_message TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-
 CREATE TABLE IF NOT EXISTS public.payment_manual_review_queue (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     intent_id UUID REFERENCES public.payment_intents(id) ON DELETE SET NULL,
@@ -126,7 +117,6 @@ CREATE TABLE IF NOT EXISTS public.payment_manual_review_queue (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (dedupe_key)
 );
-
 -- Existing table alignment for order-last card flow
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS payment_intent_id UUID;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS currency TEXT DEFAULT 'TL';
@@ -137,11 +127,9 @@ ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS shipping_total_cents BIGINT;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS discount_total_cents BIGINT DEFAULT 0;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS commission_amount_cents BIGINT DEFAULT 0;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS paid_total_cents BIGINT;
-
 UPDATE public.orders
 SET currency = 'TL'
 WHERE currency IS NULL;
-
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -154,11 +142,9 @@ BEGIN
             FOREIGN KEY (payment_intent_id) REFERENCES public.payment_intents(id) ON DELETE RESTRICT;
     END IF;
 END$$;
-
 CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_payment_intent_unique
     ON public.orders (payment_intent_id)
     WHERE payment_intent_id IS NOT NULL;
-
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -171,7 +157,6 @@ BEGIN
             CHECK (payment_method <> 'credit_card' OR payment_intent_id IS NOT NULL) NOT VALID;
     END IF;
 END$$;
-
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -184,42 +169,34 @@ BEGIN
             CHECK (currency = 'TL') NOT VALID;
     END IF;
 END$$;
-
 -- Remove legacy trigger-driven stock flow (new flow uses reservation RPCs)
 DROP TRIGGER IF EXISTS trigger_deduct_stock ON public.orders;
 DROP TRIGGER IF EXISTS trigger_manage_stock_status ON public.orders;
-
 -- Lightweight updated_at helper for payment tables
 CREATE OR REPLACE FUNCTION public.set_payment_updated_at()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = ''
 AS $$
 BEGIN
     NEW.updated_at = NOW();
     RETURN NEW;
 END;
 $$;
-
 DROP TRIGGER IF EXISTS trg_installment_rates_updated_at ON public.installment_rates;
 CREATE TRIGGER trg_installment_rates_updated_at
     BEFORE UPDATE ON public.installment_rates
     FOR EACH ROW
     EXECUTE FUNCTION public.set_payment_updated_at();
-
 DROP TRIGGER IF EXISTS trg_payment_intents_updated_at ON public.payment_intents;
 CREATE TRIGGER trg_payment_intents_updated_at
     BEFORE UPDATE ON public.payment_intents
     FOR EACH ROW
     EXECUTE FUNCTION public.set_payment_updated_at();
-
 DROP TRIGGER IF EXISTS trg_manual_review_queue_updated_at ON public.payment_manual_review_queue;
 CREATE TRIGGER trg_manual_review_queue_updated_at
     BEFORE UPDATE ON public.payment_manual_review_queue
     FOR EACH ROW
     EXECUTE FUNCTION public.set_payment_updated_at();
-
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_payment_intents_user_created ON public.payment_intents (user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_payment_intents_status_expires ON public.payment_intents (status, expires_at);
@@ -231,7 +208,6 @@ CREATE INDEX IF NOT EXISTS idx_webhook_events_status_created ON public.payment_w
 CREATE INDEX IF NOT EXISTS idx_manual_review_status_created ON public.payment_manual_review_queue (status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_stock_reservations_expires_active ON public.stock_reservations (expires_at)
     WHERE released_at IS NULL;
-
 -- RLS rules
 ALTER TABLE public.payment_intents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.stock_reservations ENABLE ROW LEVEL SECURITY;
@@ -239,44 +215,24 @@ ALTER TABLE public.payment_transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.payment_webhook_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.payment_manual_review_queue ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.installment_rates ENABLE ROW LEVEL SECURITY;
-
 REVOKE ALL ON public.payment_intents FROM anon, authenticated;
 REVOKE ALL ON public.stock_reservations FROM anon, authenticated;
 REVOKE ALL ON public.payment_transactions FROM anon, authenticated;
 REVOKE ALL ON public.payment_webhook_events FROM anon, authenticated;
 REVOKE ALL ON public.payment_manual_review_queue FROM anon, authenticated;
 REVOKE ALL ON public.installment_rates FROM anon, authenticated;
-
 GRANT SELECT ON public.payment_intents TO authenticated;
 GRANT SELECT ON public.installment_rates TO authenticated;
-
 DROP POLICY IF EXISTS "Users read own payment intents" ON public.payment_intents;
 CREATE POLICY "Users read own payment intents"
 ON public.payment_intents
 FOR SELECT
 TO authenticated
-USING (user_id = (SELECT auth.uid()));
-
+USING (auth.uid() = user_id);
 DROP POLICY IF EXISTS "Users read installment rates" ON public.installment_rates;
 CREATE POLICY "Users read installment rates"
 ON public.installment_rates
 FOR SELECT
 TO authenticated
 USING (TRUE);
-
--- Explicit deny policies to satisfy linter (rls_enabled_no_policy)
-DROP POLICY IF EXISTS "Admins and users can view own transactions" ON public.payment_transactions;
-CREATE POLICY "Admins and users can view own transactions"
-ON public.payment_transactions
-FOR SELECT
-TO authenticated
-USING (
-    (SELECT public.is_admin()) 
-    OR 
-    (intent_id IN (SELECT id FROM public.payment_intents WHERE user_id = (SELECT auth.uid())))
-);
-CREATE POLICY "No direct access to reservations" ON public.stock_reservations FOR ALL TO public USING (false);
-CREATE POLICY "No direct access to webhook events" ON public.payment_webhook_events FOR ALL TO public USING (false);
-CREATE POLICY "No direct access to manual review" ON public.payment_manual_review_queue FOR ALL TO public USING (false);
-
 COMMIT;
