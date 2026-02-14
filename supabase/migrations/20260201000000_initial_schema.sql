@@ -2,8 +2,14 @@
 CREATE TABLE IF NOT EXISTS public.profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     email TEXT UNIQUE,
+    phone TEXT,
     full_name TEXT,
     avatar_url TEXT,
+    user_type TEXT DEFAULT 'individual',
+    company_name TEXT,
+    tax_number TEXT,
+    tax_office TEXT,
+    profile_complete BOOLEAN DEFAULT FALSE,
     is_admin BOOLEAN DEFAULT FALSE,
     is_superadmin BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -53,6 +59,7 @@ CREATE TABLE IF NOT EXISTS public.orders (
     commission_amount_cents BIGINT,
     paid_total_cents BIGINT,
     total DECIMAL(10, 2),
+    cancellation_reason TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -63,6 +70,7 @@ CREATE TABLE IF NOT EXISTS public.order_status_history (
     order_id UUID REFERENCES public.orders(id) ON DELETE CASCADE NOT NULL,
     status TEXT NOT NULL,
     note TEXT,
+    created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
