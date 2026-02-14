@@ -191,8 +191,8 @@ def main():
             print(f"  [{count}] {issue}")
         
         print(f"\nAffected files ({len(all_issues)}):")
-        for item in all_issues[:5]:
-            print(f"  - {item['file']}")
+        for item in all_issues[:15]:
+            print(f"  - {item['file']}: {item['issues']}")
         if len(all_issues) > 5:
             print(f"  ... and {len(all_issues) - 5} more")
     else:

@@ -3,15 +3,15 @@
 import { useEffect, type ReactNode } from "react"
 
 interface GlowingShadowButtonProps {
-    children: ReactNode
+  children: ReactNode
 }
 
 export function GlowingShadow({ children }: GlowingShadowButtonProps) {
 
-    return (
-        <>
-            {/* @ts-expect-error styled-jsx is not typed by default */}
-            <style jsx="true">{`
+  return (
+    <>
+      {/* @ts-expect-error styled-jsx is not typed by default */}
+      <style jsx="true">{`
         @property --hue {
           syntax: "<number>";
           inherits: true;
@@ -70,7 +70,7 @@ export function GlowingShadow({ children }: GlowingShadowButtonProps) {
 
         .glow-container {
           --card-color: hsl(45 100% 98% / 0.65);
-          --text-color: hsl(260deg 10% 20%);
+          --text-color: hsl(25 50% 15%);
           --card-radius: 1.5rem;
           --card-width: 100%;
           --border-width: 2px;
@@ -290,10 +290,10 @@ export function GlowingShadow({ children }: GlowingShadowButtonProps) {
         }
       `}</style>
 
-            <div className="glow-container" role="button">
-                <span className="glow"></span>
-                <div className="glow-content">{children}</div>
-            </div>
-        </>
-    )
+      <div className="glow-container" role="button">
+        <span className="glow"></span>
+        <div className="glow-content">{children}</div>
+      </div>
+    </>
+  )
 }

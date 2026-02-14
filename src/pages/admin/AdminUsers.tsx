@@ -181,7 +181,7 @@ function UsersContent() {
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3">
-                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.is_superadmin ? (isDark ? "bg-purple-500/20 text-purple-400" : "bg-purple-100 text-purple-600") : (isDark ? "bg-orange-500/20 text-orange-400" : "bg-orange-100 text-orange-600")}`}>
+                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.is_superadmin ? (isDark ? "bg-emerald-500/20 text-emerald-400" : "bg-emerald-100 text-emerald-600") : (isDark ? "bg-orange-500/20 text-orange-400" : "bg-orange-100 text-orange-600")}`}>
                                             <Shield className="w-3 h-3 inline mr-1" />{user.is_superadmin ? "Super Admin" : "Admin"}
                                         </span>
                                         {isSuperAdmin && !user.is_superadmin && (

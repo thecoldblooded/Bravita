@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { useCart } from "@/contexts/CartContext";
+import { Helmet } from "react-helmet-async";
 
 interface OrderDetails {
     items: Array<{

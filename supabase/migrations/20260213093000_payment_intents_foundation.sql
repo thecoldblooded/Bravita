@@ -193,6 +193,8 @@ DROP TRIGGER IF EXISTS trigger_manage_stock_status ON public.orders;
 CREATE OR REPLACE FUNCTION public.set_payment_updated_at()
 RETURNS TRIGGER
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
 AS $$
 BEGIN
     NEW.updated_at = NOW();
@@ -253,7 +255,7 @@ CREATE POLICY "Users read own payment intents"
 ON public.payment_intents
 FOR SELECT
 TO authenticated
-USING (auth.uid() = user_id);
+USING (user_id = (SELECT auth.uid()));
 
 DROP POLICY IF EXISTS "Users read installment rates" ON public.installment_rates;
 CREATE POLICY "Users read installment rates"
@@ -261,5 +263,20 @@ ON public.installment_rates
 FOR SELECT
 TO authenticated
 USING (TRUE);
+
+-- Explicit deny policies to satisfy linter (rls_enabled_no_policy)
+DROP POLICY IF EXISTS "Admins and users can view own transactions" ON public.payment_transactions;
+CREATE POLICY "Admins and users can view own transactions"
+ON public.payment_transactions
+FOR SELECT
+TO authenticated
+USING (
+    (SELECT public.is_admin()) 
+    OR 
+    (intent_id IN (SELECT id FROM public.payment_intents WHERE user_id = (SELECT auth.uid())))
+);
+CREATE POLICY "No direct access to reservations" ON public.stock_reservations FOR ALL TO public USING (false);
+CREATE POLICY "No direct access to webhook events" ON public.payment_webhook_events FOR ALL TO public USING (false);
+CREATE POLICY "No direct access to manual review" ON public.payment_manual_review_queue FOR ALL TO public USING (false);
 
 COMMIT;

@@ -28,7 +28,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                     table: 'orders'
                 },
                 (payload) => {
-                    // console.log("Realtime event received:", payload);
                     if (location.pathname !== '/admin/orders') {
                         const newOrder = payload.new as Order;
                         const total = newOrder.order_details?.total || 0;
@@ -44,7 +43,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 }
             )
             .subscribe((status) => {
-                // console.log("Realtime Subscription Status:", status);
             });
 
         return () => {

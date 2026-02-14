@@ -33,7 +33,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 // Action/Table Translations
 const ACTION_MAP: Record<string, { label: string; color: string; icon: LucideIcon }> = {
-    "LOGIN": { label: "Sisteme Giriş", color: "bg-purple-100 text-purple-700 border-purple-200", icon: LogIn },
+    "LOGIN": { label: "Sisteme Giriş", color: "bg-blue-100 text-blue-700 border-blue-200", icon: LogIn },
     "CREATE": { label: "Oluşturma", color: "bg-green-100 text-green-700 border-green-200", icon: PlusCircle },
     "INSERT": { label: "Ekleme", color: "bg-green-100 text-green-700 border-green-200", icon: PlusCircle },
     "ADD": { label: "Ekleme", color: "bg-green-100 text-green-700 border-green-200", icon: PlusCircle },
@@ -761,10 +761,19 @@ function LogsContent() {
     );
 }
 
+import { Helmet } from "react-helmet-async";
+
 export default function AdminAuditLogs() {
     return (
         <AdminGuard>
             <AdminLayout>
+                <Helmet>
+                    <title>Admin Audit Logs | Bravita</title>
+                    <meta name="description" content="Admin Audit Logs" />
+                    <meta name="robots" content="noindex" />
+                    <meta property="og:title" content="Admin Audit Logs" />
+                    <meta property="og:description" content="Admin Audit Logs" />
+                </Helmet>
                 <LogsContent />
             </AdminLayout>
         </AdminGuard>

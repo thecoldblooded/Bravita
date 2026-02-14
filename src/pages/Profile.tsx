@@ -12,8 +12,11 @@ import { SupportCenter } from "@/components/profile/SupportCenter";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Loader from "@/components/ui/Loader";
+import { Helmet } from "react-helmet-async";
+import { useTranslation } from "react-i18next";
 
 export default function Profile() {
+    const { t } = useTranslation();
     const { user, isLoading } = useAuth();
     const navigate = useNavigate();
     // ... (keep existing setup)
@@ -60,6 +63,13 @@ export default function Profile() {
 
     return (
         <div className="min-h-screen bg-[#FFFBF4] flex flex-col">
+            <Helmet>
+                <title>Bravita - {t("nav.profile", "Profilim")}</title>
+                <meta name="description" content="Profil sayfası." />
+                <meta name="robots" content="noindex" />
+                <meta property="og:title" content="Bravita Profile" />
+                <meta property="og:description" content="Profil detayları." />
+            </Helmet>
             <Header />
 
             {/* Spacer for fixed header */}

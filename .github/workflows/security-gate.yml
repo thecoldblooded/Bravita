@@ -28,6 +28,10 @@ jobs:
       - name: Audit dependencies
         run: npm audit --audit-level=high
 
+      - name: Run Security Checklist (Static)
+        run: python .agent/scripts/checklist.py .
+
+
       - name: Lint
         run: npm run lint
 

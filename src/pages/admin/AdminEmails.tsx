@@ -74,6 +74,8 @@ interface EmailLog {
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
+import { Helmet } from "react-helmet-async";
+
 export default function AdminEmails() {
     const { theme } = useAdminTheme();
     const { isSuperAdmin, isLoading: authLoading } = useAuth();
@@ -87,6 +89,7 @@ export default function AdminEmails() {
         }
     }, [isSuperAdmin, authLoading, navigate]);
 
+    // ... (keep state declarations)
     const [templates, setTemplates] = useState<EmailTemplate[]>([]);
     const [configs, setConfigs] = useState<EmailConfig[]>([]);
     const [logs, setLogs] = useState<EmailLog[]>([]);
@@ -110,6 +113,7 @@ export default function AdminEmails() {
         loadData();
     }, []);
 
+    // ... (keep helper functions: loadData, handleSaveTemplate, handleSaveConfig, handleSendTest)
     const loadData = async () => {
         setIsLoading(true);
         try {
@@ -214,6 +218,13 @@ export default function AdminEmails() {
     return (
         <AdminGuard>
             <AdminLayout>
+                <Helmet>
+                    <title>Admin Emails | Bravita</title>
+                    <meta name="description" content="Admin Emails" />
+                    <meta name="robots" content="noindex" />
+                    <meta property="og:title" content="Admin Emails" />
+                    <meta property="og:description" content="Admin Emails" />
+                </Helmet>
                 <div className="max-w-7xl mx-auto">
                     <div className="flex items-center justify-between mb-8">
                         <div>

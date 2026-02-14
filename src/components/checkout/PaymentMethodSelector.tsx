@@ -168,7 +168,7 @@ export function PaymentMethodSelector({
                 >
                     <div className="flex items-center gap-2 mb-4">
                         <AlertCircle className="w-4 h-4 text-yellow-400" />
-                        <span className="text-sm text-yellow-400">3D doğrulama sonrasi banka ekranina yonlendirilirsiniz.</span>
+                        <span className="text-sm text-yellow-400">{t("checkout.card.threed_info", "3D doğrulama sonrasi banka ekranina yonlendirilirsiniz.")}</span>
                     </div>
 
                     <div className="space-y-4">
@@ -204,7 +204,7 @@ export function PaymentMethodSelector({
                                     id="expiry"
                                     value={localCardDetails.expiry}
                                     onChange={(e) => handleCardChange("expiry", e.target.value)}
-                                    placeholder="AA/YY veya AA/YYYY"
+                                    placeholder={t("checkout.card.expiry_placeholder")}
                                     maxLength={7}
                                     autoComplete="off"
                                     className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 font-mono"
@@ -226,13 +226,13 @@ export function PaymentMethodSelector({
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="text-gray-300">Taksit Seçeneği</Label>
+                            <Label className="text-gray-300">{t("checkout.payment.installments_label", "Taksit Seçeneği")}</Label>
                             <Select
                                 value={String(installmentNumber)}
                                 onValueChange={(value) => onInstallmentChange(Number(value))}
                             >
                                 <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
-                                    <SelectValue placeholder="Taksit seçin" />
+                                    <SelectValue placeholder={t("checkout.payment.select_installment", "Taksit seçin")} />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {installmentRates
@@ -240,14 +240,14 @@ export function PaymentMethodSelector({
                                         .map((rate) => (
                                             <SelectItem key={rate.installment_number} value={String(rate.installment_number)}>
                                                 {rate.installment_number === 1
-                                                    ? `Tek cekim (%${rate.commission_rate.toFixed(2)} komisyon)`
-                                                    : `${rate.installment_number} taksit (%${rate.commission_rate.toFixed(2)} komisyon)`}
+                                                    ? `${t("checkout.payment.single_payment", "Tek çekim")} (%${rate.commission_rate.toFixed(2)} ${t("checkout.payment.commission_suffix", "komisyon")})`
+                                                    : `${t("checkout.payment.installment_count", "{{count}} taksit", { count: rate.installment_number })} (%${rate.commission_rate.toFixed(2)} ${t("checkout.payment.commission_suffix", "komisyon")})`}
                                             </SelectItem>
                                         ))}
                                 </SelectContent>
                             </Select>
                             <p className="text-xs text-gray-400">
-                                Uygulanan komisyon: %{selectedInstallmentRate.toFixed(2)}
+                                {t("checkout.payment.commission_applied", "Uygulanan komisyon: %{{rate}}", { rate: selectedInstallmentRate.toFixed(2) })}
                             </p>
                         </div>
                     </div>

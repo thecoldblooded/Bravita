@@ -66,7 +66,7 @@ export function SalesAgreements({ user, address, items, totals, paymentMethod }:
     const { t } = useTranslation();
     const currentDate = format(new Date(), "dd.MM.yyyy", { locale: tr });
     const fullAddress = address ? `${address.street} ${address.district ? address.district + " " : ""}${address.city} ${address.postal_code}` : "";
-    const buyerName = user?.full_name || user?.email || "Misafir Kullanıcı";
+    const buyerName = user?.full_name || user?.email || t("common.guest_user", "Misafir Kullanıcı");
     const buyerPhone = user?.phone || "-";
     const buyerEmail = user?.email || "-";
 
@@ -105,9 +105,9 @@ export function SalesAgreements({ user, address, items, totals, paymentMethod }:
                     <div className="border border-gray-200 rounded p-2 my-2 space-y-1 bg-gray-50">
                         <p className="font-semibold border-b border-gray-200 pb-1 mb-1">{t('checkout.agreements.pre_info.table_header')}</p>
                         {items.map((item, idx) => (
-                            <p key={idx}>{item.name} / {item.quantity} / {(item.price * item.quantity).toFixed(2)} TL</p>
+                            <p key={idx}>{item.name} / {item.quantity} / ₺{(item.price * item.quantity).toFixed(2)}</p>
                         ))}
-                        <p className="font-bold pt-1 mt-1 border-t border-gray-200 text-gray-900">{t('checkout.agreements.pre_info.total')}: {totals.total.toFixed(2)} TL</p>
+                        <p className="font-bold pt-1 mt-1 border-t border-gray-200 text-gray-900">{t('checkout.agreements.pre_info.total')}: ₺{totals.total.toFixed(2)}</p>
                     </div>
 
                     <p><strong>{t('checkout.agreements.pre_info.article_2_text')}</strong></p>
@@ -162,7 +162,7 @@ export function SalesAgreements({ user, address, items, totals, paymentMethod }:
                     </div>
                     <div className="pl-4 mt-2">
                         <p><strong>{t('checkout.agreements.buyer_consumer')}:</strong></p>
-                        <p>Adı/Soyadı/Ünvanı: {buyerName}</p>
+                        <p>{t('checkout.agreements.name_label', 'Adı/Soyadı/Ünvanı')}: {buyerName}</p>
                         <p>{t('checkout.agreements.address_label')} : {fullAddress}</p>
                         <p>{t('checkout.agreements.phone_label')}: {buyerPhone}</p>
                         <p>Email: {buyerEmail}</p>
@@ -180,7 +180,7 @@ export function SalesAgreements({ user, address, items, totals, paymentMethod }:
                     <p>{t('checkout.agreements.sales_agreement.article_3_1_text')}</p>
                     <div className="border border-gray-200 rounded p-2 my-2 space-y-1 bg-gray-50">
                         {items.map((item, idx) => (
-                            <p key={idx}>{item.name} - {item.quantity} Adet - {(item.price * item.quantity).toFixed(2)} TL</p>
+                            <p key={idx}>{item.name} - {item.quantity} {t("cart.quantity_label", "Adet")} - ₺{(item.price * item.quantity).toFixed(2)}</p>
                         ))}
                     </div>
 

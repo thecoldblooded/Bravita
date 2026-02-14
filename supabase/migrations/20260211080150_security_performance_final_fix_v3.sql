@@ -8,13 +8,16 @@ ALTER FUNCTION is_admin_user(UUID) SET search_path = public;
 DROP POLICY IF EXISTS "Admin full access" ON support_tickets;
 DROP POLICY IF EXISTS "Users view own tickets" ON support_tickets;
 DROP POLICY IF EXISTS "Authenticated users insert own tickets" ON support_tickets;
-DROP POLICY IF EXISTS "Authenticated users insert own tickets" ON support_tickets; -- Just in case
 DROP POLICY IF EXISTS "support_tickets_select" ON support_tickets;
 DROP POLICY IF EXISTS "support_tickets_insert_authenticated" ON support_tickets;
 DROP POLICY IF EXISTS "support_tickets_insert_anon" ON support_tickets;
 DROP POLICY IF EXISTS "support_tickets_admin_update" ON support_tickets;
 DROP POLICY IF EXISTS "support_tickets_admin_delete" ON support_tickets;
 DROP POLICY IF EXISTS "Anonymous users can insert tickets" ON support_tickets;
+-- Fix: Drop correct names from previous migration
+DROP POLICY IF EXISTS "Anyone can insert tickets" ON support_tickets;
+DROP POLICY IF EXISTS "Users can view own tickets" ON support_tickets;
+DROP POLICY IF EXISTS "Admins can perform all actions on tickets" ON support_tickets;
 
 -- SELECT: Owner or Admin
 CREATE POLICY "support_tickets_select" ON support_tickets

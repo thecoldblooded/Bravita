@@ -46,19 +46,7 @@ export function AddressSelector({ selectedAddressId, onSelect }: AddressSelector
         if (!user) return;
         setIsLoading(true);
         try {
-            // TEST USER BYPASS - Use localStorage for test user
-            if (user.id === "test-user-id-12345") {
-                const savedAddresses = localStorage.getItem("test_user_addresses");
-                const addresses = savedAddresses ? JSON.parse(savedAddresses) : [];
-                setAddresses(addresses);
-                if (addresses.length > 0 && !selectedAddressId) {
-                    const defaultAddr = addresses.find((a: Address) => a.is_default) || addresses[0];
-                    onSelect(defaultAddr.id);
-                }
-                setIsLoading(false);
-                return;
-            }
-            // END TEST USER BYPASS
+
 
             const { data, error } = await supabase
                 .from("addresses")
@@ -76,11 +64,11 @@ export function AddressSelector({ selectedAddressId, onSelect }: AddressSelector
             }
         } catch (err) {
             console.error("Error fetching addresses:", err);
-            toast.error("Adresler yüklenirken hata oluştu");
+            toast.error(t("profile.addresses.loading_error", "Adresler yüklenirken hata oluştu"));
         } finally {
             setIsLoading(false);
         }
-    }, [user, selectedAddressId, onSelect]);
+    }, [user, selectedAddressId, onSelect, t]);
 
     useEffect(() => {
         fetchAddresses();
@@ -92,33 +80,9 @@ export function AddressSelector({ selectedAddressId, onSelect }: AddressSelector
 
         setIsSubmitting(true);
         try {
-            // TEST USER BYPASS - Store in localStorage for test user
-            if (user.id === "test-user-id-12345") {
-                const newAddr: Address = {
-                    id: `addr-${Date.now()}`,
-                    street: newAddress.street,
-                    city: newAddress.city,
-                    district: newAddress.district,
-                    postal_code: newAddress.postal_code,
-                    address_type: newAddress.address_type,
-                    is_default: addresses.length === 0,
-                };
-                const savedAddresses = localStorage.getItem("test_user_addresses");
-                const existingAddresses = savedAddresses ? JSON.parse(savedAddresses) : [];
-                const updatedAddresses = [...existingAddresses, newAddr];
-                localStorage.setItem("test_user_addresses", JSON.stringify(updatedAddresses));
 
-                toast.success("Adres eklendi");
-                setNewAddress({ street: "", city: "", district: "", postal_code: "", address_type: "home" });
-                setShowNewForm(false);
-                setAddresses(updatedAddresses);
-                onSelect(newAddr.id);
-                setIsSubmitting(false);
-                return;
-            }
-            // END TEST USER BYPASS
 
-            // console.log("Adding address for user:", user.id);
+
             const { data, error } = await supabase
                 .from("addresses")
                 .insert({
@@ -138,7 +102,7 @@ export function AddressSelector({ selectedAddressId, onSelect }: AddressSelector
                 throw error;
             }
 
-            toast.success("Adres eklendi");
+            toast.success(t("profile.addresses.add_success", "Adres eklendi"));
             setNewAddress({ street: "", city: "", district: "", postal_code: "", address_type: "home" });
             setShowNewForm(false);
             await fetchAddresses();
@@ -150,8 +114,8 @@ export function AddressSelector({ selectedAddressId, onSelect }: AddressSelector
         } catch (err) {
             const error = err as Error;
             console.error("Address add error details:", error);
-            const errorMessage = error.message || "Bilinmeyen hata";
-            toast.error(`Adres eklenirken hata: ${errorMessage}`);
+            const errorMessage = error.message || t("common.unknown", "Bilinmeyen hata");
+            toast.error(`${t("profile.addresses.add_error", "Adres eklenirken hata")}: ${errorMessage}`);
         } finally {
             setIsSubmitting(false);
         }
@@ -174,7 +138,7 @@ export function AddressSelector({ selectedAddressId, onSelect }: AddressSelector
             {addresses.length === 0 && !showNewForm ? (
                 <div className="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
                     <MapPin className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-500 mb-4">Henüz kayıtlı adresiniz yok.</p>
+                    <p className="text-gray-500 mb-4">{t("profile.addresses.empty_state", "Henüz kayıtlı adresiniz yok.")}</p>
                     <Button
                         onClick={() => setShowNewForm(true)}
                         className="bg-orange-500 hover:bg-orange-600 text-white"

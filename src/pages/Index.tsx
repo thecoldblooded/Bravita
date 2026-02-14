@@ -26,12 +26,26 @@ const SectionFallback = ({ minHeight }: { minHeight: string }) => (
   </div>
 );
 
+import { Helmet } from "react-helmet-async";
+import { useTranslation } from "react-i18next";
+
 const Index = () => {
+  const { t } = useTranslation();
   // Banner in Header handles incomplete profile notification
   // No auto-redirect needed
 
   return (
     <div className="min-h-screen">
+      <Helmet>
+        <title>Bravita - Çocuklar İçin Vitamin | Bağışıklık Güçlendirici</title>
+        <meta name="description" content="Bravita, çocukların sağlıklı gelişimi için gerekli vitamin ve mineralleri içeren, lezzetli ve eğlenceli çiğnenebilir formda takviye edici gıdadır." />
+        <link rel="canonical" href="https://bravita.com.tr" />
+        <meta property="og:title" content="Bravita - Çocuklar İçin Vitamin | Bağışıklık Güçlendirici" />
+        <meta property="og:description" content="Bravita, çocukların sağlıklı gelişimi için gerekli vitamin ve mineralleri içeren, lezzetli takviye edici gıda." />
+        <meta property="og:image" content="https://bravita.com.tr/og-image.jpg" />
+        <meta property="og:url" content="https://bravita.com.tr" />
+        <meta property="og:type" content="website" />
+      </Helmet>
       <Header />
       <main>
         <Hero />

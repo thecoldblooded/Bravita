@@ -151,7 +151,9 @@
         "valco_desc": "Valco İlaç Arge Laboratuvar Hizmetleri",
         "visitor_count": "ziyaretçi",
         "visitor_total": "Toplam:",
-        "visitor_today": "Bugün:"
+        "visitor_today": "Bugün:",
+        "guest_user": "Misafir Kullanıcı",
+        "loading": "Yükleniyor..."
     },
     "cookie_consent": {
         "title": "Çerez Kullanımı",
@@ -336,7 +338,9 @@
         "min_amount": "Min. Tutar",
         "free_shipping_remaining": "Kargo bedava için {{amount}}TL daha ekle!",
         "login_required": "Devam etmek için lütfen giriş yapın",
-        "profile_incomplete": "Lütfen önce profilinizi tamamlayın"
+        "profile_incomplete": "Lütfen önce profilinizi tamamlayın",
+        "quantity_label": "Adet",
+        "unit": "birim"
     },
     "promo": {
         "valid_until": "tarihine kadar geçerli",
@@ -401,6 +405,9 @@
         "confirm_order": "Siparişi Onayla",
         "products": "Ürünler",
         "delivery_address": "Teslimat Adresi",
+        "payable_total": "Ödenecek Toplam",
+        "commission": "Komisyon",
+        "apply": "Uygula",
         "payment": {
             "credit_card": "Kredi Kartı / Banka Kartı",
             "credit_card_desc": "Test ortamı - Herhangi bir kart numarası kabul edilir",
@@ -410,14 +417,22 @@
             "credit_card_short": "Kredi Kartı",
             "test_mode_warning": "Test Modu - Gerçek ödeme alınmaz",
             "reference_note": "Sipariş numaranızı açıklama kısmına yazmayı unutmayın.",
-            "secure_payment": "Güvenli Ödeme - 256-bit SSL Korumalı"
+            "secure_payment": "Güvenli Ödeme - 256-bit SSL Korumalı",
+            "installments_label": "Taksit Seçeneği",
+            "select_installment": "Taksit seçin",
+            "single_payment": "Tek çekim",
+            "installment_count": "{{count}} taksit",
+            "commission_suffix": "komisyon",
+            "commission_applied": "Uygulanan komisyon: %{{rate}}"
         },
         "card": {
             "name": "Kart Üzerindeki İsim",
             "name_placeholder": "AD SOYAD",
             "number": "Kart Numarası",
             "expiry": "Son Kullanma",
-            "cvv": "CVV"
+            "cvv": "CVV",
+            "threed_info": "3D doğrulama sonrası banka ekranına yönlendirilirsiniz.",
+            "expiry_placeholder": "AA/YY veya AA/YYYY"
         },
         "address": {
             "loading": "Adresler yükleniyor...",
@@ -433,7 +448,17 @@
             "city_placeholder": "İstanbul",
             "district": "İlçe",
             "district_placeholder": "Kadıköy",
-            "postal_code": "Posta Kodu"
+            "postal_code": "Posta Kodu",
+            "type_placeholder": "Ev, İş...",
+            "save": "Kaydet"
+        },
+        "validation": {
+            "agreements_required": "Lütfen sözleşmeleri onaylayın.",
+            "card_details_missing": "Kart bilgileri eksik",
+            "expiry_invalid": "Kart son kullanma tarihi geçersiz",
+            "tokenization_failed": "Kart tokenizasyonu başarısız",
+            "threed_init_failed": "3D ödeme başlatılamadı",
+            "too_many_attempts": "Çok fazla hatalı deneme. Lütfen {{minutes}} dakika sonra tekrar deneyin."
         },
         "agreements": {
             "pre_info_title": "Ön Bilgilendirme Formu",
@@ -709,5 +734,35 @@
     "landing": {
         "support_title": "Bize Ulaşın",
         "support_subtitle": "Sormak istediğiniz her türlü soru veya yaşadığınız problemler için bize yazabilirsiniz."
+    },
+    "payment_flow": {
+        "threed_secure_hint": "3D doğrulama sonrası banka ekranına yönlendirilirsiniz.",
+        "redirect": {
+            "title": "3D Yönlendirmesi",
+            "subtitle": "Bankanıza güvenli bir şekilde yönlendiriliyorsunuz, lütfen bekleyin...",
+            "error_title": "3D Yönlendirme Hatası",
+            "data_not_found": "3D yönlendirme verisi bulunamadı.",
+            "invalid_payload": "3D yönlendirme verisi geçersiz.",
+            "security_fail": "3D yönlendirme adresi güvenlik kontrolünden geçemedi.",
+            "security_fail_form": "3D form adresi güvenlik kontrolünden geçemedi.",
+            "security_fail_html": "3D HTML form action güvenlik kontrolünden geçemedi.",
+            "payload_limit": "3D içerik boyutu limiti aşıldı.",
+            "form_parse_error": "3D içerik formu okunamadı."
+        },
+        "failed": {
+            "title": "Ödeme Başarısız",
+            "transaction_reference": "İşlem Referansı",
+            "errors": {
+                "amount_mismatch": "Ödeme tutarı doğrulama kontrolünden geçmedi. İşlem manuel incelemeye alındı.",
+                "detail_query_error": "Banka işlem detayı alınamadı. Lütfen tekrar deneyin.",
+                "missing_finalize": "Ödeme tamamlandı fakat sipariş oluşturma adımı tamamlanamadı. Destek ekibimiz kontrol edecektir.",
+                "currency_mismatch": "Para birimi doğrulaması başarısız oldu. Lütfen destek ile iletişime geçin.",
+                "invalid_3d_payload": "3D yönlendirme verisi geçersiz. Lütfen ödemeyi yeniden başlatın.",
+                "failed": "3D doğrulama başarısız veya iptal edildi.",
+                "general": "Ödeme işlemi tamamlanamadı. Lütfen tekrar deneyin."
+            },
+            "retry": "Tekrar Dene",
+            "back_to_cart": "Sepete Dön"
+        }
     }
 }

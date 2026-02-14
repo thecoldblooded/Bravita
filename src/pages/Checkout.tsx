@@ -18,6 +18,7 @@ import {
     type InstallmentRate
 } from "@/lib/checkout";
 import Header from "@/components/Header";
+import { Helmet } from "react-helmet-async";
 
 const getSteps = (t: (key: string, options?: Record<string, unknown>) => string) => [
     { id: 1, name: t("checkout.steps.delivery"), icon: MapPin },
@@ -128,7 +129,7 @@ export default function Checkout() {
     const handlePlaceOrder = async () => {
         if (!user || !checkoutData.addressId) return;
         if (!isAgreed) {
-            toast.error("Lütfen sözleşmeleri onaylayın.");
+            toast.error(t("checkout.validation.agreements_required", "Lütfen sözleşmeleri onaylayın."));
             return;
         }
 
@@ -136,7 +137,7 @@ export default function Checkout() {
         try {
             if (checkoutData.paymentMethod === "credit_card") {
                 if (!checkoutData.cardDetails) {
-                    toast.error("Kart bilgileri eksik");
+                    toast.error(t("checkout.validation.card_details_missing", "Kart bilgileri eksik"));
                     return;
                 }
 
@@ -144,7 +145,7 @@ export default function Checkout() {
                 if (PAYMENT_USE_TOKENIZATION) {
                     const expiryMatch = /^(\d{2})\/(\d{2}|\d{4})$/.exec(checkoutData.cardDetails.expiry.trim());
                     if (!expiryMatch) {
-                        toast.error("Kart son kullanma tarihi gecersiz");
+                        toast.error(t("checkout.validation.expiry_invalid", "Kart son kullanma tarihi gecersiz"));
                         return;
                     }
 
@@ -162,7 +163,7 @@ export default function Checkout() {
                     if (tokenizeResult.success && tokenizeResult.cardToken) {
                         cardToken = tokenizeResult.cardToken;
                     } else if (PAYMENT_TOKENIZATION_REQUIRED) {
-                        toast.error(tokenizeResult.message || "Kart tokenizasyonu basarisiz");
+                        toast.error(tokenizeResult.message || t("checkout.validation.tokenization_failed", "Kart tokenizasyonu basarisiz"));
                         return;
                     }
                 }
@@ -197,7 +198,7 @@ export default function Checkout() {
                     return;
                 }
 
-                toast.error(cardInitResult.message || "3D ödeme başlatılamadı");
+                toast.error(cardInitResult.message || t("checkout.validation.threed_init_failed", "3D ödeme başlatılamadı"));
                 return;
             }
 
@@ -231,6 +232,13 @@ export default function Checkout() {
 
     return (
         <div className="min-h-screen bg-linear-to-b from-orange-50/50 to-white">
+            <Helmet>
+                <title>Ödeme Yap | Bravita</title>
+                <meta name="description" content="Güvenli ödeme sayfası." />
+                <meta name="robots" content="noindex" />
+                <meta property="og:title" content="Ödeme Yap | Bravita" />
+                <meta property="og:description" content="Güvenli ödeme sayfası." />
+            </Helmet>
             <Header />
 
             <div className="max-w-4xl mx-auto px-4 py-8 pt-24">
@@ -238,13 +246,13 @@ export default function Checkout() {
                 <div className="mb-8">
                     <div className="flex items-center justify-between relative">
                         {/* Progress Line */}
-                        <div className="absolute left-0 right-0 top-1/2 h-0.5 bg-gray-200 -translate-y-1/2" />
+                        <div className="absolute left-0 right-0 top-6 h-0.5 bg-gray-200 -translate-y-1/2" />
                         <div
-                            className="absolute left-0 top-1/2 h-0.5 bg-orange-500 -translate-y-1/2 transition-all duration-500"
-                            style={{ width: `${((currentStep - 1) / (getSteps(t).length - 1)) * 100}%` }}
+                            className="absolute left-0 top-6 h-0.5 bg-orange-500 -translate-y-1/2 transition-all duration-500"
+                            style={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
                         />
 
-                        {getSteps(t).map((step) => {
+                        {steps.map((step) => {
                             const Icon = step.icon;
                             const isCompleted = currentStep > step.id;
                             const isCurrent = currentStep === step.id;

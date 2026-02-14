@@ -151,7 +151,9 @@
         "valco_desc": "Valco Pharma R&D Laboratory Services",
         "visitor_count": "visitors",
         "visitor_total": "Total:",
-        "visitor_today": "Today:"
+        "visitor_today": "Today:",
+        "guest_user": "Guest User",
+        "loading": "Loading..."
     },
     "cookie_consent": {
         "title": "Cookie Usage",
@@ -336,7 +338,9 @@
         "min_amount": "Min. Amount",
         "free_shipping_remaining": "Add {{amount}}TL more for free shipping!",
         "login_required": "Please login to continue",
-        "profile_incomplete": "Please complete your profile first"
+        "profile_incomplete": "Please complete your profile first",
+        "quantity_label": "Quantity",
+        "unit": "unit"
     },
     "promo": {
         "valid_until": "valid until",
@@ -396,6 +400,9 @@
         "confirm_order": "Confirm Order",
         "products": "Products",
         "delivery_address": "Delivery Address",
+        "payable_total": "Payable Total",
+        "commission": "Commission",
+        "apply": "Apply",
         "payment": {
             "credit_card": "Credit Card / Debit Card",
             "credit_card_desc": "Test mode - Any card number accepted",
@@ -405,14 +412,22 @@
             "credit_card_short": "Credit Card",
             "test_mode_warning": "Test Mode - No real payment will be taken",
             "reference_note": "Please write your order number in the explanation section.",
-            "secure_payment": "Secure Payment - 256-bit SSL Protected"
+            "secure_payment": "Secure Payment - 256-bit SSL Protected",
+            "installments_label": "Installment Options",
+            "select_installment": "Select installment",
+            "single_payment": "Single payment",
+            "installment_count": "{{count}} installments",
+            "commission_suffix": "commission",
+            "commission_applied": "Applied commission: %{{rate}}"
         },
         "card": {
             "name": "Cardholder Name",
             "name_placeholder": "NAME SURNAME",
             "number": "Card Number",
             "expiry": "Expiry Date",
-            "cvv": "CVV"
+            "cvv": "CVV",
+            "threed_info": "You will be redirected to the bank screen after 3D verification.",
+            "expiry_placeholder": "AA/YY or AA/YYYY"
         },
         "address": {
             "loading": "Loading addresses...",
@@ -428,7 +443,17 @@
             "city_placeholder": "New York",
             "district": "District",
             "district_placeholder": "Manhattan",
-            "postal_code": "Postal Code"
+            "postal_code": "Postal Code",
+            "type_placeholder": "Home, Work...",
+            "save": "Save"
+        },
+        "validation": {
+            "agreements_required": "Please accept the agreements.",
+            "card_details_missing": "Card details are missing",
+            "expiry_invalid": "Card expiry date is invalid",
+            "tokenization_failed": "Card tokenization failed",
+            "threed_init_failed": "Could not initiate 3D payment",
+            "too_many_attempts": "Too many failed attempts. Please try again after {{minutes}} minutes."
         },
         "bank_transfer_hint": "* Bank transfer details will be sent via email after order confirmation.",
         "promo_placeholder": "Promo Code",
@@ -709,5 +734,35 @@
     "landing": {
         "support_title": "Contact Us",
         "support_subtitle": "You can write to us for any questions you want to ask or problems you are experiencing."
+    },
+    "payment_flow": {
+        "threed_secure_hint": "You will be redirected to the bank screen after 3D verification.",
+        "redirect": {
+            "title": "3D Redirect",
+            "subtitle": "Redirecting you securely to your bank, please wait...",
+            "error_title": "3D Redirect Error",
+            "data_not_found": "3D redirect data not found.",
+            "invalid_payload": "3D redirect data is invalid.",
+            "security_fail": "3D redirect address failed security check.",
+            "security_fail_form": "3D form address failed security check.",
+            "security_fail_html": "3D HTML form action failed security check.",
+            "payload_limit": "3D content size limit exceeded.",
+            "form_parse_error": "Could not read 3D content form."
+        },
+        "failed": {
+            "title": "Payment Failed",
+            "transaction_reference": "Transaction Reference",
+            "errors": {
+                "amount_mismatch": "Payment amount failed verification check. Transaction is under manual review.",
+                "detail_query_error": "Could not retrieve bank transaction details. Please try again.",
+                "missing_finalize": "Payment completed but order creation step could not be completed. Our support team will check.",
+                "currency_mismatch": "Currency verification failed. Please contact support.",
+                "invalid_3d_payload": "3D redirect data is invalid. Please restart the payment.",
+                "failed": "3D verification failed or cancelled.",
+                "general": "Payment process could not be completed. Please try again."
+            },
+            "retry": "Retry",
+            "back_to_cart": "Back to Cart"
+        }
     }
 }

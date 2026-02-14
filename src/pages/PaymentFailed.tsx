@@ -6,19 +6,19 @@ import { Button } from "@/components/ui/button";
 function getErrorMessage(code: string): string {
     switch (code) {
         case "amount_mismatch":
-            return "Odeme tutari dogrulama kontrolunden gecmedi. Islem manuel incelemeye alindi.";
+            return "Ödeme tutarı doğrulama kontrolünden geçmedi. İşlem manuel incelemeye alındı.";
         case "detail_query_error":
-            return "Banka islem detayi alinamadi. Lutfen tekrar deneyin.";
+            return "Banka işlem detayı alınamadı. Lütfen tekrar deneyin.";
         case "missing_finalize":
-            return "Odeme tamamlandi fakat siparis olusturma adimi tamamlanamadi. Destek ekibimiz kontrol edecektir.";
+            return "Ödeme tamamlandı fakat sipariş oluşturma adımı tamamlanamadı. Destek ekibimiz kontrol edecektir.";
         case "currency_mismatch":
-            return "Para birimi dogrulamasi basarisiz oldu. Lutfen destek ile iletisime gecin.";
+            return "Para birimi doğrulaması başarısız oldu. Lütfen destek ile iletişime geçin.";
         case "invalid_3d_payload":
-            return "3D yonlendirme verisi gecersiz. Lutfen odemeyi yeniden baslatin.";
+            return "3D yönlendirme verisi geçersiz. Lütfen ödemeyi yeniden başlatın.";
         case "failed":
-            return "3D dogrulama basarisiz veya iptal edildi.";
+            return "3D doğrulama başarısız veya iptal edildi.";
         default:
-            return "Odeme islemi tamamlanamadi. Lutfen tekrar deneyin.";
+            return "Ödeme işlemi tamamlanamadı. Lütfen tekrar deneyin.";
     }
 }
 
@@ -47,12 +47,12 @@ export default function PaymentFailed() {
                     <AlertTriangle className="h-7 w-7" />
                 </div>
 
-                <h1 className="text-center text-2xl font-bold text-gray-900">Odeme Basarisiz</h1>
+                <h1 className="text-center text-2xl font-bold text-gray-900">Ödeme Başarısız</h1>
                 <p className="mt-3 text-center text-sm text-gray-600">{getErrorMessage(code)}</p>
 
                 {intent ? (
                     <p className="mt-3 rounded-lg bg-gray-50 px-3 py-2 text-center text-xs text-gray-500">
-                        Islem Referansi: {intent}
+                        İşlem Referansı: {intent}
                     </p>
                 ) : null}
 

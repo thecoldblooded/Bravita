@@ -56,7 +56,7 @@ export const TextHoverEffect = ({
                             <stop offset="25%" stopColor="#ef4444" />
                             <stop offset="50%" stopColor="#FBBF24" />
                             <stop offset="75%" stopColor="#06b6d4" />
-                            <stop offset="100%" stopColor="#8b5cf6" />
+                            <stop offset="100%" stopColor="#10b981" />
                         </>
                     )}
                 </linearGradient>

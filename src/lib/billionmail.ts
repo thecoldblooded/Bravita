@@ -13,7 +13,6 @@ class BillionMailService {
      * Syncs a contact to BillionMail via Supabase Edge Function to avoid CORS and hide API keys.
      */
     async subscribeContact(contact: BillionMailContact) {
-        // console.log('BillionMail: Initiating sync via Edge Function...');
 
         try {
             const { data, error } = await supabase.functions.invoke('sync-to-billionmail', {
@@ -25,7 +24,7 @@ class BillionMailService {
                 throw error;
             }
 
-            // console.log('BillionMail: Sync complete.');
+
             return data;
         } catch (error) {
             console.error('BillionMail: Sync failed.');

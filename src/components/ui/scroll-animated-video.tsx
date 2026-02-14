@@ -146,18 +146,18 @@ export const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
         if (!isClient) return;
         const currentRoot = rootRef.current;
 
-         
+
         let gsap: any;
-         
+
         let ScrollTrigger: any;
-         
+
         let CustomEase: any;
-         
+
         let LenisCtor: any;
-         
+
         let lenis: any;
 
-         
+
         let mainTl: any;
         let overlayDarkenEl: HTMLDivElement | null = null;
 
@@ -205,7 +205,7 @@ export const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
                     });
 
                     // Expose lenis to window for global control
-                     
+
                     (window as any).lenis = lenis;
 
                     rafCb = (time: number) => lenis?.raf(time * 1000);
@@ -369,17 +369,17 @@ export const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
             cancelled = true;
             try {
                 try {
-                     
+
                     (mainTl as any)?.kill?.();
                 } catch { /* ignore */ }
             } catch { /* ignore */ }
             try {
-                 
+
                 if ((ScrollTrigger as any)?.getAll && currentRoot) {
-                     
+
                     (ScrollTrigger as any)
                         .getAll()
-                         
+
                         .forEach((t: any) => currentRoot!.contains(t.trigger) && t.kill(true));
                 }
             } catch { /* ignore */ }
@@ -389,22 +389,22 @@ export const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
                 }
             } catch { /* ignore */ }
             try {
-                 
+
                 if (rafCb && (gsap as any)?.ticker) {
-                     
+
                     (gsap as any).ticker.remove(rafCb);
-                     
+
                     (gsap as any).ticker.lagSmoothing(1000, 16);
                 }
             } catch { /* ignore */ }
             try {
-                 
+
                 (lenis as any)?.off?.("scroll", (ScrollTrigger as any)?.update);
-                 
+
                 (lenis as any)?.destroy?.();
-                 
+
                 if ((window as any).lenis === lenis) {
-                     
+
                     (window as any).lenis = undefined;
                 }
             } catch { /* ignore */ }
@@ -531,7 +531,7 @@ export const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
           --muted-border: rgba(15,17,21,0.12);
           --overlay-bg: rgba(10,10,14,0.42);
           --overlay-text: #ffffff;
-          --accent: #7c3aed;    /* violet */
+          --accent: #2563eb;    /* blue */
           --accent-2: #22d3ee;  /* cyan */
           --shadow: 0 10px 30px rgba(0,0,0,0.08);
 
@@ -550,7 +550,7 @@ export const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
             --muted-border: rgba(229,231,235,0.14);
             --overlay-bg: rgba(8,8,12,0.55);
             --overlay-text: #ffffff;
-            --accent: #8b5cf6;
+            --accent: #3b82f6;
             --accent-2: #22d3ee;
             --shadow: 0 12px 36px rgba(0,0,0,0.35);
           }

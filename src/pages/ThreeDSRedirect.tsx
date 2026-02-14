@@ -69,6 +69,8 @@ function submitForm(action: string, fields: Record<string, unknown>): void {
     form.submit();
 }
 
+import { Helmet } from "react-helmet-async";
+
 export default function ThreeDSRedirect() {
     const navigate = useNavigate();
     const location = useLocation();
@@ -101,13 +103,13 @@ export default function ThreeDSRedirect() {
         }
 
         if (!payload) {
-            setErrorMessage("3D yonlendirme verisi bulunamadi.");
+            setErrorMessage("3D yönlendirme verisi bulunamadı.");
             return;
         }
 
         if (payload.redirectUrl) {
             if (!isAllowedGatewayUrl(payload.redirectUrl)) {
-                setErrorMessage("3D yonlendirme adresi guvenlik kontrolunden gecemedi.");
+                setErrorMessage("3D yönlendirme adresi güvenlik kontrolünden geçemedi.");
                 return;
             }
 
@@ -120,7 +122,7 @@ export default function ThreeDSRedirect() {
 
         if (payload.formAction) {
             if (!isAllowedGatewayUrl(payload.formAction)) {
-                setErrorMessage("3D form adresi guvenlik kontrolunden gecemedi.");
+                setErrorMessage("3D form adresi güvenlik kontrolünden geçemedi.");
                 return;
             }
 
@@ -133,18 +135,18 @@ export default function ThreeDSRedirect() {
 
         if (payload.html) {
             if (payload.html.length > MAX_HTML_PAYLOAD_LENGTH) {
-                setErrorMessage("3D icerik boyutu limiti asildi.");
+                setErrorMessage("3D içerik boyutu limiti aşıldı.");
                 return;
             }
 
             const parsed = parseHtmlForm(payload.html);
             if (!parsed) {
-                setErrorMessage("3D icerik formu okunamadi.");
+                setErrorMessage("3D içerik formu okunamadı.");
                 return;
             }
 
             if (!isAllowedGatewayUrl(parsed.action)) {
-                setErrorMessage("3D HTML form action guvenlik kontrolunden gecemedi.");
+                setErrorMessage("3D HTML form action güvenlik kontrolünden geçemedi.");
                 return;
             }
 
@@ -155,7 +157,7 @@ export default function ThreeDSRedirect() {
             return;
         }
 
-        setErrorMessage("3D yonlendirme verisi gecersiz.");
+        setErrorMessage("3D yönlendirme verisi geçersiz.");
     }, [intentId, statePayload]);
 
     useEffect(() => {
@@ -171,29 +173,31 @@ export default function ThreeDSRedirect() {
 
     return (
         <div className="min-h-screen bg-linear-to-b from-orange-50/50 to-white flex items-center justify-center px-4">
+            <Helmet>
+                <title>3D Secure Redirect</title>
+                <meta name="robots" content="noindex" />
+            </Helmet>
             <div className="w-full max-w-md rounded-2xl border border-orange-100 bg-white p-6 text-center shadow-lg">
+                <div className={`mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full ${errorMessage ? "bg-red-50 text-red-600" : "bg-orange-50 text-orange-600"}`}>
+                    {errorMessage ? <ShieldAlert className="h-6 w-6" /> : <Loader2 className="h-6 w-6 animate-spin" />}
+                </div>
+
+                <h1 className="text-lg font-bold text-gray-900">
+                    {errorMessage ? "3D Yönlendirme Hatası" : "3D Güvenli Ödeme"}
+                </h1>
+
                 {errorMessage ? (
                     <>
-                        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600">
-                            <ShieldAlert className="h-6 w-6" />
-                        </div>
-                        <h1 className="text-lg font-bold text-gray-900">3D Yonlendirme Hatasi</h1>
                         <p className="mt-2 text-sm text-gray-600">{errorMessage}</p>
                         <Button
                             className="mt-4 w-full bg-orange-500 text-white hover:bg-orange-600"
                             onClick={() => navigate("/checkout")}
                         >
-                            Checkout'a Don
+                            Checkout'a Dön
                         </Button>
                     </>
                 ) : (
-                    <>
-                        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-orange-50 text-orange-600">
-                            <Loader2 className="h-6 w-6 animate-spin" />
-                        </div>
-                        <h1 className="text-lg font-bold text-gray-900">3D Guvenli Odeme</h1>
-                        <p className="mt-2 text-sm text-gray-600">Banka dogrulama ekranina yonlendiriliyorsunuz...</p>
-                    </>
+                    <p className="mt-2 text-sm text-gray-600">Banka doğrulama ekranına yönlendiriliyorsunuz...</p>
                 )}
             </div>
         </div>

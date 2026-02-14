@@ -27,6 +27,33 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const getInitialUser = (session: Session | null) => {
+  if (!session?.user) return null;
+
+  // Trust only signed app_metadata for privilege hints.
+  const isAdminFromMetadata = !!session.user.app_metadata?.is_admin;
+  const isSuperAdminFromMetadata = !!session.user.app_metadata?.is_superadmin;
+
+  // Create a minimal stub user - will be replaced by actual profile from DB
+  return {
+    id: session.user.id,
+    email: session.user.email || "",
+    full_name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || null,
+    phone: session.user.user_metadata?.phone || session.user.phone || null,
+    profile_complete: false,
+    phone_verified: false,
+    user_type: "individual",
+    isStub: true,
+    is_admin: isAdminFromMetadata, // Trust signed session metadata instantly
+    is_superadmin: isSuperAdminFromMetadata,
+    company_name: null,
+    phone_verified_at: null,
+    oauth_provider: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  } as UserProfile;
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const bffAuthEnabled = isBffAuthEnabled();
 
@@ -50,33 +77,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error("Initial session error:", e);
     }
     return null;
-  };
-
-  const getInitialUser = (session: Session | null) => {
-    if (!session?.user) return null;
-
-    // Trust only signed app_metadata for privilege hints.
-    const isAdminFromMetadata = !!session.user.app_metadata?.is_admin;
-    const isSuperAdminFromMetadata = !!session.user.app_metadata?.is_superadmin;
-
-    // Create a minimal stub user - will be replaced by actual profile from DB
-    return {
-      id: session.user.id,
-      email: session.user.email || "",
-      full_name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || null,
-      phone: session.user.user_metadata?.phone || session.user.phone || null,
-      profile_complete: false,
-      phone_verified: false,
-      user_type: "individual",
-      isStub: true,
-      is_admin: isAdminFromMetadata, // Trust signed session metadata instantly
-      is_superadmin: isSuperAdminFromMetadata,
-      company_name: null,
-      phone_verified_at: null,
-      oauth_provider: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    } as UserProfile;
   };
 
   const initialSession = getInitialSession();
@@ -196,8 +196,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.__isSyncingProfile = true;
 
     try {
-
-
       // Clear localStorage immediately to prevent other triggers
       localStorage.removeItem("pending_profile");
       localStorage.removeItem("profile_complete_pending");
@@ -217,11 +215,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .upsert(profilePayload, { onConflict: "id" });
 
       if (upsertError) {
-
         return;
       }
-
-
 
       // Replace any previous address for this user to avoid duplicates
       const { error: deleteError } = await supabase
@@ -307,8 +302,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         })();
       }
 
-      // console.log(`Auth Event: ${event} [User: ${sessionId.substring(0, 8)}]`);
-
       if (event === "PASSWORD_RECOVERY") {
         setIsPasswordRecovery(true);
       } else if (event === "SIGNED_OUT") {
@@ -318,11 +311,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           try {
             // We use a separate un-authed call or rely on the fact that we might still have a fleeting token? 
             // Actually SIGNED_OUT means no token. This is hard to log to DB without a token.
-            // WE SKIP LOGOUT LOGGING for now as it requires backend functions to be reliable.
-            // OR we can try if there's a lingering session, but usually there isn't.
-            // User requirement: "giriş çıkış saatlerini". 
-            // Alternative: Log "LOGOUT" *before* calling signOut() in the logout function.
-            // But this is the listener.
           } catch (e) { console.error(e) }
         }
         setIsPasswordRecovery(false);
@@ -332,10 +320,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (event === "INITIAL_SESSION") {
         // If session is null but URL has fragment (OAuth callback), retrieve session again
         if (!newSession && window.location.hash) {
-          // console.log("INITIAL_SESSION with empty session, checking URL fragment...");
           supabase.auth.getSession().then(async ({ data: { session: urlSession } }) => {
             if (urlSession && mounted) {
-              // console.log("URL fragment session found, setting session");
               setSession(urlSession);
 
               // Fetch profile for the session with AbortError handling
@@ -441,7 +427,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const errorCode = (err as { code?: string })?.code;
 
             if (errorCode === "PGRST116" || errorMessage.includes("PGRST116")) {
-              // console.log("Auth: Profile not found, creating background entry...");
               const metadata = newSession.user.user_metadata || {};
               const newProfile: UserProfile = {
                 id: newSession.user.id,
@@ -461,7 +446,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               const { error: insertError } = await supabase.from("profiles").insert(newProfile);
               if (!insertError && mounted) {
                 setUserDebug(newProfile);
-
                 // Sync to BillionMail ONLY after email confirmation (first login = confirmed)
                 // This ensures unconfirmed users never appear in BillionMail
                 billionMail.subscribeContact({
@@ -525,7 +509,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const safetyTimer = setTimeout(() => {
       if (mounted && isSplashScreenActiveRef.current) {
         // Session loading took too long, close splash screen anyway
-        // console.debug("Splash screen timeout, closing.");
         setIsSplashScreenActive(false);
       }
     }, 2000);

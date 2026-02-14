@@ -93,17 +93,6 @@ export function OrderSummary({
         async function fetchAddress() {
             if (!addressId) return;
 
-            // TEST USER BYPASS - Check localStorage first for test user addresses
-            const testAddresses = localStorage.getItem("test_user_addresses");
-            if (testAddresses) {
-                const addresses = JSON.parse(testAddresses);
-                const found = addresses.find((a: Address) => a.id === addressId);
-                if (found) {
-                    setAddress(found);
-                    return;
-                }
-            }
-            // END TEST USER BYPASS
 
             try {
                 const { data } = await supabase
@@ -119,6 +108,7 @@ export function OrderSummary({
         fetchAddress();
     }, [addressId]);
 
+
     const handleApplyPromo = async () => {
         if (!inputPromoCode.trim()) return;
 
@@ -127,7 +117,7 @@ export function OrderSummary({
             const timePassed = Date.now() - lastAttemptTimestamp;
             if (timePassed < LOCKOUT_TIME) {
                 const remainingMinutes = Math.ceil((LOCKOUT_TIME - timePassed) / 60000);
-                toast.error(`Çok fazla hatalı deneme. Lütfen ${remainingMinutes} dakika sonra tekrar deneyin.`);
+                toast.error(t("checkout.validation.too_many_attempts", "Çok fazla hatalı deneme. Lütfen {{minutes}} dakika sonra tekrar deneyin.", { minutes: remainingMinutes }));
                 return;
             } else {
                 setFailedAttempts(0);
@@ -152,7 +142,7 @@ export function OrderSummary({
 
         } catch (error) {
             console.error("Promo code error:", error);
-            toast.error("Bir hata oluştu");
+            toast.error(t("errors.unknown", "Bir hata oluştu"));
         } finally {
             setIsApplyingPromo(false);
         }
@@ -183,9 +173,9 @@ export function OrderSummary({
                                     />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <h4 className="font-black text-neutral-900 truncate">{item.name || "Bravita Multivitamin"}</h4>
+                                    <h4 className="font-black text-neutral-900 truncate">{item.name || t("cart.item_name", "Bravita Multivitamin")}</h4>
                                     <p className="text-sm font-bold text-neutral-400 mt-0.5">
-                                        {t("cart.quantity", "Adet")}: {item.quantity}
+                                        {t("cart.quantity_label", "Adet")}: {item.quantity}
                                     </p>
                                 </div>
                                 <div className="text-right">
@@ -221,7 +211,7 @@ export function OrderSummary({
                             <p>{address.postal_code}</p>
                         </div>
                     ) : (
-                        <p className="text-sm text-gray-500">Adres yükleniyor...</p>
+                        <p className="text-sm text-gray-500">{t("common.loading", "Adres yükleniyor...")}</p>
                     )}
                 </div>
 
@@ -279,7 +269,7 @@ export function OrderSummary({
                                 disabled={isApplyingPromo || !inputPromoCode.trim()}
                                 className="bg-orange-500 hover:bg-orange-600 text-white"
                             >
-                                {isApplyingPromo ? <Loader2 className="w-4 h-4 animate-spin" /> : "Uygula"}
+                                {isApplyingPromo ? <Loader2 className="w-4 h-4 animate-spin" /> : t("checkout.apply", "Uygula")}
                             </Button>
                         )}
                     </div>
@@ -313,13 +303,13 @@ export function OrderSummary({
                         {paymentMethod === "credit_card" && (
                             <div className="flex justify-between">
                                 <span className="text-gray-600">
-                                    Komisyon ({installmentNumber === 1 ? "Tek çekim" : `${installmentNumber} taksit`} - %{commissionRate.toFixed(2)})
+                                    {t("checkout.commission", "Komisyon")} ({installmentNumber === 1 ? t("checkout.payment.single_payment", "Tek çekim") : t("checkout.payment.installment_count", "{{count}} taksit", { count: installmentNumber })} - %{commissionRate.toFixed(2)})
                                 </span>
                                 <span className="font-medium text-gray-900">₺{commissionAmount.toFixed(2)}</span>
                             </div>
                         )}
                         <div className="flex justify-between items-center">
-                            <span className="font-bold text-gray-900">Ödenecek Toplam</span>
+                            <span className="font-bold text-gray-900">{t("checkout.payable_total", "Ödenecek Toplam")}</span>
                             <span className="text-2xl font-black text-orange-600">₺{payableTotal.toFixed(2)}</span>
                         </div>
                     </div>

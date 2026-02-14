@@ -62,6 +62,8 @@ const CATEGORY_LABELS: Record<string, string> = {
     other: "Diğer",
 };
 
+import { Helmet } from "react-helmet-async";
+
 export default function AdminSupport() {
     const [tickets, setTickets] = useState<Ticket[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -213,7 +215,7 @@ export default function AdminSupport() {
                         console.error("Reply email error body parse failed:", bodyErr);
                     }
                 } else {
-                    console.log("Reply email sent successfully:", funcData);
+                    // Log removed
                 }
             } catch (e) {
                 console.error("Reply email invocation error:", e);
@@ -318,6 +320,13 @@ export default function AdminSupport() {
     return (
         <AdminGuard>
             <AdminLayout>
+                <Helmet>
+                    <title>Admin Support | Bravita</title>
+                    <meta name="description" content="Admin Support" />
+                    <meta name="robots" content="noindex" />
+                    <meta property="og:title" content="Admin Support" />
+                    <meta property="og:description" content="Admin Support" />
+                </Helmet>
                 <div className="max-w-7xl mx-auto space-y-8">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>

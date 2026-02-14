@@ -16,10 +16,14 @@ document.addEventListener('gestureend', function (e) {
   e.preventDefault();
 });
 
+import { HelmetProvider } from "react-helmet-async";
+
 createRoot(document.getElementById("root")!).render(
-  <AuthProvider>
-    <CartProvider>
-      <App />
-    </CartProvider>
-  </AuthProvider>
+  <HelmetProvider>
+    <AuthProvider>
+      <CartProvider>
+        <App />
+      </CartProvider>
+    </AuthProvider>
+  </HelmetProvider>
 );
