@@ -105,3 +105,62 @@ Deno.test("renderTemplate respects raw_html policy", () => {
 
     assert(result.html.includes("<tr><td>Ürün</td></tr>"), "raw_html should not be escaped");
 });
+
+Deno.test("renderTemplate wraps output in unified Bravita layout", () => {
+    const result = renderTemplate({
+        template: {
+            slug: "order_confirmation",
+            subject: "Sipariş {{ORDER_ID}}",
+            content_html: "<p>Siparişiniz hazırlanıyor: {{ORDER_ID}}</p>",
+            unresolved_policy: "block",
+            is_auth_critical: false,
+        },
+        mode: "send",
+        variables: {
+            ORDER_ID: "ABCD1234",
+            BROWSER_LINK: "https://www.bravita.com.tr/functions/v1/send-order-email?id=1",
+        },
+    });
+
+    assert(result.html.includes("E-postayı görüntülemekte sorun mu yaşıyorsunuz?"), "browser-view helper should exist");
+    assert(result.html.includes("© 2026 Bravita. Tüm hakları saklıdır."), "standard copyright footer should exist");
+    assert(result.html.includes("support@bravita.com.tr"), "support email should exist in footer");
+    assert(result.html.includes("alt=\"Bravita\""), "brand logo should exist");
+    assert(result.html.includes("🧾"), "order templates should include order emoji");
+});
+
+Deno.test("renderTemplate shows confirmation fallback line only when confirmation url exists", () => {
+    const withConfirmation = renderTemplate({
+        template: {
+            slug: "reset_password",
+            subject: "Şifre sıfırlama",
+            content_html: "<p>Şifre sıfırlama bağlantınız hazır.</p>",
+            unresolved_policy: "block",
+            is_auth_critical: true,
+            allowlist_fallback_keys: ["CONFIRMATION_URL"],
+        },
+        mode: "send",
+        variables: {
+            CONFIRMATION_URL: "https://www.bravita.com.tr/reset-password?token=abc123",
+        },
+    });
+
+    assert(withConfirmation.html.includes("Link çalışmıyor mu? Bunu deneyin:"), "confirmation helper text should be visible when link exists");
+    assert(withConfirmation.html.includes("https://www.bravita.com.tr/reset-password?token=abc123"), "confirmation URL should be visible in helper area");
+
+    const withoutConfirmation = renderTemplate({
+        template: {
+            slug: "reset_password",
+            subject: "Şifre sıfırlama",
+            content_html: "<p>Şifre sıfırlama bağlantınız hazır.</p>",
+            unresolved_policy: "block",
+            is_auth_critical: false,
+        },
+        mode: "send",
+        variables: {
+            NAME: "Müşterimiz",
+        },
+    });
+
+    assert(!withoutConfirmation.html.includes("Link çalışmıyor mu? Bunu deneyin:"), "confirmation helper text should be hidden without URL");
+});

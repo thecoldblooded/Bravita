@@ -83,6 +83,185 @@ function sanitizeUrl(value: string): string {
     return "#";
 }
 
+const BRAVITA_SITE_URL = "https://www.bravita.com.tr";
+const BRAVITA_SUPPORT_EMAIL = "support@bravita.com.tr";
+
+function resolveTemplateEmoji(slug: string): string {
+    const normalizedSlug = String(slug || "").toLowerCase();
+
+    if (normalizedSlug.includes("confirm_signup") || normalizedSlug.includes("reset_password") || normalizedSlug.includes("password_changed")) {
+        return "🔐";
+    }
+    if (normalizedSlug.includes("welcome")) return "🎉";
+    if (normalizedSlug.includes("support_ticket_closed")) return "✅";
+    if (normalizedSlug.includes("support_ticket_replied")) return "💬";
+    if (normalizedSlug.includes("support_ticket")) return "🎫";
+    if (normalizedSlug.includes("order_shipped")) return "🚚";
+    if (normalizedSlug.includes("order_delivered")) return "🎁";
+    if (normalizedSlug.includes("order_cancelled")) return "❌";
+    if (normalizedSlug.includes("order_processing")) return "⚙️";
+    if (normalizedSlug.includes("order_preparing")) return "📦";
+    if (normalizedSlug.includes("order_awaiting_payment")) return "💳";
+    if (normalizedSlug.includes("order_confirmation")) return "🧾";
+
+    return "✉️";
+}
+
+function extractStyleBlocks(content: string): string {
+    const matches = String(content ?? "").match(/<style[^>]*>[\s\S]*?<\/style>/gi);
+    return matches ? matches.join("\n") : "";
+}
+
+function extractBodyContent(content: string): string {
+    const raw = String(content ?? "").trim();
+    if (!raw) return "";
+
+    const bodyMatch = raw.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+    if (bodyMatch?.[1]) {
+        return bodyMatch[1].trim();
+    }
+
+    return raw
+        .replace(/<!doctype[^>]*>/gi, "")
+        .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, "")
+        .replace(/<html[^>]*>/gi, "")
+        .replace(/<\/html>/gi, "")
+        .replace(/<body[^>]*>/gi, "")
+        .replace(/<\/body>/gi, "")
+        .trim();
+}
+
+function buildUnifiedBravitaLayout(params: {
+    templateSlug: string;
+    subject: string;
+    renderedHtml: string;
+    values: Record<string, string>;
+}): string {
+    const { templateSlug, subject, renderedHtml, values } = params;
+
+    const sanitizedSiteUrl = sanitizeUrl(values.SITE_URL || BRAVITA_SITE_URL);
+    const siteUrl = sanitizedSiteUrl === "#" ? BRAVITA_SITE_URL : sanitizedSiteUrl.replace(/\/+$/, "");
+    const logoUrl = `${siteUrl}/logo.png`;
+
+    const browserLink = sanitizeUrl(values.BROWSER_LINK || "");
+    const browserLine = browserLink === "#"
+        ? "E-postayı görüntülemekte sorun mu yaşıyorsunuz? Tarayıcıda açın."
+        : `E-postayı görüntülemekte sorun mu yaşıyorsunuz? <a href="${escapeHtml(browserLink)}" style="color:#ea580c;text-decoration:none;font-weight:700;">Tarayıcıda açın</a>`;
+
+    const confirmationUrl = sanitizeUrl(values.CONFIRMATION_URL || "");
+    const showConfirmationLine = confirmationUrl !== "#";
+    const emoji = resolveTemplateEmoji(templateSlug);
+
+    const preservedStyles = extractStyleBlocks(renderedHtml);
+    const contentBody = extractBodyContent(renderedHtml) || renderedHtml;
+
+    return `<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>${escapeHtml(subject)}</title>
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        background-color: #fffbf7;
+        font-family: 'Baloo 2', 'Nunito', Arial, sans-serif;
+        color: #1f2937;
+    }
+
+    .brv-shell {
+        width: 100%;
+        border-collapse: collapse;
+        background-color: #fffbf7;
+    }
+
+    .brv-card {
+        width: 100%;
+        max-width: 640px;
+        border-collapse: separate;
+        border-spacing: 0;
+        background: #ffffff;
+        border: 1px solid #f5e7dd;
+        border-radius: 22px;
+        overflow: hidden;
+    }
+
+    .brv-muted {
+        color: #6b7280;
+        font-size: 13px;
+        line-height: 1.55;
+        margin: 0;
+    }
+
+    .brv-footer-link {
+        color: #ea580c;
+        text-decoration: none;
+        font-weight: 700;
+    }
+
+    .brv-main-content table {
+        max-width: 100%;
+    }
+</style>
+${preservedStyles}
+</head>
+<body>
+<table role="presentation" class="brv-shell" cellspacing="0" cellpadding="0" border="0">
+    <tr>
+        <td align="center" style="padding: 36px 14px;">
+            <table role="presentation" class="brv-card" cellspacing="0" cellpadding="0" border="0">
+                <tr>
+                    <td style="padding: 24px 30px; border-bottom: 1px solid #f8ece3;">
+                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                            <tr>
+                                <td align="left" valign="middle">
+                                    <a href="${escapeHtml(siteUrl)}" style="text-decoration:none;">
+                                        <img src="${escapeHtml(logoUrl)}" alt="Bravita" style="display:block; height:34px; width:auto; border:0;" />
+                                    </a>
+                                </td>
+                                <td align="right" valign="middle" style="font-size:28px; line-height:1;">${emoji}</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 18px 30px 0;">
+                        <p class="brv-muted">${browserLine}</p>
+                    </td>
+                </tr>
+                ${showConfirmationLine ? `
+                <tr>
+                    <td style="padding: 10px 30px 0;">
+                        <p class="brv-muted" style="margin-bottom: 4px;">Link çalışmıyor mu? Bunu deneyin:</p>
+                        <p class="brv-muted" style="word-break: break-all;">
+                            <a href="${escapeHtml(confirmationUrl)}" style="color:#ea580c; text-decoration:none;">${escapeHtml(confirmationUrl)}</a>
+                        </p>
+                    </td>
+                </tr>
+                ` : ""}
+                <tr>
+                    <td class="brv-main-content" style="padding: 24px 30px 20px;">
+                        ${contentBody}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 18px 30px; background:#fff8f1; border-top:1px solid #f8ece3;">
+                        <p class="brv-muted" style="margin-bottom: 8px;">
+                            Sorularınız mı var? Bize ulaşın:
+                            <a href="mailto:${BRAVITA_SUPPORT_EMAIL}" class="brv-footer-link">${BRAVITA_SUPPORT_EMAIL}</a>
+                        </p>
+                        <p class="brv-muted">© 2026 Bravita. Tüm hakları saklıdır.</p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>`;
+}
+
 function toTextFromHtml(html: string): string {
     return String(html ?? "")
         .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, " ")
@@ -266,11 +445,18 @@ export function renderTemplate(input: RenderTemplateInput): RenderTemplateOutput
         })
         : "";
 
-    const text = renderedTextFromTemplate || toTextFromHtml(renderedHtml);
+    const unifiedHtml = buildUnifiedBravitaLayout({
+        templateSlug: template.slug || "generic_email",
+        subject: renderedSubject,
+        renderedHtml,
+        values: valuesForRender,
+    });
+
+    const text = renderedTextFromTemplate || toTextFromHtml(unifiedHtml);
 
     return {
         subject: renderedSubject,
-        html: renderedHtml,
+        html: unifiedHtml,
         text,
         unresolvedTokens: unresolvedAfterPolicy,
         warnings,
