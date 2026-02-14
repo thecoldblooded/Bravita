@@ -11,6 +11,9 @@ jobs:
   security-gate:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    env:
+      SKIP_SUPABASE: 'false'
+      SKIP_DRIFT: 'false'
 
     steps:
       - name: Checkout
@@ -50,7 +53,7 @@ jobs:
           fi
 
       - name: Link Supabase project
-        if: env.SKIP_SUPABASE != 'true'
+        if: ${{ env.SKIP_SUPABASE != 'true' }}
         env:
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF || 'xpmbnznsmsujjuwumfiw' }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
@@ -63,7 +66,7 @@ jobs:
           fi
 
       - name: Check linked migrations
-        if: env.SKIP_SUPABASE != 'true' && env.SKIP_DRIFT != 'true'
+        if: ${{ env.SKIP_SUPABASE != 'true' && env.SKIP_DRIFT != 'true' }}
         env:
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: |
