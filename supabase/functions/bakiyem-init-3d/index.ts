@@ -33,7 +33,7 @@ interface ThreeDPayload {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
-const BAKIYEM_BASE_URL = Deno.env.get("BAKIYEM_BASE_URL") ?? "https://pos.bakiyem.com/ode/api";
+const BAKIYEM_BASE_URL = Deno.env.get("BAKIYEM_BASE_URL") ?? "https://service.moka.com";
 const BAKIYEM_DEALER_CODE = (Deno.env.get("BAKIYEM_DEALER_CODE") ?? "").trim();
 const BAKIYEM_API_USERNAME = (Deno.env.get("BAKIYEM_API_USERNAME") ?? "").trim();
 const BAKIYEM_API_PASSWORD = (Deno.env.get("BAKIYEM_API_PASSWORD") ?? "").trim();
@@ -201,15 +201,14 @@ serve(async (req: Request) => {
 
     const origin = req.headers.get("origin") || APP_BASE_URL;
     const redirectUrl = new URL(BAKIYEM_REDIRECT_URL);
-    redirectUrl.searchParams.set("intentId", intentId);
+    redirectUrl.searchParams.set("MyTrxCode", intentId);
     redirectUrl.searchParams.set("uiOrigin", origin);
 
     const paymentDealerRequest: JsonRecord = {
-      Amount: paymentAmount, Currency: "TL", InstallmentNumber: 1,
+      Amount: paymentAmount, Currency: "TL", InstallmentNumber: 0,
       OtherTrxCode: shortTrxCode, RedirectUrl: redirectUrl.toString(),
-      Description: "Bravita Online Odeme", Software: "Bravita", IntegratorId: 1,
       ClientIP: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "127.0.0.1",
-      BuyerInformation: { BuyerFullName: buyerName, BuyerEmail: profile?.email || "customer@example.com", BuyerGsmNumber: buyerGsm, BuyerAddress: sanitizeString(addr?.street || "Istanbul") }
+      SubMerchantName: "",
     };
 
     if (body.cardToken) {

@@ -7,7 +7,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const DEFAULT_APP_BASE_URL = "https://bravita.com.tr";
 
-const BAKIYEM_BASE_URL = Deno.env.get("BAKIYEM_BASE_URL") ?? "https://pos.bakiyem.com/ode/api";
+const BAKIYEM_BASE_URL = "https://service.moka.com";
 const BAKIYEM_DEALER_CODE = (Deno.env.get("BAKIYEM_DEALER_CODE") ?? "").trim();
 const BAKIYEM_API_USERNAME = (Deno.env.get("BAKIYEM_API_USERNAME") ?? "").trim();
 const BAKIYEM_API_PASSWORD = (Deno.env.get("BAKIYEM_API_PASSWORD") ?? "").trim();
@@ -35,7 +35,7 @@ serve(async (req: Request) => {
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
   const url = new URL(req.url);
   const uiOrigin = url.searchParams.get("uiOrigin") || DEFAULT_APP_BASE_URL;
-  const intentId = url.searchParams.get("intentId");
+  const intentId = url.searchParams.get("MyTrxCode") || url.searchParams.get("intentId");
 
   if (!intentId) return Response.redirect(`${uiOrigin}/payment-failed?code=no_intent`, 302);
 
