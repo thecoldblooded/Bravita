@@ -71,13 +71,13 @@ CREATE OR REPLACE FUNCTION public.verify_promo_code(p_code text) RETURNS jsonb L
 CREATE OR REPLACE FUNCTION public.manage_inventory() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RETURN NEW; END; $$;
 CREATE OR REPLACE FUNCTION public.handle_new_order_promo() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RETURN NEW; END; $$;
 CREATE OR REPLACE FUNCTION public.is_admin_user() RETURNS boolean LANGUAGE plpgsql AS $$ BEGIN RETURN FALSE; END; $$;
-CREATE OR REPLACE FUNCTION public.is_admin_user(p_uid uuid) RETURNS boolean LANGUAGE plpgsql AS $$ BEGIN RETURN FALSE; END; $$;
+CREATE OR REPLACE FUNCTION public.is_admin_user(user_id uuid) RETURNS boolean LANGUAGE plpgsql AS $$ BEGIN RETURN FALSE; END; $$;
 CREATE OR REPLACE FUNCTION public.is_admin() RETURNS boolean LANGUAGE plpgsql AS $$ BEGIN RETURN FALSE; END; $$;
-CREATE OR REPLACE FUNCTION public.create_order(p1 jsonb, p2 uuid, p3 text, p4 text) RETURNS jsonb LANGUAGE plpgsql AS $$ BEGIN RETURN NULL; END; $$;
-CREATE OR REPLACE FUNCTION public.admin_set_user_admin(p1 uuid, p2 boolean) RETURNS boolean LANGUAGE plpgsql AS $$ BEGIN RETURN FALSE; END; $$;
-CREATE OR REPLACE FUNCTION public.admin_update_order_status(p1 uuid, p2 text, p3 text DEFAULT NULL) RETURNS boolean LANGUAGE plpgsql AS $$ BEGIN RETURN FALSE; END; $$;
-CREATE OR REPLACE FUNCTION public.admin_get_all_orders(p1 text DEFAULT NULL, p2 integer DEFAULT 100, p3 integer DEFAULT 0) 
+CREATE OR REPLACE FUNCTION public.create_order(p_items jsonb, p_shipping_address_id uuid, p_payment_method text, p_promo_code text DEFAULT NULL) RETURNS jsonb LANGUAGE plpgsql AS $$ BEGIN RETURN NULL; END; $$;
+CREATE OR REPLACE FUNCTION public.admin_set_user_admin(p_user_id uuid, p_is_admin boolean) RETURNS boolean LANGUAGE plpgsql AS $$ BEGIN RETURN FALSE; END; $$;
+CREATE OR REPLACE FUNCTION public.admin_update_order_status(p_order_id uuid, p_new_status text) RETURNS boolean LANGUAGE plpgsql AS $$ BEGIN RETURN FALSE; END; $$;
+CREATE OR REPLACE FUNCTION public.admin_get_all_orders(p_status text DEFAULT NULL, p_limit integer DEFAULT 100, p_offset integer DEFAULT 0) 
 RETURNS TABLE (id UUID, user_id UUID, total DECIMAL, status TEXT, created_at TIMESTAMPTZ, user_email TEXT, user_name TEXT) 
 LANGUAGE plpgsql AS $$ BEGIN RETURN; END; $$;
-CREATE OR REPLACE FUNCTION public.sanitize_search_input(p1 text) RETURNS text LANGUAGE plpgsql AS $$ BEGIN RETURN p1; END; $$;
+CREATE OR REPLACE FUNCTION public.sanitize_search_input(input_text text) RETURNS text LANGUAGE plpgsql AS $$ BEGIN RETURN input_text; END; $$;
 CREATE OR REPLACE FUNCTION public.log_admin_action() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RETURN NEW; END; $$;
