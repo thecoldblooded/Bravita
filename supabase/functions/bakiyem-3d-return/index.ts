@@ -23,6 +23,14 @@ function asText(value: unknown): string {
   return String(value);
 }
 
+function toLowerSafe(value: unknown): string {
+  return asText(value).trim().toLowerCase();
+}
+
+function isSuccessResultCode(value: unknown): boolean {
+  return ["success", "0", "00", "000"].includes(toLowerSafe(value));
+}
+
 serve(async (req: Request) => {
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
   const url = new URL(req.url);
@@ -103,17 +111,24 @@ serve(async (req: Request) => {
       : Array.isArray(inquiryData)
         ? inquiryData
         : [];
+    const normalizedShortTrxCode = shortTrxCode.toLowerCase();
+    const normalizedGatewayTrxCode = gatewayTrxCode.toLowerCase();
+    const normalizedCallbackTrxCode = callbackNormalized.trxCode.toLowerCase();
+
     const matchedByOtherTrxCode = inquiryPaymentList.find((item: any) =>
-      asText(item?.OtherTrxCode).replace(/-/g, "") === shortTrxCode
+      asText(item?.OtherTrxCode).replace(/-/g, "").toLowerCase() === normalizedShortTrxCode
     );
-    const matchedByGatewayTrxCode = gatewayTrxCode
-      ? inquiryPaymentList.find((item: any) => asText(item?.TrxCode) === gatewayTrxCode)
+    const matchedByGatewayTrxCode = normalizedGatewayTrxCode
+      ? inquiryPaymentList.find((item: any) => asText(item?.TrxCode).toLowerCase() === normalizedGatewayTrxCode)
       : null;
+    const matchedByCallbackTrxCode = normalizedCallbackTrxCode
+      ? inquiryPaymentList.find((item: any) => asText(item?.TrxCode).toLowerCase() === normalizedCallbackTrxCode)
+      : null;
+
     const selectedInquiryRecordForDebug =
       matchedByOtherTrxCode ||
       matchedByGatewayTrxCode ||
-      inquiryPaymentList[0] ||
-      (Array.isArray(inquiryData) ? inquiryData[0] : inquiryData) ||
+      matchedByCallbackTrxCode ||
       null;
 
     // Log inquiry result
@@ -144,49 +159,89 @@ serve(async (req: Request) => {
       response_payload: {
         matchedByOtherTrxCode: !!matchedByOtherTrxCode,
         matchedByGatewayTrxCode: !!matchedByGatewayTrxCode,
+        matchedByCallbackTrxCode: !!matchedByCallbackTrxCode,
         selectedInquiryRecordForDebug
       },
       success: true
     });
 
     // 3. Status logic
-    // We combine data from callback and inquiry
-    const mokaData = inquiryJson?.Data?.[0] || inquiryJson?.Data || callbackData;
-    const trxStatus = mokaData?.TrxStatus || callbackData?.TrxStatus;
-    const paymentStatus = mokaData?.PaymentStatus || callbackData?.PaymentStatus;
-    const resultCode = mokaData?.ResultCode || inquiryJson?.ResultCode || callbackData?.ResultCode;
+    const matchedRecord = selectedInquiryRecordForDebug;
+    const callbackResultCode = callbackNormalized.resultCode;
+    const callbackIsSuccessful = toLowerSafe(callbackNormalized.isSuccessful);
+    const callbackBankResultCode = asText(callbackNormalized.bankResultCode).trim();
 
-    // In Moka: TrxStatus 1 is Success
-    const isActuallySuccess = (resultCode === "Success" || resultCode === "0") &&
-      (trxStatus == 1 || paymentStatus == 1 || paymentStatus == 2);
+    const inquiryResultCode = asText(matchedRecord?.ResultCode);
+    const inquiryTrxStatus = asText(matchedRecord?.TrxStatus);
+    const inquiryPaymentStatus = asText(matchedRecord?.PaymentStatus);
 
-    const previewResultCode = selectedInquiryRecordForDebug?.ResultCode || inquiryJson?.ResultCode || callbackNormalized.resultCode;
-    const previewTrxStatus = selectedInquiryRecordForDebug?.TrxStatus ?? callbackNormalized.trxStatus;
-    const previewPaymentStatus = selectedInquiryRecordForDebug?.PaymentStatus ?? callbackNormalized.paymentStatus;
-    const previewSuccess = (previewResultCode === "Success" || previewResultCode === "0") &&
-      (previewTrxStatus == 1 || previewPaymentStatus == 1 || previewPaymentStatus == 2);
+    const callbackIndicatesFailure =
+      ["false", "0", "fail", "failed", "unsuccessful"].includes(callbackIsSuccessful) ||
+      (callbackBankResultCode.length > 0 && !["0", "00"].includes(callbackBankResultCode));
+
+    const callbackIndicatesSuccess =
+      ["true", "1", "success", "successful"].includes(callbackIsSuccessful) ||
+      (isSuccessResultCode(callbackResultCode) && ["", "0", "00"].includes(callbackBankResultCode));
+
+    const inquiryIndicatesSuccess =
+      !!matchedRecord &&
+      (["1", "2"].includes(inquiryTrxStatus) || ["1", "2"].includes(inquiryPaymentStatus));
+
+    const resultCode = callbackResultCode || inquiryResultCode || asText(inquiryJson?.ResultCode) || "fail";
+    const trxStatus = callbackNormalized.trxStatus || inquiryTrxStatus || "unknown";
+    const paymentStatus = callbackNormalized.paymentStatus || inquiryPaymentStatus || "";
+
+    const bankCode =
+      callbackNormalized.bankResultCode ||
+      asText(matchedRecord?.BankResultCode ?? matchedRecord?.BankCode) ||
+      "";
+
+    const resMsg =
+      callbackNormalized.resultMessage ||
+      asText(matchedRecord?.ResultMessage ?? inquiryData?.ResultMessage ?? inquiryJson?.ResultMessage) ||
+      "";
+
+    const isActuallySuccess = !callbackIndicatesFailure && (callbackIndicatesSuccess || inquiryIndicatesSuccess);
 
     await supabase.from("payment_transactions").insert({
       intent_id: intentId,
       operation: "inquiry",
       request_payload: {
-        type: "status_eval_compare_v1",
-        oldLogic: { resultCode, trxStatus, paymentStatus, isActuallySuccess },
-        previewLogic: {
-          resultCode: previewResultCode,
-          trxStatus: previewTrxStatus,
-          paymentStatus: previewPaymentStatus,
-          isActuallySuccess: previewSuccess
-        },
-        callbackNormalized
+        type: "status_eval_compare_v2",
+        resultCode,
+        trxStatus,
+        paymentStatus,
+        bankCode,
+        callbackIndicatesFailure,
+        callbackIndicatesSuccess,
+        inquiryIndicatesSuccess,
+        isActuallySuccess,
+        callbackNormalized,
+      },
+      response_payload: {
+        matchedRecord,
       },
       success: true
     });
 
     if (isActuallySuccess) {
-      const { data: orderData, error: finalizeError } = await supabase.rpc("finalize_payment_intent_v1", {
+      const { data: orderData, error: finalizeError } = await supabase.rpc("finalize_intent_create_order_v1", {
         p_intent_id: intentId,
-        p_gateway_response: { callback: callbackData, inquiry: inquiryJson }
+        p_gateway_result: {
+          callback: callbackData,
+          inquiry: inquiryJson,
+          matchedRecord,
+          statusEvaluation: {
+            resultCode,
+            trxStatus,
+            paymentStatus,
+            bankCode,
+            callbackIndicatesFailure,
+            callbackIndicatesSuccess,
+            inquiryIndicatesSuccess,
+            isActuallySuccess,
+          },
+        }
       });
 
       if (finalizeError) {
@@ -199,13 +254,16 @@ serve(async (req: Request) => {
         return Response.redirect(`${uiOrigin}/payment-failed?intent=${intentId}&code=finalize_err`, 302);
       }
 
-      return Response.redirect(`${uiOrigin}/order-confirmation?orderId=${orderData?.order_id || ""}`, 302);
+      return Response.redirect(`${uiOrigin}/order-confirmation?orderId=${orderData?.order_id || orderData?.orderId || ""}`, 302);
     }
 
-    // 4. Detailed Failure
-    const bankCode = mokaData?.BankResultCode || callbackData?.BankResultCode || "";
-    const resMsg = mokaData?.ResultMessage || callbackData?.ResultMessage || "";
+    await supabase
+      .from("payment_intents")
+      .update({ status: "failed", gateway_status: `callback_failed:${resultCode || "unknown"}` })
+      .eq("id", intentId)
+      .in("status", ["pending", "awaiting_3d"]);
 
+    // 4. Detailed Failure
     return Response.redirect(`${uiOrigin}/payment-failed?intent=${intentId}&code=${resultCode || "fail"}&trxStatus=${trxStatus || "unknown"}&bankCode=${bankCode}&msg=${encodeURIComponent(resMsg)}`, 302);
 
   } catch (e: any) {
