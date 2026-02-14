@@ -2,6 +2,7 @@
 /// <reference path="./types.d.ts" />
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { fetchTemplateBundle, renderTemplate } from "../_shared/email-renderer.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -54,55 +55,6 @@ function getCorsHeaders(req: Request) {
         "Vary": "Origin",
     };
 }
-
-const getBaseTemplate = (title: string, content: string, emoji: string = "✉️") => `
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-    <style>
-        body { background-color: #FFFBF7; color: #1F2937; font-family: 'Baloo 2', 'Nunito', sans-serif; margin: 0; padding: 0; }
-        .container { max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); overflow: hidden; }
-        .top-bar { height: 6px; background-color: #F97316; }
-        .content { padding: 40px 60px; text-align: center; }
-        .logo { width: 180px; margin-bottom: 20px; }
-        .emoji { font-size: 48px; margin-bottom: 20px; }
-        h1 { font-size: 24px; color: #111827; margin-bottom: 20px; }
-        .message-box { background: #F9FAF7; border: 1px solid #E5E7EB; border-radius: 12px; padding: 20px; text-align: left; color: #374151; line-height: 1.6; margin: 20px 0; }
-        .footer { background-color: #FFF8F0; padding: 30px; text-align: center; color: #9CA3AF; font-size: 12px; line-height: 1.6; }
-        .btn { display: inline-block; padding: 12px 32px; background: #F97316; color: #ffffff; text-decoration: none; border-radius: 50px; font-weight: 600; margin-top: 20px; font-family: 'Baloo 2', 'Nunito', sans-serif; }
-        .legal { margin-top: 20px; font-size: 10px; color: #D1D5DB; }
-    </style>
-</head>
-<body>
-    <div style="text-align: center; padding: 20px 0;">
-        <p style="margin: 0; color: #9CA3AF; font-size: 12px;">E-postayı görüntülemekte sorun mu yaşıyorsunuz? <a href="{{BROWSER_LINK}}" style="color: #F97316; text-decoration: none;">Browserda açın</a></p>
-    </div>
-    <div class="container">
-        <div class="top-bar"></div>
-        <div class="content">
-            <img src="https://xpmbnznsmsujjuwumfiw.supabase.co/storage/v1/object/public/public-assets/bravita-logo.webp" class="logo" alt="Bravita" />
-            <div class="emoji">${emoji}</div>
-            <h1>${title}</h1>
-            ${content}
-        </div>
-        <div class="footer">
-            <p><strong>Bravita Elektronik ve Ticaret</strong></p>
-            <p>Bu e-posta, Bravita üzerinden oluşturduğunuz destek talebi hakkında bilgilendirme amacıyla gönderilmiştir. 
-            Müşteri memnuniyeti bizim için her zaman önceliklidir. Sorularınız için her zaman yanınızdayız.</p>
-            <p>Gelecek bildirimleri durdurmak için profil ayarlarınızdan bildirim tercihlerinizi güncelleyebilir veya bu servisten ayrılabilirsiniz.</p>
-            <p>© 2026 Bravita. İstanbul, Türkiye. Tüm hakları saklıdır.</p>
-            <div class="legal">
-                Bu mesaj gizli bilgi içerebilir. Eğer bu mesajın alıcısı değilseniz, lütfen siliniz ve göndereni bilgilendiriniz. 
-                Görüş ve önerileriniz için web sitemizi her zaman ziyaret edebilirsiniz.
-            </div>
-        </div>
-    </div>
-</body>
-</html>
-`;
 
 /**
  * Generates a secure signature with expiration for a given ID.
@@ -219,7 +171,14 @@ serve(async (req: Request) => {
             }
 
             const SUPPORT_EMAIL = Deno.env.get("SUPPORT_EMAIL_NOTIFY") || "support@bravita.com.tr";
-            const { html } = await prepareSupportEmail(supabase, ticket, type, "", SUPPORT_EMAIL); // No link needed for view
+            const { html } = await prepareSupportEmail(
+                supabase,
+                ticket,
+                type,
+                "#",
+                SUPPORT_EMAIL,
+                "browser_preview",
+            );
 
             return new Response(html, {
                 status: 200,
@@ -335,16 +294,30 @@ serve(async (req: Request) => {
         // 4. Prepare Email Content
         const signature = await generateSignature(ticket_id);
         const browserLink = `${url.origin}/functions/v1/send-support-email?id=${ticket_id}&token=${signature}&type=${normalizedType}`;
-        const { subject, html, text, to, fromEmail } = await prepareSupportEmail(supabase, ticket, normalizedType, browserLink, SUPPORT_EMAIL);
+        const { subject, html, text, to, config, render, defaultFromName, defaultFromEmail } = await prepareSupportEmail(
+            supabase,
+            ticket,
+            normalizedType,
+            browserLink,
+            SUPPORT_EMAIL,
+        );
 
-        const resendPayload = {
-            from: fromEmail,
-            to: to,
-            reply_to: normalizedType === "ticket_replied" ? SUPPORT_EMAIL : ticket.email,
-            subject: subject,
-            html: html,
-            text: text,
+        if (render.blocked) {
+            throw new Error(`Blocked by unresolved tokens: ${render.unresolvedTokens.join(", ")}`);
+        }
+
+        const resendPayload: Record<string, unknown> = {
+            from: `${config?.sender_name || defaultFromName} <${config?.sender_email || defaultFromEmail}>`,
+            to,
+            subject,
+            html,
+            text,
         };
+
+        const replyTo = config?.reply_to || (normalizedType === "ticket_replied" ? SUPPORT_EMAIL : ticket.email);
+        if (replyTo) {
+            resendPayload.reply_to = replyTo;
+        }
 
         // 5. Send via Resend
         const res = await fetch("https://api.resend.com/emails", {
@@ -363,7 +336,16 @@ serve(async (req: Request) => {
             throw new Error(`Resend Error: ${JSON.stringify(resData)}`);
         }
 
-        return new Response(JSON.stringify({ success: true, id: resData.id }), {
+        return new Response(JSON.stringify({
+            success: true,
+            id: resData.id,
+            render: {
+                unresolved_tokens: render.unresolvedTokens,
+                warnings: render.warnings,
+                used_variables: render.usedVariables,
+                degradation: render.degradation,
+            },
+        }), {
             headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
             status: 200,
         });
@@ -396,7 +378,14 @@ serve(async (req: Request) => {
 /**
  * Prepares support email content using database templates.
  */
-async function prepareSupportEmail(supabase: any, ticket: any, type: string, browserLink: string, supportEmail: string) {
+async function prepareSupportEmail(
+    supabase: any,
+    ticket: any,
+    type: string,
+    browserLink: string,
+    supportEmail: string,
+    mode: "send" | "browser_preview" = "send",
+) {
     // Map internal types to DB slugs
     const slugMap: Record<string, string> = {
         "ticket_created": "support_ticket",
@@ -405,65 +394,52 @@ async function prepareSupportEmail(supabase: any, ticket: any, type: string, bro
         "user_replied": "support_ticket"
     };
 
-    // Use type directly if not in map, or default to support_ticket_replied
     const slug = slugMap[type] || "support_ticket_replied";
 
-    // 1. Fetch Template
-    const { data: template, error: tErr } = await supabase
-        .from("email_templates")
-        .select("*")
-        .eq("slug", slug)
-        .single();
+    // 1. Fetch template/config/policy bundle via shared renderer
+    const { template, config, variablePolicies } = await fetchTemplateBundle(supabase, slug);
 
-    if (tErr || !template) throw new Error(`Template not found for slug: ${slug}`);
-
-    // 2. Fetch Config
-    const { data: config } = await supabase
-        .from("email_configs")
-        .select("*")
-        .eq("template_slug", slug)
-        .limit(1)
-        .maybeSingle();
-
-    // 3. Prepare Variables
+    // 2. Prepare Variables
     const variables: Record<string, string> = {
-        "NAME": escapeHtml(ticket.name || "Müşteri"),
-        "EMAIL": escapeHtml(ticket.email || ""),
-        "SUBJECT": escapeHtml(ticket.subject || "Destek Talebi"),
+        "NAME": ticket.name || "Müşteri",
+        "EMAIL": ticket.email || "",
+        "SUBJECT": ticket.subject || "Destek Talebi",
         "TICKET_ID": ticket.id.substring(0, 8).toUpperCase(),
-        "CATEGORY": escapeHtml(ticket.category || "Genel"),
-        "USER_MESSAGE": escapeHtml(ticket.message || ""),
-        "ADMIN_REPLY": escapeHtml(ticket.admin_reply || ""),
-        "BROWSER_LINK": browserLink || "#"
+        "CATEGORY": ticket.category || "Genel",
+        "USER_MESSAGE": ticket.message || "",
+        "ADMIN_REPLY": ticket.admin_reply || "",
+        "BROWSER_LINK": browserLink || "#",
+        "SITE_URL": "https://www.bravita.com.tr",
     };
 
-    let html = template.content_html;
-    let subject = template.subject;
-
-    // Replace in subject
-    Object.entries(variables).forEach(([key, val]) => {
-        subject = subject.replaceAll(`{{${key}}}`, val);
+    const render = renderTemplate({
+        template,
+        mode,
+        variables,
+        variablePolicies,
+        fallbackValues: {
+            NAME: "Müşteri",
+            BROWSER_LINK: browserLink || "#",
+            SITE_URL: "https://www.bravita.com.tr",
+        },
     });
 
-    // Replace in HTML
-    Object.entries(variables).forEach(([key, val]) => {
-        html = html.replaceAll(`{{${key}}}`, val);
-        html = html.replaceAll(`{{ ${key} }}`, val); // Handles spaces
-    });
-
-    // 4. Set recipient and sender
+    // 3. Set recipient and sender
     const to = (type === "ticket_created" || type === "user_replied") ? [supportEmail] : [ticket.email];
 
-    const fromName = config?.sender_name || (type === "ticket_created" ? "Bravita Sistem" : "Bravita Destek");
-    const fromEmail = config?.sender_email || (type === "ticket_created" ? "noreply@bravita.com.tr" : "support@bravita.com.tr");
+    const defaultFromName = type === "ticket_created" ? "Bravita Sistem" : "Bravita Destek";
+    const defaultFromEmail = type === "ticket_created" ? "noreply@bravita.com.tr" : "support@bravita.com.tr";
 
-    const text = `Bravita Destek: ${subject}\n\n${variables.ADMIN_REPLY || variables.USER_MESSAGE}`;
+    const text = render.text || `Bravita Destek: ${render.subject}\n\n${variables.ADMIN_REPLY || variables.USER_MESSAGE}`;
 
     return {
-        subject,
-        html,
+        subject: render.subject,
+        html: render.html,
         text,
         to,
-        fromEmail: `${fromName} <${fromEmail}>`
+        config,
+        render,
+        defaultFromName,
+        defaultFromEmail,
     };
 }

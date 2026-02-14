@@ -17,16 +17,56 @@ const PeriodicGif = ({
   alt = "Periodic animation",
 }: PeriodicGifProps) => {
   const [isVisible, setIsVisible] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const DISPLAY_DURATION = 8000; // Fixed 8 seconds
   const videoRef = useCallback((ref: HTMLVideoElement | null) => {
     if (ref) ref.muted = true;
   }, []);
+
+  const isAnyDialogOpen = useCallback(() => {
+    if (typeof document === "undefined") return false;
+
+    return Boolean(
+      document.querySelector(
+        '[role="dialog"], [aria-modal="true"], [data-radix-dialog-content], [data-radix-alert-dialog-content]'
+      )
+    );
+  }, []);
+
+  useEffect(() => {
+    const syncModalState = () => setIsModalOpen(isAnyDialogOpen());
+
+    syncModalState();
+
+    const observer = new MutationObserver(syncModalState);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["data-state", "open", "aria-hidden", "class"],
+    });
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [isAnyDialogOpen]);
+
+  useEffect(() => {
+    if (isModalOpen) {
+      setIsVisible(false);
+    }
+  }, [isModalOpen]);
 
   useEffect(() => {
     let hideTimeout: ReturnType<typeof setTimeout> | undefined;
     let intervalTimeout: ReturnType<typeof setTimeout> | undefined;
 
     const showGif = () => {
+      if (isAnyDialogOpen()) {
+        intervalTimeout = setTimeout(showGif, intervalMs);
+        return;
+      }
+
       setIsVisible(true);
       // Hide after fixed duration
       hideTimeout = setTimeout(() => {
@@ -44,12 +84,12 @@ const PeriodicGif = ({
       if (hideTimeout) clearTimeout(hideTimeout);
       if (intervalTimeout) clearTimeout(intervalTimeout);
     };
-  }, [initialDelayMs, intervalMs]);
+  }, [initialDelayMs, intervalMs, isAnyDialogOpen]);
 
   return (
     <div
-      className={`fixed bottom-24 left-0 z-90 pointer-events-none transition-opacity duration-500 md:bottom-20 md:left-0 ${isVisible ? "opacity-100" : "opacity-0"}`}
-      aria-hidden={!isVisible}
+      className={`fixed bottom-24 left-0 z-90 pointer-events-none transition-opacity duration-500 md:bottom-20 md:left-0 ${isVisible && !isModalOpen ? "opacity-100" : "opacity-0"}`}
+      aria-hidden={!isVisible || isModalOpen}
     >
       {videoSrc ? (
         <video

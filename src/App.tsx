@@ -63,6 +63,7 @@ const RouteFallback = () => (
 const AppContent = () => {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin');
+  const isLandingRoute = location.pathname === '/';
   const [showDeferredEnhancements, setShowDeferredEnhancements] = useState(false);
 
   useEffect(() => {
@@ -119,12 +120,14 @@ const AppContent = () => {
       {/* Only show these on non-admin routes */}
       {!isAdminRoute && (
         <Suspense fallback={null}>
-          <PeriodicGif
-            gifSrc={PERIODIC_IMAGE_URL}
-            intervalMs={60000}
-            initialDelayMs={0}
-            alt="Alpaca animation"
-          />
+          {isLandingRoute ? (
+            <PeriodicGif
+              gifSrc={PERIODIC_IMAGE_URL}
+              intervalMs={60000}
+              initialDelayMs={0}
+              alt="Alpaca animation"
+            />
+          ) : null}
           {showDeferredEnhancements ? (
             <>
               <PromotionMarquee />

@@ -2,6 +2,7 @@
 /// <reference path="./types.d.ts" />
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { fetchTemplateBundle, renderTemplate } from "../_shared/email-renderer.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -86,24 +87,10 @@ serve(async (req: Request) => {
             throw new Error("Missing template_slug or recipient_email");
         }
 
-        // 3. Fetch Template & Config
-        const { data: template, error: tErr } = await supabase
-            .from("email_templates")
-            .select("*")
-            .eq("slug", template_slug)
-            .single();
+        // 3. Fetch template/config/policy bundle from shared renderer module
+        const { template, config, variablePolicies } = await fetchTemplateBundle(supabase, template_slug);
 
-        if (tErr || !template) throw new Error("Template not found");
-
-        const { data: config } = await supabase
-            .from("email_configs")
-            .select("*")
-            .eq("template_slug", template_slug)
-            .limit(1)
-            .maybeSingle();
-
-        // 4. Prepare Content (Simple replacement for test)
-        let html = template.content_html;
+        // 4. Prepare content with shared render pipeline (test mode = warn, no block)
         const dummyVars: Record<string, string> = {
             "ORDER_ID": "TEST-12345",
             "ORDER_DATE": new Date().toLocaleDateString("tr-TR"),
@@ -113,20 +100,33 @@ serve(async (req: Request) => {
             "BROWSER_LINK": "#",
             "ADMIN_REPLY": "Bu bir test yanıtıdır.",
             "USER_MESSAGE": "Test mesajı içeriği.",
-            "ConfirmationURL": "https://bravita.com.tr/test-confirm",
-            "UnsubscribeURL": "https://bravita.com.tr/unsubscribe"
+            "CONFIRMATION_URL": "https://bravita.com.tr/test-confirm",
+            "UNSUBSCRIBE_URL": "https://bravita.com.tr/unsubscribe",
+            "SITE_URL": "https://bravita.com.tr",
+            "NAME": "Test Kullanıcı"
         };
 
-        Object.entries(dummyVars).forEach(([key, val]) => {
-            html = html.replaceAll(`{{${key}}}`, val);
-            // Handle Handlebars style if any
-            html = html.replaceAll(`{{ ${key} }}`, val);
-            html = html.replaceAll(`{{.${key}}}`, val);
+        const renderResult = renderTemplate({
+            template,
+            mode: "test",
+            variables: dummyVars,
+            variablePolicies,
         });
 
         // 5. Send via Resend
         const fromName = config?.sender_name || "Bravita Test";
         const fromEmail = config?.sender_email || "noreply@bravita.com.tr";
+        const resendPayload: Record<string, unknown> = {
+            from: `${fromName} <${fromEmail}>`,
+            to: [recipient_email],
+            subject: `[TEST] ${renderResult.subject}`,
+            html: renderResult.html,
+            text: renderResult.text,
+        };
+
+        if (config?.reply_to) {
+            resendPayload.reply_to = config.reply_to;
+        }
 
         const res = await fetch("https://api.resend.com/emails", {
             method: "POST",
@@ -134,18 +134,23 @@ serve(async (req: Request) => {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${RESEND_API_KEY}`,
             },
-            body: JSON.stringify({
-                from: `${fromName} <${fromEmail}>`,
-                to: [recipient_email],
-                subject: `[TEST] ${template.subject}`,
-                html: html,
-            }),
+            body: JSON.stringify(resendPayload),
         });
 
         const resData = await res.json();
         if (!res.ok) throw new Error(`Resend Error: ${JSON.stringify(resData)}`);
 
-        return new Response(JSON.stringify({ success: true, id: resData.id }), {
+        return new Response(JSON.stringify({
+            success: true,
+            id: resData.id,
+            render: {
+                blocked: renderResult.blocked,
+                unresolved_tokens: renderResult.unresolvedTokens,
+                warnings: renderResult.warnings,
+                used_variables: renderResult.usedVariables,
+                degradation: renderResult.degradation,
+            },
+        }), {
             headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
             status: 200,
         });

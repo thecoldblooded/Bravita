@@ -2,7 +2,7 @@
 /// <reference path="./types.d.ts" />
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { ORDER_CONFIRMATION_HTML, SHIPPED_HTML, DELIVERED_HTML, CANCELLED_HTML, PROCESSING_HTML, PREPARING_HTML, AWAITING_PAYMENT_HTML } from "./template.ts";
+import { fetchTemplateBundle, renderTemplate } from "../_shared/email-renderer.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -173,7 +173,16 @@ serve(async (req: Request) => {
                 return new Response("Sipariş bulunamadı.", { status: 404 });
             }
 
-            const { html } = await prepareEmailContent(supabase, order, type);
+            const { html } = await prepareEmailContent(
+                supabase,
+                order,
+                type,
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                "browser_preview",
+            );
             return new Response(html, {
                 status: 200,
                 headers: {
@@ -286,9 +295,40 @@ serve(async (req: Request) => {
         const signature = await generateSignature(order_id);
         const browserLink = `${url.origin}/functions/v1/send-order-email?id=${order_id}&token=${signature}&type=${type}`;
 
-        const { subject, html, textContent } = await prepareEmailContent(supabase, order, type, tracking_number, shipping_company, cancellation_reason, browserLink);
+        const { subject, html, textContent, config, render } = await prepareEmailContent(
+            supabase,
+            order,
+            type,
+            tracking_number,
+            shipping_company,
+            cancellation_reason,
+            browserLink,
+        );
+
+        if (render.blocked) {
+            throw new Error(`Blocked by unresolved tokens: ${render.unresolvedTokens.join(", ")}`);
+        }
 
         console.log(`Sending email to ${order.user.email} with subject: ${subject}`);
+
+        const fromName = config?.sender_name || "Bravita";
+        const fromEmail = config?.sender_email || "noreply@bravita.com.tr";
+
+        const resendPayload: Record<string, unknown> = {
+            from: `${fromName} <${fromEmail}>`,
+            to: [order.user.email],
+            subject,
+            html,
+            text: textContent,
+            headers: {
+                "List-Unsubscribe": "<mailto:support@bravita.com.tr>",
+                "X-Entity-Ref-ID": order.id
+            },
+        };
+
+        if (config?.reply_to) {
+            resendPayload.reply_to = config.reply_to;
+        }
 
         const res = await fetch("https://api.resend.com/emails", {
             method: "POST",
@@ -296,17 +336,7 @@ serve(async (req: Request) => {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${RESEND_API_KEY}`,
             },
-            body: JSON.stringify({
-                from: "Bravita <noreply@bravita.com.tr>",
-                to: [order.user.email],
-                subject: subject,
-                html: html,
-                text: textContent,
-                headers: {
-                    "List-Unsubscribe": "<mailto:support@bravita.com.tr>",
-                    "X-Entity-Ref-ID": order.id
-                }
-            }),
+            body: JSON.stringify(resendPayload),
         });
 
         const data = await res.json();
@@ -319,7 +349,16 @@ serve(async (req: Request) => {
             sent_at: new Date().toISOString()
         });
 
-        return new Response(JSON.stringify({ success: true, id: data.id }), {
+        return new Response(JSON.stringify({
+            success: true,
+            id: data.id,
+            render: {
+                unresolved_tokens: render.unresolvedTokens,
+                warnings: render.warnings,
+                used_variables: render.usedVariables,
+                degradation: render.degradation,
+            },
+        }), {
             headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
             status: 200,
         });
@@ -366,7 +405,8 @@ async function prepareEmailContent(
     tracking_number?: string,
     shipping_company?: string,
     cancellation_reason?: string,
-    browserLink?: string
+    browserLink?: string,
+    mode: "send" | "browser_preview" = "send",
 ) {
     // Map internal types to DB slugs
     const slugMap: Record<string, string> = {
@@ -385,22 +425,8 @@ async function prepareEmailContent(
         slug = "order_awaiting_payment";
     }
 
-    // 1. Fetch Template
-    const { data: template, error: tErr } = await supabase
-        .from("email_templates")
-        .select("*")
-        .eq("slug", slug)
-        .single();
-
-    if (tErr || !template) throw new Error(`Template not found for slug: ${slug}`);
-
-    // 2. Fetch Config
-    const { data: config } = await supabase
-        .from("email_configs")
-        .select("*")
-        .eq("template_slug", slug)
-        .limit(1)
-        .maybeSingle();
+    // 1. Fetch template/config/policy bundle via shared renderer
+    const { template, config, variablePolicies } = await fetchTemplateBundle(supabase, slug);
 
     // 3. Prepare Logic Data (from original code)
     const orderDate = new Date(order.created_at).toLocaleDateString("tr-TR", {
@@ -474,31 +500,40 @@ async function prepareEmailContent(
     const variables: Record<string, string> = {
         "ORDER_ID": order.id.substring(0, 8).toUpperCase(),
         "ORDER_DATE": orderDate,
-        "NAME": sanitize(order.user.full_name || "Müşterimiz"),
+        "NAME": order.user.full_name || "Müşterimiz",
         "ITEMS_LIST": itemsHtml,
         "SUBTOTAL": totals.subtotal.toFixed(2),
         "DISCOUNT": totals.discount.toFixed(2),
         "TAX": totals.vat.toFixed(2),
         "TOTAL": totals.total.toFixed(2),
-        "SHIPPING_ADDRESS": sanitize(addressString),
+        "SHIPPING_ADDRESS": addressString,
         "PAYMENT_METHOD": paymentMethod,
         "BANK_DETAILS": bankDetailsHtml,
-        "SHIPPING_COMPANY": sanitize(shipping_company || order.shipping_company || "Kargo Firması"),
-        "TRACKING_NUMBER": sanitize(tracking_number || order.tracking_number || "Takip numarası girilmedi"),
-        "CANCELLATION_REASON": sanitize(cancellation_reason || order.cancellation_reason || "Belirtilmedi"),
+        "SHIPPING_COMPANY": shipping_company || order.shipping_company || "Kargo Firması",
+        "TRACKING_NUMBER": tracking_number || order.tracking_number || "Takip numarası girilmedi",
+        "CANCELLATION_REASON": cancellation_reason || order.cancellation_reason || "Belirtilmedi",
         "BROWSER_LINK": browserLink
     };
 
-    let html = template.content_html;
-    let subject = template.subject;
-
-    Object.entries(variables).forEach(([key, val]) => {
-        subject = subject.replaceAll(`{{${key}}}`, val);
-        html = html.replaceAll(`{{${key}}}`, val);
-        html = html.replaceAll(`{{ ${key} }}`, val);
+    const render = renderTemplate({
+        template,
+        mode,
+        variables,
+        variablePolicies,
+        fallbackValues: {
+            NAME: "Müşterimiz",
+            SITE_URL: "https://www.bravita.com.tr",
+            BROWSER_LINK: browserLink || "#",
+        },
     });
 
-    const textContent = `Bravita Sipariş: ${subject}\nSipariş No: #${variables.ORDER_ID}`;
+    const textContent = render.text || `Bravita Sipariş: ${render.subject}\nSipariş No: #${variables.ORDER_ID}`;
 
-    return { subject, html, textContent };
+    return {
+        subject: render.subject,
+        html: render.html,
+        textContent,
+        config,
+        render,
+    };
 }

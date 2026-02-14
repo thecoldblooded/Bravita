@@ -2,6 +2,7 @@
 /// <reference path="./types.d.ts" />
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { fetchTemplateBundle, renderTemplate } from "../_shared/email-renderer.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -278,21 +279,27 @@ serve(async (req: Request) => {
                 return new Response("Yetkisiz erişim.", { status: 403 });
             }
 
-            // Fetch Template from DB for viewing
-            const { data: template, error: tErr } = await supabase
-                .from("email_templates")
-                .select("*")
-                .eq("slug", "welcome_template")
-                .single();
+            const { template, variablePolicies } = await fetchTemplateBundle(supabase, "welcome_template");
 
-            if (tErr || !template) return new Response("Şablon bulunamadı.", { status: 404 });
+            const preview = renderTemplate({
+                template,
+                mode: "browser_preview",
+                variables: {
+                    NAME: "Müşterimiz",
+                    BROWSER_LINK: "#",
+                    UNSUBSCRIBE_URL: "https://www.bravita.com.tr/unsubscribe",
+                    SITE_URL: "https://www.bravita.com.tr",
+                },
+                variablePolicies,
+                fallbackValues: {
+                    NAME: "Müşterimiz",
+                    BROWSER_LINK: "#",
+                    UNSUBSCRIBE_URL: "https://www.bravita.com.tr/unsubscribe",
+                    SITE_URL: "https://www.bravita.com.tr",
+                },
+            });
 
-            let html = template.content_html;
-            html = html.replaceAll("{{NAME}}", "Müşterimiz"); // Sample for preview
-            html = html.replaceAll("{{BROWSER_LINK}}", "#");
-            html = html.replaceAll("{{UNSUBSCRIBE_URL}}", "https://www.bravita.com.tr/unsubscribe");
-
-            return new Response(html, {
+            return new Response(preview.html, {
                 headers: { "Content-Type": "text/html; charset=utf-8" },
             });
         }
@@ -315,22 +322,8 @@ serve(async (req: Request) => {
             throw new Error("Server configuration error: Missing RESEND_API_KEY");
         }
 
-        // Fetch Template from DB
-        const { data: template, error: tErr } = await supabase
-            .from("email_templates")
-            .select("*")
-            .eq("slug", "welcome_template")
-            .single();
-
-        if (tErr || !template) throw new Error("Welcome template not found in database");
-
-        // Fetch Config
-        const { data: config } = await supabase
-            .from("email_configs")
-            .select("*")
-            .eq("template_slug", "welcome_template")
-            .limit(1)
-            .maybeSingle();
+        // Fetch template/config/policy bundle from shared renderer module
+        const { template, config, variablePolicies } = await fetchTemplateBundle(supabase, "welcome_template");
 
         const body = await req.json();
         const { user_id, email: directEmail } = body;
@@ -365,20 +358,29 @@ serve(async (req: Request) => {
 
         // Prepare Variables
         const variables: Record<string, string> = {
-            "NAME": escapeHtml(recipientName),
-            "EMAIL": escapeHtml(recipientEmail),
+            "NAME": recipientName,
+            "EMAIL": recipientEmail,
             "BROWSER_LINK": browserLink,
-            "UNSUBSCRIBE_URL": "https://www.bravita.com.tr/unsubscribe"
+            "UNSUBSCRIBE_URL": "https://www.bravita.com.tr/unsubscribe",
+            "SITE_URL": "https://www.bravita.com.tr",
         };
 
-        let html = template.content_html;
-        let subject = template.subject;
-
-        Object.entries(variables).forEach(([key, val]) => {
-            subject = subject.replaceAll(`{{${key}}}`, val);
-            html = html.replaceAll(`{{${key}}}`, val);
-            html = html.replaceAll(`{{ ${key} }}`, val);
+        const render = renderTemplate({
+            template,
+            mode: "send",
+            variables,
+            variablePolicies,
+            fallbackValues: {
+                NAME: "Müşterimiz",
+                BROWSER_LINK: browserLink || "#",
+                UNSUBSCRIBE_URL: "https://www.bravita.com.tr/unsubscribe",
+                SITE_URL: "https://www.bravita.com.tr",
+            },
         });
+
+        if (render.blocked) {
+            throw new Error(`Blocked by unresolved tokens: ${render.unresolvedTokens.join(", ")}`);
+        }
 
         const fromName = config?.sender_name || "Bravita";
         const fromEmail = config?.sender_email || "noreply@bravita.com.tr";
@@ -394,16 +396,26 @@ serve(async (req: Request) => {
             body: JSON.stringify({
                 from: `${fromName} <${fromEmail}>`,
                 to: [recipientEmail],
-                subject: subject,
-                html: html,
-                text: `Bravita'ya Hoş Geldiniz!\n\nAramıza Hoş Geldiniz, ${recipientName}.\n\nBravita'yı Keşfet: https://www.bravita.com.tr/shop`,
+                subject: render.subject,
+                html: render.html,
+                text: render.text || `Bravita'ya Hoş Geldiniz!\n\nAramıza Hoş Geldiniz, ${recipientName}.\n\nBravita'yı Keşfet: https://www.bravita.com.tr/shop`,
+                ...(config?.reply_to ? { reply_to: config.reply_to } : {}),
             }),
         });
 
         const data = await res.json();
         if (!res.ok) throw new Error(`Resend API Error: ${JSON.stringify(data)}`);
 
-        return new Response(JSON.stringify({ success: true, id: data.id }), {
+        return new Response(JSON.stringify({
+            success: true,
+            id: data.id,
+            render: {
+                unresolved_tokens: render.unresolvedTokens,
+                warnings: render.warnings,
+                used_variables: render.usedVariables,
+                degradation: render.degradation,
+            },
+        }), {
             headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
             status: 200,
         });

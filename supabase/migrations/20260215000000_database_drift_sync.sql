@@ -64,6 +64,25 @@ CREATE INDEX IF NOT EXISTS idx_support_tickets_order_id ON public.support_ticket
 CREATE INDEX IF NOT EXISTS idx_support_tickets_replied_by ON public.support_tickets USING btree (replied_by);
 CREATE INDEX IF NOT EXISTS idx_support_tickets_user_id ON public.support_tickets USING btree (user_id);
 
+-- 4.1 Data Alignment: Ensure support_ticket email configuration exists
+INSERT INTO public.email_configs (template_slug, sender_name, sender_email, reply_to, is_active)
+SELECT
+  'support_ticket',
+  'Bravita Destek',
+  'support@bravita.com.tr',
+  'support@bravita.com.tr',
+  true
+WHERE EXISTS (
+  SELECT 1
+  FROM public.email_templates
+  WHERE slug = 'support_ticket'
+)
+AND NOT EXISTS (
+  SELECT 1
+  FROM public.email_configs
+  WHERE template_slug = 'support_ticket'
+);
+
 -- 5. Function Alignment (Extracted from drift to match remote state exactly)
 -- These MUST exist before triggers that reference them
 CREATE OR REPLACE FUNCTION public.finalize_reservation(p_id uuid, quantity integer)

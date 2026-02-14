@@ -60,6 +60,7 @@ interface EmailConfig {
     sender_name: string;
     sender_email: string;
     reply_to: string | null;
+    is_virtual?: boolean;
 }
 
 interface EmailLog {
@@ -75,6 +76,52 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
 import { Helmet } from "react-helmet-async";
+
+const SUPPORT_TICKET_SLUG = "support_ticket";
+
+function getDefaultConfigForSlug(templateSlug: string): Pick<EmailConfig, "sender_name" | "sender_email" | "reply_to"> {
+    if (templateSlug.startsWith("support_ticket")) {
+        return {
+            sender_name: "Bravita Destek",
+            sender_email: "support@bravita.com.tr",
+            reply_to: "support@bravita.com.tr",
+        };
+    }
+
+    if (templateSlug.startsWith("order_")) {
+        return {
+            sender_name: "Bravita Sipariş",
+            sender_email: "noreply@bravita.com.tr",
+            reply_to: null,
+        };
+    }
+
+    return {
+        sender_name: "Bravita",
+        sender_email: "noreply@bravita.com.tr",
+        reply_to: null,
+    };
+}
+
+function withRequiredConfigs(templateRows: EmailTemplate[], configRows: EmailConfig[]): EmailConfig[] {
+    const mergedConfigs = [...configRows];
+    const hasSupportTemplate = templateRows.some((template) => template.slug === SUPPORT_TICKET_SLUG);
+    const hasSupportConfig = mergedConfigs.some((config) => config.template_slug === SUPPORT_TICKET_SLUG);
+
+    if (hasSupportTemplate && !hasSupportConfig) {
+        const defaults = getDefaultConfigForSlug(SUPPORT_TICKET_SLUG);
+        mergedConfigs.push({
+            id: `virtual-${SUPPORT_TICKET_SLUG}`,
+            template_slug: SUPPORT_TICKET_SLUG,
+            sender_name: defaults.sender_name,
+            sender_email: defaults.sender_email,
+            reply_to: defaults.reply_to,
+            is_virtual: true,
+        });
+    }
+
+    return mergedConfigs.sort((a, b) => a.template_slug.localeCompare(b.template_slug, "tr"));
+}
 
 export default function AdminEmails() {
     const { theme } = useAdminTheme();
@@ -123,8 +170,12 @@ export default function AdminEmails() {
                 supabase.from("email_logs").select("*").order("sent_at", { ascending: false }).limit(50)
             ]);
 
-            if (tRes.data) setTemplates(tRes.data);
-            if (cRes.data) setConfigs(cRes.data);
+            const templateRows = tRes.data ?? [];
+            const configRows = cRes.data ?? [];
+
+            setTemplates(templateRows);
+            setConfigs(withRequiredConfigs(templateRows, configRows));
+
             if (lRes.data) setLogs(lRes.data);
         } catch (error) {
             toast.error("Veriler yüklenirken bir hata oluştu");
@@ -160,18 +211,52 @@ export default function AdminEmails() {
         if (!editingConfig) return;
 
         try {
-            const { error } = await supabase
-                .from("email_configs")
-                .update({
-                    sender_name: editingConfig.sender_name,
-                    sender_email: editingConfig.sender_email,
-                    reply_to: editingConfig.reply_to
-                })
-                .eq("id", editingConfig.id);
+            const normalizedReplyTo = editingConfig.reply_to?.trim() ? editingConfig.reply_to.trim() : null;
+            const payload = {
+                sender_name: editingConfig.sender_name,
+                sender_email: editingConfig.sender_email,
+                reply_to: normalizedReplyTo,
+            };
 
-            if (error) throw error;
+            if (editingConfig.is_virtual) {
+                const { data: existingConfig, error: existingError } = await supabase
+                    .from("email_configs")
+                    .select("id")
+                    .eq("template_slug", editingConfig.template_slug)
+                    .order("created_at", { ascending: true })
+                    .limit(1)
+                    .maybeSingle();
 
-            toast.success("Yapılandırma güncellendi");
+                if (existingError) throw existingError;
+
+                if (existingConfig?.id) {
+                    const { error } = await supabase
+                        .from("email_configs")
+                        .update(payload)
+                        .eq("id", existingConfig.id);
+
+                    if (error) throw error;
+                } else {
+                    const { error } = await supabase
+                        .from("email_configs")
+                        .insert({
+                            template_slug: editingConfig.template_slug,
+                            ...payload,
+                            is_active: true,
+                        });
+
+                    if (error) throw error;
+                }
+            } else {
+                const { error } = await supabase
+                    .from("email_configs")
+                    .update(payload)
+                    .eq("id", editingConfig.id);
+
+                if (error) throw error;
+            }
+
+            toast.success(editingConfig.is_virtual ? "Yapılandırma oluşturuldu" : "Yapılandırma güncellendi");
             setIsConfigEditorOpen(false);
             loadData();
         } catch (error) {
@@ -312,7 +397,12 @@ export default function AdminEmails() {
                                     <TableBody>
                                         {configs.map((config) => (
                                             <TableRow key={config.id} className={tableRowClass}>
-                                                <TableCell className={`font-mono text-xs ${isDark ? "text-slate-300" : "text-gray-600"}`}>{config.template_slug}</TableCell>
+                                                <TableCell className={`font-mono text-xs ${isDark ? "text-slate-300" : "text-gray-600"}`}>
+                                                    <span>{config.template_slug}</span>
+                                                    {config.is_virtual && (
+                                                        <span className={`ml-2 text-[10px] ${isDark ? "text-amber-300" : "text-amber-700"}`}>(eksik, oluşturulacak)</span>
+                                                    )}
+                                                </TableCell>
                                                 <TableCell className={textPrimary}>{config.sender_name}</TableCell>
                                                 <TableCell className={textPrimary}>{config.sender_email}</TableCell>
                                                 <TableCell className={textPrimary}>{config.reply_to || "-"}</TableCell>
@@ -321,6 +411,7 @@ export default function AdminEmails() {
                                                         variant="ghost"
                                                         size="icon"
                                                         className={isDark ? "text-slate-400 hover:text-white hover:bg-slate-700" : ""}
+                                                        title={config.is_virtual ? "Yapılandırmayı Oluştur" : "Düzenle"}
                                                         onClick={() => {
                                                             setEditingConfig(config);
                                                             setIsConfigEditorOpen(true);
@@ -536,9 +627,12 @@ export default function AdminEmails() {
                 <Dialog open={isConfigEditorOpen} onOpenChange={setIsConfigEditorOpen}>
                     <DialogContent className={`max-w-xl border-none ${isDark ? "bg-slate-900 text-slate-100 shadow-2xl ring-1 ring-slate-800" : "bg-white text-gray-900"}`}>
                         <DialogHeader>
-                            <DialogTitle className="text-xl font-bold">Yapılandırmayı Düzenle</DialogTitle>
+                            <DialogTitle className="text-xl font-bold">
+                                {editingConfig?.is_virtual ? "Yapılandırma Oluştur" : "Yapılandırmayı Düzenle"}
+                            </DialogTitle>
                             <DialogDescription className={isDark ? "text-slate-400" : "text-gray-500"}>
-                                <strong>{editingConfig?.template_slug}</strong> şablonu için gönderen bilgilerini güncelleyin.
+                                <strong>{editingConfig?.template_slug}</strong> şablonu için gönderen bilgilerini
+                                {editingConfig?.is_virtual ? " ilk kez kaydedin." : " güncelleyin."}
                             </DialogDescription>
                         </DialogHeader>
 
