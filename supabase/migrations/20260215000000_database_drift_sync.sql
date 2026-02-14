@@ -64,20 +64,8 @@ CREATE INDEX IF NOT EXISTS idx_support_tickets_order_id ON public.support_ticket
 CREATE INDEX IF NOT EXISTS idx_support_tickets_replied_by ON public.support_tickets USING btree (replied_by);
 CREATE INDEX IF NOT EXISTS idx_support_tickets_user_id ON public.support_tickets USING btree (user_id);
 
--- 5. Trigger Alignment (Ensure clean recreation of triggers that were out of sync)
-DROP TRIGGER IF EXISTS trigger_handle_promo_usage ON public.orders;
-CREATE TRIGGER trigger_handle_promo_usage AFTER INSERT ON public.orders FOR EACH ROW EXECUTE FUNCTION public.handle_new_order_promo();
-
-DROP TRIGGER IF EXISTS trigger_manage_inventory ON public.orders;
-CREATE TRIGGER trigger_manage_inventory AFTER INSERT OR UPDATE ON public.orders FOR EACH ROW EXECUTE FUNCTION public.manage_inventory();
-
-DROP TRIGGER IF EXISTS trigger_orders_updated_at ON public.orders;
-CREATE TRIGGER trigger_orders_updated_at BEFORE UPDATE ON public.orders FOR EACH ROW EXECUTE FUNCTION public.update_orders_updated_at();
-
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
-
--- 6. Function Alignment (Extracted from drift to match remote state exactly)
+-- 5. Function Alignment (Extracted from drift to match remote state exactly)
+-- These MUST exist before triggers that reference them
 CREATE OR REPLACE FUNCTION public.finalize_reservation(p_id uuid, quantity integer)
  RETURNS void
  LANGUAGE plpgsql
@@ -190,4 +178,18 @@ BEGIN
   RETURN NEW;
 END;
 $function$;
+
+-- 6. Trigger Alignment (Ensure clean recreation of triggers that were out of sync)
+DROP TRIGGER IF EXISTS trigger_handle_promo_usage ON public.orders;
+CREATE TRIGGER trigger_handle_promo_usage AFTER INSERT ON public.orders FOR EACH ROW EXECUTE FUNCTION public.handle_new_order_promo();
+
+DROP TRIGGER IF EXISTS trigger_manage_inventory ON public.orders;
+CREATE TRIGGER trigger_manage_inventory AFTER INSERT OR UPDATE ON public.orders FOR EACH ROW EXECUTE FUNCTION public.manage_inventory();
+
+DROP TRIGGER IF EXISTS trigger_orders_updated_at ON public.orders;
+CREATE TRIGGER trigger_orders_updated_at BEFORE UPDATE ON public.orders FOR EACH ROW EXECUTE FUNCTION public.update_orders_updated_at();
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
 
