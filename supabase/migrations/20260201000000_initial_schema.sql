@@ -76,6 +76,8 @@ CREATE OR REPLACE FUNCTION public.is_admin() RETURNS boolean LANGUAGE plpgsql AS
 CREATE OR REPLACE FUNCTION public.create_order(p1 jsonb, p2 uuid, p3 text, p4 text) RETURNS jsonb LANGUAGE plpgsql AS $$ BEGIN RETURN NULL; END; $$;
 CREATE OR REPLACE FUNCTION public.admin_set_user_admin(p1 uuid, p2 boolean) RETURNS boolean LANGUAGE plpgsql AS $$ BEGIN RETURN FALSE; END; $$;
 CREATE OR REPLACE FUNCTION public.admin_update_order_status(p1 uuid, p2 text, p3 text DEFAULT NULL) RETURNS boolean LANGUAGE plpgsql AS $$ BEGIN RETURN FALSE; END; $$;
-CREATE OR REPLACE FUNCTION public.admin_get_all_orders(p1 text DEFAULT NULL, p2 integer DEFAULT 100, p3 integer DEFAULT 0) RETURNS setof record LANGUAGE plpgsql AS $$ BEGIN RETURN; END; $$;
+CREATE OR REPLACE FUNCTION public.admin_get_all_orders(p1 text DEFAULT NULL, p2 integer DEFAULT 100, p3 integer DEFAULT 0) 
+RETURNS TABLE (id UUID, user_id UUID, total DECIMAL, status TEXT, created_at TIMESTAMPTZ, user_email TEXT, user_name TEXT) 
+LANGUAGE plpgsql AS $$ BEGIN RETURN; END; $$;
 CREATE OR REPLACE FUNCTION public.sanitize_search_input(p1 text) RETURNS text LANGUAGE plpgsql AS $$ BEGIN RETURN p1; END; $$;
 CREATE OR REPLACE FUNCTION public.log_admin_action() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RETURN NEW; END; $$;
