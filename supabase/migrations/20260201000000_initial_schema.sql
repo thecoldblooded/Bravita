@@ -74,7 +74,22 @@ CREATE TABLE IF NOT EXISTS public.order_status_history (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 6. Placeholder functions for downstream migrations
+-- 6. Create site_settings table
+CREATE TABLE IF NOT EXISTS public.site_settings (
+    id INTEGER PRIMARY KEY DEFAULT 1,
+    vat_rate NUMERIC NOT NULL DEFAULT 0.20,
+    shipping_cost NUMERIC NOT NULL DEFAULT 49.90,
+    free_shipping_threshold NUMERIC NOT NULL DEFAULT 1500.00,
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT one_row CHECK (id = 1)
+);
+
+-- Insert default settings
+INSERT INTO public.site_settings (id, vat_rate, shipping_cost, free_shipping_threshold)
+VALUES (1, 0.20, 49.90, 1500.00)
+ON CONFLICT (id) DO NOTHING;
+
+-- 7. Placeholder functions for downstream migrations
 CREATE OR REPLACE FUNCTION public.verify_promo_code(p_code text) RETURNS jsonb LANGUAGE plpgsql AS $$ BEGIN RETURN NULL; END; $$;
 CREATE OR REPLACE FUNCTION public.manage_inventory() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RETURN NEW; END; $$;
 CREATE OR REPLACE FUNCTION public.handle_new_order_promo() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RETURN NEW; END; $$;
@@ -89,3 +104,5 @@ RETURNS TABLE (id UUID, user_id UUID, total DECIMAL, status TEXT, created_at TIM
 LANGUAGE plpgsql AS $$ BEGIN RETURN; END; $$;
 CREATE OR REPLACE FUNCTION public.sanitize_search_input(input_text text) RETURNS text LANGUAGE plpgsql AS $$ BEGIN RETURN input_text; END; $$;
 CREATE OR REPLACE FUNCTION public.log_admin_action() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RETURN NEW; END; $$;
+CREATE OR REPLACE FUNCTION public.create_support_ticket_v1(p1 text, p2 text, p3 text, p4 text, p5 text, p6 uuid DEFAULT NULL) RETURNS jsonb LANGUAGE plpgsql AS $$ BEGIN RETURN NULL; END; $$;
+CREATE OR REPLACE FUNCTION public.send_order_confirmation_email(p1 uuid) RETURNS void LANGUAGE plpgsql AS $$ BEGIN RETURN; END; $$;
