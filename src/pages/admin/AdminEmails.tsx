@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminGuard } from "@/components/admin/AdminGuard";
 import { supabase } from "@/lib/supabase";
@@ -200,14 +200,7 @@ export default function AdminEmails() {
     const [testTemplate, setTestTemplate] = useState<EmailTemplate | null>(null);
     const [isSendingTest, setIsSendingTest] = useState(false);
 
-    useEffect(() => {
-        if (!authLoading && isSuperAdmin) {
-            loadData();
-        }
-    }, [authLoading, isSuperAdmin]);
-
-    // ... (keep helper functions: loadData, handleSaveTemplate, handleSaveConfig, handleSendTest)
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
         setIsLoading(true);
         try {
             if (!isSuperAdmin) {
@@ -237,13 +230,13 @@ export default function AdminEmails() {
                 toast.error("Gönderim logları yüklenemedi");
                 setLogs([]);
             } else {
-                const normalizedLogs: EmailLog[] = (lRes.data ?? []).map((row: any) => ({
-                    id: row.id,
-                    template_slug: row.template_slug || row.email_type || "-",
-                    recipient_email: row.recipient_email || row.recipient || "-",
-                    status: row.status || (row.blocked ? "failed" : "sent"),
-                    sent_at: row.sent_at,
-                    error_message: row.error_message || row.error_details || null,
+                const normalizedLogs: EmailLog[] = (lRes.data ?? []).map((row: Record<string, unknown>) => ({
+                    id: String(row.id || ""),
+                    template_slug: String(row.template_slug || row.email_type || "-"),
+                    recipient_email: String(row.recipient_email || row.recipient || "-"),
+                    status: String(row.status || (row.blocked ? "failed" : "sent")),
+                    sent_at: String(row.sent_at || ""),
+                    error_message: row.error_message ? String(row.error_message) : (row.error_details ? String(row.error_details) : null),
                 }));
 
                 setLogs(normalizedLogs);
@@ -253,7 +246,13 @@ export default function AdminEmails() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [isSuperAdmin]);
+
+    useEffect(() => {
+        if (!authLoading && isSuperAdmin) {
+            loadData();
+        }
+    }, [authLoading, isSuperAdmin, loadData]);
 
     const handleSaveTemplate = async () => {
         if (!editingTemplate) return;
