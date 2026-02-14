@@ -65,5 +65,16 @@ jobs:
         run: |
           # F-03: Detect drift between local schema and remote DB
           # This ensures all DB changes are tracked in migrations
-          npx supabase db diff --use-migra --check
+          # Removing --check flag which is unsupported in current CLI version
+          npx supabase db diff --linked --use-migra > drift.sql
+          if [ -s drift.sql ]; then
+            # If the file is not empty, check if it contains actual SQL changes
+            # (migra sometimes outputs comments)
+            if grep -q "CREATE\|ALTER\|DROP\|INSERT\|UPDATE\|DELETE" drift.sql; then
+              echo "❌ Database drift detected! Please create a migration for manual changes."
+              cat drift.sql
+              exit 1
+            fi
+          fi
+          echo "✅ No database drift detected."
 
