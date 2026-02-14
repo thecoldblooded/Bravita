@@ -103,7 +103,7 @@ function PromoCodesContent() {
                 </div>
                 <div className="relative mb-6">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <Input placeholder="Kod Ara..." value={search} onChange={(e) => setSearch(e.target.value)} className={`pl-10 ${inputClass}`} />
+                    <Input aria-label="Kod Ara" placeholder="Kod Ara..." value={search} onChange={(e) => setSearch(e.target.value)} className={`pl-10 ${inputClass}`} />
                 </div>
                 <div className={`rounded-2xl border overflow-hidden shadow-sm ${cardClass}`}>
                     <table className="w-full">

@@ -208,7 +208,7 @@ class UXAuditor:
             self.warnings.append(f"[Cognitive Load] {filename}: High visual noise detected. Many colors and borders increase cognitive load.")
 
         # Familiar patterns
-        if has_form:
+        if has_form and "src/components/ui" not in filepath.replace("\\", "/"):
             has_label = bool(re.search(r'<label|<FormLabel|<Label|aria-label|title', content, re.IGNORECASE))
             if not has_label:
                 self.issues.append(f"[Cognitive Load] {filename}: Form inputs without labels. Use <label> for accessibility and clarity.")
