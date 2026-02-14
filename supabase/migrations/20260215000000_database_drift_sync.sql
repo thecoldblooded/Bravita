@@ -8,12 +8,28 @@ ALTER TABLE "public"."addresses" ALTER COLUMN "postal_code" SET DATA TYPE charac
 ALTER TABLE "public"."addresses" ALTER COLUMN "street" SET DATA TYPE character varying(500) USING "street"::character varying(500);
 
 -- 2. Table Alignment: Orders
+-- Drop policies depending on status/payment columns to allow type change
+DROP POLICY IF EXISTS "Users and admins update orders" ON public.orders;
+
 ALTER TABLE "public"."orders" ADD COLUMN IF NOT EXISTS "shipping_company" TEXT;
 ALTER TABLE "public"."orders" ADD COLUMN IF NOT EXISTS "tracking_number" character varying(100);
 -- Align types with remote
 ALTER TABLE "public"."orders" ALTER COLUMN "status" SET DATA TYPE character varying(50) USING "status"::character varying(50);
 ALTER TABLE "public"."orders" ALTER COLUMN "payment_method" SET DATA TYPE character varying(50) USING "payment_method"::character varying(50);
 ALTER TABLE "public"."orders" ALTER COLUMN "payment_status" SET DATA TYPE character varying(50) USING "payment_status"::character varying(50);
+
+-- Recreate policies for orders
+CREATE POLICY "Users and admins update orders" ON public.orders
+FOR UPDATE TO authenticated
+USING (
+  ((user_id = (SELECT auth.uid())) AND (status = 'pending')) OR 
+  (SELECT is_admin_user((SELECT auth.uid())))
+)
+WITH CHECK (
+  ((user_id = (SELECT auth.uid())) AND (status = 'pending')) OR 
+  (SELECT is_admin_user((SELECT auth.uid())))
+);
+
 
 -- 3. Table Alignment: Profiles
 -- Remove columns that don't exist in production to prevent drift
