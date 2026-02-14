@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     full_name TEXT,
     avatar_url TEXT,
     is_admin BOOLEAN DEFAULT FALSE,
+    is_superadmin BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -27,11 +28,11 @@ CREATE TABLE IF NOT EXISTS public.products (
     slug TEXT UNIQUE NOT NULL,
     price DECIMAL(10, 2) NOT NULL,
     stock INTEGER NOT NULL DEFAULT 0,
+    reserved_stock INTEGER DEFAULT 0,
     max_quantity_per_order INTEGER DEFAULT 10,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW(),
-    reserved_stock INTEGER DEFAULT 0
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- 4. Create orders table
@@ -40,7 +41,18 @@ CREATE TABLE IF NOT EXISTS public.orders (
     user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
     shipping_address_id UUID REFERENCES public.addresses(id) ON DELETE SET NULL,
     status TEXT DEFAULT 'pending',
+    payment_method TEXT,
+    payment_status TEXT DEFAULT 'pending',
     order_details JSONB,
+    currency TEXT DEFAULT 'TL',
+    installment_number INTEGER DEFAULT 1,
+    item_total_cents BIGINT,
+    vat_total_cents BIGINT,
+    shipping_total_cents BIGINT,
+    discount_total_cents BIGINT,
+    commission_amount_cents BIGINT,
+    paid_total_cents BIGINT,
+    total DECIMAL(10, 2),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -59,3 +71,11 @@ CREATE OR REPLACE FUNCTION public.verify_promo_code(p_code text) RETURNS jsonb L
 CREATE OR REPLACE FUNCTION public.manage_inventory() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RETURN NEW; END; $$;
 CREATE OR REPLACE FUNCTION public.handle_new_order_promo() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RETURN NEW; END; $$;
 CREATE OR REPLACE FUNCTION public.is_admin_user() RETURNS boolean LANGUAGE plpgsql AS $$ BEGIN RETURN FALSE; END; $$;
+CREATE OR REPLACE FUNCTION public.is_admin_user(p_uid uuid) RETURNS boolean LANGUAGE plpgsql AS $$ BEGIN RETURN FALSE; END; $$;
+CREATE OR REPLACE FUNCTION public.is_admin() RETURNS boolean LANGUAGE plpgsql AS $$ BEGIN RETURN FALSE; END; $$;
+CREATE OR REPLACE FUNCTION public.create_order(p1 jsonb, p2 uuid, p3 text, p4 text) RETURNS jsonb LANGUAGE plpgsql AS $$ BEGIN RETURN NULL; END; $$;
+CREATE OR REPLACE FUNCTION public.admin_set_user_admin(p1 uuid, p2 boolean) RETURNS boolean LANGUAGE plpgsql AS $$ BEGIN RETURN FALSE; END; $$;
+CREATE OR REPLACE FUNCTION public.admin_update_order_status(p1 uuid, p2 text, p3 text DEFAULT NULL) RETURNS boolean LANGUAGE plpgsql AS $$ BEGIN RETURN FALSE; END; $$;
+CREATE OR REPLACE FUNCTION public.admin_get_all_orders(p1 text DEFAULT NULL, p2 integer DEFAULT 100, p3 integer DEFAULT 0) RETURNS setof record LANGUAGE plpgsql AS $$ BEGIN RETURN; END; $$;
+CREATE OR REPLACE FUNCTION public.sanitize_search_input(p1 text) RETURNS text LANGUAGE plpgsql AS $$ BEGIN RETURN p1; END; $$;
+CREATE OR REPLACE FUNCTION public.log_admin_action() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RETURN NEW; END; $$;
