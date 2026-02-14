@@ -18,6 +18,11 @@ async function sha256Hex(input: string): Promise<string> {
   return Array.from(new Uint8Array(hashBuffer)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+function asText(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  return String(value);
+}
+
 serve(async (req: Request) => {
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
   const url = new URL(req.url);
@@ -27,6 +32,13 @@ serve(async (req: Request) => {
   if (!intentId) return Response.redirect(`${uiOrigin}/payment-failed?code=no_intent`, 302);
 
   try {
+    const { data: intentRow } = await supabase
+      .from("payment_intents")
+      .select("gateway_trx_code")
+      .eq("id", intentId)
+      .maybeSingle();
+    const gatewayTrxCode = asText(intentRow?.gateway_trx_code);
+
     let callbackData: any = {};
     const contentType = req.headers.get("content-type") || "";
 
@@ -75,13 +87,66 @@ serve(async (req: Request) => {
 
     const inquiryJson = await inquiry.json().catch(() => ({ ResultCode: "JSON_ERROR" }));
 
+    const callbackNormalized = {
+      resultCode: asText(callbackData?.ResultCode ?? callbackData?.resultCode),
+      isSuccessful: asText(callbackData?.IsSuccessful ?? callbackData?.isSuccessful),
+      trxStatus: asText(callbackData?.TrxStatus ?? callbackData?.trxStatus),
+      paymentStatus: asText(callbackData?.PaymentStatus ?? callbackData?.paymentStatus),
+      bankResultCode: asText(callbackData?.BankResultCode ?? callbackData?.bankResultCode),
+      resultMessage: asText(callbackData?.ResultMessage ?? callbackData?.resultMessage),
+      trxCode: asText(callbackData?.TrxCode ?? callbackData?.trxCode),
+    };
+
+    const inquiryData = inquiryJson?.Data;
+    const inquiryPaymentList = Array.isArray(inquiryData?.PaymentList)
+      ? inquiryData.PaymentList
+      : Array.isArray(inquiryData)
+        ? inquiryData
+        : [];
+    const matchedByOtherTrxCode = inquiryPaymentList.find((item: any) =>
+      asText(item?.OtherTrxCode).replace(/-/g, "") === shortTrxCode
+    );
+    const matchedByGatewayTrxCode = gatewayTrxCode
+      ? inquiryPaymentList.find((item: any) => asText(item?.TrxCode) === gatewayTrxCode)
+      : null;
+    const selectedInquiryRecordForDebug =
+      matchedByOtherTrxCode ||
+      matchedByGatewayTrxCode ||
+      inquiryPaymentList[0] ||
+      (Array.isArray(inquiryData) ? inquiryData[0] : inquiryData) ||
+      null;
+
     // Log inquiry result
     await supabase.from("payment_transactions").insert({
       intent_id: intentId,
       operation: "inquiry",
-      request_payload: { shortTrxCode, type: "GetPaymentList" },
+      request_payload: { shortTrxCode, gatewayTrxCode, type: "GetPaymentList" },
       response_payload: inquiryJson,
       success: inquiryJson?.ResultCode === "Success"
+    });
+
+    // Extra diagnostics log to validate callback/inquiry mapping assumptions
+    await supabase.from("payment_transactions").insert({
+      intent_id: intentId,
+      operation: "inquiry",
+      request_payload: {
+        type: "status_diagnostics_v1",
+        shortTrxCode,
+        gatewayTrxCode,
+        callbackNormalized,
+        inquiryShape: {
+          rootResultCode: asText(inquiryJson?.ResultCode),
+          dataType: Array.isArray(inquiryData) ? "array" : typeof inquiryData,
+          hasPaymentListArray: Array.isArray(inquiryData?.PaymentList),
+          paymentListCount: inquiryPaymentList.length
+        }
+      },
+      response_payload: {
+        matchedByOtherTrxCode: !!matchedByOtherTrxCode,
+        matchedByGatewayTrxCode: !!matchedByGatewayTrxCode,
+        selectedInquiryRecordForDebug
+      },
+      success: true
     });
 
     // 3. Status logic
@@ -94,6 +159,29 @@ serve(async (req: Request) => {
     // In Moka: TrxStatus 1 is Success
     const isActuallySuccess = (resultCode === "Success" || resultCode === "0") &&
       (trxStatus == 1 || paymentStatus == 1 || paymentStatus == 2);
+
+    const previewResultCode = selectedInquiryRecordForDebug?.ResultCode || inquiryJson?.ResultCode || callbackNormalized.resultCode;
+    const previewTrxStatus = selectedInquiryRecordForDebug?.TrxStatus ?? callbackNormalized.trxStatus;
+    const previewPaymentStatus = selectedInquiryRecordForDebug?.PaymentStatus ?? callbackNormalized.paymentStatus;
+    const previewSuccess = (previewResultCode === "Success" || previewResultCode === "0") &&
+      (previewTrxStatus == 1 || previewPaymentStatus == 1 || previewPaymentStatus == 2);
+
+    await supabase.from("payment_transactions").insert({
+      intent_id: intentId,
+      operation: "inquiry",
+      request_payload: {
+        type: "status_eval_compare_v1",
+        oldLogic: { resultCode, trxStatus, paymentStatus, isActuallySuccess },
+        previewLogic: {
+          resultCode: previewResultCode,
+          trxStatus: previewTrxStatus,
+          paymentStatus: previewPaymentStatus,
+          isActuallySuccess: previewSuccess
+        },
+        callbackNormalized
+      },
+      success: true
+    });
 
     if (isActuallySuccess) {
       const { data: orderData, error: finalizeError } = await supabase.rpc("finalize_payment_intent_v1", {

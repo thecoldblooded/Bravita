@@ -3,7 +3,7 @@
 # Admin/authenticated-only functions enforce verify_jwt at platform level.
 
 [auth]
-pwned_password_protection_enabled = true
+# pwned_password_protection_enabled = true
 
 [functions.send-order-email]
 verify_jwt = false
