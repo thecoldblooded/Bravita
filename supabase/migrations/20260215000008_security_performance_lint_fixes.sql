@@ -6,7 +6,7 @@
 BEGIN;
 
 -- 1. SECURITY: Set search_path for mutable functions to prevent search-path hijacking
-ALTER FUNCTION public.set_updated_at() SET search_path = public, pg_catalog;
+
 ALTER FUNCTION public.handle_updated_at() SET search_path = public, pg_catalog;
 ALTER FUNCTION public.normalize_email_token_key(text) SET search_path = public, pg_catalog;
 
