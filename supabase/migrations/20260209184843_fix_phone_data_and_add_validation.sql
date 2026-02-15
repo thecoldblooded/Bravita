@@ -44,6 +44,8 @@ CHECK (
 );
 
 -- Company name required for company users
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS company_name TEXT;
+
 ALTER TABLE public.profiles
 ADD CONSTRAINT profiles_company_name_required_check 
 CHECK (
