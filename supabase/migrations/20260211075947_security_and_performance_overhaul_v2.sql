@@ -5,7 +5,7 @@
 -- 2. Function security fixes
 -- Ensure search_path is secure to prevent search_path injection attacks
 ALTER FUNCTION is_admin_user(UUID) SET search_path = public;
-ALTER FUNCTION is_admin() SET search_path = public;
+
 
 -- 3. Policy Cleanup & Optimization (initplan optimization)
 
@@ -73,7 +73,7 @@ CREATE POLICY "Profiles viewable by owners and admins" ON profiles
 FOR SELECT TO authenticated
 USING (
   id = (SELECT auth.uid()) OR 
-  (SELECT is_admin())
+  (SELECT is_admin_user((SELECT auth.uid())))
 );
 
 DROP POLICY IF EXISTS "Profiles are updatable by owners and admins" ON profiles;
@@ -82,11 +82,11 @@ CREATE POLICY "Profiles updatable by owners and admins" ON profiles
 FOR UPDATE TO authenticated
 USING (
   id = (SELECT auth.uid()) OR 
-  (SELECT is_admin())
+  (SELECT is_admin_user((SELECT auth.uid())))
 )
 WITH CHECK (
   id = (SELECT auth.uid()) OR 
-  (SELECT is_admin())
+  (SELECT is_admin_user((SELECT auth.uid())))
 );
 
 -- support_tickets: Fix permissive INSERT, multiple policies, and initplan
@@ -117,7 +117,7 @@ CREATE POLICY "Authenticated users insert own tickets" ON support_tickets
 FOR INSERT TO authenticated
 WITH CHECK (
   (user_id = (SELECT auth.uid())) OR 
-  (SELECT is_admin())
+  (SELECT is_admin_user((SELECT auth.uid())))
 );
 
 CREATE POLICY "Anonymous users can insert tickets" ON support_tickets
