@@ -18,7 +18,7 @@ ON public.payment_manual_review_queue
 FOR SELECT
 TO authenticated
 USING (
-    (SELECT public.is_admin())
+    (SELECT public.is_admin_user())
 );
 
 -- 3. Add RLS policies for payment_webhook_events (Admins only - for debugging)
@@ -28,7 +28,7 @@ ON public.payment_webhook_events
 FOR SELECT
 TO authenticated
 USING (
-    (SELECT public.is_admin())
+    (SELECT public.is_admin_user())
 );
 
 COMMIT;
