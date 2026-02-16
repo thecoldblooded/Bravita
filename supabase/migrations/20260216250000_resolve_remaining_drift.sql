@@ -28,7 +28,10 @@ ALTER TABLE public.profiles ADD CONSTRAINT profiles_id_fkey
 -- 3. Data Type Refinement (Syncing to TIMESTAMPTZ)
 ALTER TABLE public.profiles ALTER COLUMN phone_verified_at SET DATA TYPE TIMESTAMPTZ;
 
--- 4. Audit & Email Log Index Refinement
+-- 4. Email Templates Missing Column
+ALTER TABLE public.email_templates ADD COLUMN IF NOT EXISTS unresolved_policy TEXT DEFAULT 'block'::text;
+
+-- 5. Audit & Email Log Index Refinement
 CREATE INDEX IF NOT EXISTS idx_email_logs_mode_blocked ON public.email_logs (mode, blocked);
 CREATE INDEX IF NOT EXISTS idx_email_logs_sent_at ON public.email_logs (sent_at);
 CREATE INDEX IF NOT EXISTS idx_email_logs_template_slug_sent_at ON public.email_logs (template_slug, sent_at);
