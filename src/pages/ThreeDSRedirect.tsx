@@ -42,8 +42,13 @@ function isAllowedGatewayUrl(rawUrl: string): boolean {
         if (parsed.protocol !== "https:") return false;
 
         const host = parsed.hostname.toLowerCase();
-        if (host === "service.testmoka.com" || host === "service.moka.com") return true;
-        if (host.endsWith(".moka.com") || host.endsWith(".bakiyem.com")) return true;
+        if (
+            host === "service.testmoka.com" ||
+            host === "service.moka.com" ||
+            host === "service.refmokaunited.com" ||
+            host === "service.mokaunited.com"
+        ) return true;
+        if (host.endsWith(".moka.com") || host.endsWith(".mokaunited.com") || host.endsWith(".bakiyem.com")) return true;
 
         return false;
     } catch {

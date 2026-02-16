@@ -34,8 +34,8 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const PAYMENT_MAINTENANCE_SECRET = Deno.env.get("PAYMENT_MAINTENANCE_SECRET") ?? "";
 
-const BAKIYEM_BASE_URL = Deno.env.get("BAKIYEM_BASE_URL") ?? "https://service.moka.com";
-const BAKIYEM_TEST_BASE_URL = Deno.env.get("BAKIYEM_TEST_BASE_URL") ?? "https://service.testmoka.com";
+const BAKIYEM_BASE_URL = Deno.env.get("BAKIYEM_BASE_URL") ?? "https://service.mokaunited.com";
+const BAKIYEM_TEST_BASE_URL = Deno.env.get("BAKIYEM_TEST_BASE_URL") ?? "https://service.refmokaunited.com";
 const BAKIYEM_DEALER_CODE = Deno.env.get("BAKIYEM_DEALER_CODE") ?? "";
 const BAKIYEM_API_USERNAME = Deno.env.get("BAKIYEM_API_USERNAME") ?? "";
 const BAKIYEM_API_PASSWORD = Deno.env.get("BAKIYEM_API_PASSWORD") ?? "";

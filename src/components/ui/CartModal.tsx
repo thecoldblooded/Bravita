@@ -23,7 +23,7 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { user, isAuthenticated } = useAuth();
-    const { addToCart, clearCart, applyPromoCode, removePromoCode, promoCode: contextPromoCode } = useCart();
+    const { addToCart, clearCart, applyPromoCode, removePromoCode, promoCode: contextPromoCode, settings } = useCart();
     const [quantity, setQuantity] = useState(1);
     // const [promoCode, setPromoCode] = useState(""); // Replaced by inputPromoCode and contextPromoCode
     const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -54,7 +54,7 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
     // Fallback değerler (sunucudan gelmezse)
     const PRICING = Object.freeze({
         UNIT_PRICE: serverPrice ?? 600,
-        VAT_RATE: 0.20,
+        VAT_RATE: settings.vat_rate,
         MAX_QUANTITY: maxQuantity,
         MIN_QUANTITY: 1,
     });
@@ -152,8 +152,8 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
     }, [subtotal, localAppliedPromo, t]);
 
     // Shipping Calculation
-    const SHIPPING_COST = 49.90;
-    const FREE_SHIPPING_THRESHOLD = 1500;
+    const SHIPPING_COST = settings.shipping_cost;
+    const FREE_SHIPPING_THRESHOLD = settings.free_shipping_threshold;
     const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
     const remainingForFreeShipping = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
 

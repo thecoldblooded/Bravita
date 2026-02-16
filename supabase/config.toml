@@ -35,5 +35,8 @@ verify_jwt = false
 [functions.bakiyem-tokenize-card]
 verify_jwt = false
 
+[functions.bakiyem-refund]
+verify_jwt = false
+
 [functions.payment-maintenance]
 verify_jwt = false

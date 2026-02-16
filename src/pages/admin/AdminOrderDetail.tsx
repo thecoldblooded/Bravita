@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Package, User, MapPin, Clock, Truck, CheckCircle, Edit2, Save, X, ClipboardList, RefreshCw, Building2, CreditCard } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminGuard } from "@/components/admin/AdminGuard";
-import { getOrderById, updateOrderStatus, updateTrackingNumber, getOrderStatusHistory, Order, OrderStatus, STATUS_CONFIG, OrderStatusHistoryItem, confirmPayment, voidCardPayment } from "@/lib/admin";
+import { getOrderById, updateOrderStatus, updateTrackingNumber, getOrderStatusHistory, Order, OrderStatus, STATUS_CONFIG, OrderStatusHistoryItem, confirmPayment, voidCardPayment, refundCardPayment } from "@/lib/admin";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { OrderDetailSkeleton } from "@/components/admin/skeletons";
@@ -92,24 +92,49 @@ function AdminOrderDetailContent() {
 
         setIsUpdatingStatus(true);
         try {
-            let cardVoidSucceeded = false;
-            const shouldVoidCardPayment =
+            let cardPaymentReversalSucceeded = false;
+            const shouldReverseCardPayment =
                 newStatus === "cancelled" &&
                 order.payment_method === "credit_card" &&
                 order.payment_status === "paid";
 
-            if (shouldVoidCardPayment) {
-                const voidResult = await voidCardPayment(orderId);
-                if (!voidResult.success && !voidResult.pending) {
-                    toast.error(voidResult.message || "Kart iade/iptal islemi basarisiz");
-                    return;
-                }
+            if (shouldReverseCardPayment) {
+                const shouldAttemptVoidFirst = order.status === "pending";
 
-                cardVoidSucceeded = voidResult.success;
-                if (voidResult.success) {
-                    toast.success("Kart odemesi void edildi.");
-                } else if (voidResult.pending) {
-                    toast.warning(voidResult.message || "Void istegi manuel incelemeye alindi.");
+                if (shouldAttemptVoidFirst) {
+                    const voidResult = await voidCardPayment(orderId);
+                    if (voidResult.success) {
+                        cardPaymentReversalSucceeded = true;
+                        toast.success("Kart odemesi void edildi.");
+                    } else if (voidResult.pending) {
+                        toast.warning(voidResult.message || "Void istegi manuel incelemeye alindi.");
+                    } else {
+                        const refundFallbackResult = await refundCardPayment(orderId);
+                        if (!refundFallbackResult.success && !refundFallbackResult.pending) {
+                            toast.error(refundFallbackResult.message || "Kart iade islemi basarisiz");
+                            return;
+                        }
+
+                        cardPaymentReversalSucceeded = refundFallbackResult.success;
+                        if (refundFallbackResult.success) {
+                            toast.success("Kart odemesi iade edildi.");
+                        } else if (refundFallbackResult.pending) {
+                            toast.warning(refundFallbackResult.message || "Refund istegi manuel incelemeye alindi.");
+                        }
+                    }
+                } else {
+                    const refundResult = await refundCardPayment(orderId);
+                    if (!refundResult.success && !refundResult.pending) {
+                        toast.error(refundResult.message || "Kart iade islemi basarisiz");
+                        return;
+                    }
+
+                    cardPaymentReversalSucceeded = refundResult.success;
+                    if (refundResult.success) {
+                        toast.success("Kart odemesi iade edildi.");
+                    } else if (refundResult.pending) {
+                        toast.warning(refundResult.message || "Refund istegi manuel incelemeye alindi.");
+                    }
                 }
             }
 
@@ -118,7 +143,7 @@ function AdminOrderDetailContent() {
                 ...order,
                 status: newStatus,
                 cancellation_reason: note,
-                payment_status: cardVoidSucceeded ? "refunded" : order.payment_status,
+                payment_status: cardPaymentReversalSucceeded ? "refunded" : order.payment_status,
             });
             const newHistory = await getOrderStatusHistory(orderId);
             setHistory(newHistory);
@@ -340,8 +365,14 @@ function AdminOrderDetailContent() {
                         <CreditCard className="w-5 h-5" />
                     </div>
                     <div>
-                        <p className={`font-bold ${textPrimary}`}>Kredi Kartı ile Ödendi</p>
-                        <p className={`text-sm ${textSecondary}`}>İşlem otomatik olarak onaylandı.</p>
+                        <p className={`font-bold ${textPrimary}`}>
+                            {order.payment_status === "refunded" ? "Kredi Karti Odemesi Iade Edildi" : "Kredi Karti ile Odendi"}
+                        </p>
+                        <p className={`text-sm ${textSecondary}`}>
+                            {order.payment_status === "refunded"
+                                ? "Odeme iade sureci tamamlandi."
+                                : "Islem otomatik olarak onaylandi."}
+                        </p>
                     </div>
                 </motion.div>
             )}

@@ -8,7 +8,7 @@ type JsonRecord = Record<string, unknown>;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
-const BAKIYEM_BASE_URL = Deno.env.get("BAKIYEM_BASE_URL") ?? "https://service.testmoka.com";
+const BAKIYEM_BASE_URL = Deno.env.get("BAKIYEM_BASE_URL") ?? "https://service.refmokaunited.com";
 const BAKIYEM_DEALER_CODE = Deno.env.get("BAKIYEM_DEALER_CODE") ?? "";
 const BAKIYEM_API_USERNAME = Deno.env.get("BAKIYEM_API_USERNAME") ?? "";
 const BAKIYEM_API_PASSWORD = Deno.env.get("BAKIYEM_API_PASSWORD") ?? "";
@@ -184,7 +184,7 @@ serve(async (req: Request) => {
         .update({ payment_status: "refunded" })
         .eq("id", order.id);
 
-      return response(req, 200, { success: true, message: "Void basarili" });
+      return response(req, 200, { success: true, pending: false, message: "Void basarili" });
     }
 
     await supabase
@@ -208,7 +208,7 @@ serve(async (req: Request) => {
         },
       );
 
-    return response(req, 202, { success: false, message: "Void pending, manuel inceleme kuyruğuna alindi" });
+    return response(req, 202, { success: false, pending: true, message: "Void pending, manuel inceleme kuyruğuna alindi" });
   } catch (error) {
     console.error("bakiyem-void failed", error);
     return response(req, 500, { success: false, message: "Void istegi islenemedi" });

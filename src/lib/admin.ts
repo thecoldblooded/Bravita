@@ -66,6 +66,8 @@ export interface CardVoidResult {
     error?: string;
 }
 
+export type CardRefundResult = CardVoidResult;
+
 export interface OrderStats {
     pending: number;
     processing: number;
@@ -362,11 +364,44 @@ export async function voidCardPayment(orderId: string): Promise<CardVoidResult> 
     }
 
     const success = data?.success === true;
-    const pending = success ? false : true;
+    const pending = data?.pending === true;
     return {
         success,
         pending,
-        message: data?.message || (success ? "Void basarili" : "Void manuel incelemeye alindi"),
+        message: data?.message || (success ? "Void basarili" : (pending ? "Void manuel incelemeye alindi" : "Void basarisiz")),
+        error: data?.error,
+    };
+}
+
+export async function refundCardPayment(orderId: string, amountCents?: number): Promise<CardRefundResult> {
+    const headers = await getFunctionAuthHeaders();
+    const body: { orderId: string; amountCents?: number } = { orderId };
+
+    if (Number.isFinite(amountCents) && Number(amountCents) > 0) {
+        body.amountCents = Number(amountCents);
+    }
+
+    const { data, error } = await supabase.functions.invoke("bakiyem-refund", {
+        body,
+        headers,
+    });
+
+    if (error) {
+        return {
+            success: false,
+            pending: false,
+            message: "Refund istegi gonderilemedi",
+            error: error.message || "FUNCTION_ERROR",
+        };
+    }
+
+    const success = data?.success === true;
+    const pending = data?.pending === true;
+
+    return {
+        success,
+        pending,
+        message: data?.message || (success ? "Refund basarili" : (pending ? "Refund manuel incelemeye alindi" : "Refund basarisiz")),
         error: data?.error,
     };
 }

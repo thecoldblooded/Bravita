@@ -285,7 +285,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               });
             } else {
               // Double check DB just in case metadata is stale (less likely for login but good for security)
-              const { data: userData } = await supabase.from('profiles').select('is_admin, is_superadmin').eq('id', uid).single();
+              const { data: userData } = await supabase.from('profiles').select('is_admin, is_superadmin').eq('id', uid).maybeSingle();
               if (userData?.is_admin || userData?.is_superadmin) {
                 await supabase.from('admin_audit_log').insert({
                   admin_user_id: uid,
@@ -296,8 +296,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 });
               }
             }
-          } catch (e) {
-            console.error("Login logging failed", e);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } catch (e: any) {
+            // Ignore 403 errors (permissions) to avoid console noise for non-admins
+            if (e?.code !== '403' && !e?.message?.includes('403')) {
+              console.error("Login logging failed", e);
+            }
           }
         })();
       }
@@ -402,13 +406,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               .from("profiles")
               .select("id, email, full_name, phone, user_type, company_name, profile_complete, phone_verified, is_admin, is_superadmin, oauth_provider, created_at, updated_at")
               .eq("id", newSession.user.id)
-              .single();
+              .maybeSingle();
 
             // Background attempt with 10s limit
             const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Background fetch timeout')), 10000));
             try {
               const result = (await Promise.race([fetchProfile(), timeout])) as { data: UserProfile | null; error: { message: string; code?: string } | null };
               if (result.error) throw result.error;
+
+              // Handle missing profile execution path without 406 error
+              if (!result.data) {
+                throw { code: "PGRST116", message: "The result contains 0 rows" };
+              }
+
               userProfile = result.data;
 
               // Success - Update state and cache
@@ -420,6 +430,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               }
             } catch (err: unknown) {
               console.warn("Auth: Background profile fetch failed or timed out. User is operating on secure stub.", err);
+              throw err;
             }
           } catch (err: unknown) {
             // "Not Found" handling for completely new users
@@ -444,6 +455,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 phone_verified_at: null
               };
               const { error: insertError } = await supabase.from("profiles").insert(newProfile);
+
               if (!insertError && mounted) {
                 setUserDebug(newProfile);
                 // Sync to BillionMail ONLY after email confirmation (first login = confirmed)
@@ -459,6 +471,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   },
                   tags: ["website_signup", newProfile.user_type],
                 }).catch(err => console.error("BillionMail sync failed:", err));
+              } else if (insertError && (insertError.code === '23505' || insertError.code === '409') && mounted) {
+                // Conflict detected - profile exists but initial fetch failed. Retry fetch.
+                console.warn("Auth: Profile conflict detected. Retrying fetch...");
+                const { data: existingProfile } = await supabase
+                  .from("profiles")
+                  .select("*")
+                  .eq("id", newSession.user.id)
+                  .maybeSingle();
+
+                if (existingProfile) {
+                  setUserDebug(existingProfile);
+                  if (existingProfile.profile_complete) {
+                    localStorage.setItem("profile_known_complete", "true");
+                  }
+                }
               }
             }
           }

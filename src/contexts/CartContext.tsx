@@ -37,6 +37,11 @@ interface CartContextType {
     discountAmount: number;
     applyPromoCode: (code: string, discount: number) => void;
     removePromoCode: () => void;
+    settings: {
+        vat_rate: number;
+        shipping_cost: number;
+        free_shipping_threshold: number;
+    };
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -252,7 +257,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 promoCode,
                 discountAmount: validDiscount,
                 applyPromoCode,
-                removePromoCode
+                removePromoCode,
+                settings
             }}
         >
             {children}

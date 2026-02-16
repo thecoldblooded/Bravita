@@ -52,6 +52,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import Loader from "@/components/ui/Loader";
 import { AdminThemeProvider } from "@/contexts/AdminThemeContext";
+import { ProtectedAdminRoute } from "@/components/admin/ProtectedAdminRoute";
 
 const RouteFallback = () => (
   <div className="min-h-[35vh] flex items-center justify-center">
@@ -103,15 +104,15 @@ const AppContent = () => {
           <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
 
           {/* Admin routes */}
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/orders" element={<AdminOrders />} />
-          <Route path="/admin/orders/:orderId" element={<AdminOrderDetail />} />
-          <Route path="/admin/products" element={<AdminProducts />} />
-          <Route path="/admin/promotions" element={<AdminPromoCodes />} />
-          <Route path="/admin/support" element={<AdminSupport />} />
-          <Route path="/admin/emails" element={<AdminEmails />} />
-          <Route path="/admin/admins" element={<AdminUsers />} />
-          <Route path="/admin/logs" element={<AdminAuditLogs />} />
+          <Route path="/admin" element={<ProtectedAdminRoute><AdminDashboard /></ProtectedAdminRoute>} />
+          <Route path="/admin/orders" element={<ProtectedAdminRoute><AdminOrders /></ProtectedAdminRoute>} />
+          <Route path="/admin/orders/:orderId" element={<ProtectedAdminRoute><AdminOrderDetail /></ProtectedAdminRoute>} />
+          <Route path="/admin/products" element={<ProtectedAdminRoute><AdminProducts /></ProtectedAdminRoute>} />
+          <Route path="/admin/promotions" element={<ProtectedAdminRoute><AdminPromoCodes /></ProtectedAdminRoute>} />
+          <Route path="/admin/support" element={<ProtectedAdminRoute><AdminSupport /></ProtectedAdminRoute>} />
+          <Route path="/admin/emails" element={<ProtectedAdminRoute requireSuperAdmin={true}><AdminEmails /></ProtectedAdminRoute>} />
+          <Route path="/admin/admins" element={<ProtectedAdminRoute requireSuperAdmin={true}><AdminUsers /></ProtectedAdminRoute>} />
+          <Route path="/admin/logs" element={<ProtectedAdminRoute requireSuperAdmin={true}><AdminAuditLogs /></ProtectedAdminRoute>} />
 
           <Route path="*" element={<NotFound />} />
         </Routes>
