@@ -8,6 +8,7 @@
 -- Also wrap auth.uid() in (SELECT auth.uid()) for caching.
 DROP POLICY IF EXISTS "Users can view own profile" ON profiles;
 DROP POLICY IF EXISTS "Admins can view all profiles" ON profiles;
+DROP POLICY IF EXISTS "Authenticated users view profiles" ON profiles;
 
 CREATE POLICY "Authenticated users view profiles" 
 ON profiles FOR SELECT 
@@ -39,6 +40,7 @@ USING ((SELECT auth.uid()) = id);
 
 DROP POLICY IF EXISTS "Admins manage email template variables" ON email_template_variables;
 DROP POLICY IF EXISTS "Public read template variables" ON email_template_variables;
+DROP POLICY IF EXISTS "Authenticated users view template variables" ON email_template_variables;
 
 -- Everyone authenticated can read
 CREATE POLICY "Authenticated users view template variables"
@@ -47,16 +49,19 @@ TO authenticated
 USING (true);
 
 -- Admins can insert/update/delete
+DROP POLICY IF EXISTS "Admins manage template variables" ON email_template_variables;
 CREATE POLICY "Admins manage template variables"
 ON email_template_variables FOR INSERT
 TO authenticated
 WITH CHECK ((SELECT is_admin_user()));
 
+DROP POLICY IF EXISTS "Admins update template variables" ON email_template_variables;
 CREATE POLICY "Admins update template variables"
 ON email_template_variables FOR UPDATE
 TO authenticated
 USING ((SELECT is_admin_user()));
 
+DROP POLICY IF EXISTS "Admins delete template variables" ON email_template_variables;
 CREATE POLICY "Admins delete template variables"
 ON email_template_variables FOR DELETE
 TO authenticated
@@ -69,6 +74,7 @@ USING ((SELECT is_admin_user()));
 
 DROP POLICY IF EXISTS "Admins manage email variable registry" ON email_variable_registry;
 DROP POLICY IF EXISTS "Public read variable registry" ON email_variable_registry;
+DROP POLICY IF EXISTS "Authenticated users view variable registry" ON email_variable_registry;
 
 -- Everyone authenticated can read
 CREATE POLICY "Authenticated users view variable registry"
@@ -77,16 +83,19 @@ TO authenticated
 USING (true);
 
 -- Admins can manage
+DROP POLICY IF EXISTS "Admins insert variable registry" ON email_variable_registry;
 CREATE POLICY "Admins insert variable registry"
 ON email_variable_registry FOR INSERT
 TO authenticated
 WITH CHECK ((SELECT is_admin_user()));
 
+DROP POLICY IF EXISTS "Admins update variable registry" ON email_variable_registry;
 CREATE POLICY "Admins update variable registry"
 ON email_variable_registry FOR UPDATE
 TO authenticated
 USING ((SELECT is_admin_user()));
 
+DROP POLICY IF EXISTS "Admins delete variable registry" ON email_variable_registry;
 CREATE POLICY "Admins delete variable registry"
 ON email_variable_registry FOR DELETE
 TO authenticated
@@ -102,6 +111,7 @@ USING ((SELECT is_admin_user()));
 
 DROP POLICY IF EXISTS "Admins manage payment transactions" ON payment_transactions;
 DROP POLICY IF EXISTS "Select payment transactions" ON payment_transactions;
+DROP POLICY IF EXISTS "View payment transactions" ON payment_transactions;
 
 -- Unified SELECT policy (Admins OR Owners)
 CREATE POLICY "View payment transactions"
@@ -118,16 +128,19 @@ USING (
 );
 
 -- Admin Management (Insert/Update/Delete)
+DROP POLICY IF EXISTS "Admins insert payment transactions" ON payment_transactions;
 CREATE POLICY "Admins insert payment transactions"
 ON payment_transactions FOR INSERT
 TO authenticated
 WITH CHECK ((SELECT is_admin_user()));
 
+DROP POLICY IF EXISTS "Admins update payment transactions" ON payment_transactions;
 CREATE POLICY "Admins update payment transactions"
 ON payment_transactions FOR UPDATE
 TO authenticated
 USING ((SELECT is_admin_user()));
 
+DROP POLICY IF EXISTS "Admins delete payment transactions" ON payment_transactions;
 CREATE POLICY "Admins delete payment transactions"
 ON payment_transactions FOR DELETE
 TO authenticated
