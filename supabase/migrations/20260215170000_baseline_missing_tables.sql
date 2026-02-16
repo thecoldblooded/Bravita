@@ -194,6 +194,38 @@ CREATE TABLE IF NOT EXISTS public.email_template_variables (
 );
 ALTER TABLE public.email_template_variables ENABLE ROW LEVEL SECURITY;
 
+-- 12a. Critical Functions Baseline (Missing in some repos but present in remote)
+CREATE OR REPLACE FUNCTION public.is_admin_user()
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_catalog'
+AS $function$
+BEGIN
+    RETURN EXISTS (
+        SELECT 1 FROM public.profiles 
+        WHERE id = (SELECT auth.uid()) AND (is_admin = true OR is_superadmin = true)
+    );
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.is_admin_user(user_id uuid)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  admin_status boolean;
+BEGIN
+  SELECT is_admin INTO admin_status
+  FROM public.profiles
+  WHERE id = user_id
+  LIMIT 1;
+  RETURN COALESCE(admin_status, false);
+END;
+$function$;
+
 -- 13. site_settings (Baseline as seen in production if not already created)
 -- Note: site_settings is usually created in 20260210121836, but let's ensure it has all columns correctly.
 -- We use DO blocks to avoid errors if partially created.
