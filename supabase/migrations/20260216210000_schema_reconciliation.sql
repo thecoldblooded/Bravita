@@ -73,8 +73,13 @@ BEGIN
 END $$;
 
 -- 7. Orders and Support Tickets Constraints
-ALTER TABLE "public"."orders" ADD CONSTRAINT orders_currency_tl_only CHECK (currency = 'TL'::text) NOT VALID;
-ALTER TABLE "public"."orders" VALIDATE CONSTRAINT orders_currency_tl_only;
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'orders_currency_tl_only') THEN
+        ALTER TABLE "public"."orders" ADD CONSTRAINT orders_currency_tl_only CHECK (currency = 'TL'::text) NOT VALID;
+        ALTER TABLE "public"."orders" VALIDATE CONSTRAINT orders_currency_tl_only;
+    END IF;
+END $$;
 
 ALTER TABLE "public"."support_tickets" 
   ALTER COLUMN "category" SET DEFAULT 'general'::text,

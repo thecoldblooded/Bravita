@@ -193,7 +193,12 @@ CREATE TABLE IF NOT EXISTS public.email_template_variables (
     source_token TEXT
 );
 ALTER TABLE public.email_template_variables ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.email_template_variables ADD CONSTRAINT email_template_variables_unique UNIQUE (template_slug, variable_key);
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'email_template_variables_unique') THEN
+        ALTER TABLE public.email_template_variables ADD CONSTRAINT email_template_variables_unique UNIQUE (template_slug, variable_key);
+    END IF;
+END $$;
 
 -- 12a. Critical Functions Baseline (Missing in some repos but present in remote)
 CREATE OR REPLACE FUNCTION public.is_admin_user()
