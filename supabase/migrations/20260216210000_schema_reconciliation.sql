@@ -96,7 +96,7 @@ BEGIN
 
     -- orders
     ALTER TABLE public.orders DROP CONSTRAINT IF EXISTS orders_credit_card_requires_intent;
-    ALTER TABLE public.orders ADD CONSTRAINT orders_credit_card_requires_intent CHECK (payment_method <> 'credit_card' OR payment_intent_id IS NOT NULL);
+    ALTER TABLE public.orders ADD CONSTRAINT orders_credit_card_requires_intent CHECK (payment_method <> 'credit_card' OR payment_intent_id IS NOT NULL) NOT VALID;
 END $$;
 
 COMMIT;
