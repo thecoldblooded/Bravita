@@ -18,7 +18,7 @@ ALTER TABLE public.admin_audit_log ENABLE ROW LEVEL SECURITY;
 CREATE TABLE IF NOT EXISTS public.email_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     order_id UUID REFERENCES public.orders(id) ON DELETE SET NULL,
-    email_type TEXT,
+    email_type TEXT NOT NULL,
     sent_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
     recipient TEXT,
     template_slug TEXT,
@@ -27,12 +27,12 @@ CREATE TABLE IF NOT EXISTS public.email_logs (
     error_details TEXT,
     metadata JSONB DEFAULT '{}'::jsonb,
     recipient_email TEXT,
-    render_warnings JSONB DEFAULT '[]'::jsonb,
-    unresolved_tokens JSONB DEFAULT '[]'::jsonb,
-    blocked BOOLEAN DEFAULT false,
-    degradation_active BOOLEAN DEFAULT false,
+    render_warnings JSONB NOT NULL DEFAULT '[]'::jsonb,
+    unresolved_tokens JSONB NOT NULL DEFAULT '[]'::jsonb,
+    blocked BOOLEAN NOT NULL DEFAULT false,
+    degradation_active BOOLEAN NOT NULL DEFAULT false,
     degradation_reason TEXT,
-    mode TEXT CHECK (mode IS NULL OR mode IN ('send', 'test', 'browser_preview')),
+    mode TEXT CHECK (mode IS NULL OR mode IN ('send'::text, 'test'::text, 'browser_preview'::text)),
     template_version INTEGER
 );
 ALTER TABLE public.email_logs ENABLE ROW LEVEL SECURITY;
@@ -67,9 +67,9 @@ CREATE TABLE IF NOT EXISTS public.payment_intents (
     threed_session_ref TEXT,
     threed_payload_encrypted TEXT,
     encryption_key_version TEXT,
-    expires_at TIMESTAMP WITH TIME ZONE DEFAULT (now() + interval '15 minutes'),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT (now() + interval '15 minutes'),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 ALTER TABLE public.payment_intents ENABLE ROW LEVEL SECURITY;
 
@@ -168,12 +168,12 @@ CREATE TABLE IF NOT EXISTS public.email_variable_registry (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     key TEXT UNIQUE NOT NULL,
     description TEXT,
-    category TEXT DEFAULT 'general',
+    category TEXT DEFAULT 'general'::text,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
     label TEXT,
-    value_type TEXT DEFAULT 'string',
-    render_policy TEXT DEFAULT 'escaped_text',
+    value_type TEXT DEFAULT 'string'::text,
+    render_policy TEXT DEFAULT 'escaped_text'::text,
     is_sensitive BOOLEAN DEFAULT false,
     is_active BOOLEAN DEFAULT true,
     sample_value TEXT
@@ -183,8 +183,8 @@ ALTER TABLE public.email_variable_registry ENABLE ROW LEVEL SECURITY;
 -- 12. email_template_variables
 CREATE TABLE IF NOT EXISTS public.email_template_variables (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    template_slug TEXT REFERENCES public.email_templates(slug) ON DELETE CASCADE,
-    variable_key TEXT REFERENCES public.email_variable_registry(key),
+    template_slug TEXT NOT NULL REFERENCES public.email_templates(slug) ON DELETE CASCADE,
+    variable_key TEXT NOT NULL REFERENCES public.email_variable_registry(key),
     is_required BOOLEAN DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
@@ -193,6 +193,7 @@ CREATE TABLE IF NOT EXISTS public.email_template_variables (
     source_token TEXT
 );
 ALTER TABLE public.email_template_variables ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.email_template_variables ADD CONSTRAINT email_template_variables_unique UNIQUE (template_slug, variable_key);
 
 -- 12a. Critical Functions Baseline (Missing in some repos but present in remote)
 CREATE OR REPLACE FUNCTION public.is_admin_user()
