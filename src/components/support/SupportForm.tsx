@@ -207,7 +207,7 @@ export function SupportForm({ onSuccess }: SupportFormProps) {
                                             <SelectValue placeholder={t("support.category_placeholder") || "Seçin"} />
                                         </SelectTrigger>
                                     </FormControl>
-                                    <SelectContent className="z-[999999]">
+                                    <SelectContent className="z-999999">
                                         <SelectItem value="general">{t("support.category_general") || "Genel"}</SelectItem>
                                         <SelectItem value="order_issue">{t("support.category_order_issue") || "Sipariş"}</SelectItem>
                                         <SelectItem value="product_info">{t("support.category_product_info") || "Ürün"}</SelectItem>

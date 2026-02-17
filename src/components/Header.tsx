@@ -204,12 +204,17 @@ const Header = () => {
     requestSectionMeasure();
     window.addEventListener("scroll", requestScrollUpdate, { passive: true });
     window.addEventListener("resize", requestSectionMeasure);
-    window.addEventListener("load", requestSectionMeasure);
+
+    // Observer for layout changes (lazy loading, accordion expansion, etc)
+    const resizeObserver = new ResizeObserver(() => {
+      requestSectionMeasure();
+    });
+    resizeObserver.observe(document.body);
 
     return () => {
       window.removeEventListener("scroll", requestScrollUpdate);
       window.removeEventListener("resize", requestSectionMeasure);
-      window.removeEventListener("load", requestSectionMeasure);
+      resizeObserver.disconnect();
       if (scrollFrameRef.current !== null) window.cancelAnimationFrame(scrollFrameRef.current);
       if (measureFrameRef.current !== null) window.cancelAnimationFrame(measureFrameRef.current);
     };

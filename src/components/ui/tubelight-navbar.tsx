@@ -105,7 +105,7 @@ export function NavBar({ items, className, activeTab: externalActiveTab, layoutI
 
         // Content not loaded yet (lazy section) — scroll near wrapper to trigger IntersectionObserver
         const elementTop = element.getBoundingClientRect().top + window.scrollY
-        window.scrollTo({ top: elementTop, behavior: "smooth" })
+        window.scrollTo({ top: elementTop - offset, behavior: "smooth" })
 
         // Watch for lazy content to appear, then re-scroll precisely
         const observer = new MutationObserver(() => {
