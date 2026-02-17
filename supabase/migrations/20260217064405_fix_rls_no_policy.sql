@@ -7,6 +7,7 @@
 -- =========================================================================
 
 -- Admins should be able to view and manage the review queue
+DROP POLICY IF EXISTS "Admins can manage payment reviews" ON public.payment_manual_review_queue;
 CREATE POLICY "Admins can manage payment reviews"
 ON public.payment_manual_review_queue
 FOR ALL
@@ -20,6 +21,7 @@ WITH CHECK (public.is_admin_user());
 -- =========================================================================
 
 -- Admins should be able to view webhook logs for debugging
+DROP POLICY IF EXISTS "Admins can view webhook events" ON public.payment_webhook_events;
 CREATE POLICY "Admins can view webhook events"
 ON public.payment_webhook_events
 FOR SELECT
