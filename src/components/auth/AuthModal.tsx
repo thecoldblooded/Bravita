@@ -9,6 +9,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 const LoginForm = React.lazy(() => import("./LoginForm").then(module => ({ default: module.LoginForm })));
 const SignupForm = React.lazy(() => import("./SignupForm").then(module => ({ default: module.SignupForm })));
@@ -132,6 +133,9 @@ export function AuthModal({
                     ? t("auth.login_to_account")
                     : t("auth.create_account")}
                 </DialogTitle>
+                <DialogDescription className="sr-only">
+                  Hesabınıza giriş yapın veya yeni bir hesap oluşturun.
+                </DialogDescription>
               </DialogHeader>
             </div>
 

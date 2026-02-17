@@ -31,6 +31,7 @@ import {
     DialogHeader,
     DialogTitle,
     DialogFooter,
+    DialogDescription,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -480,6 +481,9 @@ export default function AdminSupport() {
                                 <MessageCircle className="w-5 h-5 text-orange-500" />
                                 Destek Talebi Detayı
                             </DialogTitle>
+                            <DialogDescription className="sr-only">
+                                Müşteri destek talebini görüntüleyin ve yanıtlayın.
+                            </DialogDescription>
                         </DialogHeader>
 
                         {selectedTicket && (

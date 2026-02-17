@@ -19,8 +19,11 @@ try {
   console.warn("Could not read .env file:", err);
 }
 
-if (process.env.SUPABASE_DB_PASSWORD && process.env.SUPABASE_DB_PASSWORD.trim().length > 0) {
-  supabaseArgs.push("--password", process.env.SUPABASE_DB_PASSWORD);
+const needsPasswordPrompt = !process.env.SUPABASE_DB_PASSWORD || process.env.SUPABASE_DB_PASSWORD.trim().length === 0;
+
+if (needsPasswordPrompt) {
+  console.error("SUPABASE_DB_PASSWORD is required in environment for non-interactive execution.");
+  process.exit(1);
 }
 
 let command = "npx";
@@ -34,6 +37,10 @@ if (process.platform === "win32") {
 
 const child = spawn(command, commandArgs, {
   stdio: "inherit",
+  env: {
+    ...process.env,
+    SUPABASE_DB_PASSWORD: process.env.SUPABASE_DB_PASSWORD,
+  },
 });
 
 child.on("error", (error) => {

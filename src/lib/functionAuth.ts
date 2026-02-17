@@ -3,21 +3,25 @@ import { getSessionSafe } from "@/lib/supabase";
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
 /**
- * Builds a stable header set for Edge Function calls:
- * - Authorization stays on anon key to avoid gateway JWT mismatch issues.
- * - User session token is forwarded via x-user-jwt for function-level auth.
+ * Builds auth headers for Edge Function calls:
+ * - Prefer session access token in Authorization when available.
+ * - Keep x-user-jwt for backward compatibility with existing function auth extraction.
+ * - Fallback to anon Authorization only when user session is absent.
  */
 export async function getFunctionAuthHeaders(): Promise<Record<string, string>> {
     const headers: Record<string, string> = {};
 
-    if (anonKey && anonKey.length > 0) {
-        headers.Authorization = `Bearer ${anonKey}`;
-    }
-
     const { data } = await getSessionSafe();
     const accessToken = data?.session?.access_token;
-    if (accessToken) {
+
+    if (accessToken && accessToken.length > 0) {
+        headers.Authorization = `Bearer ${accessToken}`;
         headers["x-user-jwt"] = accessToken;
+        return headers;
+    }
+
+    if (anonKey && anonKey.length > 0) {
+        headers.Authorization = `Bearer ${anonKey}`;
     }
 
     return headers;

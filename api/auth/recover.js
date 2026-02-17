@@ -5,12 +5,68 @@ import {
   sendJson,
 } from "./_shared.js";
 
-function buildRecoverPath(redirectTo) {
+const DEFAULT_SITE_URL = "https://bravita.com.tr";
+
+const DEFAULT_ALLOWED_RECOVERY_ORIGINS = [
+  "https://bravita.com.tr",
+  "https://www.bravita.com.tr",
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "http://localhost:8080",
+];
+
+function loadAllowedRecoveryOrigins() {
+  const configured = String(process.env.ALLOWED_RECOVERY_REDIRECT_ORIGINS || "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
+
+  if (configured.length > 0) return configured;
+
+  const siteUrl = String(process.env.SITE_URL || process.env.VITE_SITE_URL || DEFAULT_SITE_URL).trim();
+  if (siteUrl.length > 0) {
+    return Array.from(new Set([...DEFAULT_ALLOWED_RECOVERY_ORIGINS, siteUrl]));
+  }
+
+  return DEFAULT_ALLOWED_RECOVERY_ORIGINS;
+}
+
+function sanitizeRecoverRedirect(redirectTo) {
   if (typeof redirectTo !== "string" || redirectTo.trim().length === 0) {
+    return null;
+  }
+
+  const allowedOrigins = loadAllowedRecoveryOrigins();
+  const fallbackOrigin = allowedOrigins[0] || DEFAULT_SITE_URL;
+  const rawValue = redirectTo.trim();
+
+  try {
+    if (/^https?:\/\//i.test(rawValue)) {
+      const absolute = new URL(rawValue);
+      if (!allowedOrigins.includes(absolute.origin)) {
+        return null;
+      }
+      return absolute.toString();
+    }
+
+    const normalizedRelative = rawValue.startsWith("/") ? rawValue : `/${rawValue}`;
+    const absolute = new URL(normalizedRelative, fallbackOrigin);
+    if (!allowedOrigins.includes(absolute.origin)) {
+      return null;
+    }
+    return absolute.toString();
+  } catch {
+    return null;
+  }
+}
+
+function buildRecoverPath(redirectTo) {
+  const safeRedirect = sanitizeRecoverRedirect(redirectTo);
+  if (!safeRedirect) {
     return "/auth/v1/recover";
   }
 
-  const query = new URLSearchParams({ redirect_to: redirectTo.trim() }).toString();
+  const query = new URLSearchParams({ redirect_to: safeRedirect }).toString();
   return `/auth/v1/recover?${query}`;
 }
 

@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { TableSkeleton } from "./skeletons";
@@ -135,6 +135,9 @@ export function PromoLogsModal({ isOpen, onClose, promoId, promoCode }: PromoLog
             <DialogContent className={`max-w-3xl max-h-[80vh] overflow-y-auto w-full ${dialogClass}`}>
                 <DialogHeader>
                     <DialogTitle className={titleClass}>Kullanım Geçmişi: <span className="font-mono text-orange-500">{promoCode}</span></DialogTitle>
+                    <DialogDescription className="sr-only">
+                        Bu promosyon kodunun kullanım geçmişi detayları.
+                    </DialogDescription>
                 </DialogHeader>
 
                 {isLoading ? (

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./dialog";
 import { useTranslation } from "react-i18next";
 import { ShoppingCart, Trash2, Ticket, Plus, Minus } from "lucide-react";
 import bravitaGif from "@/assets/bravita.gif";
@@ -352,6 +352,11 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
                         </div>
                         {t("cart.title")}
                     </DialogTitle>
+                    <div className="sr-only">
+                        <DialogDescription>
+                            Sepetinizdeki ürünleri görüntüleyin ve düzenleyin.
+                        </DialogDescription>
+                    </div>
                 </DialogHeader>
 
                 <div className="px-8 pb-8 pt-4 space-y-6">

@@ -55,14 +55,17 @@ jobs:
       - name: Link Supabase project
         if: ${{ env.SKIP_SUPABASE != 'true' }}
         env:
-          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF || 'xpmbnznsmsujjuwumfiw' }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: |
-          if [ -z "$SUPABASE_DB_PASSWORD" ]; then
+          if [ -z "$SUPABASE_PROJECT_REF" ]; then
+            echo "::warning::Missing SUPABASE_PROJECT_REF secret. Skipping Supabase drift check."
+            echo "SKIP_DRIFT=true" >> $GITHUB_ENV
+          elif [ -z "$SUPABASE_DB_PASSWORD" ]; then
             echo "::warning::Missing SUPABASE_DB_PASSWORD secret. Skipping Supabase drift check."
             echo "SKIP_DRIFT=true" >> $GITHUB_ENV
           else
-            npx supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+            npx supabase link --project-ref "$SUPABASE_PROJECT_REF"
           fi
 
       - name: Check linked migrations
@@ -71,17 +74,16 @@ jobs:
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: |
           # F-03: Detect drift between local schema and remote DB
-          # This ensures all DB changes are tracked in migrations
-          # Removing --check flag which is unsupported in current CLI version
-          npx supabase db diff --linked --use-migra > drift.sql
+          # Scope to public schema to avoid false positives from managed schemas (auth/storage/realtime internals).
+          npx supabase db diff --linked --use-migra --schema public > drift.sql
           if [ -s drift.sql ]; then
             # If the file is not empty, check if it contains actual SQL changes
             # (migra sometimes outputs comments)
             if grep -q "CREATE\|ALTER\|DROP\|INSERT\|UPDATE\|DELETE" drift.sql; then
-              echo "❌ Database drift detected! Please create a migration for manual changes."
+              echo "❌ Database drift detected in public schema. Please create a migration for manual changes."
               cat drift.sql
               exit 1
             fi
           fi
-          echo "✅ No database drift detected."
+          echo "✅ No database drift detected in public schema."
 

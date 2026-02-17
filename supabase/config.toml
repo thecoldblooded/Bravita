@@ -21,22 +21,22 @@ verify_jwt = false
 verify_jwt = true
 
 [functions.bakiyem-init-3d]
-verify_jwt = false
+verify_jwt = true
 
 [functions.bakiyem-3d-return]
 verify_jwt = false
 
 [functions.bakiyem-void]
-verify_jwt = false
+verify_jwt = true
 
 [functions.bakiyem-capture]
-verify_jwt = false
+verify_jwt = true
 
 [functions.bakiyem-tokenize-card]
-verify_jwt = false
+verify_jwt = true
 
 [functions.bakiyem-refund]
-verify_jwt = false
+verify_jwt = true
 
 [functions.payment-maintenance]
 verify_jwt = false

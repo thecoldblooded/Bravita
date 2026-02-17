@@ -7,6 +7,23 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const DEFAULT_APP_BASE_URL = "https://bravita.com.tr";
 
+const DEFAULT_ALLOWED_ORIGINS = [
+  "https://bravita.com.tr",
+  "https://www.bravita.com.tr",
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "http://localhost:8080",
+];
+
+const PAYMENT_ALLOWED_ORIGINS = (Deno.env.get("PAYMENT_ALLOWED_ORIGINS") ?? "")
+  .split(",")
+  .map((value) => value.trim())
+  .filter((value) => value.length > 0);
+
+const ACTIVE_ALLOWED_ORIGINS = PAYMENT_ALLOWED_ORIGINS.length > 0
+  ? PAYMENT_ALLOWED_ORIGINS
+  : DEFAULT_ALLOWED_ORIGINS;
+
 const BAKIYEM_BASE_URL = (Deno.env.get("BAKIYEM_BASE_URL") ?? "https://service.refmokaunited.com").trim();
 const BAKIYEM_DEALER_CODE = (Deno.env.get("BAKIYEM_DEALER_CODE") ?? "").trim();
 const BAKIYEM_API_USERNAME = (Deno.env.get("BAKIYEM_API_USERNAME") ?? "").trim();
@@ -29,6 +46,16 @@ function toLowerSafe(value: unknown): string {
 
 function normalizeComparable(value: unknown): string {
   return asText(value).replace(/[\s\-_]/g, "").trim().toLowerCase();
+}
+
+function isAllowedOrigin(origin: string): boolean {
+  return ACTIVE_ALLOWED_ORIGINS.includes(origin);
+}
+
+function resolveUiOrigin(value: string | null): string {
+  const origin = (value ?? "").trim();
+  if (isAllowedOrigin(origin)) return origin;
+  return ACTIVE_ALLOWED_ORIGINS[0] ?? DEFAULT_APP_BASE_URL;
 }
 
 function pickFirstText(record: Record<string, unknown> | null | undefined, keys: string[]): string {
@@ -102,7 +129,7 @@ function callbackAckResponse(): Response {
 serve(async (req: Request) => {
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
   const url = new URL(req.url);
-  const uiOrigin = url.searchParams.get("uiOrigin") || DEFAULT_APP_BASE_URL;
+  const uiOrigin = resolveUiOrigin(url.searchParams.get("uiOrigin"));
   const intentId = url.searchParams.get("MyTrxCode") || url.searchParams.get("intentId");
   const isPostCallback = req.method === "POST";
   const userAgent = req.headers.get("user-agent") || "";

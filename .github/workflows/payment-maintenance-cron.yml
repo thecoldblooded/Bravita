@@ -12,23 +12,38 @@ concurrency:
 jobs:
   run-maintenance:
     runs-on: ubuntu-latest
+    permissions: {}
     timeout-minutes: 5
+    env:
+      PAYMENT_MAINTENANCE_URL: ${{ vars.PAYMENT_MAINTENANCE_URL }}
+      PAYMENT_MAINTENANCE_SECRET: ${{ secrets.PAYMENT_MAINTENANCE_SECRET }}
     steps:
       - name: Invoke payment-maintenance function
-        env:
-          PAYMENT_MAINTENANCE_URL: ${{ vars.PAYMENT_MAINTENANCE_URL }}
-          PAYMENT_MAINTENANCE_SECRET: ${{ secrets.PAYMENT_MAINTENANCE_SECRET }}
         run: |
           set -euo pipefail
 
-          URL="${PAYMENT_MAINTENANCE_URL:-https://xpmbnznsmsujjuwumfiw.supabase.co/functions/v1/payment-maintenance}"
+          if [ -z "${PAYMENT_MAINTENANCE_URL:-}" ]; then
+            echo "Missing variable: PAYMENT_MAINTENANCE_URL"
+            exit 1
+          fi
 
           if [ -z "${PAYMENT_MAINTENANCE_SECRET:-}" ]; then
             echo "Missing secret: PAYMENT_MAINTENANCE_SECRET"
             exit 1
           fi
 
+          URL="${PAYMENT_MAINTENANCE_URL}"
+          case "${URL}" in
+            https://*) ;;
+            *)
+              echo "PAYMENT_MAINTENANCE_URL must start with https://"
+              exit 1
+              ;;
+          esac
+
           response="$(curl -sS -w '\n%{http_code}' -X POST \
+            --connect-timeout 10 \
+            --max-time 60 \
             -H "content-type: application/json" \
             -H "x-maintenance-secret: ${PAYMENT_MAINTENANCE_SECRET}" \
             --data '{}' \

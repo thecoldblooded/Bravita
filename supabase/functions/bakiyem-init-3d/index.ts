@@ -48,11 +48,45 @@ const BAKIYEM_API_PASSWORD = (Deno.env.get("BAKIYEM_API_PASSWORD") ?? "").trim()
 const BAKIYEM_REDIRECT_URL = (Deno.env.get("BAKIYEM_REDIRECT_URL") ?? "https://xpmbnznsmsujjuwumfiw.supabase.co/functions/v1/bakiyem-3d-return").trim();
 const APP_BASE_URL = (Deno.env.get("APP_BASE_URL") ?? "https://bravita.com.tr").trim();
 const BAKIYEM_SOFTWARE_NAME = (Deno.env.get("BAKIYEM_SOFTWARE_NAME") ?? "BravitaCheckout").trim();
+const THREED_PAYLOAD_ENC_KEY = (Deno.env.get("THREED_PAYLOAD_ENC_KEY") ?? "").trim();
+
+const DEFAULT_ALLOWED_ORIGINS = [
+  "https://bravita.com.tr",
+  "https://www.bravita.com.tr",
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "http://localhost:8080",
+];
+
+const PAYMENT_ALLOWED_ORIGINS = (Deno.env.get("PAYMENT_ALLOWED_ORIGINS") ?? "")
+  .split(",")
+  .map((value) => value.trim())
+  .filter((value) => value.length > 0);
+
+const ACTIVE_ALLOWED_ORIGINS = PAYMENT_ALLOWED_ORIGINS.length > 0
+  ? PAYMENT_ALLOWED_ORIGINS
+  : DEFAULT_ALLOWED_ORIGINS;
+
+function isAllowedOrigin(origin: string): boolean {
+  if (!origin) return false;
+  if (ACTIVE_ALLOWED_ORIGINS.includes(origin)) return true;
+
+  try {
+    const parsed = new URL(origin);
+    return (
+      (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") &&
+      (parsed.protocol === "http:" || parsed.protocol === "https:")
+    );
+  } catch {
+    return false;
+  }
+}
 
 function corsHeaders(req: Request): HeadersInit {
   const origin = req.headers.get("Origin") ?? "";
+  const allowedOrigin = isAllowedOrigin(origin) ? origin : ACTIVE_ALLOWED_ORIGINS[0] ?? APP_BASE_URL;
   return {
-    "Access-Control-Allow-Origin": origin || "*",
+    "Access-Control-Allow-Origin": allowedOrigin,
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-user-jwt",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     Vary: "Origin",
@@ -190,10 +224,60 @@ function parseThreeDPayload(data: any): ThreeDPayload {
   };
 }
 
+function base64ToBytes(base64Value: string): Uint8Array {
+  const normalized = base64Value
+    .replace(/^base64:/i, "")
+    .replace(/\s/g, "")
+    .replace(/-/g, "+")
+    .replace(/_/g, "/");
+  const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
+  const binary = atob(padded);
+  return Uint8Array.from(binary, (char) => char.charCodeAt(0));
+}
+
+function bytesToBase64(value: Uint8Array): string {
+  let binary = "";
+  for (const byte of value) {
+    binary += String.fromCharCode(byte);
+  }
+  return btoa(binary);
+}
+
+function parseAesKey(value: string): Uint8Array {
+  const normalized = value.trim();
+  if (!normalized) {
+    throw new Error("Missing THREED_PAYLOAD_ENC_KEY");
+  }
+
+  const hexCandidate = normalized.replace(/^hex:/i, "");
+  if (/^[0-9a-fA-F]+$/.test(hexCandidate) && [32, 48, 64].includes(hexCandidate.length)) {
+    const out = new Uint8Array(hexCandidate.length / 2);
+    for (let i = 0; i < hexCandidate.length; i += 2) {
+      out[i / 2] = parseInt(hexCandidate.slice(i, i + 2), 16);
+    }
+    return out;
+  }
+
+  const decoded = base64ToBytes(normalized);
+  if (![16, 24, 32].includes(decoded.byteLength)) {
+    throw new Error("THREED_PAYLOAD_ENC_KEY must be 16/24/32 bytes (AES key)");
+  }
+  return decoded;
+}
+
 async function encryptGcm(plaintext: string): Promise<string> {
-  // Simple placeholder for GCM encryption (using service role key as secret for demo)
-  // Real implementation would use dedicated encryption key
-  return btoa(plaintext);
+  const rawKey = parseAesKey(THREED_PAYLOAD_ENC_KEY);
+  const key = await crypto.subtle.importKey("raw", rawKey, "AES-GCM", false, ["encrypt"]);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const payload = new TextEncoder().encode(plaintext);
+  const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, payload);
+  return `v1:${bytesToBase64(iv)}:${bytesToBase64(new Uint8Array(encrypted))}`;
+}
+
+function extractUserJwt(req: Request): string {
+  const xUserJwt = req.headers.get("x-user-jwt");
+  const authHeader = req.headers.get("Authorization");
+  return (xUserJwt ?? authHeader ?? "").replace(/^Bearer\s+/i, "").trim();
 }
 
 serve(async (req: Request) => {
@@ -201,7 +285,7 @@ serve(async (req: Request) => {
   if (req.method !== "POST") return jsonResponse(req, 405, { success: false, message: "Method not allowed" });
 
   try {
-    const token = req.headers.get("x-user-jwt")?.replace("Bearer ", "") || "";
+    const token = extractUserJwt(req);
     if (!token) return jsonResponse(req, 401, { success: false, message: "Unauthorized" });
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -300,10 +384,11 @@ serve(async (req: Request) => {
     const paymentAmount = amountFromCents(paymentTotalCents);
     const gatewayInstallmentNumber = normalizeGatewayInstallmentNumber(quoteData.installment_number ?? body.installmentNumber ?? 1);
 
-    const origin = req.headers.get("origin") || APP_BASE_URL;
+    const requestOrigin = req.headers.get("origin") ?? "";
+    const uiOrigin = isAllowedOrigin(requestOrigin) ? requestOrigin : APP_BASE_URL;
     const redirectUrl = new URL(BAKIYEM_REDIRECT_URL);
     redirectUrl.searchParams.set("MyTrxCode", intentId);
-    redirectUrl.searchParams.set("uiOrigin", origin);
+    redirectUrl.searchParams.set("uiOrigin", uiOrigin);
 
     const configuredPayloadProfile = normalizePayloadProfile(Deno.env.get("BAKIYEM_3D_PAYLOAD_PROFILE"));
     const envPayloadProfile: PayloadProfile = configuredPayloadProfile ?? "extended";

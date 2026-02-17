@@ -78,20 +78,67 @@ interface OrderItem {
     unit_price: number;
 }
 
+function bytesToHex(bytes: Uint8Array): string {
+    return Array.from(bytes).map((value) => value.toString(16).padStart(2, "0")).join("");
+}
+
+function hexToBytes(value: string): Uint8Array | null {
+    const normalized = value.trim().toLowerCase();
+    if (!/^[a-f0-9]+$/.test(normalized) || normalized.length % 2 !== 0) {
+        return null;
+    }
+
+    const result = new Uint8Array(normalized.length / 2);
+    for (let i = 0; i < normalized.length; i += 2) {
+        const parsed = Number.parseInt(normalized.slice(i, i + 2), 16);
+        if (Number.isNaN(parsed)) {
+            return null;
+        }
+        result[i / 2] = parsed;
+    }
+
+    return result;
+}
+
+function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
+    if (a.length !== b.length) {
+        return false;
+    }
+
+    let diff = 0;
+    for (let i = 0; i < a.length; i += 1) {
+        diff |= a[i] ^ b[i];
+    }
+    return diff === 0;
+}
+
+async function hmacSha256Hex(data: string, secret: string): Promise<string> {
+    const key = await crypto.subtle.importKey(
+        "raw",
+        new TextEncoder().encode(secret),
+        { name: "HMAC", hash: "SHA-256" },
+        false,
+        ["sign"],
+    );
+
+    const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(data));
+    return bytesToHex(new Uint8Array(signature));
+}
+
 /**
  * Generates a secure signature with expiration for a given ID.
  * Format: expiration_timestamp.hmac_signature
  * Default: 7 days validity
  */
 async function generateSignature(id: string) {
-    const secret = SUPABASE_SERVICE_ROLE_KEY;
-    const expiration = Date.now() + (7 * 24 * 60 * 60 * 1000); // 7 days
-    const data = `${id}:${expiration}`; // data to sign
+    const secret = SUPABASE_SERVICE_ROLE_KEY?.trim();
+    if (!secret) {
+        throw new Error("Server configuration error: Missing SUPABASE_SERVICE_ROLE_KEY");
+    }
 
-    const msgUint8 = new TextEncoder().encode(data + secret);
-    const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const signature = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+    const expiration = Date.now() + (7 * 24 * 60 * 60 * 1000); // 7 days
+    const data = `${id}:${expiration}`;
+    const signature = await hmacSha256Hex(data, secret);
 
     return `${expiration}.${signature}`;
 }
@@ -101,25 +148,27 @@ async function generateSignature(id: string) {
  */
 async function validateSignature(id: string, token: string) {
     try {
-        const [expirationStr, signature] = token.split(".");
-        if (!expirationStr || !signature) return false;
+        const firstDot = token.indexOf(".");
+        if (firstDot <= 0 || firstDot >= token.length - 1) return false;
 
-        const expiration = parseInt(expirationStr, 10);
-        if (isNaN(expiration)) return false;
+        const expirationStr = token.slice(0, firstDot);
+        const providedSignature = token.slice(firstDot + 1).trim().toLowerCase();
+        if (!/^[a-f0-9]{64}$/.test(providedSignature)) return false;
 
-        // Check Expiration
+        const expiration = Number.parseInt(expirationStr, 10);
+        if (!Number.isFinite(expiration)) return false;
+
         if (Date.now() > expiration) return false;
 
-        // Re-compute Signature
-        const secret = SUPABASE_SERVICE_ROLE_KEY;
-        const data = `${id}:${expiration}`;
+        const secret = SUPABASE_SERVICE_ROLE_KEY?.trim();
+        if (!secret) return false;
 
-        const msgUint8 = new TextEncoder().encode(data + secret);
-        const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        const expectedSignature = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+        const expectedSignature = await hmacSha256Hex(`${id}:${expiration}`, secret);
+        const providedBytes = hexToBytes(providedSignature);
+        const expectedBytes = hexToBytes(expectedSignature);
+        if (!providedBytes || !expectedBytes) return false;
 
-        return signature === expectedSignature;
+        return timingSafeEqual(providedBytes, expectedBytes);
     } catch {
         return false;
     }
