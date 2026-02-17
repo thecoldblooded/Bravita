@@ -125,7 +125,7 @@ const Benefits = () => {
                 </div>
 
                 <h3 className="text-xl font-bold mb-3 text-gray-900">{benefit.title}</h3>
-                <div className="text-gray-600 leading-relaxed text-base">
+                <div className="text-gray-600 leading-relaxed text-base flex-1 flex flex-col w-full">
                   {renderDescription(benefit.description)}
                 </div>
 
