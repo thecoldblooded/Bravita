@@ -166,7 +166,7 @@ export async function getBankDetails(): Promise<{
 // ORDER CREATION
 // ============================================
 
-export interface CartItem {
+interface CartItem {
     id: string;
     name: string;
     slug?: string;

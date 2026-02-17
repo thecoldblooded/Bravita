@@ -14,7 +14,7 @@ import { useAdminTheme } from "@/contexts/AdminThemeContext";
 
 function PromoCodesContent() {
     const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
-    const [filteredPromoCodes, setFilteredPromoCodes] = useState<PromoCode[]>([]);
+
     const [isLoading, setIsLoading] = useState(true);
     const [search, setSearch] = useState("");
     const { theme } = useAdminTheme();
@@ -24,18 +24,17 @@ function PromoCodesContent() {
     const [isLogsModalOpen, setIsLogsModalOpen] = useState(false);
     const [viewingLogsPromo, setViewingLogsPromo] = useState<PromoCode | null>(null);
 
-    useEffect(() => { loadPromoCodes(); }, []);
+    // Derived state
+    const filteredPromoCodes = search.trim()
+        ? promoCodes.filter(p => p.code.toLowerCase().includes(search.toLowerCase()))
+        : promoCodes;
 
-    useEffect(() => {
-        if (!search.trim()) setFilteredPromoCodes(promoCodes);
-        else setFilteredPromoCodes(promoCodes.filter(p => p.code.toLowerCase().includes(search.toLowerCase())));
-    }, [search, promoCodes]);
+    useEffect(() => { loadPromoCodes(); }, []);
 
     async function loadPromoCodes() {
         try {
             const data = await getPromoCodes();
             setPromoCodes(data);
-            setFilteredPromoCodes(data);
         } catch (error) {
             toast.error("Promosyon kodları yüklenemedi");
         } finally {

@@ -31,7 +31,7 @@ function getValidationMessages(t: TFunction) {
   };
 }
 
-export function CompleteProfile() {
+export default function CompleteProfile() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { session, user, isLoading: authLoading, refreshUserProfile } = useAuth();
@@ -311,4 +311,4 @@ export function CompleteProfile() {
   );
 }
 
-export default CompleteProfile;
+

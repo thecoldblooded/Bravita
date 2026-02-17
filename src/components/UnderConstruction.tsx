@@ -1,5 +1,5 @@
 import Lottie from "lottie-react";
-import { useEffect, useState } from "react";
+import animationData from "@/assets/under-construction.json";
 
 /**
  * Under Construction Page
@@ -11,41 +11,25 @@ import { useEffect, useState } from "react";
  * - Or remove the <UnderConstruction /> render condition
  */
 const UnderConstruction = () => {
-    const [animationData, setAnimationData] = useState<object | null>(null);
-
-    useEffect(() => {
-        // Fetch the Lottie animation JSON
-        fetch("/under-construction.json")
-            .then(res => res.json())
-            .then(data => setAnimationData(data))
-            .catch(err => console.error("Failed to load Lottie animation:", err));
-    }, []);
-
     return (
-        <div className="fixed inset-0 bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100 z-[9999] flex flex-col items-center justify-center overflow-hidden">
+        <div className="fixed inset-0 bg-linear-to-br from-orange-50 via-amber-50 to-orange-100 z-max flex flex-col items-center justify-center overflow-hidden">
             {/* Decorative background elements */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute -top-20 -right-20 w-96 h-96 bg-orange-200/30 rounded-full blur-3xl" />
-                <div className="absolute -bottom-32 -left-32 w-[500px] h-[500px] bg-amber-200/40 rounded-full blur-3xl" />
+                <div className="absolute -bottom-32 -left-32 w-125 h-125 bg-amber-200/40 rounded-full blur-3xl" />
                 <div className="absolute top-1/3 left-1/4 w-64 h-64 bg-orange-300/20 rounded-full blur-2xl" />
             </div>
 
             {/* Main content */}
             <div className="relative z-10 flex flex-col items-center justify-center px-6 text-center max-w-2xl">
                 {/* Lottie Animation */}
-                <div className="w-[280px] h-[280px] sm:w-[360px] sm:h-[360px] md:w-[420px] md:h-[420px] mb-6">
-                    {animationData ? (
-                        <Lottie
-                            animationData={animationData}
-                            loop
-                            autoplay
-                            className="w-full h-full"
-                        />
-                    ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                            <div className="w-16 h-16 border-4 border-orange-300 border-t-orange-600 rounded-full animate-spin" />
-                        </div>
-                    )}
+                <div className="w-70 h-70 sm:w-90 sm:h-90 md:w-105 md:h-105 mb-6">
+                    <Lottie
+                        animationData={animationData}
+                        loop
+                        autoplay
+                        className="w-full h-full"
+                    />
                 </div>
 
                 {/* Title */}

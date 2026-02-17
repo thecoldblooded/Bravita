@@ -81,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const initialSession = getInitialSession();
   const [session, setSession] = useState<Session | null>(initialSession);
-  const [user, setUser] = useState<UserProfile | null>(getInitialUser(initialSession));
+  const [user, setUser] = useState<UserProfile | null>(() => getInitialUser(initialSession));
   const [isLoading, setIsLoading] = useState(true);
   const [isSplashScreenActive, setIsSplashScreenActive] = useState(() => {
     // Only active on first load of the session

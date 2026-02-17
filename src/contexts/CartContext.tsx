@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, ReactNode, useCallback, use
 import { supabase } from "@/lib/supabase";
 import { getProductPrice } from "@/lib/checkout";
 
-export interface CartItem {
+interface CartItem {
     id: string;
     name: string;
     slug: string;

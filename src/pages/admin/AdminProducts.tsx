@@ -278,11 +278,12 @@ function ProductsContent() {
                                 <form onSubmit={handleUpdateSettings}>
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                                         <div className="space-y-2">
-                                            <label className={`text-sm font-semibold flex items-center gap-2 ${textSecondary}`}>
+                                            <label htmlFor="settings-vat-rate" className={`text-sm font-semibold flex items-center gap-2 ${textSecondary}`}>
                                                 <Percent className="w-4 h-4" />
                                                 KDV Oranı (%)
                                             </label>
                                             <Input
+                                                id="settings-vat-rate"
                                                 type="number"
                                                 step="0.01"
                                                 value={siteSettings.vat_rate * 100}
@@ -293,11 +294,12 @@ function ProductsContent() {
                                             <p className="text-[10px] text-gray-400">Ürün fiyatlarına uygulanacak KDV oranı.</p>
                                         </div>
                                         <div className="space-y-2">
-                                            <label className={`text-sm font-semibold flex items-center gap-2 ${textSecondary}`}>
+                                            <label htmlFor="settings-shipping-cost" className={`text-sm font-semibold flex items-center gap-2 ${textSecondary}`}>
                                                 <Truck className="w-4 h-4" />
                                                 Kargo Ücreti (₺)
                                             </label>
                                             <Input
+                                                id="settings-shipping-cost"
                                                 type="number"
                                                 step="0.01"
                                                 value={siteSettings.shipping_cost}
@@ -308,11 +310,12 @@ function ProductsContent() {
                                             <p className="text-[10px] text-gray-400">Sabit kargo gönderim bedeli.</p>
                                         </div>
                                         <div className="space-y-2">
-                                            <label className={`text-sm font-semibold flex items-center gap-2 ${textSecondary}`}>
+                                            <label htmlFor="settings-shipping-threshold" className={`text-sm font-semibold flex items-center gap-2 ${textSecondary}`}>
                                                 <Coins className="w-4 h-4" />
                                                 Bedava Kargo Alt Limiti (₺)
                                             </label>
                                             <Input
+                                                id="settings-shipping-threshold"
                                                 type="number"
                                                 step="1"
                                                 value={siteSettings.free_shipping_threshold}
@@ -332,8 +335,9 @@ function ProductsContent() {
                                         </h4>
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                                             <div className="space-y-2">
-                                                <label className={`text-sm font-semibold ${textSecondary}`}>Banka Adı</label>
+                                                <label htmlFor="settings-bank-name" className={`text-sm font-semibold ${textSecondary}`}>Banka Adı</label>
                                                 <Input
+                                                    id="settings-bank-name"
                                                     value={siteSettings.bank_name}
                                                     onChange={(e) => setSiteSettings({ ...siteSettings, bank_name: e.target.value })}
                                                     className={inputClass}
@@ -341,8 +345,9 @@ function ProductsContent() {
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <label className={`text-sm font-semibold ${textSecondary}`}>IBAN</label>
+                                                <label htmlFor="settings-iban" className={`text-sm font-semibold ${textSecondary}`}>IBAN</label>
                                                 <Input
+                                                    id="settings-iban"
                                                     value={siteSettings.bank_iban}
                                                     onChange={(e) => setSiteSettings({ ...siteSettings, bank_iban: e.target.value })}
                                                     className={inputClass}
@@ -350,8 +355,9 @@ function ProductsContent() {
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <label className={`text-sm font-semibold ${textSecondary}`}>Hesap Sahibi</label>
+                                                <label htmlFor="settings-account-holder" className={`text-sm font-semibold ${textSecondary}`}>Hesap Sahibi</label>
                                                 <Input
+                                                    id="settings-account-holder"
                                                     value={siteSettings.bank_account_holder}
                                                     onChange={(e) => setSiteSettings({ ...siteSettings, bank_account_holder: e.target.value })}
                                                     className={inputClass}
@@ -511,7 +517,7 @@ function ProductsContent() {
                                                             className={`h-8 text-sm ${isDark ? "bg-gray-600 border-gray-500 text-white" : ""}`}
                                                             type="number"
                                                             min={product.reserved_stock}
-                                                            autoFocus
+
                                                         />
                                                     </div>
 

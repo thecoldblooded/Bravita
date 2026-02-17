@@ -512,7 +512,7 @@ function AdminOrderDetailContent() {
                     </h2>
                     <div className="space-y-4">
                         {order.order_details?.items?.map((item, index) => (
-                            <div key={index} className={`flex items-center justify-between py-3 border-b ${borderClass} last:border-0`}>
+                            <div key={item.product_id || index} className={`flex items-center justify-between py-3 border-b ${borderClass} last:border-0`}>
                                 <div>
                                     <p className={`font-medium ${textPrimary}`}>{item.product_name}</p>
                                     <p className={`text-sm ${textSecondary}`}>{item.quantity} adet × ₺{item.unit_price}</p>

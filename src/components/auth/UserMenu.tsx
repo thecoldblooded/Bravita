@@ -118,7 +118,7 @@ export function UserMenu() {
             sideOffset={8}
             className="w-72 p-0 bg-white/95 backdrop-blur-xl border border-gray-100 rounded-2xl shadow-xl shadow-gray-200/50 overflow-hidden"
           >
-            {/* Header Section with LordIcon */}
+
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}

@@ -152,8 +152,8 @@ function Footer() {
                 <span className="mt-1"><MapPin size={18} className="text-bravita-orange" /></span>
                 <span className="text-sm">Prof. Dr. Ahmet Taner Kışlalı Mah. Alacaatlı Cad. No:30/5A Çankaya - Ankara</span>
               </li>
-              {contactInfo.map((item, i) => (
-                <li key={i} className="flex items-center space-x-3 justify-center md:justify-start">
+              {contactInfo.map((item) => (
+                <li key={item.text} className="flex items-center space-x-3 justify-center md:justify-start">
                   {item.icon}
                   {item.href ? (
                     <a

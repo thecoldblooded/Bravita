@@ -1,18 +1,20 @@
 import { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./dialog";
 import { useTranslation } from "react-i18next";
-import { ShoppingCart, Trash2, Ticket, Plus, Minus } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
 import bravitaGif from "@/assets/bravita.gif";
 import { Button } from "./button";
-import bravitaBottle from "@/assets/bravita-bottle.webp";
 import { motion, AnimatePresence } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
+import { CartItem } from "../cart/CartItem";
+import { CartSummary } from "../cart/CartSummary";
+import { PromoCodeInput } from "../cart/PromoCodeInput";
 import { cn } from "@/lib/utils";
-import { processCheckout, getProductPrice, checkStock } from "@/lib/checkout";
+import { getProductPrice } from "@/lib/checkout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import Loader from "@/components/ui/Loader";
 
 interface CartModalProps {
     open: boolean;
@@ -27,29 +29,19 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
     const [quantity, setQuantity] = useState(1);
     // const [promoCode, setPromoCode] = useState(""); // Replaced by inputPromoCode and contextPromoCode
     const [isCheckingOut, setIsCheckingOut] = useState(false);
-    const [serverPrice, setServerPrice] = useState<number | null>(null);
-    const [serverOriginalPrice, setServerOriginalPrice] = useState<number | null>(null);
-    const [maxQuantity, setMaxQuantity] = useState(99);
-    const [currentStock, setCurrentStock] = useState(1000);
+    // Use useQuery for product data fetching
+    const { data: productData } = useQuery({
+        queryKey: ['productPrice', 'bravita-multivitamin'],
+        queryFn: () => getProductPrice("bravita-multivitamin"),
+        enabled: open,
+        staleTime: 1000 * 60 * 5
+    });
 
-    const [productId, setProductId] = useState<string | null>(null);
-
-    // SECURITY: Fiyatları SUNUCUDAN al
-    useEffect(() => {
-        async function fetchPrice() {
-            const product = await getProductPrice("bravita-multivitamin");
-            if (product) {
-                setServerPrice(product.price);
-                setServerOriginalPrice(product.original_price || null);
-                setMaxQuantity(product.maxQuantity);
-                setCurrentStock(product.stock);
-                setProductId(product.id);
-            }
-        }
-        if (open) {
-            fetchPrice();
-        }
-    }, [open]);
+    const serverPrice = productData?.price ?? null;
+    const serverOriginalPrice = productData?.original_price ?? null;
+    const maxQuantity = productData?.maxQuantity ?? 99;
+    const currentStock = productData?.stock ?? 1000;
+    const productId = productData?.id ?? null;
 
     // Fallback değerler (sunucudan gelmezse)
     const PRICING = Object.freeze({
@@ -361,160 +353,39 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
 
                 <div className="px-8 pb-8 pt-4 space-y-6">
                     {/* Cart Item - Animated entry */}
-                    <AnimatePresence mode="wait">
-                        {quantity > 0 ? (
-                            <motion.div
-                                key="cart-item"
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: 20 }}
-                                className="flex items-center gap-5 group"
-                            >
-                                <div className="w-24 h-28 bg-[#FFF8F1] rounded-3xl flex items-center justify-center p-3 relative overflow-hidden group-hover:scale-105 transition-all duration-500">
-                                    <div className="absolute inset-0 bg-linear-to-br from-orange-200/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                                    <img
-                                        src={bravitaBottle}
-                                        alt="Bravita"
-                                        className="w-full h-full object-contain drop-shadow-[0_8px_15px_rgba(246,139,40,0.2)] relative z-10"
-                                    />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <h3 className="font-black text-neutral-900 text-lg leading-tight">{t("cart.item_name")}</h3>
-                                            <p className="text-xs font-bold text-neutral-400 mt-1 uppercase tracking-wider">{t("cart.item_desc")}</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="mt-4 flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className="flex items-center bg-neutral-50 rounded-xl border border-neutral-100 overflow-hidden">
-                                                <button
-                                                    onClick={decrement}
-                                                    disabled={quantity <= 1}
-                                                    className="p-2 hover:bg-neutral-100 text-neutral-600 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                                                >
-                                                    <Minus className="w-3 h-3" />
-                                                </button>
-                                                <span className="w-8 text-center text-sm font-black text-neutral-900">{quantity}</span>
-                                                <button
-                                                    onClick={increment}
-                                                    className="p-2 hover:bg-neutral-100 text-neutral-600 transition-colors"
-                                                >
-                                                    <Plus className="w-3 h-3" />
-                                                </button>
-                                            </div>
-                                            {/* Delete button removed as per user request */}
-                                        </div>
-                                        <div className="flex flex-col items-end">
-                                            {serverOriginalPrice && serverOriginalPrice > (serverPrice ?? 600) && (
-                                                <span className="text-xs font-bold text-neutral-400 line-through decoration-current">
-                                                    ₺{(serverOriginalPrice * quantity).toFixed(2)}
-                                                </span>
-                                            )}
-                                            <span className="font-black text-neutral-900 text-lg">
-                                                ₺{((serverPrice ?? 600) * quantity).toFixed(2)}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        ) : (
-                            <motion.div
-                                key="empty-cart"
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                className="py-12 text-center"
-                            >
-                                <div className="w-20 h-20 bg-neutral-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <ShoppingCart className="w-10 h-10 text-neutral-200" />
-                                </div>
-                                <p className="font-bold text-neutral-400">{t("cart.empty")}</p>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                    <CartItem
+                        t={t}
+                        quantity={quantity}
+                        increment={increment}
+                        decrement={decrement}
+                        serverPrice={serverPrice}
+                        serverOriginalPrice={serverOriginalPrice}
+                    />
 
                     <div className="h-px bg-neutral-100/80" />
 
                     {/* Totals Section */}
-                    <div className="space-y-4 bg-neutral-50/50 p-6 rounded-3xl border border-neutral-100">
-                        <div className="flex justify-between text-sm">
-                            <span className="font-bold text-neutral-400">{t("cart.subtotal")}</span>
-                            <span className="font-black text-neutral-900">₺{subtotal.toFixed(2)}</span>
-                        </div>
-
-                        {localAppliedPromo && (
-                            <div className="flex justify-between text-sm text-green-600">
-                                <span className="font-bold">İndirim ({localAppliedPromo.code})</span>
-                                <span className="font-black">-₺{discountAmount.toFixed(2)}</span>
-                            </div>
-                        )}
-
-                        <div className="flex justify-between text-sm">
-                            <span className="font-bold text-neutral-400">{t("cart.vat")}</span>
-                            <span className="font-black text-neutral-900">₺{vatAmount.toFixed(2)}</span>
-                        </div>
-
-                        <div className="flex justify-between text-sm">
-                            <span className="font-bold text-neutral-400">{t("checkout.shipping")}</span>
-                            <span className={shipping === 0 ? "font-black text-green-600" : "font-black text-neutral-900"}>
-                                {shipping === 0 ? t("checkout.free") : `₺${shipping.toFixed(2)}`}
-                            </span>
-                        </div>
-
-                        {remainingForFreeShipping > 0 && (
-                            <div className="bg-orange-50 text-orange-700 p-3 rounded-xl text-xs font-bold text-center border border-orange-100">
-                                {t('cart.free_shipping_remaining', { amount: remainingForFreeShipping.toFixed(2) })}
-                            </div>
-                        )}
-
-                        <div className="pt-4 border-t border-neutral-100 flex justify-between items-center">
-                            <span className="font-black text-neutral-900 text-xl tracking-tight">{t("cart.total")}</span>
-                            <span className="font-black text-orange-600 text-3xl">₺{total.toFixed(2)}</span>
-                        </div>
-                    </div>
+                    <CartSummary
+                        t={t}
+                        subtotal={subtotal}
+                        localAppliedPromo={localAppliedPromo}
+                        discountAmount={discountAmount}
+                        vatAmount={vatAmount}
+                        shipping={shipping}
+                        total={total}
+                        remainingForFreeShipping={remainingForFreeShipping}
+                    />
 
                     {/* Promo Code Input */}
-                    <div className="flex gap-2">
-                        <div className="relative flex-1 group">
-                            <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                                <Ticket className="w-4 h-4 text-neutral-400 group-focus-within:text-orange-500 transition-colors" />
-                            </div>
-                            <input
-                                type="text"
-                                value={inputPromoCode}
-                                onChange={(e) => {
-                                    const sanitized = e.target.value.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 20);
-                                    setInputPromoCode(sanitized);
-                                }}
-                                placeholder={t("cart.promo_code")}
-                                disabled={!!localAppliedPromo}
-                                className="w-full pl-11 pr-4 h-12 bg-neutral-50 border border-neutral-200 rounded-2xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all disabled:opacity-50"
-                            />
-                        </div>
-                        {localAppliedPromo ? (
-                            <Button
-                                variant="outline"
-                                onClick={() => {
-                                    setLocalAppliedPromo(null);
-                                    setInputPromoCode("");
-                                }}
-                                className="h-12 px-6 rounded-2xl border-red-200 text-red-600 hover:bg-red-50 font-black text-sm transition-all"
-                            >
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Kaldır
-                            </Button>
-                        ) : (
-                            <Button
-                                variant="outline"
-                                onClick={handleApplyPromoCode}
-                                disabled={isApplyingPromo || !inputPromoCode}
-                                className="h-12 px-6 rounded-2xl border-neutral-200 font-black text-sm hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200 transition-all active:scale-95"
-                            >
-                                {isApplyingPromo ? <Loader size="1rem" noMargin /> : t("cart.apply")}
-                            </Button>
-                        )}
-                    </div>
+                    <PromoCodeInput
+                        t={t}
+                        inputPromoCode={inputPromoCode}
+                        setInputPromoCode={setInputPromoCode}
+                        localAppliedPromo={localAppliedPromo}
+                        setLocalAppliedPromo={setLocalAppliedPromo}
+                        handleApplyPromoCode={handleApplyPromoCode}
+                        isApplyingPromo={isApplyingPromo}
+                    />
 
                     {/* Checkout Button */}
                     <div className="relative group/btn-container">

@@ -128,7 +128,7 @@ export default function OrderConfirmation() {
             <div className="max-w-2xl mx-auto px-4 py-8">
                 {/* Success Animation */}
                 <motion.div
-                    initial={{ scale: 0 }}
+                    initial={{ scale: 0.5 }}
                     animate={{ scale: 1 }}
                     transition={{ type: "spring", duration: 0.5 }}
                     className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6"
@@ -238,7 +238,7 @@ export default function OrderConfirmation() {
                     </h3>
 
                     {order.order_details.items.map((item, index) => (
-                        <div key={index} className="flex items-center gap-4 py-3 border-b border-gray-100 last:border-0">
+                        <div key={item.product_id || index} className="flex items-center gap-4 py-3 border-b border-gray-100 last:border-0">
                             <div className="w-14 h-14 bg-orange-50 rounded-xl flex items-center justify-center p-2">
                                 <img src={bravitaBottle} alt={item.product_name} className="w-full h-full object-contain" />
                             </div>

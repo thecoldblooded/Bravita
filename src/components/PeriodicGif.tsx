@@ -106,7 +106,6 @@ const PeriodicGif = ({
             object-contain object-left
             translate-x-0
             transition-transform duration-300
-            will-change-transform
           "
         >
           <source src={videoSrc} type="video/mp4" />
@@ -132,7 +131,6 @@ const PeriodicGif = ({
             object-contain object-left
             translate-x-0
             transition-transform duration-300
-            will-change-transform
           "
         />
       )}

@@ -18,15 +18,15 @@ const AuthModal = lazy(() => import("@/components/auth/AuthModal").then(module =
 const CartModal = lazy(() => import("@/components/ui/CartModal").then(module => ({ default: module.CartModal })));
 
 const BravitaLogo = ({ isScrolled }: { isScrolled: boolean }) => {
-  const letters = [
-    { char: "B", color: "text-[#EE4036]", rotate: "-rotate-3", spacing: 0 },
-    { char: "R", color: "text-[#F68B28]", rotate: "-rotate-1", spacing: -0.15 },
-    { char: "A", color: "text-[#FDB813]", rotate: "rotate-1", spacing: -0.13 },
-    { char: "V", color: "text-[#CDDC39]", rotate: "-rotate-2", spacing: -0.155 },
-    { char: "i", color: "text-[#4CAF50]", rotate: "rotate-2", spacing: -0.12 },
-    { char: "T", color: "text-[#00ADEF]", rotate: "rotate-1", spacing: -0.06 },
-    { char: "A", color: "text-[#9E499B]", rotate: "rotate-3", spacing: -0.17 },
-  ];
+  const letters = useMemo(() => [
+    { id: 'b', char: "B", color: "text-[#EE4036]", rotate: "-rotate-3", spacing: 0 },
+    { id: 'r', char: "R", color: "text-[#F68B28]", rotate: "-rotate-1", spacing: -0.15 },
+    { id: 'a1', char: "A", color: "text-[#FDB813]", rotate: "rotate-1", spacing: -0.13 },
+    { id: 'v', char: "V", color: "text-[#CDDC39]", rotate: "-rotate-2", spacing: -0.155 },
+    { id: 'i', char: "i", color: "text-[#4CAF50]", rotate: "rotate-2", spacing: -0.12 },
+    { id: 't', char: "T", color: "text-[#00ADEF]", rotate: "rotate-1", spacing: -0.06 },
+    { id: 'a2', char: "A", color: "text-[#9E499B]", rotate: "rotate-3", spacing: -0.17 },
+  ], []);
 
   return (
     <div
@@ -37,7 +37,7 @@ const BravitaLogo = ({ isScrolled }: { isScrolled: boolean }) => {
     >
       {letters.map((letter, index) => (
         <motion.span
-          key={index}
+          key={letter.id}
           className={cn(
             letter.color,
             letter.rotate,
@@ -78,9 +78,16 @@ const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated, user, isLoading } = useAuth();
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [activeTab, setActiveTab] = useState('home');
-  const [showBackToTop, setShowBackToTop] = useState(false);
+
+  // Grouped scroll and UI state to reduce useState calls
+  const [scrollState, setScrollState] = useState({
+    isScrolled: false,
+    showBackToTop: false,
+    activeTab: 'home'
+  });
+
+  const { isScrolled, showBackToTop, activeTab } = scrollState;
+
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [isCookieConsentPending, setIsCookieConsentPending] = useState(false);
   const sectionTopOffsetsRef = useRef<Array<{ id: string; top: number }>>([]);
@@ -97,7 +104,7 @@ const Header = () => {
     return storedLang || i18n.language || 'tr';
   };
 
-  const [currentLang, setCurrentLang] = useState(getCurrentLanguage());
+  const [currentLang, setCurrentLang] = useState(getCurrentLanguage);
 
   useEffect(() => {
     const handleLanguageChange = () => {
@@ -142,11 +149,9 @@ const Header = () => {
       const shouldShowCompactHeader = currentScrollY > 50;
       const shouldShowBackToTopButton = currentScrollY > 400;
 
-      setIsScrolled(shouldShowCompactHeader);
-      setShowBackToTop(shouldShowBackToTopButton);
-
       // Re-measure offsets periodically as lazy sections load and change layout
-      refreshSectionOffsets();
+      // Optimization: Only refresh if height changed? Or just trust the raf.
+      // refreshSectionOffsets(); // Keeping this might be expensive in loop
 
       const scrollPosition = currentScrollY + 200;
       let currentSectionId = "home";
@@ -160,10 +165,22 @@ const Header = () => {
       }
 
       if (currentScrollY < 100) currentSectionId = "home";
-      const activeItem = navItems.find((item) => item.id === currentSectionId);
-      if (activeItem) {
-        setActiveTab(activeItem.id);
-      }
+
+      setScrollState(prev => {
+        if (
+          prev.isScrolled !== shouldShowCompactHeader ||
+          prev.showBackToTop !== shouldShowBackToTopButton ||
+          prev.activeTab !== currentSectionId
+        ) {
+          return {
+            isScrolled: shouldShowCompactHeader,
+            showBackToTop: shouldShowBackToTopButton,
+            activeTab: currentSectionId
+          };
+        }
+        return prev;
+      });
+
       scrollFrameRef.current = null;
     };
 

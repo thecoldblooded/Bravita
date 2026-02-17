@@ -7,19 +7,4 @@ declare module '*.lottie' {
     export default src;
 }
 
-// LordIcon custom element type definition
-declare namespace JSX {
-    interface IntrinsicElements {
-        'lord-icon': React.DetailedHTMLProps<
-            React.HTMLAttributes<HTMLElement> & {
-                src?: string;
-                trigger?: string;
-                colors?: string;
-                stroke?: string;
-                state?: string;
-                style?: React.CSSProperties;
-            },
-            HTMLElement
-        >;
-    }
-}
+
