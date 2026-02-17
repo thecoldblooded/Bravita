@@ -1,10 +1,9 @@
-import Lottie from "lottie-react";
-import animationData from "@/assets/under-construction.json";
+import bravitaGif from "@/assets/bravita.gif";
 
 /**
  * Under Construction Page
  * 
- * TEMPORARY COMPONENT - Displays "Site Under Construction" animation
+ * TEMPORARY COMPONENT - Displays "Site Under Construction" status
  * 
  * To disable maintenance mode:
  * - Set MAINTENANCE_MODE = false in App.tsx
@@ -22,13 +21,12 @@ const UnderConstruction = () => {
 
             {/* Main content */}
             <div className="relative z-10 flex flex-col items-center justify-center px-6 text-center max-w-2xl">
-                {/* Lottie Animation */}
-                <div className="w-70 h-70 sm:w-90 sm:h-90 md:w-105 md:h-105 mb-6">
-                    <Lottie
-                        animationData={animationData}
-                        loop
-                        autoplay
-                        className="w-full h-full"
+                {/* Visual Content */}
+                <div className="w-48 h-48 mb-6">
+                    <img
+                        src={bravitaGif}
+                        alt="Bravita"
+                        className="w-full h-full object-contain"
                     />
                 </div>
 
