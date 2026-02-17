@@ -10,32 +10,56 @@ const HERO_LCP_IMAGE_SRC = "/bravita-bottle.webp";
 const Hero = () => {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLElement>(null);
+  const bottleRef = useRef<HTMLDivElement>(null);
   const [isLG, setIsLG] = useState(false);
+  const [targetPos, setTargetPos] = useState([820, 530]);
 
   useEffect(() => {
-    const checkIsLG = () => setIsLG(window.matchMedia("(max-width: 1024px)").matches);
+    const checkIsLG = () => {
+      const isMobile = window.matchMedia("(max-width: 1023px)").matches;
+      setIsLG(isMobile);
+    };
+
+    const updateTarget = () => {
+      if (!bottleRef.current || !containerRef.current) return;
+      const bottleRect = bottleRef.current.getBoundingClientRect();
+      const containerRect = containerRef.current.getBoundingClientRect();
+
+      const x = ((bottleRect.left + bottleRect.width / 2 - containerRect.left) / containerRect.width) * 1000;
+      const y = ((bottleRect.top + bottleRect.height / 2 - containerRect.top) / containerRect.height) * 1000;
+
+      setTargetPos([x, y]);
+    };
+
     checkIsLG();
-    window.addEventListener("resize", checkIsLG);
-    return () => window.removeEventListener("resize", checkIsLG);
+    setTimeout(updateTarget, 100); // Initial delay for layout stabilization
+
+    window.addEventListener("resize", () => {
+      checkIsLG();
+      updateTarget();
+    });
+    return () => window.removeEventListener("resize", updateTarget);
   }, []);
 
   const ingredients = [
-    t('hero.ingredients.phospho'),
-    t('hero.ingredients.choline'),
-    t('hero.ingredients.carnitine'),
+    t('hero.ingredients.sitikolin'),
     t('hero.ingredients.arginine'),
-    t('hero.ingredients.multivitamin'),
+    t('hero.ingredients.taurin'),
+    t('hero.ingredients.phospho'),
+    t('hero.ingredients.amino'),
     t('hero.ingredients.multimineral'),
+    t('hero.ingredients.multivitamin'),
   ];
 
   // Coordinates scaled to 1000x1000 for better precision and text rendering
   const starsData = [
-    { name: t('hero.ingredients.phospho'), start: [380, 180], mobileStart: [180, 150], delay: 0, duration: 6, size: 119, mobileSize: 55, floatAmount: 15 },
-    { name: t('hero.ingredients.choline'), start: [880, 120], mobileStart: [820, 150], delay: 0.5, duration: 7, size: 85, mobileSize: 55, floatAmount: 20 },
-    { name: t('hero.ingredients.carnitine'), start: [420, 750], mobileStart: [120, 280], delay: 1, duration: 5.5, size: 102, mobileSize: 55, floatAmount: 12 },
-    { name: t('hero.ingredients.arginine'), start: [480, 450], mobileStart: [880, 280], delay: 1.5, duration: 8, size: 94, mobileSize: 55, floatAmount: 18 },
-    { name: t('hero.ingredients.multivitamin'), start: [650, 880], mobileStart: [200, 410], delay: 2, duration: 6.5, size: 111, mobileSize: 55, floatAmount: 14 },
-    { name: t('hero.ingredients.multimineral'), start: [920, 620], mobileStart: [800, 410], delay: 1.2, duration: 7.5, size: 106, mobileSize: 55, floatAmount: 16 },
+    { name: t('hero.ingredients.phospho'), start: [380, 180], mobileStart: [150, 150], delay: 0, duration: 6, size: 119, mobileSize: 50, floatAmount: 15 },
+    { name: t('hero.ingredients.sitikolin'), start: [820, 920], mobileStart: [820, 180], delay: 0.5, duration: 7, size: 85, mobileSize: 50, floatAmount: 20 },
+    { name: t('hero.ingredients.taurin'), start: [580, 280], mobileStart: [100, 310], delay: 1, duration: 5.5, size: 102, mobileSize: 50, floatAmount: 12 },
+    { name: t('hero.ingredients.arginine'), start: [480, 480], mobileStart: [900, 310], delay: 1.5, duration: 8, size: 94, mobileSize: 50, floatAmount: 18 },
+    { name: t('hero.ingredients.amino'), start: [620, 860], mobileStart: [150, 470], delay: 1.8, duration: 6, size: 105, mobileSize: 50, floatAmount: 14 },
+    { name: t('hero.ingredients.multimineral'), start: [960, 420], mobileStart: [850, 470], delay: 1.2, duration: 7.5, size: 106, mobileSize: 50, floatAmount: 16 },
+    { name: t('hero.ingredients.multivitamin'), start: [960, 850], mobileStart: [500, 520], delay: 2, duration: 6.5, size: 111, mobileSize: 50, floatAmount: 14 },
   ];
 
   const stars = starsData.map(star => ({
@@ -44,7 +68,7 @@ const Hero = () => {
     size: isLG ? star.mobileSize : star.size
   }));
 
-  const target = isLG ? [500, 280] : [820, 530]; // Bottle center relative to 1000x1000
+  const target = targetPos; // Dynamically tracked bottle center relative to 1000x1000
   const safeStars = stars.filter((star) => (
     Number.isFinite(star.start?.[0]) &&
     Number.isFinite(star.start?.[1]) &&
@@ -278,31 +302,21 @@ const Hero = () => {
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start w-full sm:w-auto animate-fade-in-up" style={{ animationDelay: '0.8s' }}>
               <a
-                href="#about"
+                href="#ingredients"
                 onClick={(e) => {
                   e.preventDefault();
-                  document.querySelector('#about')?.scrollIntoView({ behavior: 'smooth' });
+                  document.querySelector('#ingredients')?.scrollIntoView({ behavior: 'smooth' });
                 }}
                 className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-[#f97316] text-white px-8 py-4 rounded-full font-bold text-base shadow-xl shadow-orange-200/50 hover:bg-orange-600 transition-all duration-300"
               >
                 {t('hero.cta_more')}
                 <ChevronDown className="w-4 h-4" />
               </a>
-              <a
-                href="#benefits"
-                onClick={(e) => {
-                  e.preventDefault();
-                  document.querySelector('#benefits')?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="inline-flex w-full sm:w-auto items-center justify-center bg-white text-orange-600 px-8 py-4 rounded-full font-bold text-base shadow-xl shadow-gray-100/50 hover:bg-gray-50 transition-all duration-300"
-              >
-                {t('hero.cta_benefits')}
-              </a>
             </div>
           </div>
 
           <div className="order-1 lg:order-2 relative flex justify-center lg:justify-end lg:pr-12 translate-y-[15%] lg:translate-y-0">
-            <div className="relative w-max">
+            <div ref={bottleRef} className="relative w-max">
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[110%] bg-orange-100/20 rounded-full blur-[80px]" />
 
               <div className="relative animate-float">

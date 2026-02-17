@@ -1,7 +1,7 @@
 {
     "nav": {
         "home": "Merhaba",
-        "benefits": "Faydaları",
+        "benefits": "Açıklama",
         "ingredients": "İçindekiler",
         "usage": "Kullanım",
         "about": "Hakkında",
@@ -12,50 +12,51 @@
         "title_part1": "Büyümenin",
         "title_part2": "Formülü",
         "title_part3": "Burada!",
-        "description": "Kolin ile birlikte zengin multivitamin ve mineral kompleksi içeren lezzetli sıvı takviye edici gıda. Çocukların normal büyüme ve gelişimi için özel olarak formüle edildi.",
+        "description": "Aminoasitlerle birlikte zengin multivitamin ve mineral kompleksi içeren lezzetli sıvı takviye edici gıda. Çocukların normal büyüme ve gelişimini desteklemek için özel olarak formüle edildi.",
         "cta_more": "Daha Fazla Bilgi",
         "cta_benefits": "Faydaları Gör",
         "bottle_meta": "150ml",
-        "flavor": "Portakal & Vanilya",
+        "flavor": "Tutti Frutti & Vanilya",
         "delicious": "Tadı Harika!",
         "ingredients": {
-            "phospho": "Fosfotidilserin",
-            "choline": "Kolin",
-            "carnitine": "L-Karnitin",
+            "sitikolin": "Sitikolin",
             "arginine": "L-Arjinin",
-            "multivitamin": "Multivitamin",
-            "multimineral": "Multimineral"
+            "taurin": "Taurin",
+            "phospho": "Fosfotidilserin",
+            "amino": "Amino Asitler",
+            "multimineral": "Multimineral",
+            "multivitamin": "Multivitamin"
         }
     },
     "benefits": {
-        "badge": "Faydaları",
+        "badge": "AÇIKLAMA",
         "title": "Çocuğunuzun Sağlıklı",
         "title_accent": "Gelişimi İçin",
         "description": "Bravita'nın zengin vitamin ve mineral içeriği, çocukların normal büyüme ve gelişimini destekler",
         "items": {
             "immune": {
                 "title": "Bağışıklık Sistemi",
-                "desc": "C Vitamini, Çinko, B6, A Vitamini, Selenyum, D Vitamini, B12, Demir ve Folik Asit ile bağışıklık sisteminin normal fonksiyonuna yardımcı olur."
+                "desc": "(Vitamin C, Vitamin D, Vitamin A, Vitamin E, Çinko, Selenyum) Bağışıklık sisteminin normal fonksiyonuna katkıda bulunur. Hücrelerin oksidatif stresten korunmasına yardımcı olan antioksidan bileşenler içerir. Günlük beslenmeye tamamlayıcı mikrobesin desteği sağlar."
             },
             "nervous": {
-                "title": "Sinir Sistemi",
-                "desc": "Biyotin, Niyasin, C Vitamini, İyot, B1, B2, B6 ve B12 Vitaminleri sinir sisteminin normal işleyişine yardımcı olur."
+                "title": "Zihinsel Performans",
+                "desc": "(B Grubu Vitaminleri, İyot, Çinko, Biotin) Normal zihinsel performansın korunmasına katkıda bulunur. Sinir sisteminin normal işleyişini destekleyen ve konsantrasyon gerektiren günlük aktiviteler için besinsel destek sağlayan bileşenler içerir."
             },
             "energy": {
-                "title": "Enerji Metabolizması",
-                "desc": "C Vitamini, Niyasin, Demir, B2, B6 ve B12 Vitaminleri normal enerji oluşum metabolizmasını destekler, yorgunluk ve bitkinliğin azalmasına katkıda bulunur."
+                "title": "Metabolik Denge",
+                "desc": "(Krom, Biotin, B Vitaminleri) Makro besin öğelerinin normal metabolizmasına ve kan şekeri metabolizmasının normal fonksiyonuna katkıda bulunan vitamin ve mineraller içerir."
             },
             "bone": {
-                "title": "Kemik Gelişimi",
-                "desc": "D Vitamini, çocuklarda normal büyüme ve kemik gelişimi için gereklidir. Çinko, K Vitamini ve Mangan normal kemiklerin korunmasını destekler."
+                "title": "Kemik ve Diş Gelişimi",
+                "desc": "(Vitamin D, Kalsiyum ilişkili metabolizma, Çinko) Kemiklerin ve dişlerin normal gelişimine katkıda bulunur. Çocukların normal büyüme ve gelişimine destek olan besin öğeleri içerir."
             },
             "vision": {
                 "title": "Görme Yetisi",
-                "desc": "Çinko, B2 Vitamini ve A Vitamini normal görme yetisinin korunmasına yardımcı olur."
+                "desc": "(Vitamin B1, Vitamin B2, Vitamin B3, Vitamin B5, Vitamin B6, Vitamin B12, Vitamin C) Normal görme yetisinin korunmasına katkıda bulunur. Hücrelerin oksidatif stresten korunmasına yardımcı olan antioksidan koruma sağlar."
             },
             "heart": {
-                "title": "Karaciğer & Kalp",
-                "desc": "Kolin normal karaciğer fonksiyonunun korunmasına yardımcı olur. B1 Vitamini kalbin normal fonksiyonuna katkıda bulunur."
+                "title": "Özel Bileşen Kompleksi",
+                "desc": "Sitikolin – Fosfatidilserin – Taurin – L-Arjinin ile hücresel yapı taşları ve metabolik süreçlerde yer alan besin bileşenleri içerir. Beslenme destekleyici kompleks formül."
             }
         }
     },
@@ -63,11 +64,11 @@
         "badge": "Ürün",
         "title": "Lezzetli ve",
         "title_accent": "Besleyici",
-        "description": "Çocukların severek tüketeceği, doğal portakal ve vanilya aromalı sıvı formül",
+        "description": "Çocukların severek tüketeceği, doğal tutti frutti ve vanilya aromalı sıvı formül",
         "features": {
             "flavor": {
                 "title": "Doğal Aroma",
-                "desc": "Portakal ve vanilya aroması ile lezzetli formül"
+                "desc": "Tutti frutti ve vanilya aroması ile lezzetli formül"
             },
             "liquid": {
                 "title": "Sıvı Formül",
@@ -75,7 +76,7 @@
             },
             "rich": {
                 "title": "Zengin İçerik",
-                "desc": "20'den fazla vitamin ve mineral ile kapsamlı destek"
+                "desc": "20'den fazla vitamin, mineral ve aminoasit ile kapsamlı destek"
             },
             "science": {
                 "title": "Bilimsel Formül",
@@ -86,7 +87,7 @@
     "ingredients": {
         "badge": "İçindekiler",
         "title": "Zengin",
-        "title_accent": "Vitamin ve Mineral",
+        "title_accent": "Vitamin, Mineral ve Aminoasit",
         "description": "5 ml (1 ölçek) için besin değerleri - Beslenme Referans Değeri yüzdeleri (% BRD)",
         "header_name": "İçindekiler",
         "header_amount": "5 ml (1 Ölçek)",

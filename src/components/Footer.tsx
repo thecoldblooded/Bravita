@@ -5,7 +5,7 @@ import {
   Phone,
   MapPin,
   Instagram,
-  Facebook,
+  Twitter,
   Linkedin,
   Users,
 } from "lucide-react";
@@ -72,16 +72,16 @@ function Footer() {
     },
     {
       icon: <Phone size={18} className="text-bravita-orange" />,
-      text: "0312 238 18 68",
-      href: "tel:+903122381868",
+      text: "444 51 73",
+      href: "tel:4445173",
     },
   ];
 
   // Social media icons
   const socialLinks = [
-    { icon: <Instagram size={20} />, label: "Instagram", href: "https://instagram.com/bravitaturkiye" },
-    { icon: <Facebook size={20} />, label: "Facebook", href: "#" },
-    { icon: <Linkedin size={20} />, label: "LinkedIn", href: "#" },
+    { icon: <Instagram size={20} />, label: "Instagram", href: "https://www.instagram.com/valcoilac" },
+    { icon: <Twitter size={20} />, label: "X", href: "https://x.com/valcoilac" },
+    { icon: <Linkedin size={20} />, label: "LinkedIn", href: "https://www.linkedin.com/company/valco-ilaç/" },
   ];
 
   return (
@@ -200,7 +200,7 @@ function Footer() {
             {socialLinks.map(({ icon, label, href }) => (
               <a
                 key={label}
-                href={encodeURI(href)}
+                href={href}
                 aria-label={label}
                 className="hover:text-bravita-orange transition-colors"
                 target={href.startsWith("http") ? "_blank" : undefined}

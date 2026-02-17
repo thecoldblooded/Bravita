@@ -50,8 +50,58 @@ const Benefits = () => {
     }
   ];
 
+  const renderDescription = (text: string) => {
+    // Handle both parentheses and dash-separated lists
+    const hasParentheses = text.includes('(') && text.includes(')');
+    const hasDashList = text.includes(' – ') && text.includes(' ile ');
+
+    let ingredients: string[] = [];
+    let mainText = text;
+
+    if (hasParentheses) {
+      const parts = text.split(/(\(.*?\))/);
+      mainText = "";
+      parts.forEach(part => {
+        if (part.startsWith('(') && part.endsWith(')')) {
+          ingredients = part.slice(1, -1).split(',').map(s => s.trim());
+        } else {
+          mainText += part;
+        }
+      });
+    } else if (hasDashList) {
+      const parts = text.split(' ile ');
+      if (parts.length > 1) {
+        ingredients = parts[0].split(' – ').map(s => s.trim());
+        mainText = parts[1];
+      }
+    }
+
+    return (
+      <div className="flex flex-col h-full w-full">
+        <p className="text-gray-600 leading-relaxed text-sm md:text-[15px] mb-6 grow">
+          {mainText.trim()}
+        </p>
+
+        {ingredients.length > 0 && (
+          <div className="mt-auto">
+            <div className="flex flex-wrap gap-2">
+              {ingredients.map((item, idx) => (
+                <span
+                  key={idx}
+                  className="inline-flex items-center px-3 py-1 rounded-full bg-primary/5 text-primary text-[10px] font-bold tracking-wide border border-primary/10 transition-all hover:bg-primary/10 hover:scale-105 cursor-default"
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
-    <section className="py-20 md:py-32 bg-background">
+    <section id="benefits" className="py-20 md:py-32 bg-background">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <span className="text-primary font-bold text-sm uppercase tracking-wider">{t('benefits.badge')}</span>
@@ -75,7 +125,9 @@ const Benefits = () => {
                 </div>
 
                 <h3 className="text-xl font-bold mb-3 text-gray-900">{benefit.title}</h3>
-                <p className="text-gray-600 leading-relaxed">{benefit.description}</p>
+                <div className="text-gray-600 leading-relaxed text-base">
+                  {renderDescription(benefit.description)}
+                </div>
 
                 {/* Decorative corner */}
                 <div className="absolute top-0 right-0 text-2xl opacity-20 grayscale">⭐</div>

@@ -1,7 +1,7 @@
 {
     "nav": {
         "home": "Home",
-        "benefits": "Benefits",
+        "benefits": "Description",
         "ingredients": "Ingredients",
         "usage": "Usage",
         "about": "About",
@@ -12,50 +12,51 @@
         "title_part1": "Growth",
         "title_part2": "Formula",
         "title_part3": "starts Here!",
-        "description": "Delicious liquid dietary supplement containing choline, rich multivitamin, and mineral complex. Specially formulated for children's healthy growth and development.",
+        "description": "Delicious liquid dietary supplement containing amino acids, rich multivitamin, and mineral complex. Specially formulated to support children's healthy growth and development.",
         "cta_more": "More Information",
         "cta_benefits": "View Benefits",
         "bottle_meta": "150ml",
-        "flavor": "Orange & Vanilla",
+        "flavor": "Tutti Frutti & Vanilla",
         "delicious": "Delicious!",
         "ingredients": {
-            "phospho": "Phosphatidilserine",
-            "choline": "Choline",
-            "carnitine": "L-Carnitine",
-            "arginine": "L-Arjinin",
-            "multivitamin": "Multivitamin",
-            "multimineral": "Multimineral"
+            "sitikolin": "Citicoline",
+            "arginine": "L-Arginine",
+            "taurin": "Taurine",
+            "phospho": "Phosphatidylserine",
+            "amino": "Amino Acids",
+            "multimineral": "Multimineral",
+            "multivitamin": "Multivitamin"
         }
     },
     "benefits": {
-        "badge": "Benefits",
+        "badge": "DESCRIPTION",
         "title": "For Your Child's Healthy",
         "title_accent": "Development",
         "description": "Bravita's rich vitamin and mineral content supports children's normal growth and development.",
         "items": {
             "immune": {
                 "title": "Immune System",
-                "desc": "Helps the normal function of the immune system with Vitamin C, Zinc, B6, Vitamin A, Selenium, Vitamin D, B12, Iron, and Folic Acid."
+                "desc": "(Vitamin C, Vitamin D, Vitamin A, Vitamin E, Zinc, Selenium) Contributes to the normal function of the immune system. Contains antioxidant components that help protect cells from oxidative stress."
             },
             "nervous": {
-                "title": "Nervous System",
-                "desc": "Biotin, Niacin, Vitamin C, Iodine, Vitamins B1, B2, B6, and B12 contribute to the normal functioning of the nervous system."
+                "title": "Mental Performance",
+                "desc": "(B-Group Vitamins, Iodine, Zinc, Biotin) Contributes to the maintenance of normal mental performance. Supports the normal functioning of the nervous system."
             },
             "energy": {
-                "title": "Energy Metabolism",
-                "desc": "Vitamin C, Niacin, Iron, Vitamins B2, B6, and B12 support normal energy-yielding metabolism and contribute to the reduction of tiredness and fatigue."
+                "title": "Metabolic Balance",
+                "desc": "(Chromium, Biotin, B Vitamins) Contains vitamins and minerals that contribute to normal macro-nutrient metabolism and normal blood sugar function."
             },
             "bone": {
-                "title": "Bone Development",
-                "desc": "Vitamin D is needed for normal growth and development of bone in children. Zinc, Vitamin K, and Manganese contribute to the maintenance of normal bones."
+                "title": "Bone & Teeth Development",
+                "desc": "(Vitamin D, Calcium-related metabolism, Zinc) Contributes to the normal development of bones and teeth in children."
             },
             "vision": {
-                "title": "Vision",
-                "desc": "Zinc, Vitamin B2, and Vitamin A contribute to the maintenance of normal vision."
+                "title": "Vision Health",
+                "desc": "(Vitamin B1, Vitamin B2, Vitamin B3, Vitamin B5, Vitamin B6, Vitamin B12, Vitamin C) Contributes to the maintenance of normal vision and helps protect cells from oxidative stress."
             },
             "heart": {
-                "title": "Liver & Heart",
-                "desc": "Choline contributes to the maintenance of normal liver function. Vitamin B1 contributes to the normal function of the heart."
+                "title": "Special Ingredient Complex",
+                "desc": "(Citicoline, Phosphatidylserine, Taurine, L-Arginine) Contains essential components for cellular building blocks and metabolic processes. Nutritional supportive complex formula."
             }
         }
     },
@@ -63,11 +64,11 @@
         "badge": "Product",
         "title": "Delicious and",
         "title_accent": "Nutritious",
-        "description": "Delicious liquid formula with natural orange and vanilla flavor that children will love.",
+        "description": "Delicious liquid formula with natural tutti frutti and vanilla flavor that children will love.",
         "features": {
             "flavor": {
                 "title": "Natural Flavor",
-                "desc": "Delicious formula with orange and vanilla flavor."
+                "desc": "Delicious formula with tutti frutti and vanilla flavor."
             },
             "liquid": {
                 "title": "Liquid Formula",
@@ -75,7 +76,7 @@
             },
             "rich": {
                 "title": "Rich Content",
-                "desc": "Comprehensive support with more than 20 vitamins and minerals."
+                "desc": "Comprehensive support with more than 20 vitamins, minerals, and amino acids."
             },
             "science": {
                 "title": "Scientific Formula",
@@ -86,7 +87,7 @@
     "ingredients": {
         "badge": "Ingredients",
         "title": "Rich",
-        "title_accent": "Vitamin and Mineral",
+        "title_accent": "Vitamin, Mineral and Amino Acid",
         "description": "Nutritional values per 5 ml (1 scoop) - Nutrient Reference Value percentages (% NRV)",
         "header_name": "Ingredients",
         "header_amount": "5 ml (1 Scoop)",
