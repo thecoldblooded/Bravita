@@ -267,10 +267,12 @@ export default function OrderConfirmation() {
                             <span className="text-gray-500">{t("cart.vat", "KDV (%20)")}</span>
                             <span className="text-gray-900">₺{order.order_details.vat_amount}</span>
                         </div>
-                        {(order.order_details.shipping_cost || 0) > 0 && (
+                        {order.order_details.shipping_cost !== undefined && (
                             <div className="flex justify-between">
                                 <span className="text-gray-500">{t("checkout.shipping", "Kargo")}</span>
-                                <span className="text-gray-900">₺{order.order_details.shipping_cost}</span>
+                                <span className={order.order_details.shipping_cost === 0 ? "text-green-600 font-medium" : "text-gray-900"}>
+                                    {order.order_details.shipping_cost === 0 ? t("checkout.free") : `₺${order.order_details.shipping_cost}`}
+                                </span>
                             </div>
                         )}
                         {(order.order_details.commission_amount || 0) > 0 && (

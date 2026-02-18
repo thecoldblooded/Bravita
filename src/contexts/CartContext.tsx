@@ -176,9 +176,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     const [settings, setSettings] = useState({
         vat_rate: 0.20,
-        shipping_cost: 49.90,
-        free_shipping_threshold: 1500
+        shipping_cost: 0,
+        free_shipping_threshold: 0
     });
+
 
     // Fetch settings on mount and periodically
     useEffect(() => {

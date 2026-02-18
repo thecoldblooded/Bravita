@@ -533,12 +533,12 @@ function AdminOrderDetailContent() {
                                 </div>
                             ) : null}
 
-                            {order.order_details?.shipping_cost ? order.order_details.shipping_cost > 0 && (
+                            {order.order_details?.shipping_cost !== undefined && (
                                 <div className={`flex justify-between ${textSecondary}`}>
                                     <span>Kargo Ücreti</span>
-                                    <span>₺{order.order_details.shipping_cost.toLocaleString("tr-TR")}</span>
+                                    <span>{order.order_details.shipping_cost === 0 ? "Bedava" : `₺${order.order_details.shipping_cost.toLocaleString("tr-TR")}`}</span>
                                 </div>
-                            ) : null}
+                            )}
 
                             <div className={`flex justify-between ${textSecondary}`}>
                                 <span>KDV</span>

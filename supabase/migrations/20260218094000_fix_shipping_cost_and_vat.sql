@@ -1,9 +1,9 @@
--- ============================================
--- CREATE ORDER FUNCTION (Backend Logic)
--- ============================================
+-- Migration: Fix shipping cost calculation and VAT rate logic
+-- Created: 2026-02-18 09:40:00
 
+-- Update create_order function with dynamic settings and improved calculation order
 CREATE OR REPLACE FUNCTION create_order(
-    p_items JSONB, -- Array of objects: [{"product_id": "uuid", "quantity": 1}]
+    p_items JSONB,
     p_shipping_address_id UUID,
     p_payment_method TEXT,
     p_promo_code TEXT DEFAULT NULL
@@ -160,12 +160,11 @@ BEGIN
     -- Bank Reference
     v_bank_ref := 'BRV-' || to_char(NOW(), 'YYMMDD') || '-' || upper(substring(md5(random()::text) from 1 for 4));
 
-    -- 8. Construct final order_details JSON
+    -- 9. Construct final order_details JSON
     v_order_details := jsonb_build_object(
         'items', v_valid_items,
         'subtotal', v_total_subtotal,
         'vat_rate', v_vat_rate,
-
         'vat_amount', v_total_vat,
         'shipping_cost', v_shipping_cost,
         'total', v_final_total,
@@ -174,7 +173,7 @@ BEGIN
         'bank_reference', v_bank_ref
     );
 
-    -- 9. Insert Order
+    -- 10. Insert Order
     INSERT INTO orders (
         user_id,
         shipping_address_id,
@@ -207,7 +206,7 @@ BEGIN
         v_paid_total_cents
     ) RETURNING id INTO v_order_id;
     
-    -- 10. Insert Status History
+    -- 11. Insert Status History
     BEGIN
         INSERT INTO order_status_history (order_id, status, note, created_at)
         VALUES (
@@ -220,7 +219,7 @@ BEGIN
         NULL;
     END;
 
-    -- 11. Return Success
+    -- 12. Return Success
     RETURN jsonb_build_object(
         'success', true, 
         'order_id', v_order_id,

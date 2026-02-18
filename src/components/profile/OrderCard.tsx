@@ -162,6 +162,14 @@ export function OrderCard({ order, isOpen, onToggle }: OrderCardProps) {
                                 <span className="text-gray-500">{t("cart.vat")}</span>
                                 <span className="text-gray-600">₺{order.order_details.vat_amount}</span>
                             </div>
+                            {order.order_details.shipping_cost !== undefined && (
+                                <div className="flex justify-between text-sm py-2">
+                                    <span className="text-gray-500">{t("checkout.shipping")}</span>
+                                    <span className={order.order_details.shipping_cost === 0 ? "text-green-600 font-medium" : "text-gray-600"}>
+                                        {order.order_details.shipping_cost === 0 ? t("checkout.free") : `₺${order.order_details.shipping_cost}`}
+                                    </span>
+                                </div>
+                            )}
                             <div className="flex justify-between py-2 font-bold">
                                 <span className="text-gray-900">{t("cart.total")}</span>
                                 <span className="text-orange-600">₺{order.order_details.total}</span>

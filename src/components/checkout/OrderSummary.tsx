@@ -65,7 +65,7 @@ export function OrderSummary({
 }: OrderSummaryProps) {
     const { t } = useTranslation();
     const [address, setAddress] = useState<Address | null>(null);
-    const { applyPromoCode, removePromoCode, promoCode } = useCart();
+    const { applyPromoCode, removePromoCode, promoCode, settings } = useCart();
 
     // Local input state
     const [inputPromoCode, setInputPromoCode] = useState(promoCode || "");
@@ -126,7 +126,8 @@ export function OrderSummary({
 
         setIsApplyingPromo(true);
         try {
-            const totalOnFullPrice = totals.subtotal * 1.20; // 20% VAT
+            const totalOnFullPrice = totals.subtotal * (1 + settings.vat_rate);
+
             // Validate code
             const result = await validatePromoCode(inputPromoCode, totalOnFullPrice, totals.subtotal);
 

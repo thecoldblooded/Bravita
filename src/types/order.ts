@@ -10,7 +10,10 @@ export interface OrderDetails {
     items: OrderItem[];
     subtotal: number;
     vat_amount: number;
+    vat_rate?: number;
+    shipping_cost?: number;
     total: number;
+
     discount?: number;
     promo_code?: string;
 }
