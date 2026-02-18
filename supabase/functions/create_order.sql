@@ -11,6 +11,7 @@ CREATE OR REPLACE FUNCTION create_order(
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = ''
 AS $$
 DECLARE
     v_user_id UUID;
