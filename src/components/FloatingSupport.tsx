@@ -8,7 +8,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { SupportForm } from "./support/SupportForm";
 
@@ -23,7 +23,7 @@ export default function FloatingSupport({ className }: FloatingSupportProps) {
     return (
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
-                <motion.button
+                <m.button
                     initial={{ opacity: 0, scale: 0.5, y: 20 }}
                     whileInView={{ opacity: 1, scale: 1, y: 0 }}
                     whileHover={{ scale: 1.05, y: -2 }}
@@ -39,7 +39,7 @@ export default function FloatingSupport({ className }: FloatingSupportProps) {
                         <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 border-2 border-orange-600 rounded-full" />
                     </div>
                     <span className="hidden md:inline font-black text-sm tracking-tight uppercase">{t("landing.support_title") || "Bize Ulaşın"}</span>
-                </motion.button>
+                </m.button>
             </PopoverTrigger>
             <PopoverContent
                 side="top"

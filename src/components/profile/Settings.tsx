@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { Bell, Shield, Lock, Trash2, LogOut } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -85,7 +85,7 @@ export function Settings() {
     };
 
     return (
-        <motion.div
+        <m.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className="max-w-2xl"
@@ -170,6 +170,6 @@ export function Settings() {
                     </div>
                 </section>
             </div>
-        </motion.div>
+        </m.div>
     );
 }

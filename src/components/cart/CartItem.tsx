@@ -1,5 +1,5 @@
 
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { Plus, Minus, ShoppingCart } from "lucide-react";
 import bravitaBottle from "@/assets/bravita-bottle.webp";
 
@@ -24,7 +24,7 @@ export const CartItem = ({
     return (
         <AnimatePresence mode="wait">
             {quantity > 0 ? (
-                <motion.div
+                <m.div
                     key="cart-item"
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -80,9 +80,9 @@ export const CartItem = ({
                             </div>
                         </div>
                     </div>
-                </motion.div>
+                </m.div>
             ) : (
-                <motion.div
+                <m.div
                     key="empty-cart"
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -92,7 +92,7 @@ export const CartItem = ({
                         <ShoppingCart className="w-10 h-10 text-neutral-200" />
                     </div>
                     <p className="font-bold text-neutral-400">{t("cart.empty")}</p>
-                </motion.div>
+                </m.div>
             )}
         </AnimatePresence>
     );

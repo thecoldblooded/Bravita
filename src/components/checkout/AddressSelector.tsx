@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useReducer, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { MapPin, Plus, Check, Home, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,61 @@ interface Address {
     address_type: AddressType;
 }
 
+interface AddressState {
+    addresses: Address[];
+    isLoading: boolean;
+    showNewForm: boolean;
+    isSubmitting: boolean;
+    newAddress: {
+        street: string;
+        city: string;
+        district: string;
+        postal_code: string;
+        address_type: AddressType;
+    };
+}
+
+type AddressAction =
+    | { type: 'SET_ADDRESSES'; payload: Address[] }
+    | { type: 'SET_LOADING'; payload: boolean }
+    | { type: 'SET_SHOW_NEW_FORM'; payload: boolean }
+    | { type: 'SET_SUBMITTING'; payload: boolean }
+    | { type: 'UPDATE_NEW_ADDRESS'; payload: Partial<AddressState['newAddress']> }
+    | { type: 'RESET_NEW_ADDRESS' };
+
+const initialAddressState: AddressState = {
+    addresses: [],
+    isLoading: true,
+    showNewForm: false,
+    isSubmitting: false,
+    newAddress: {
+        street: "",
+        city: "",
+        district: "",
+        postal_code: "",
+        address_type: "home",
+    },
+};
+
+function addressReducer(state: AddressState, action: AddressAction): AddressState {
+    switch (action.type) {
+        case 'SET_ADDRESSES':
+            return { ...state, addresses: action.payload };
+        case 'SET_LOADING':
+            return { ...state, isLoading: action.payload };
+        case 'SET_SHOW_NEW_FORM':
+            return { ...state, showNewForm: action.payload };
+        case 'SET_SUBMITTING':
+            return { ...state, isSubmitting: action.payload };
+        case 'UPDATE_NEW_ADDRESS':
+            return { ...state, newAddress: { ...state.newAddress, ...action.payload } };
+        case 'RESET_NEW_ADDRESS':
+            return { ...state, newAddress: initialAddressState.newAddress };
+        default:
+            return state;
+    }
+}
+
 interface AddressSelectorProps {
     selectedAddressId: string | null;
     onSelect: (addressId: string) => void;
@@ -30,24 +85,13 @@ interface AddressSelectorProps {
 export function AddressSelector({ selectedAddressId, onSelect }: AddressSelectorProps) {
     const { t } = useTranslation();
     const { user } = useAuth();
-    const [addresses, setAddresses] = useState<Address[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [showNewForm, setShowNewForm] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [newAddress, setNewAddress] = useState({
-        street: "",
-        city: "",
-        district: "",
-        postal_code: "",
-        address_type: "home" as AddressType,
-    });
+    const [state, dispatch] = useReducer(addressReducer, initialAddressState);
+    const { addresses, isLoading, showNewForm, isSubmitting, newAddress } = state;
 
     const fetchAddresses = useCallback(async () => {
         if (!user) return;
-        setIsLoading(true);
+        dispatch({ type: 'SET_LOADING', payload: true });
         try {
-
-
             const { data, error } = await supabase
                 .from("addresses")
                 .select("*")
@@ -55,7 +99,7 @@ export function AddressSelector({ selectedAddressId, onSelect }: AddressSelector
                 .order("is_default", { ascending: false });
 
             if (error) throw error;
-            setAddresses(data || []);
+            dispatch({ type: 'SET_ADDRESSES', payload: data || [] });
 
             // Auto-select default address
             if (data && data.length > 0 && !selectedAddressId) {
@@ -66,7 +110,7 @@ export function AddressSelector({ selectedAddressId, onSelect }: AddressSelector
             console.error("Error fetching addresses:", err);
             toast.error(t("profile.addresses.loading_error", "Adresler yüklenirken hata oluştu"));
         } finally {
-            setIsLoading(false);
+            dispatch({ type: 'SET_LOADING', payload: false });
         }
     }, [user, selectedAddressId, onSelect, t]);
 
@@ -78,11 +122,8 @@ export function AddressSelector({ selectedAddressId, onSelect }: AddressSelector
         e.preventDefault();
         if (!user || isSubmitting) return;
 
-        setIsSubmitting(true);
+        dispatch({ type: 'SET_SUBMITTING', payload: true });
         try {
-
-
-
             const { data, error } = await supabase
                 .from("addresses")
                 .insert({
@@ -103,8 +144,8 @@ export function AddressSelector({ selectedAddressId, onSelect }: AddressSelector
             }
 
             toast.success(t("profile.addresses.add_success", "Adres eklendi"));
-            setNewAddress({ street: "", city: "", district: "", postal_code: "", address_type: "home" });
-            setShowNewForm(false);
+            dispatch({ type: 'RESET_NEW_ADDRESS' });
+            dispatch({ type: 'SET_SHOW_NEW_FORM', payload: false });
             await fetchAddresses();
 
             // Select the newly added address
@@ -117,7 +158,7 @@ export function AddressSelector({ selectedAddressId, onSelect }: AddressSelector
             const errorMessage = error.message || t("common.unknown", "Bilinmeyen hata");
             toast.error(`${t("profile.addresses.add_error", "Adres eklenirken hata")}: ${errorMessage}`);
         } finally {
-            setIsSubmitting(false);
+            dispatch({ type: 'SET_SUBMITTING', payload: false });
         }
     };
 
@@ -140,7 +181,7 @@ export function AddressSelector({ selectedAddressId, onSelect }: AddressSelector
                     <MapPin className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                     <p className="text-gray-500 mb-4">{t("profile.addresses.empty_state", "Henüz kayıtlı adresiniz yok.")}</p>
                     <Button
-                        onClick={() => setShowNewForm(true)}
+                        onClick={() => dispatch({ type: 'SET_SHOW_NEW_FORM', payload: true })}
                         className="bg-orange-500 hover:bg-orange-600 text-white"
                     >
                         <Plus className="w-4 h-4 mr-2" />
@@ -151,7 +192,7 @@ export function AddressSelector({ selectedAddressId, onSelect }: AddressSelector
                 <>
                     <div className="grid gap-3 mb-4">
                         {addresses.map((address) => (
-                            <motion.button
+                            <m.button
                                 key={address.id}
                                 whileHover={{ scale: 1.01 }}
                                 whileTap={{ scale: 0.99 }}
@@ -190,14 +231,14 @@ export function AddressSelector({ selectedAddressId, onSelect }: AddressSelector
                                         </div>
                                     )}
                                 </div>
-                            </motion.button>
+                            </m.button>
                         ))}
                     </div>
 
                     {!showNewForm && (
                         <Button
                             variant="outline"
-                            onClick={() => setShowNewForm(true)}
+                            onClick={() => dispatch({ type: 'SET_SHOW_NEW_FORM', payload: true })}
                             className="w-full border-dashed border-gray-300 text-gray-600 hover:border-orange-300 hover:text-orange-600"
                         >
                             <Plus className="w-4 h-4 mr-2" />
@@ -208,7 +249,7 @@ export function AddressSelector({ selectedAddressId, onSelect }: AddressSelector
             )}
 
             {showNewForm && (
-                <motion.form
+                <m.form
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: "auto", opacity: 1 }}
                     className="bg-orange-50/50 border border-orange-100 p-4 rounded-xl mt-4 overflow-hidden"
@@ -222,7 +263,7 @@ export function AddressSelector({ selectedAddressId, onSelect }: AddressSelector
                             <div className="flex gap-2">
                                 <button
                                     type="button"
-                                    onClick={() => setNewAddress({ ...newAddress, address_type: "home" })}
+                                    onClick={() => dispatch({ type: 'UPDATE_NEW_ADDRESS', payload: { address_type: "home" } })}
                                     className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 transition-all ${newAddress.address_type === "home"
                                         ? "border-orange-500 bg-orange-50 text-orange-700"
                                         : "border-gray-200 bg-white text-gray-600 hover:border-orange-200"
@@ -233,7 +274,7 @@ export function AddressSelector({ selectedAddressId, onSelect }: AddressSelector
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => setNewAddress({ ...newAddress, address_type: "work" })}
+                                    onClick={() => dispatch({ type: 'UPDATE_NEW_ADDRESS', payload: { address_type: "work" } })}
                                     className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 transition-all ${newAddress.address_type === "work"
                                         ? "border-orange-500 bg-orange-50 text-orange-700"
                                         : "border-gray-200 bg-white text-gray-600 hover:border-orange-200"
@@ -249,7 +290,7 @@ export function AddressSelector({ selectedAddressId, onSelect }: AddressSelector
                             <Input
                                 id="street"
                                 value={newAddress.street}
-                                onChange={(e) => setNewAddress({ ...newAddress, street: e.target.value })}
+                                onChange={(e) => dispatch({ type: 'UPDATE_NEW_ADDRESS', payload: { street: e.target.value } })}
                                 placeholder={newAddress.address_type === "home" ? t("checkout.address.home_placeholder", "Örn: Evim - Çiçek Mah. Gül Sok. No:1") : t("checkout.address.work_placeholder", "Örn: Ofisim - Levent Plaza Kat:5")}
                                 required
                                 className="bg-white"
@@ -260,7 +301,7 @@ export function AddressSelector({ selectedAddressId, onSelect }: AddressSelector
                             <Input
                                 id="city"
                                 value={newAddress.city}
-                                onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
+                                onChange={(e) => dispatch({ type: 'UPDATE_NEW_ADDRESS', payload: { city: e.target.value } })}
                                 placeholder={t("checkout.address.city_placeholder", "İstanbul")}
                                 required
                                 className="bg-white"
@@ -271,7 +312,7 @@ export function AddressSelector({ selectedAddressId, onSelect }: AddressSelector
                             <Input
                                 id="district"
                                 value={newAddress.district}
-                                onChange={(e) => setNewAddress({ ...newAddress, district: e.target.value })}
+                                onChange={(e) => dispatch({ type: 'UPDATE_NEW_ADDRESS', payload: { district: e.target.value } })}
                                 placeholder={t("checkout.address.district_placeholder", "Kadıköy")}
                                 required
                                 className="bg-white"
@@ -282,7 +323,7 @@ export function AddressSelector({ selectedAddressId, onSelect }: AddressSelector
                             <Input
                                 id="postal_code"
                                 value={newAddress.postal_code}
-                                onChange={(e) => setNewAddress({ ...newAddress, postal_code: e.target.value })}
+                                onChange={(e) => dispatch({ type: 'UPDATE_NEW_ADDRESS', payload: { postal_code: e.target.value } })}
                                 placeholder="34000"
                                 required
                                 className="bg-white"
@@ -293,7 +334,7 @@ export function AddressSelector({ selectedAddressId, onSelect }: AddressSelector
                         <Button
                             type="button"
                             variant="ghost"
-                            onClick={() => setShowNewForm(false)}
+                            onClick={() => dispatch({ type: 'SET_SHOW_NEW_FORM', payload: false })}
                             disabled={isSubmitting}
                         >
                             {t("common.cancel", "İptal")}
@@ -306,7 +347,7 @@ export function AddressSelector({ selectedAddressId, onSelect }: AddressSelector
                             {isSubmitting ? <Loader size="1.25rem" noMargin /> : t("common.save", "Kaydet")}
                         </Button>
                     </div>
-                </motion.form>
+                </m.form>
             )}
         </div>
     );

@@ -1,6 +1,6 @@
 import { User, MapPin, ShoppingBag, Settings, LifeBuoy } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 
 interface ProfileSidebarProps {
     activeTab: string;
@@ -35,7 +35,7 @@ export function ProfileSidebar({ activeTab, setActiveTab }: ProfileSidebarProps)
                         )}
                     >
                         {activeTab === item.id && (
-                            <motion.div
+                            <m.div
                                 layoutId="activeTab"
                                 className="absolute left-0 w-1 h-8 bg-orange-500 rounded-r-full"
                                 initial={{ opacity: 0 }}

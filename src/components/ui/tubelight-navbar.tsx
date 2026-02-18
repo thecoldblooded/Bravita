@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useState } from "react"
-import { motion } from "framer-motion"
+import { m } from "framer-motion"
 import { cn } from "@/lib/utils"
 
 import { LucideIcon } from "lucide-react"
@@ -147,7 +147,7 @@ export function NavBar({ items, className, activeTab: externalActiveTab, layoutI
                                 <Icon size={18} strokeWidth={2.5} />
                             </span>
                             {isActive && (
-                                <motion.div
+                                <m.div
                                     layoutId={layoutId}
                                     className="absolute inset-0 w-full bg-orange-100/80 rounded-full z-0"
                                     initial={false}
@@ -161,7 +161,7 @@ export function NavBar({ items, className, activeTab: externalActiveTab, layoutI
                                         <div className="absolute w-12 h-6 bg-orange-500/30 rounded-full blur-md -top-2 -left-2" />
                                         <div className="absolute w-8 h-6 bg-orange-500/30 rounded-full blur-sm -top-1" />
                                     </div>
-                                </motion.div>
+                                </m.div>
                             )}
                         </a>
                     )

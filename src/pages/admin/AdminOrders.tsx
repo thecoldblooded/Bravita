@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { Package, Search, Filter, ChevronRight, RefreshCw } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminGuard } from "@/components/admin/AdminGuard";
@@ -247,7 +247,7 @@ function OrdersContent() {
             </div>
 
             {/* Orders Table */}
-            <motion.div
+            <m.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className={`rounded-2xl border shadow-sm overflow-hidden ${cardClass}`}
@@ -255,7 +255,7 @@ function OrdersContent() {
                 {isLoading ? (
                     <div className={`divide-y ${dividerClass}`}>
                         {[...Array(8)].map((_, i) => (
-                            <div key={i} className="grid grid-cols-12 gap-4 px-6 py-5">
+                            <div key={`order-skeleton-${i}`} className="grid grid-cols-12 gap-4 px-6 py-5">
                                 <div className="col-span-3 flex items-center gap-3">
                                     <Skeleton className="h-10 w-10 rounded-lg" />
                                     <div>
@@ -332,7 +332,7 @@ function OrdersContent() {
                                             }`}
                                     >
                                         {isHighlighted && (
-                                            <motion.div
+                                            <m.div
                                                 className="absolute inset-0 pointer-events-none z-20 rounded-lg border-2 border-orange-500"
                                                 initial={{ boxShadow: "0 0 0 0px rgba(249, 115, 22, 0.4)", borderColor: "rgba(249, 115, 22, 0.8)" }}
                                                 animate={{
@@ -351,7 +351,6 @@ function OrdersContent() {
                                                     ease: "easeOut",
                                                     repeatDelay: 0.1
                                                 }}
-                                                style={{ willChange: "box-shadow, border-color" }}
                                             />
                                         )}
                                         <div className="col-span-3 flex items-center gap-3">
@@ -388,7 +387,7 @@ function OrdersContent() {
                         </div>
                     </>
                 )}
-            </motion.div>
+            </m.div>
 
             {/* Pagination Info */}
             {!isLoading && orders.length > 0 && (

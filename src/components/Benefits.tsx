@@ -2,6 +2,56 @@ import { Shield, Brain, Heart, Eye, Zap, Bone } from "lucide-react";
 import { GlowingShadow } from "@/components/ui/glowing-shadow";
 import { useTranslation } from "react-i18next";
 
+const BenefitDescription = ({ text }: { text: string }) => {
+  // Handle both parentheses and dash-separated lists
+  const hasParentheses = text.includes('(') && text.includes(')');
+  const hasDashList = text.includes(' – ') && text.includes(' ile ');
+
+  let ingredients: string[] = [];
+  let mainText = text;
+
+  if (hasParentheses) {
+    const parts = text.split(/(\(.*?\))/);
+    mainText = "";
+    parts.forEach(part => {
+      if (part.startsWith('(') && part.endsWith(')')) {
+        ingredients = part.slice(1, -1).split(',').map(s => s.trim());
+      } else {
+        mainText += part;
+      }
+    });
+  } else if (hasDashList) {
+    const parts = text.split(' ile ');
+    if (parts.length > 1) {
+      ingredients = parts[0].split(' – ').map(s => s.trim());
+      mainText = parts[1];
+    }
+  }
+
+  return (
+    <div className="flex flex-col h-full w-full">
+      <p className="text-gray-600 leading-relaxed text-sm md:text-[15px] mb-6 grow">
+        {mainText.trim()}
+      </p>
+
+      {ingredients.length > 0 && (
+        <div className="mt-auto">
+          <div className="flex flex-wrap gap-2">
+            {ingredients.map((item) => (
+              <span
+                key={item}
+                className="inline-flex items-center px-3 py-1 rounded-full bg-primary/5 text-primary text-[10px] font-bold tracking-wide border border-primary/10 transition-all hover:bg-primary/10 hover:scale-105 cursor-default"
+              >
+                {item}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const Benefits = () => {
   const { t } = useTranslation();
 
@@ -50,56 +100,6 @@ const Benefits = () => {
     }
   ];
 
-  const renderDescription = (text: string) => {
-    // Handle both parentheses and dash-separated lists
-    const hasParentheses = text.includes('(') && text.includes(')');
-    const hasDashList = text.includes(' – ') && text.includes(' ile ');
-
-    let ingredients: string[] = [];
-    let mainText = text;
-
-    if (hasParentheses) {
-      const parts = text.split(/(\(.*?\))/);
-      mainText = "";
-      parts.forEach(part => {
-        if (part.startsWith('(') && part.endsWith(')')) {
-          ingredients = part.slice(1, -1).split(',').map(s => s.trim());
-        } else {
-          mainText += part;
-        }
-      });
-    } else if (hasDashList) {
-      const parts = text.split(' ile ');
-      if (parts.length > 1) {
-        ingredients = parts[0].split(' – ').map(s => s.trim());
-        mainText = parts[1];
-      }
-    }
-
-    return (
-      <div className="flex flex-col h-full w-full">
-        <p className="text-gray-600 leading-relaxed text-sm md:text-[15px] mb-6 grow">
-          {mainText.trim()}
-        </p>
-
-        {ingredients.length > 0 && (
-          <div className="mt-auto">
-            <div className="flex flex-wrap gap-2">
-              {ingredients.map((item, idx) => (
-                <span
-                  key={idx}
-                  className="inline-flex items-center px-3 py-1 rounded-full bg-primary/5 text-primary text-[10px] font-bold tracking-wide border border-primary/10 transition-all hover:bg-primary/10 hover:scale-105 cursor-default"
-                >
-                  {item}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
-
   return (
     <section id="benefits" className="py-20 md:py-32 bg-background">
       <div className="container mx-auto px-4">
@@ -126,7 +126,7 @@ const Benefits = () => {
 
                 <h3 className="text-xl font-bold mb-3 text-gray-900">{benefit.title}</h3>
                 <div className="text-gray-600 leading-relaxed text-base flex-1 flex flex-col w-full">
-                  {renderDescription(benefit.description)}
+                  <BenefitDescription text={benefit.description} />
                 </div>
 
                 {/* Decorative corner */}

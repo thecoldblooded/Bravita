@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback, useRef } from "react";
-import { motion } from "framer-motion";
+import { useReducer, useEffect, useCallback, useRef } from "react";
+import { m } from "framer-motion";
 import { Package, Search, Filter, ArrowUpDown, XCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
@@ -12,28 +12,79 @@ import { useTranslation } from "react-i18next";
 import { OrderCard } from "@/components/profile/OrderCard";
 import { Order } from "@/types/order";
 
+type OrderState = {
+    orders: Order[];
+    isLoading: boolean;
+    selectedOrderId: string | null;
+    sortBy: "created_at" | "total";
+    sortOrder: "asc" | "desc";
+    minAmountInput: string;
+    maxAmountInput: string;
+    minAmount: string;
+    maxAmount: string;
+};
+
+type OrderAction =
+    | { type: 'SET_ORDERS'; payload: Order[] }
+    | { type: 'SET_LOADING'; payload: boolean }
+    | { type: 'TOGGLE_ORDER'; payload: string }
+    | { type: 'SET_SORT'; sortBy: "created_at" | "total"; sortOrder: "asc" | "desc" }
+    | { type: 'SET_MIN_INPUT'; payload: string }
+    | { type: 'SET_MAX_INPUT'; payload: string }
+    | { type: 'APPLY_FILTERS' }
+    | { type: 'CLEAR_FILTERS' };
+
+const initialState: OrderState = {
+    orders: [],
+    isLoading: true,
+    selectedOrderId: null,
+    sortBy: "created_at",
+    sortOrder: "desc",
+    minAmountInput: "",
+    maxAmountInput: "",
+    minAmount: "",
+    maxAmount: ""
+};
+
+function orderReducer(state: OrderState, action: OrderAction): OrderState {
+    switch (action.type) {
+        case 'SET_ORDERS':
+            return { ...state, orders: action.payload, isLoading: false };
+        case 'SET_LOADING':
+            return { ...state, isLoading: action.payload };
+        case 'TOGGLE_ORDER':
+            return { ...state, selectedOrderId: state.selectedOrderId === action.payload ? null : action.payload };
+        case 'SET_SORT':
+            return { ...state, sortBy: action.sortBy, sortOrder: action.sortOrder };
+        case 'SET_MIN_INPUT':
+            return { ...state, minAmountInput: action.payload };
+        case 'SET_MAX_INPUT':
+            return { ...state, maxAmountInput: action.payload };
+        case 'APPLY_FILTERS':
+            return { ...state, minAmount: state.minAmountInput, maxAmount: state.maxAmountInput };
+        case 'CLEAR_FILTERS':
+            return { ...state, minAmountInput: "", maxAmountInput: "", minAmount: "", maxAmount: "" };
+        default:
+            return state;
+    }
+}
+
 export function OrderHistory() {
     const { t } = useTranslation();
     const { user } = useAuth();
     const { openCart } = useCart();
-    const [orders, setOrders] = useState<Order[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-    const [sortBy, setSortBy] = useState<"created_at" | "total">("created_at");
-    const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
-    // Input states (for typing)
-    const [minAmountInput, setMinAmountInput] = useState<string>("");
-    const [maxAmountInput, setMaxAmountInput] = useState<string>("");
+    const [state, dispatch] = useReducer(orderReducer, initialState);
+    const {
+        orders, isLoading, selectedOrderId, sortBy, sortOrder,
+        minAmountInput, maxAmountInput, minAmount, maxAmount
+    } = state;
 
-    // Actual filter states (applied on button click)
-    const [minAmount, setMinAmount] = useState<string>("");
-    const [maxAmount, setMaxAmount] = useState<string>("");
     const retryCountRef = useRef(0);
 
     const fetchOrders = useCallback(async () => {
         if (!user) return;
-        setIsLoading(true);
+        dispatch({ type: 'SET_LOADING', payload: true });
         try {
             const data = await getUserOrders(user.id, {
                 sortBy,
@@ -41,16 +92,14 @@ export function OrderHistory() {
                 minAmount: minAmount ? parseFloat(minAmount) : undefined,
                 maxAmount: maxAmount ? parseFloat(maxAmount) : undefined
             });
-            retryCountRef.current = 0; // Reset on success
-            setOrders(data as Order[]);
+            retryCountRef.current = 0;
+            dispatch({ type: 'SET_ORDERS', payload: data as Order[] });
         } catch (err: unknown) {
             if (err instanceof Error && (err.name === 'AbortError' || err.message?.includes('AbortError') || err.message?.includes('Aborted'))) {
-                console.debug("Order fetch was aborted (expected on navigation)");
                 return;
             }
             console.error("Fetch orders error:", err);
-        } finally {
-            setIsLoading(false);
+            dispatch({ type: 'SET_LOADING', payload: false });
         }
     }, [user, sortBy, sortOrder, minAmount, maxAmount]);
 
@@ -60,15 +109,11 @@ export function OrderHistory() {
 
     const handleFilterSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        setMinAmount(minAmountInput);
-        setMaxAmount(maxAmountInput);
+        dispatch({ type: 'APPLY_FILTERS' });
     };
 
     const handleClearFilters = () => {
-        setMinAmountInput("");
-        setMaxAmountInput("");
-        setMinAmount("");
-        setMaxAmount("");
+        dispatch({ type: 'CLEAR_FILTERS' });
     };
 
     if (isLoading) {
@@ -76,7 +121,7 @@ export function OrderHistory() {
     }
 
     return (
-        <motion.div
+        <m.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className="max-w-3xl"
@@ -92,8 +137,7 @@ export function OrderHistory() {
                         value={`${sortBy}-${sortOrder}`}
                         onValueChange={(value) => {
                             const [sort, order] = value.split("-") as ["created_at" | "total", "asc" | "desc"];
-                            setSortBy(sort);
-                            setSortOrder(order);
+                            dispatch({ type: 'SET_SORT', sortBy: sort, sortOrder: order });
                         }}
                     >
                         <SelectTrigger className="w-45 h-9 bg-white border-gray-200">
@@ -114,14 +158,14 @@ export function OrderHistory() {
                             placeholder={t("profile.orders.filter_min")}
                             className="w-20 h-9 bg-white"
                             value={minAmountInput}
-                            onChange={(e) => setMinAmountInput(e.target.value)}
+                            onChange={(e) => dispatch({ type: 'SET_MIN_INPUT', payload: e.target.value })}
                         />
                         <Input
                             type="number"
                             placeholder={t("profile.orders.filter_max")}
                             className="w-20 h-9 bg-white"
                             value={maxAmountInput}
-                            onChange={(e) => setMaxAmountInput(e.target.value)}
+                            onChange={(e) => dispatch({ type: 'SET_MAX_INPUT', payload: e.target.value })}
                         />
                         <Button type="submit" size="sm" variant="outline" className="h-9">
                             <Filter className="w-3 h-3 mr-1" />
@@ -164,12 +208,12 @@ export function OrderHistory() {
                         <OrderCard
                             key={order.id}
                             order={order}
-                            isOpen={selectedOrder?.id === order.id}
-                            onToggle={() => setSelectedOrder(selectedOrder?.id === order.id ? null : order)}
+                            isOpen={selectedOrderId === order.id}
+                            onToggle={() => dispatch({ type: 'TOGGLE_ORDER', payload: order.id })}
                         />
                     ))}
                 </div>
             )}
-        </motion.div>
+        </m.div>
     );
 }

@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { lazy, Suspense, useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { LazyMotion, domAnimation, m } from "framer-motion";
 import Index from "./pages/Index";
 import "@/i18n/config"; // Ensure i18n is initialized
 import UnderConstruction from "@/components/UnderConstruction";
@@ -157,42 +157,44 @@ const App = () => {
 
   return (
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <AdminThemeProvider>
-            <Toaster />
-            <Sonner />
+      <LazyMotion features={domAnimation}>
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <AdminThemeProvider>
+              <Toaster />
+              <Sonner />
 
-            {isSplashScreenActive ? (
-              <div className="fixed inset-0 bg-[#FFFBF7] z-50 flex flex-col items-center justify-center">
-                <div className="relative w-32 h-32 mb-4 flex items-center justify-center">
-                  <ImageWithFallback />
+              {isSplashScreenActive ? (
+                <div className="fixed inset-0 bg-[#FFFBF7] z-50 flex flex-col items-center justify-center">
+                  <div className="relative w-32 h-32 mb-4 flex items-center justify-center">
+                    <ImageWithFallback />
+                  </div>
+                  <m.p
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="text-orange-900/40 font-medium text-sm tracking-widest uppercase"
+                  >
+                    Yükleniyor
+                  </m.p>
                 </div>
-                <motion.p
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 }}
-                  className="text-orange-900/40 font-medium text-sm tracking-widest uppercase"
-                >
-                  Yükleniyor
-                </motion.p>
-              </div>
-            ) : isPasswordRecovery ? (
-              <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-                <Suspense fallback={<RouteFallback />}>
-                  <Routes>
-                    <Route path="*" element={<UpdatePassword />} />
-                  </Routes>
-                </Suspense>
-              </BrowserRouter>
-            ) : (
-              <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-                <AppContent />
-              </BrowserRouter>
-            )}
-          </AdminThemeProvider>
-        </TooltipProvider>
-      </QueryClientProvider>
+              ) : isPasswordRecovery ? (
+                <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                  <Suspense fallback={<RouteFallback />}>
+                    <Routes>
+                      <Route path="*" element={<UpdatePassword />} />
+                    </Routes>
+                  </Suspense>
+                </BrowserRouter>
+              ) : (
+                <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                  <AppContent />
+                </BrowserRouter>
+              )}
+            </AdminThemeProvider>
+          </TooltipProvider>
+        </QueryClientProvider>
+      </LazyMotion>
     </ErrorBoundary>
   );
 };

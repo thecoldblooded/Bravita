@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { ArrowLeft, ArrowRight, Check, MapPin, CreditCard, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -116,13 +116,13 @@ export default function Checkout() {
 
     const handleNext = () => {
         if (currentStep < 3) {
-            setCurrentStep(currentStep + 1);
+            setCurrentStep(prev => prev + 1);
         }
     };
 
     const handleBack = () => {
         if (currentStep > 1) {
-            setCurrentStep(currentStep - 1);
+            setCurrentStep(prev => prev - 1);
         }
     };
 
@@ -259,7 +259,7 @@ export default function Checkout() {
 
                             return (
                                 <div key={step.id} className="relative z-10 flex flex-col items-center">
-                                    <motion.div
+                                    <m.div
                                         animate={{
                                             scale: isCurrent ? 1.1 : 1,
                                             backgroundColor: isCompleted || isCurrent ? "#f97316" : "#fff",
@@ -274,7 +274,7 @@ export default function Checkout() {
                                         ) : (
                                             <Icon className="w-5 h-5" />
                                         )}
-                                    </motion.div>
+                                    </m.div>
                                     <span className={`mt-2 text-sm font-medium ${isCurrent ? "text-orange-600" : "text-gray-500"
                                         }`}>
                                         {step.name}
@@ -289,7 +289,7 @@ export default function Checkout() {
                 <div className="bg-white rounded-3xl shadow-xl shadow-orange-100/50 p-6 md:p-8 min-h-100">
                     <AnimatePresence mode="wait">
                         {currentStep === 1 && (
-                            <motion.div
+                            <m.div
                                 key="step1"
                                 initial={{ opacity: 0, x: 20 }}
                                 animate={{ opacity: 1, x: 0 }}
@@ -299,11 +299,11 @@ export default function Checkout() {
                                     selectedAddressId={checkoutData.addressId}
                                     onSelect={(addressId) => setCheckoutData({ ...checkoutData, addressId })}
                                 />
-                            </motion.div>
+                            </m.div>
                         )}
 
                         {currentStep === 2 && (
-                            <motion.div
+                            <m.div
                                 key="step2"
                                 initial={{ opacity: 0, x: 20 }}
                                 animate={{ opacity: 1, x: 0 }}
@@ -318,11 +318,11 @@ export default function Checkout() {
                                     onInstallmentChange={(installmentNumber) => setCheckoutData({ ...checkoutData, installmentNumber })}
                                     onCardDetailsChange={(details) => setCheckoutData({ ...checkoutData, cardDetails: details })}
                                 />
-                            </motion.div>
+                            </m.div>
                         )}
 
                         {currentStep === 3 && (
-                            <motion.div
+                            <m.div
                                 key="step3"
                                 initial={{ opacity: 0, x: 20 }}
                                 animate={{ opacity: 1, x: 0 }}
@@ -339,7 +339,7 @@ export default function Checkout() {
                                     isAgreed={isAgreed}
                                     onAgreementChange={setIsAgreed}
                                 />
-                            </motion.div>
+                            </m.div>
                         )}
                     </AnimatePresence>
                 </div>

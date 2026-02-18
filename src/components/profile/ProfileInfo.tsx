@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { Save, Lock } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
@@ -96,7 +96,7 @@ export function ProfileInfo() {
     };
 
     return (
-        <motion.div
+        <m.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className="max-w-xl"
@@ -163,6 +163,6 @@ export function ProfileInfo() {
                     </Button>
                 </div>
             </form>
-        </motion.div>
+        </m.div>
     );
 }

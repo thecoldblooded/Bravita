@@ -38,7 +38,7 @@ export function OrderDetailSkeleton({ className }: OrderDetailSkeletonProps) {
 
                         {/* Items */}
                         {[...Array(2)].map((_, i) => (
-                            <div key={i} className={`flex gap-4 py-4 border-b last:border-0 ${borderClass}`}>
+                            <div key={`item-skeleton-${i}`} className={`flex gap-4 py-4 border-b last:border-0 ${borderClass}`}>
                                 <Skeleton className={`h-20 w-20 rounded-lg ${skeletonClass}`} />
                                 <div className="flex-1">
                                     <Skeleton className={`h-5 w-48 mb-2 ${skeletonClass}`} />
@@ -94,7 +94,7 @@ export function OrderDetailSkeleton({ className }: OrderDetailSkeletonProps) {
                         {/* Timeline */}
                         <div className="space-y-6">
                             {[...Array(4)].map((_, i) => (
-                                <div key={i} className="flex gap-4">
+                                <div key={`timeline-step-${i}`} className="flex gap-4">
                                     <div className="flex flex-col items-center">
                                         <Skeleton className={`h-8 w-8 rounded-full ${skeletonClass}`} />
                                         {i < 3 && <Skeleton className={`h-12 w-0.5 my-2 ${skeletonClass}`} />}

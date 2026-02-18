@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { CreditCard, Building2, Check, AlertCircle, Lock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -100,7 +100,7 @@ export function PaymentMethodSelector({
 
             <div className="grid gap-4 mb-6">
                 {/* Credit Card Option */}
-                <motion.button
+                <m.button
                     whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.99 }}
                     onClick={() => onMethodChange("credit_card")}
@@ -126,10 +126,10 @@ export function PaymentMethodSelector({
                             </div>
                         )}
                     </div>
-                </motion.button>
+                </m.button>
 
                 {/* Bank Transfer Option */}
-                <motion.button
+                <m.button
                     whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.99 }}
                     onClick={() => onMethodChange("bank_transfer")}
@@ -155,12 +155,12 @@ export function PaymentMethodSelector({
                             </div>
                         )}
                     </div>
-                </motion.button>
+                </m.button>
             </div>
 
             {/* Credit Card Form */}
             {selectedMethod === "credit_card" && (
-                <motion.div
+                <m.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
@@ -260,14 +260,14 @@ export function PaymentMethodSelector({
                             {t("checkout.payment.secure_payment", "Güvenli Ödeme - 256-bit SSL Korumalı")}
                         </span>
                     </div>
-                </motion.div>
+                </m.div>
             )
             }
 
             {/* Bank Transfer Info */}
             {
                 selectedMethod === "bank_transfer" && (
-                    <motion.div
+                    <m.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
@@ -295,7 +295,7 @@ export function PaymentMethodSelector({
                                 <strong>{t("common.note", "Not")}:</strong> {t("checkout.payment.reference_note", BANK_INFO.referenceNote)}
                             </p>
                         </div>
-                    </motion.div>
+                    </m.div>
                 )
             }
         </div >

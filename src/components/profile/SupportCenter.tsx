@@ -14,7 +14,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { MessageSquare, Plus, Send, History, Clock, CheckCircle2, XCircle, User, Headphones } from "lucide-react";
 import Loader from "@/components/ui/Loader";
 import { format } from "date-fns";
@@ -215,7 +215,7 @@ export function SupportCenter() {
     };
 
     return (
-        <motion.div
+        <m.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className="space-y-8"
@@ -240,7 +240,7 @@ export function SupportCenter() {
 
             <AnimatePresence mode="wait">
                 {showForm ? (
-                    <motion.div
+                    <m.div
                         key="form"
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -300,9 +300,9 @@ export function SupportCenter() {
                                 </Button>
                             </div>
                         </form>
-                    </motion.div>
+                    </m.div>
                 ) : (
-                    <motion.div
+                    <m.div
                         key="list"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -333,7 +333,7 @@ export function SupportCenter() {
 
                                             <div className="mt-6 space-y-6">
                                                 {parseConversation(ticket.message).map((msg, idx) => (
-                                                    <div key={idx} className={cn("flex gap-3", msg.isAdmin ? "flex-row" : "flex-row-reverse")}>
+                                                    <div key={`msg-${ticket.id}-${idx}`} className={cn("flex gap-3", msg.isAdmin ? "flex-row" : "flex-row-reverse")}>
                                                         <div className={cn(
                                                             "w-8 h-8 rounded-full flex items-center justify-center shrink-0 border",
                                                             msg.isAdmin ? "bg-orange-50 border-orange-200 text-orange-600" : "bg-gray-50 border-gray-200 text-gray-600"
@@ -378,7 +378,7 @@ export function SupportCenter() {
 
                                             <div className="mt-6 flex flex-col gap-4">
                                                 {replyingToId === ticket.id ? (
-                                                    <motion.div
+                                                    <m.div
                                                         initial={{ opacity: 0, height: 0 }}
                                                         animate={{ opacity: 1, height: "auto" }}
                                                         className="space-y-3"
@@ -414,7 +414,7 @@ export function SupportCenter() {
                                                                 {t("support.reply_submit")}
                                                             </Button>
                                                         </div>
-                                                    </motion.div>
+                                                    </m.div>
                                                 ) : (
                                                     ticket.status !== "closed" && (
                                                         <div className="flex justify-end">
@@ -446,9 +446,9 @@ export function SupportCenter() {
                                 </p>
                             </div>
                         )}
-                    </motion.div>
+                    </m.div>
                 )}
             </AnimatePresence>
-        </motion.div>
+        </m.div>
     );
 }

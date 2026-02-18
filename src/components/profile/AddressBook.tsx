@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase, safeQuery } from "@/lib/supabase";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { MapPin, Plus, Trash2, Home, Star, Building2 } from "lucide-react";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { toast } from "sonner";
@@ -213,7 +213,7 @@ export function AddressBook() {
     };
 
     return (
-        <motion.div
+        <m.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className="max-w-2xl"
@@ -235,7 +235,7 @@ export function AddressBook() {
 
             <AnimatePresence>
                 {isAdding && (
-                    <motion.form
+                    <m.form
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
@@ -324,7 +324,7 @@ export function AddressBook() {
                                 {isSubmitting ? <Loader size="1.25rem" noMargin /> : t("profile.addresses.form.save")}
                             </Button>
                         </div>
-                    </motion.form>
+                    </m.form>
                 )}
             </AnimatePresence>
 
@@ -361,7 +361,7 @@ export function AddressBook() {
                     </div>
                 ) : (
                     addresses.map((address) => (
-                        <motion.div
+                        <m.div
                             layout
                             key={address.id}
                             className={`p-4 rounded-xl border flex items-center justify-between group transition-colors ${address.is_default
@@ -427,10 +427,10 @@ export function AddressBook() {
                                     )}
                                 </Button>
                             </div>
-                        </motion.div>
+                        </m.div>
                     ))
                 )}
             </div>
-        </motion.div>
+        </m.div>
     );
 }

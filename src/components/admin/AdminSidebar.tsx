@@ -4,7 +4,7 @@ import { LayoutDashboard, Package, Users, LogOut, ChevronRight, Tags, Ticket, Ho
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminTheme } from "@/contexts/AdminThemeContext";
 import { supabase } from "@/lib/supabase";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 
 const menuItems = [
     { path: "/admin/orders", label: "Siparişler", icon: Package },
@@ -184,12 +184,12 @@ export function AdminSidebar() {
                             )}
 
                             {isActive && item.path !== "/admin/orders" && (
-                                <motion.div
+                                <m.div
                                     layoutId="activeIndicator"
                                     className="ml-auto"
                                 >
                                     <ChevronRight className="w-4 h-4 text-orange-500" />
-                                </motion.div>
+                                </m.div>
                             )}
                         </button>
                     );

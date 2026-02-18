@@ -1,7 +1,7 @@
 import { useState } from "react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import loginVideo from "@/assets/optimized/login-compressed.mp4";
 import bravitaLogo from "@/assets/bravita-logo.png";
 import {
@@ -20,13 +20,6 @@ interface AuthModalProps {
   defaultTab?: "login" | "signup";
 }
 
-
-interface AuthModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  defaultTab?: "login" | "signup";
-}
-
 export function AuthModal({
   open,
   onOpenChange,
@@ -35,9 +28,15 @@ export function AuthModal({
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<"login" | "signup">(defaultTab);
 
+  // Sync activeTab with defaultTab when modal opens
+  React.useEffect(() => {
+    if (open) {
+      setActiveTab(defaultTab);
+    }
+  }, [open, defaultTab]);
+
   const handleSuccess = () => {
     onOpenChange(false);
-    setActiveTab(defaultTab);
   };
 
   // Ultra-strict scroll lock for mobile and desktop including Lenis
@@ -118,7 +117,7 @@ export function AuthModal({
       >
         <div className="flex flex-col md:flex-row h-full overflow-hidden">
           {/* Left Section - Forms */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3 }}
@@ -140,7 +139,7 @@ export function AuthModal({
             </div>
 
             <React.Suspense fallback={<div className="min-h-75 flex items-center justify-center text-gray-400 capitalize">{t("common.loading") || "Yükleniyor..."}</div>}>
-              <motion.div
+              <m.div
                 key={activeTab}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -157,12 +156,12 @@ export function AuthModal({
                     onSwitchToLogin={() => setActiveTab("login")}
                   />
                 )}
-              </motion.div>
+              </m.div>
             </React.Suspense>
-          </motion.div>
+          </m.div>
 
           {/* Right Section - Video (Hidden on mobile) */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3, delay: 0.1 }}
@@ -182,7 +181,7 @@ export function AuthModal({
                 maxHeight: "100%",
               }}
             />
-          </motion.div>
+          </m.div>
         </div>
       </DialogContent>
     </Dialog>

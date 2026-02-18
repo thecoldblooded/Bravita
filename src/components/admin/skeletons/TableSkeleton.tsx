@@ -53,7 +53,7 @@ export function TableSkeleton({
                     <div className="flex gap-4">
                         {[...Array(columns)].map((_, i) => (
                             <Skeleton
-                                key={i}
+                                key={`head-col-${i}`}
                                 className={`h-4 ${skeletonClass}`}
                                 style={{ width: `${100 / columns}%` }}
                             />
@@ -64,13 +64,13 @@ export function TableSkeleton({
                 {/* Table Rows */}
                 {[...Array(rows)].map((_, rowIndex) => (
                     <div
-                        key={rowIndex}
+                        key={`row-${rowIndex}`}
                         className={`border-b last:border-b-0 px-6 py-4 ${rowBorder}`}
                     >
                         <div className="flex gap-4 items-center">
                             {[...Array(columns)].map((_, colIndex) => (
                                 <Skeleton
-                                    key={colIndex}
+                                    key={`col-${rowIndex}-${colIndex}`}
                                     className={`h-5 ${skeletonClass}`}
                                     style={{ width: `${100 / columns}%` }}
                                 />

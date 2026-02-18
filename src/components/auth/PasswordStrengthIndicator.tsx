@@ -91,9 +91,9 @@ export function PasswordStrengthIndicator({ password }: PasswordStrengthIndicato
 
             {/* Rules Checklist */}
             <div className="grid grid-cols-1 gap-1">
-                {results.map((rule, index) => (
+                {results.map((rule) => (
                     <div
-                        key={index}
+                        key={rule.key}
                         className={cn(
                             "flex items-center gap-2 text-xs transition-colors duration-200",
                             rule.passed ? "text-green-600" : "text-gray-400"

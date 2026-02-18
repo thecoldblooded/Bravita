@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, X } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { useAdminTheme } from "@/contexts/AdminThemeContext";
 
 const promoSchema = z.object({
@@ -104,14 +104,14 @@ export function PromoCodeModal({ isOpen, onClose, onSave, promoCode }: PromoCode
         <AnimatePresence>
             {isOpen && (
                 <>
-                    <motion.div
+                    <m.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
                         className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50"
                     />
-                    <motion.div
+                    <m.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.95 }}
@@ -239,7 +239,7 @@ export function PromoCodeModal({ isOpen, onClose, onSave, promoCode }: PromoCode
                                 </div>
                             </form>
                         </div>
-                    </motion.div>
+                    </m.div>
                 </>
             )}
         </AnimatePresence>

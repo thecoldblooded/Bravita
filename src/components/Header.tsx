@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { NavBar } from "@/components/ui/tubelight-navbar";
 import { Home, Heart, List, HelpCircle, Info, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserMenu } from "@/components/auth/UserMenu";
@@ -36,7 +36,7 @@ const BravitaLogo = ({ isScrolled }: { isScrolled: boolean }) => {
       )}
     >
       {letters.map((letter, index) => (
-        <motion.span
+        <m.span
           key={letter.id}
           className={cn(
             letter.color,
@@ -67,7 +67,7 @@ const BravitaLogo = ({ isScrolled }: { isScrolled: boolean }) => {
               i
             </span>
           ) : letter.char}
-        </motion.span>
+        </m.span>
       ))}
     </div>
   );
@@ -289,7 +289,7 @@ const Header = () => {
           </div>
 
           <div className="flex items-center gap-2 md:gap-4 shrink-0">
-            <motion.button
+            <m.button
               onClick={toggleLanguage}
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.96 }}
@@ -309,7 +309,7 @@ const Header = () => {
                 loading="eager"
                 decoding="sync"
               />
-            </motion.button>
+            </m.button>
 
             <div className="flex items-center gap-2 md:gap-4">
               {isUserReady || !isAuthenticated ? (
@@ -347,7 +347,7 @@ const Header = () => {
               {isUserReady && <UserMenu />}
 
               {!isAuthenticated && (
-                <motion.button
+                <m.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setAuthModalOpen(true)}
@@ -359,7 +359,7 @@ const Header = () => {
                   )}
                 >
                   {t('auth.login')}
-                </motion.button>
+                </m.button>
               )}
             </div>
           </div>
@@ -395,7 +395,7 @@ const Header = () => {
 
         <AnimatePresence>
           {showBackToTop && (
-            <motion.button
+            <m.button
               initial={{ opacity: 0, scale: 0.5, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.5, y: 20 }}
@@ -407,7 +407,7 @@ const Header = () => {
               className="pointer-events-auto bg-orange-600 text-white p-4 rounded-full shadow-2xl hover:bg-orange-700 transition-colors group"
             >
               <ChevronUp className="w-6 h-6 group-hover:-translate-y-1 transition-transform" />
-            </motion.button>
+            </m.button>
           )}
         </AnimatePresence>
       </div>

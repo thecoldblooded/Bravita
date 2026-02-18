@@ -1,5 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from "react";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { AlertTriangle, RefreshCw, Home } from "lucide-react";
 import { Button } from "./button";
 
@@ -37,7 +37,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
             return (
                 <div className="min-h-screen flex items-center justify-center bg-[#FFFBF7] p-6">
-                    <motion.div
+                    <m.div
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         className="max-w-md w-full bg-white rounded-3xl shadow-xl shadow-orange-100/50 p-8 text-center border border-orange-50"
@@ -76,7 +76,7 @@ export class ErrorBoundary extends Component<Props, State> {
                                 </p>
                             </div>
                         )}
-                    </motion.div>
+                    </m.div>
                 </div>
             );
         }

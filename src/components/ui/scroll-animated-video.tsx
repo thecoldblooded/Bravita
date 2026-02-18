@@ -87,7 +87,59 @@ function isSourceObject(m?: VideoLike): m is Source {
    Component
 ========================= */
 
-export const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
+const VideoMedia = ({
+    mediaType,
+    media,
+    poster,
+    muted,
+    loop,
+    playsInline,
+    autoPlay
+}: {
+    mediaType: string;
+    media?: VideoLike;
+    poster?: string;
+    muted: boolean;
+    loop: boolean;
+    playsInline: boolean;
+    autoPlay: boolean;
+}) => {
+    if (mediaType === "image") {
+        const src = typeof media === "string" ? media : media?.mp4 || "";
+        return (
+            <img
+                src={src}
+                alt=""
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+        );
+    }
+    // video
+    const sources: JSX.Element[] = [];
+    if (typeof media === "string") {
+        sources.push(<source key="mp4" src={media} type="video/mp4" />);
+    } else if (isSourceObject(media)) {
+        if (media.webm) sources.push(<source key="webm" src={media.webm} type="video/webm" />);
+        if (media.mp4) sources.push(<source key="mp4" src={media.mp4} type="video/mp4" />);
+        if (media.ogg) sources.push(<source key="ogg" src={media.ogg} type="video/ogg" />);
+    }
+
+    return (
+        <video
+            poster={poster}
+            muted={muted}
+            loop={loop}
+            playsInline={playsInline}
+            autoPlay={autoPlay || muted}
+            preload="metadata"
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        >
+            {sources}
+        </video>
+    );
+};
+
+const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
     title = "Future Forms",
     subtitle = "Design in Motion",
     meta = "2025",
@@ -424,43 +476,6 @@ export const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
         JSON.stringify(lenisOptions),
     ]);
 
-    // Media rendering
-    const renderMedia = () => {
-        if (mediaType === "image") {
-            const src = typeof media === "string" ? media : media?.mp4 || "";
-            return (
-                <img
-                    src={src}
-                    alt=""
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                />
-            );
-        }
-        // video
-        const sources: JSX.Element[] = [];
-        if (typeof media === "string") {
-            sources.push(<source key="mp4" src={media} type="video/mp4" />);
-        } else if (isSourceObject(media)) {
-            if (media.webm) sources.push(<source key="webm" src={media.webm} type="video/webm" />);
-            if (media.mp4) sources.push(<source key="mp4" src={media.mp4} type="video/mp4" />);
-            if (media.ogg) sources.push(<source key="ogg" src={media.ogg} type="video/ogg" />);
-        }
-
-        return (
-            <video
-                poster={poster}
-                muted={muted}
-                loop={loop}
-                playsInline={playsInline}
-                autoPlay={autoPlay || muted}
-                preload="metadata"
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-            >
-                {sources}
-            </video>
-        );
-    };
-
     return (
         <div
             ref={rootRef}
@@ -498,7 +513,15 @@ export const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
             >
                 <div className={`hsv-sticky ${sticky ? "is-sticky" : ""}`}>
                     <div className="hsv-media" ref={containerRef}>
-                        {renderMedia()}
+                        <VideoMedia
+                            mediaType={mediaType}
+                            media={media}
+                            poster={poster}
+                            muted={muted}
+                            loop={loop}
+                            playsInline={playsInline}
+                            autoPlay={autoPlay}
+                        />
 
                         {/* overlay that reveals */}
                         <div className="hsv-overlay" ref={overlayRef}>
@@ -510,7 +533,7 @@ export const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
                             <div className="hsv-overlay-content" ref={overlayContentRef}>
                                 {overlay?.heading ? <h3>{overlay.heading}</h3> : null}
                                 {overlay?.paragraphs?.map((p, i) => (
-                                    <p key={i}>{p}</p>
+                                    <p key={`p-${i}`}>{p}</p>
                                 ))}
                                 {overlay?.extra}
                             </div>
@@ -519,7 +542,6 @@ export const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
                 </div>
             </div>
 
-            {/* Styles (scoped) */}
             <style>{`
         /* System theme: define light defaults, override in dark */
         .hsv-root {
@@ -547,7 +569,7 @@ export const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
             --text: #e5e7eb;
             --muted: #9ca3af;
             --muted-bg: rgba(229,231,235,0.08);
-            --muted-border: rgba(229,231,235,0.14);
+            --muted-border: rgba(229,229,235,0.14);
             --overlay-bg: rgba(8,8,12,0.55);
             --overlay-text: #ffffff;
             --accent: #3b82f6;

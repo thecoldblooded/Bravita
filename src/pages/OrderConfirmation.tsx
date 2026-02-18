@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { Check, Package, MapPin, CreditCard, Building2, ArrowRight, Copy, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getOrderById, getBankDetails } from "@/lib/checkout";
@@ -127,16 +127,16 @@ export default function OrderConfirmation() {
         <div className="min-h-screen bg-linear-to-b from-green-50/50 to-white">
             <div className="max-w-2xl mx-auto px-4 py-8">
                 {/* Success Animation */}
-                <motion.div
+                <m.div
                     initial={{ scale: 0.5 }}
                     animate={{ scale: 1 }}
                     transition={{ type: "spring", duration: 0.5 }}
                     className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6"
                 >
                     <Check className="w-10 h-10 text-white" strokeWidth={3} />
-                </motion.div>
+                </m.div>
 
-                <motion.div
+                <m.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
@@ -150,10 +150,10 @@ export default function OrderConfirmation() {
                             ? t("order.success_desc_bank", "Havale/EFT ile ödeme bekleniyor.")
                             : t("order.success_desc", "Siparişiniz hazırlanmaya başlandı.")}
                     </p>
-                </motion.div>
+                </m.div>
 
                 {/* Order ID */}
-                <motion.div
+                <m.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
@@ -171,11 +171,11 @@ export default function OrderConfirmation() {
                             </p>
                         </div>
                     </div>
-                </motion.div>
+                </m.div>
 
                 {/* Bank Transfer Info */}
                 {isBankTransfer && (
-                    <motion.div
+                    <m.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.35 }}
@@ -222,11 +222,11 @@ export default function OrderConfirmation() {
                                 <strong>{t("common.important", "Önemli")}:</strong> {t("order.bank_reference_note", "Açıklama kısmına sipariş numaranızı ({{orderId}}) yazmayı unutmayın.", { orderId: order.id.slice(0, 8).toUpperCase() })}
                             </p>
                         </div>
-                    </motion.div>
+                    </m.div>
                 )}
 
                 {/* Order Details */}
-                <motion.div
+                <m.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4 }}
@@ -286,11 +286,11 @@ export default function OrderConfirmation() {
                             <span className="text-orange-600">₺{order.order_details.total}</span>
                         </div>
                     </div>
-                </motion.div>
+                </m.div>
 
                 {/* Shipping Address */}
                 {order.shipping_address && (
-                    <motion.div
+                    <m.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.5 }}
@@ -303,11 +303,11 @@ export default function OrderConfirmation() {
                         <p className="font-medium text-gray-900">{order.shipping_address.city}</p>
                         <p className="text-gray-600">{order.shipping_address.street}</p>
                         <p className="text-gray-500 text-sm">{order.shipping_address.postal_code}</p>
-                    </motion.div>
+                    </m.div>
                 )}
 
                 {/* Actions */}
-                <motion.div
+                <m.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.6 }}
@@ -324,7 +324,7 @@ export default function OrderConfirmation() {
                             {t("order.continue_shopping", "Alışverişe Devam Et")}
                         </Button>
                     </Link>
-                </motion.div>
+                </m.div>
             </div>
         </div>
     );

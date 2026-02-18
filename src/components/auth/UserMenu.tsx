@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,7 +22,7 @@ interface MenuItemProps {
 }
 
 const MenuItem = ({ icon, label, onClick, variant = "default", delay = 0 }: MenuItemProps) => (
-  <motion.button
+  <m.button
     initial={{ opacity: 0, x: -10 }}
     animate={{ opacity: 1, x: 0 }}
     transition={{ delay, duration: 0.2 }}
@@ -51,7 +51,7 @@ const MenuItem = ({ icon, label, onClick, variant = "default", delay = 0 }: Menu
       group-hover:opacity-100 group-hover:translate-x-0
       ${variant === "danger" ? "text-red-400" : "text-orange-400"}
     `} />
-  </motion.button>
+  </m.button>
 );
 
 export function UserMenu() {
@@ -99,7 +99,7 @@ export function UserMenu() {
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
-        <motion.button
+        <m.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           className="ml-2 md:ml-4 focus:outline-none relative"
@@ -108,7 +108,7 @@ export function UserMenu() {
           <div className="relative w-11 h-11 flex items-center justify-center bg-linear-to-br from-orange-100 to-orange-50 rounded-full overflow-hidden shadow-sm hover:shadow-orange-200 transition-all duration-300 border border-orange-200">
             <UserRound className="w-6 h-6 text-orange-600" />
           </div>
-        </motion.button>
+        </m.button>
       </DropdownMenuTrigger>
 
       <AnimatePresence>
@@ -119,7 +119,7 @@ export function UserMenu() {
             className="w-72 p-0 bg-white/95 backdrop-blur-xl border border-gray-100 rounded-2xl shadow-xl shadow-gray-200/50 overflow-hidden"
           >
 
-            <motion.div
+            <m.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2 }}
@@ -138,7 +138,7 @@ export function UserMenu() {
                   </p>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
 
             {/* Menu Items */}
             <div className="p-2">

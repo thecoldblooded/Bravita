@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { Cookie } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -65,7 +65,7 @@ const CookieConsent = () => {
     return (
         <AnimatePresence>
             {isVisible && (
-                <motion.div
+                <m.div
                     initial={{ y: 100, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     exit={{ y: 100, opacity: 0 }}
@@ -123,7 +123,7 @@ const CookieConsent = () => {
 
                             <AnimatePresence>
                                 {showCustomize && (
-                                    <motion.div
+                                    <m.div
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, y: 10 }}
@@ -168,12 +168,12 @@ const CookieConsent = () => {
                                                 {t("cookie_consent.save_preferences")}
                                             </Button>
                                         </div>
-                                    </motion.div>
+                                    </m.div>
                                 )}
                             </AnimatePresence>
                         </div>
                     </div>
-                </motion.div>
+                </m.div>
             )}
         </AnimatePresence>
     );

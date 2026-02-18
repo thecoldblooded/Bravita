@@ -10,7 +10,7 @@ import {
     LayoutDashboard,
     ArrowRight
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { useAdminTheme } from "@/contexts/AdminThemeContext";
 
 export const CommandPalette = () => {
@@ -55,14 +55,14 @@ export const CommandPalette = () => {
         <>
             <AnimatePresence>
                 {open && (
-                    <motion.div
+                    <m.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         className="fixed inset-0 z-100 bg-gray-900/50 backdrop-blur-sm p-4 md:p-20"
                         onClick={() => setOpen(false)}
                     >
-                        <motion.div
+                        <m.div
                             initial={{ scale: 0.95, opacity: 0, y: -20 }}
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.95, opacity: 0, y: -20 }}
@@ -111,8 +111,8 @@ export const CommandPalette = () => {
                                     </Command.Group>
                                 </Command.List>
                             </Command>
-                        </motion.div>
-                    </motion.div>
+                        </m.div>
+                    </m.div>
                 )}
             </AnimatePresence>
 

@@ -30,7 +30,7 @@ export function DashboardSkeleton({ className }: DashboardSkeletonProps) {
             {/* Stat Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 {[...Array(4)].map((_, i) => (
-                    <div key={i} className={cardClass}>
+                    <div key={`stat-card-${i}`} className={cardClass}>
                         <div className="flex items-center justify-between mb-4">
                             <Skeleton className={`h-10 w-10 rounded-lg ${skeletonClass}`} />
                             <Skeleton className={`h-4 w-16 ${skeletonClass}`} />
@@ -49,7 +49,7 @@ export function DashboardSkeleton({ className }: DashboardSkeletonProps) {
                     <div className="h-72 flex items-end gap-2">
                         {[...Array(12)].map((_, i) => (
                             <Skeleton
-                                key={i}
+                                key={`area-bar-${i}`}
                                 className={`flex-1 rounded-t ${skeletonClass}`}
                                 style={{ height: `${Math.random() * 60 + 30}%` }}
                             />
@@ -63,7 +63,7 @@ export function DashboardSkeleton({ className }: DashboardSkeletonProps) {
                     <div className="h-72 flex items-end gap-3">
                         {[...Array(7)].map((_, i) => (
                             <Skeleton
-                                key={i}
+                                key={`chart-bar-${i}`}
                                 className={`flex-1 rounded-t ${skeletonClass}`}
                                 style={{ height: `${Math.random() * 70 + 20}%` }}
                             />

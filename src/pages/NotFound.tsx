@@ -1,7 +1,7 @@
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
 
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import notFoundAnimation from "@/assets/404-not-found.lottie";
 import bravitaLogo from "@/assets/bravita-logo.webp";
@@ -16,7 +16,7 @@ const NotFound = () => {
 
   return (
     <div className="flex min-h-screen items-start justify-center bg-[#FFFBF4] p-4 pt-8 text-center">
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
@@ -34,7 +34,7 @@ const NotFound = () => {
           </div>
         </div>
 
-        <motion.img
+        <m.img
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.3, duration: 0.5 }}
@@ -43,7 +43,7 @@ const NotFound = () => {
           className="w-48 h-auto mx-auto mb-4"
         />
 
-        <motion.p
+        <m.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
@@ -51,9 +51,9 @@ const NotFound = () => {
         >
           Aradığınız sayfa taşınmış, silinmiş veya hiç var olmamış olabilir.
           Ama merak etmeyin, büyüme formülümüz hala burada!
-        </motion.p>
+        </m.p>
 
-        <motion.a
+        <m.a
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
@@ -63,8 +63,8 @@ const NotFound = () => {
         >
           Ana Sayfaya Dön
           <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
-        </motion.a>
-      </motion.div>
+        </m.a>
+      </m.div>
     </div>
   );
 };

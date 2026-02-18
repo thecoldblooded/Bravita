@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -40,7 +40,7 @@ function AgreementItem({ title, children }: { title: string, children: React.Rea
                 {title}
                 <ChevronDown className={`w-4 h-4 text-orange-500 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} />
             </button>
-            <motion.div
+            <m.div
                 initial={false}
                 animate={{ height: isOpen ? "auto" : 80 }}
                 className="relative overflow-hidden bg-white"
@@ -57,7 +57,7 @@ function AgreementItem({ title, children }: { title: string, children: React.Rea
                         className="absolute bottom-0 left-0 right-0 h-16 bg-linear-to-t from-white via-white/80 to-transparent pointer-events-none"
                     />
                 )}
-            </motion.div>
+            </m.div>
         </div>
     );
 }
@@ -104,8 +104,8 @@ export function SalesAgreements({ user, address, items, totals, paymentMethod }:
 
                     <div className="border border-gray-200 rounded p-2 my-2 space-y-1 bg-gray-50">
                         <p className="font-semibold border-b border-gray-200 pb-1 mb-1">{t('checkout.agreements.pre_info.table_header')}</p>
-                        {items.map((item, idx) => (
-                            <p key={idx}>{item.name} / {item.quantity} / ₺{(item.price * item.quantity).toFixed(2)}</p>
+                        {items.map((item) => (
+                            <p key={item.name}>{item.name} / {item.quantity} / ₺{(item.price * item.quantity).toFixed(2)}</p>
                         ))}
                         <p className="font-bold pt-1 mt-1 border-t border-gray-200 text-gray-900">{t('checkout.agreements.pre_info.total')}: ₺{totals.total.toFixed(2)}</p>
                     </div>
@@ -127,7 +127,7 @@ export function SalesAgreements({ user, address, items, totals, paymentMethod }:
                     <p className="mt-2"><strong>{t('checkout.agreements.pre_info.exceptions_title')}</strong></p>
                     <ul className="list-disc pl-4 space-y-1">
                         {(t('checkout.agreements.pre_info.exceptions_list', { returnObjects: true }) as string[]).map((item, index) => (
-                            <li key={index}>{item}</li>
+                            <li key={`exception-${index}`}>{item}</li>
                         ))}
                     </ul>
 
@@ -179,8 +179,8 @@ export function SalesAgreements({ user, address, items, totals, paymentMethod }:
                     <p className="mt-4"><strong>{t('checkout.agreements.sales_agreement.article_3_title')}</strong></p>
                     <p>{t('checkout.agreements.sales_agreement.article_3_1_text')}</p>
                     <div className="border border-gray-200 rounded p-2 my-2 space-y-1 bg-gray-50">
-                        {items.map((item, idx) => (
-                            <p key={idx}>{item.name} - {item.quantity} {t("cart.quantity_label", "Adet")} - ₺{(item.price * item.quantity).toFixed(2)}</p>
+                        {items.map((item) => (
+                            <p key={item.name}>{item.name} - {item.quantity} {t("cart.quantity_label", "Adet")} - ₺{(item.price * item.quantity).toFixed(2)}</p>
                         ))}
                     </div>
 

@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { Star, Sparkles, ChevronDown } from "lucide-react";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import TextCursorProximity from "./ui/text-cursor-proximity";
 import { useTranslation } from "react-i18next";
 
@@ -132,7 +132,7 @@ const Hero = () => {
             return (
               <g key={`group-${i}`}>
                 {/* Rope */}
-                <motion.path
+                <m.path
                   stroke="rgba(249, 115, 22, 0.1)"
                   strokeWidth="0.5"
                   fill="none"
@@ -155,7 +155,7 @@ const Hero = () => {
                 />
 
                 {/* Beam - Simplified for performance */}
-                <motion.path
+                <m.path
                   stroke={`url(#comet-grad-${i})`}
                   strokeWidth="1.5"
                   strokeLinecap="round"
@@ -186,7 +186,7 @@ const Hero = () => {
       {/* 2. Foreground Stars Layer (DOM Elements for perfect 1:1 Aspect Ratio) */}
       <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden">
         {stars.map((star, i) => (
-          <motion.div
+          <m.div
             key={`star-dom-${i}`}
             className="absolute flex items-center justify-center transform -translate-x-1/2 -translate-y-1/2"
             style={{
@@ -222,7 +222,7 @@ const Hero = () => {
                 {star.name}
               </span>
             </div>
-          </motion.div>
+          </m.div>
         ))}
       </div>
 

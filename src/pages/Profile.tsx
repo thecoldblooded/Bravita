@@ -15,11 +15,27 @@ import Loader from "@/components/ui/Loader";
 import { Helmet } from "react-helmet-async";
 import { useTranslation } from "react-i18next";
 
+const ProfileContent = ({ activeTab }: { activeTab: string }) => {
+    switch (activeTab) {
+        case "profile":
+            return <ProfileInfo />;
+        case "addresses":
+            return <AddressBook />;
+        case "orders":
+            return <OrderHistory />;
+        case "support":
+            return <SupportCenter />;
+        case "settings":
+            return <SettingsPanel />;
+        default:
+            return <ProfileInfo />;
+    }
+};
+
 export default function Profile() {
     const { t } = useTranslation();
     const { user, isLoading } = useAuth();
     const navigate = useNavigate();
-    // ... (keep existing setup)
     const [searchParams, setSearchParams] = useSearchParams();
     const location = useLocation();
 
@@ -44,23 +60,6 @@ export default function Profile() {
 
     if (!user) return null;
 
-    const renderContent = () => {
-        switch (activeTab) {
-            case "profile":
-                return <ProfileInfo />;
-            case "addresses":
-                return <AddressBook />;
-            case "orders":
-                return <OrderHistory />;
-            case "support":
-                return <SupportCenter />;
-            case "settings":
-                return <SettingsPanel />;
-            default:
-                return <ProfileInfo />;
-        }
-    };
-
     return (
         <div className="min-h-screen bg-[#FFFBF4] flex flex-col">
             <Helmet>
@@ -82,7 +81,7 @@ export default function Profile() {
 
                     {/* Main Content Area */}
                     <div className="flex-1 min-w-0">
-                        {renderContent()}
+                        <ProfileContent activeTab={activeTab} />
                     </div>
                 </div>
             </main>

@@ -1,10 +1,10 @@
-import { useState, useEffect, useMemo } from "react";
+import { useEffect, useMemo, useReducer } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./dialog";
 import { useTranslation } from "react-i18next";
 import { ShoppingCart } from "lucide-react";
 import bravitaGif from "@/assets/bravita.gif";
 import { Button } from "./button";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence, LazyMotion, domAnimation } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { CartItem } from "../cart/CartItem";
 import { CartSummary } from "../cart/CartSummary";
@@ -15,21 +15,73 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { useScrollLock } from "@/hooks/useScrollLock";
 
 interface CartModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }
 
+type AppliedPromo = {
+    code: string;
+    type: 'percentage' | 'fixed_amount';
+    value: number;
+    minOrderAmount: number;
+    maxDiscountAmount: number | null;
+};
+
+type CartState = {
+    quantity: number;
+    isCheckingOut: boolean;
+    inputPromoCode: string;
+    isApplyingPromo: boolean;
+    localAppliedPromo: AppliedPromo | null;
+    failedAttempts: number;
+    lastAttemptTimestamp: number | null;
+};
+
+type CartAction =
+    | { type: 'SET_QUANTITY'; payload: number }
+    | { type: 'SET_CHECKING_OUT'; payload: boolean }
+    | { type: 'SET_PROMO_INPUT'; payload: string }
+    | { type: 'SET_APPLYING_PROMO'; payload: boolean }
+    | { type: 'SET_APPLIED_PROMO'; payload: AppliedPromo | null }
+    | { type: 'PROMO_FAILED'; payload: number }
+    | { type: 'RESET_FAILED_ATTEMPTS' };
+
+const cartReducer = (state: CartState, action: CartAction): CartState => {
+    switch (action.type) {
+        case 'SET_QUANTITY': return { ...state, quantity: action.payload };
+        case 'SET_CHECKING_OUT': return { ...state, isCheckingOut: action.payload };
+        case 'SET_PROMO_INPUT': return { ...state, inputPromoCode: action.payload };
+        case 'SET_APPLYING_PROMO': return { ...state, isApplyingPromo: action.payload };
+        case 'SET_APPLIED_PROMO': return { ...state, localAppliedPromo: action.payload, failedAttempts: 0, lastAttemptTimestamp: null };
+        case 'PROMO_FAILED': return { ...state, failedAttempts: action.payload, lastAttemptTimestamp: Date.now(), localAppliedPromo: null };
+        case 'RESET_FAILED_ATTEMPTS': return { ...state, failedAttempts: 0 };
+        default: return state;
+    }
+};
+
 export function CartModal({ open, onOpenChange }: CartModalProps) {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { user, isAuthenticated } = useAuth();
     const { addToCart, clearCart, applyPromoCode, removePromoCode, promoCode: contextPromoCode, settings } = useCart();
-    const [quantity, setQuantity] = useState(1);
-    // const [promoCode, setPromoCode] = useState(""); // Replaced by inputPromoCode and contextPromoCode
-    const [isCheckingOut, setIsCheckingOut] = useState(false);
-    // Use useQuery for product data fetching
+
+    const [state, dispatch] = useReducer(cartReducer, {
+        quantity: 1,
+        isCheckingOut: false,
+        inputPromoCode: contextPromoCode || "",
+        isApplyingPromo: false,
+        localAppliedPromo: null,
+        failedAttempts: 0,
+        lastAttemptTimestamp: null,
+    });
+
+    const { quantity, isCheckingOut, inputPromoCode, isApplyingPromo, localAppliedPromo, failedAttempts, lastAttemptTimestamp } = state;
+
+    useScrollLock(open);
+
     const { data: productData } = useQuery({
         queryKey: ['productPrice', 'bravita-multivitamin'],
         queryFn: () => getProductPrice("bravita-multivitamin"),
@@ -37,94 +89,29 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
         staleTime: 1000 * 60 * 5
     });
 
-    const serverPrice = productData?.price ?? null;
-    const serverOriginalPrice = productData?.original_price ?? null;
-    const maxQuantity = productData?.maxQuantity ?? 99;
+    const PRICING = useMemo(() => ({
+        UNIT_PRICE: productData?.price ?? 600,
+        VAT_RATE: settings.vat_rate,
+        MAX_QUANTITY: productData?.maxQuantity ?? 99,
+        MIN_QUANTITY: 1,
+    }), [productData, settings.vat_rate]);
+
     const currentStock = productData?.stock ?? 1000;
     const productId = productData?.id ?? null;
 
-    // Fallback değerler (sunucudan gelmezse)
-    const PRICING = Object.freeze({
-        UNIT_PRICE: serverPrice ?? 600,
-        VAT_RATE: settings.vat_rate,
-        MAX_QUANTITY: maxQuantity,
-        MIN_QUANTITY: 1,
-    });
-
-    // Use context for promo state
-
-    // Local state for input
-    const [inputPromoCode, setInputPromoCode] = useState(contextPromoCode || "");
-    const [isApplyingPromo, setIsApplyingPromo] = useState(false);
-
-    // Sync input with context
     useEffect(() => {
-        if (contextPromoCode) setInputPromoCode(contextPromoCode);
+        if (contextPromoCode) dispatch({ type: 'SET_PROMO_INPUT', payload: contextPromoCode });
     }, [contextPromoCode]);
-
-    // Calculate totals using context logic (or just use cartTotal from context!)
-    // But since this modal might be used to *manipulate* quantities before committing to "cartTotal" 
-    // Wait, useCart's cartTotal is live. 
-    // The previous implementation used a local 'quantity' state.
-    // The CartModal seems to be designed for a SINGLE item add to cart flow 
-    // OR viewing the cart.
-    // Looking at the code:
-    // It has `const { addToCart, clearCart } = useCart();`
-    // It has `const [quantity, setQuantity] = useState(1);`
-    // It clears cart and adds item on checkout.
-    // This design is... unusual. It treats the modal as a "Quick Buy" for a specific item (Bravita Multivitamin),
-    // effectively ignoring whatever was in the cart before?
-    // "Clear existing cart and add new item" line 144 confirms this.
-
-    // If the modal is a "Cart View", it should iterate `cartItems`.
-    // But lines 202-264 show a SINGLE hardcoded item display (Bravita Bottle).
-
-    // The user issue is "sipariş özetinde [...] görünmüyor".
-    // "Sipariş Özeti" is on the Checkout page.
-
-    // If the CartModal is a transient "Quick Buy" window, then persisting to CartContext is exactly what we need
-    // so that when we navigate to Checkout (which uses CartContext), the data is there.
-
-    // However, the `subtotal` in CartModal was calculated based on the LOCAL quantity state.
-    // `const subtotal = PRICING.UNIT_PRICE * quantity;`
-
-    // When the user clicks "Checkout", we do:
-    // clearCart(); addToCart(...); navigate('/checkout');
-
-    // We also need to Apply the promo code to the context AT THAT MOMENT.
-    // OR, we can allow applying it in the modal, but since the modal works on *potential* cart items,
-    // we should only commit it to context on checkout.
-
-    // BUT the user wants to see the discount IN THE MODAL too.
-
-    // Let's modify the modal to keep using local state for display, but commit to context on checkout.
-
-    const [localAppliedPromo, setLocalAppliedPromo] = useState<{
-        code: string;
-        type: 'percentage' | 'fixed_amount';
-        value: number;
-        minOrderAmount: number;
-        maxDiscountAmount: number | null;
-    } | null>(null);
-
-    // Brute force protection state
-    const [failedAttempts, setFailedAttempts] = useState(0);
-    const [lastAttemptTimestamp, setLastAttemptTimestamp] = useState<number | null>(null);
-    const MAX_ATTEMPTS = 5;
-    const LOCKOUT_TIME = 10 * 60 * 1000; // 10 minutes
 
     const subtotal = PRICING.UNIT_PRICE * quantity;
     const vatAmountBeforeDiscount = subtotal * PRICING.VAT_RATE;
     const totalBeforeDiscount = subtotal + vatAmountBeforeDiscount;
 
-    // Recalculate discount dynamically based on Total
     const discountAmount = useMemo(() => {
         if (!localAppliedPromo) return 0;
-
         let calculated = localAppliedPromo.value;
         if (localAppliedPromo.type === 'percentage') {
             calculated = (totalBeforeDiscount * localAppliedPromo.value) / 100;
-            // Apply maximum discount cap
             if (localAppliedPromo.maxDiscountAmount && calculated > localAppliedPromo.maxDiscountAmount) {
                 calculated = localAppliedPromo.maxDiscountAmount;
             }
@@ -132,86 +119,66 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
         return calculated;
     }, [localAppliedPromo, totalBeforeDiscount]);
 
-    // Validation Effect: Monitor subtotal and auto-remove promo if threshold not met
     useEffect(() => {
         if (localAppliedPromo && subtotal < localAppliedPromo.minOrderAmount) {
-            setLocalAppliedPromo(null);
+            dispatch({ type: 'SET_APPLIED_PROMO', payload: null });
             toast.error(t("promo.invalid_threshold", {
-                defaultValue: "Sepet tutarı minimum limitin altına düştüğü için kupon kaldırıldı.",
                 amount: localAppliedPromo.minOrderAmount
             }));
         }
     }, [subtotal, localAppliedPromo, t]);
 
-    // Shipping Calculation
     const SHIPPING_COST = settings.shipping_cost;
     const FREE_SHIPPING_THRESHOLD = settings.free_shipping_threshold;
     const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
     const remainingForFreeShipping = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
-
     const total = Math.max(0, totalBeforeDiscount - discountAmount + shipping);
-    const vatAmount = vatAmountBeforeDiscount; // Fixed VAT on full amount
 
-    const handleRemove = () => {
-        setQuantity(0);
-        setLocalAppliedPromo(null);
-    };
-    const increment = () => setQuantity(prev => Math.min(Math.min(PRICING.MAX_QUANTITY, currentStock), prev + 1));
-    const decrement = () => setQuantity(prev => Math.max(PRICING.MIN_QUANTITY, prev - 1));
-
-    // SECURITY: Sanitize promo code input to prevent injection
-    const handlePromoCodeChange = (value: string) => {
-        const sanitized = value.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 20);
-        setInputPromoCode(sanitized);
-    };
+    const increment = () => dispatch({ type: 'SET_QUANTITY', payload: Math.min(Math.min(PRICING.MAX_QUANTITY, currentStock), quantity + 1) });
+    const decrement = () => dispatch({ type: 'SET_QUANTITY', payload: Math.max(PRICING.MIN_QUANTITY, quantity - 1) });
 
     const handleApplyPromoCode = async () => {
         if (!inputPromoCode.trim()) return;
 
-        // 1. Brute Force Protection
+        const MAX_ATTEMPTS = 5;
+        const LOCKOUT_TIME = 10 * 60 * 1000;
+
         if (failedAttempts >= MAX_ATTEMPTS && lastAttemptTimestamp) {
             const timePassed = Date.now() - lastAttemptTimestamp;
             if (timePassed < LOCKOUT_TIME) {
                 const remainingMinutes = Math.ceil((LOCKOUT_TIME - timePassed) / 60000);
-                toast.error(`Çok fazla hatalı deneme. Lütfen ${remainingMinutes} dakika sonra tekrar deneyin.`);
+                toast.error(`${remainingMinutes} dakika sonra tekrar deneyin.`);
                 return;
             } else {
-                // Reset after lockout
-                setFailedAttempts(0);
+                dispatch({ type: 'RESET_FAILED_ATTEMPTS' });
             }
         }
 
-        setIsApplyingPromo(true);
+        dispatch({ type: 'SET_APPLYING_PROMO', payload: true });
         try {
             const result = await import("@/lib/checkout").then(m => m.validatePromoCode(inputPromoCode, subtotal, subtotal));
-
             if (result.valid) {
-                // Success: Reset failed attempts
-                setFailedAttempts(0);
-                setLocalAppliedPromo({
-                    code: inputPromoCode,
-                    type: result.type as 'percentage' | 'fixed_amount',
-                    value: result.value || 0,
-                    minOrderAmount: result.minOrderAmount || 0,
-                    maxDiscountAmount: result.maxDiscountAmount ?? null
+                dispatch({
+                    type: 'SET_APPLIED_PROMO', payload: {
+                        code: inputPromoCode,
+                        type: result.type as 'percentage' | 'fixed_amount',
+                        value: result.value || 0,
+                        minOrderAmount: result.minOrderAmount || 0,
+                        maxDiscountAmount: result.maxDiscountAmount ?? null
+                    }
                 });
                 toast.success(result.message);
             } else {
-                // Failure: Increment brute force counter
-                setFailedAttempts(prev => prev + 1);
-                setLastAttemptTimestamp(Date.now());
-                setLocalAppliedPromo(null);
+                dispatch({ type: 'PROMO_FAILED', payload: failedAttempts + 1 });
                 toast.error(result.message);
             }
         } catch (error) {
-            console.error("Promo code error:", error);
             toast.error("Hata oluştu");
         } finally {
-            setIsApplyingPromo(false);
+            dispatch({ type: 'SET_APPLYING_PROMO', payload: false });
         }
     };
 
-    // SECURITY: Server-side validated checkout
     const handleCheckout = async () => {
         if (!isAuthenticated) {
             toast.error(t("cart.login_required") || "Lütfen giriş yapın");
@@ -219,7 +186,6 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
             return;
         }
 
-        // Profile completion check (frontend hint, server will verify too)
         if (user && !user.profile_complete) {
             toast.error(t("cart.profile_incomplete") || "Lütfen önce profilinizi tamamlayın");
             onOpenChange(false);
@@ -227,30 +193,17 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
             return;
         }
 
-        setIsCheckingOut(true);
-
+        dispatch({ type: 'SET_CHECKING_OUT', payload: true });
         try {
-            // NOTE: Stock check temporarily disabled until products table is set up in Supabase
-            // const stockCheck = await checkStock("bravita-multivitamin", quantity);
-            // if (!stockCheck.available) {
-            //     toast.error(stockCheck.message || "Stok yetersiz");
-            //     setIsCheckingOut(false);
-            //     return;
-            // }
-
-            // 1. Clear Cart
             clearCart();
-
-            // 2. Add Item
             addToCart({
                 name: "Bravita Multivitamin",
                 slug: "bravita-multivitamin",
                 quantity: quantity,
-                price: serverPrice ?? 600,
+                price: PRICING.UNIT_PRICE,
                 product_id: productId || undefined,
             });
 
-            // 3. Apply Promo to Context if exists
             if (localAppliedPromo) {
                 applyPromoCode(localAppliedPromo.code, discountAmount);
             } else {
@@ -260,79 +213,11 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
             onOpenChange(false);
             navigate("/checkout");
         } catch (error) {
-            console.error("Checkout error:", error);
             toast.error("Bir hata oluştu");
         } finally {
-            setIsCheckingOut(false);
+            dispatch({ type: 'SET_CHECKING_OUT', payload: false });
         }
     };
-
-    // Ultra-strict scroll lock for mobile and desktop including Lenis
-    useEffect(() => {
-        if (!open) return;
-
-        // 1. Handle Lenis (Smooth Scroll)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const lenis = (window as any).lenis;
-        if (lenis) {
-            lenis.stop();
-        }
-
-        // 2. Standard Scroll Lock
-        const scrollY = window.scrollY;
-        const originalOverflow = document.body.style.overflow;
-        const originalPosition = document.body.style.position;
-        const originalTop = document.body.style.top;
-        const originalWidth = document.body.style.width;
-
-        document.body.style.position = 'fixed';
-        document.body.style.top = `-${scrollY}px`;
-        document.body.style.width = '100%';
-        document.body.style.overflow = 'hidden';
-
-        // 3. Final barrier against touch bleed
-        const preventDefault = (e: TouchEvent) => {
-            if (e.touches.length > 1) return;
-            const isScrollable = (e.target as HTMLElement).closest('.overflow-y-auto');
-            if (!isScrollable) {
-                e.preventDefault();
-            }
-        };
-
-        document.addEventListener('touchmove', preventDefault, { passive: false });
-
-        const handleWheel = (e: WheelEvent) => {
-            const isScrollable = (e.target as HTMLElement).closest('.overflow-y-auto');
-            if (!isScrollable) {
-                e.preventDefault();
-            } else {
-                e.stopPropagation();
-            }
-        };
-
-        document.addEventListener('wheel', handleWheel, { passive: false });
-
-        return () => {
-            // Restore Lenis
-            if (lenis) {
-                lenis.start();
-            }
-
-            // Restore standard scroll
-            const savedScrollY = parseInt(document.body.style.top || '0') * -1;
-            document.body.style.position = originalPosition;
-            document.body.style.top = originalTop;
-            document.body.style.width = originalWidth;
-            document.body.style.overflow = originalOverflow;
-
-            if (!isNaN(savedScrollY)) {
-                window.scrollTo(0, savedScrollY);
-            }
-
-            document.removeEventListener('touchmove', preventDefault);
-            document.removeEventListener('wheel', handleWheel);
-        };
-    }, [open]);
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -345,111 +230,94 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
                         {t("cart.title")}
                     </DialogTitle>
                     <div className="sr-only">
-                        <DialogDescription>
-                            Sepetinizdeki ürünleri görüntüleyin ve düzenleyin.
-                        </DialogDescription>
+                        <DialogDescription>Sepetinizdeki ürünleri görüntüleyin.</DialogDescription>
                     </div>
                 </DialogHeader>
 
                 <div className="px-8 pb-8 pt-4 space-y-6">
-                    {/* Cart Item - Animated entry */}
-                    <CartItem
-                        t={t}
-                        quantity={quantity}
-                        increment={increment}
-                        decrement={decrement}
-                        serverPrice={serverPrice}
-                        serverOriginalPrice={serverOriginalPrice}
-                    />
+                    <LazyMotion features={domAnimation}>
+                        <CartItem
+                            t={t}
+                            quantity={quantity}
+                            increment={increment}
+                            decrement={decrement}
+                            serverPrice={PRICING.UNIT_PRICE}
+                            serverOriginalPrice={productData?.original_price ?? null}
+                        />
 
-                    <div className="h-px bg-neutral-100/80" />
+                        <div className="h-px bg-neutral-100/80" />
 
-                    {/* Totals Section */}
-                    <CartSummary
-                        t={t}
-                        subtotal={subtotal}
-                        localAppliedPromo={localAppliedPromo}
-                        discountAmount={discountAmount}
-                        vatAmount={vatAmount}
-                        shipping={shipping}
-                        total={total}
-                        remainingForFreeShipping={remainingForFreeShipping}
-                    />
+                        <CartSummary
+                            t={t}
+                            subtotal={subtotal}
+                            localAppliedPromo={localAppliedPromo}
+                            discountAmount={discountAmount}
+                            vatAmount={vatAmountBeforeDiscount}
+                            shipping={shipping}
+                            total={total}
+                            remainingForFreeShipping={remainingForFreeShipping}
+                        />
 
-                    {/* Promo Code Input */}
-                    <PromoCodeInput
-                        t={t}
-                        inputPromoCode={inputPromoCode}
-                        setInputPromoCode={setInputPromoCode}
-                        localAppliedPromo={localAppliedPromo}
-                        setLocalAppliedPromo={setLocalAppliedPromo}
-                        handleApplyPromoCode={handleApplyPromoCode}
-                        isApplyingPromo={isApplyingPromo}
-                    />
+                        <PromoCodeInput
+                            t={t}
+                            inputPromoCode={inputPromoCode}
+                            setInputPromoCode={(val) => dispatch({ type: 'SET_PROMO_INPUT', payload: val })}
+                            localAppliedPromo={localAppliedPromo}
+                            setLocalAppliedPromo={(val) => dispatch({ type: 'SET_APPLIED_PROMO', payload: val })}
+                            handleApplyPromoCode={handleApplyPromoCode}
+                            isApplyingPromo={isApplyingPromo}
+                        />
 
-                    {/* Checkout Button */}
-                    <div className="relative group/btn-container">
-                        <AnimatePresence>
-                            {quantity > 0 && (
-                                <motion.div
-                                    initial={{ opacity: 0, scale: 0.8 }}
-                                    animate={{
-                                        opacity: [0.5, 1, 0.5],
-                                        scale: [1, 1.02, 1],
-                                    }}
-                                    transition={{
-                                        duration: 2,
-                                        repeat: Infinity,
-                                        ease: "easeInOut"
-                                    }}
-                                    className="absolute -inset-1 bg-orange-600/20 rounded-3xl blur-xl z-0"
-                                />
-                            )}
-                        </AnimatePresence>
+                        <div className="relative group/btn-container">
+                            <AnimatePresence>
+                                {quantity > 0 && (
+                                    <m.div
+                                        initial={{ opacity: 0, scale: 0.8 }}
+                                        animate={{ opacity: [0.5, 1, 0.5], scale: [1, 1.02, 1] }}
+                                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                                        className="absolute -inset-1 bg-orange-600/20 rounded-3xl blur-xl z-0"
+                                    />
+                                )}
+                            </AnimatePresence>
 
-                        <Button
-                            disabled={quantity === 0 || isCheckingOut}
-                            onClick={handleCheckout}
-                            className={cn(
-                                "relative w-full h-16 rounded-[1.25rem] font-black text-lg transition-all duration-500 border-none active:scale-[0.98] flex items-center justify-center gap-3 overflow-hidden z-10",
-                                quantity > 0 && !isCheckingOut
-                                    ? "bg-orange-600 hover:bg-orange-700 text-white shadow-[0_10px_30px_rgba(238,64,54,0.25)]"
-                                    : "bg-neutral-100 text-neutral-400 cursor-not-allowed"
-                            )}
-                        >
-                            {/* Shine Effect */}
-                            {quantity > 0 && !isCheckingOut && (
-                                <motion.div
-                                    initial={{ x: "-100%" }}
-                                    animate={{ x: "200%" }}
-                                    transition={{
-                                        repeat: Infinity,
-                                        duration: 3,
-                                        ease: "linear",
-                                        repeatDelay: 1
-                                    }}
-                                    className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent skew-x-[-20deg] z-10"
-                                />
-                            )}
+                            <Button
+                                disabled={quantity === 0 || isCheckingOut}
+                                onClick={handleCheckout}
+                                className={cn(
+                                    "relative w-full h-16 rounded-[1.25rem] font-black text-lg transition-all duration-500 border-none active:scale-[0.98] flex items-center justify-center gap-3 overflow-hidden z-10",
+                                    quantity > 0 && !isCheckingOut
+                                        ? "bg-orange-600 hover:bg-orange-700 text-white shadow-[0_10px_30px_rgba(238,64,54,0.25)]"
+                                        : "bg-neutral-100 text-neutral-400 cursor-not-allowed"
+                                )}
+                            >
+                                {quantity > 0 && !isCheckingOut && (
+                                    <m.div
+                                        initial={{ x: "-100%" }}
+                                        animate={{ x: "200%" }}
+                                        transition={{ repeat: Infinity, duration: 3, ease: "linear", repeatDelay: 1 }}
+                                        className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent skew-x-[-20deg] z-10"
+                                    />
+                                )}
 
-                            {isCheckingOut ? (
-                                <>
-                                    <img src={bravitaGif} alt="Loading" className="w-6 h-6" />
-                                    <span className="relative z-20">İşleniyor...</span>
-                                </>
-                            ) : (
-                                <>
-                                    <span className="relative z-20">{t("cart.checkout")}</span>
-                                    <div className={cn(
-                                        "relative z-20 w-8 h-8 rounded-lg flex items-center justify-center transition-transform",
-                                        quantity > 0 ? "bg-orange-500/50 group-hover/btn-container:translate-x-1" : "bg-neutral-200"
-                                    )}>
-                                        <ShoppingCart className="w-4 h-4 text-white" />
-                                    </div>
-                                </>
-                            )}
-                        </Button>
-                    </div>
+                                {isCheckingOut ? (
+                                    <>
+                                        <img src={bravitaGif} alt="Loading" className="w-6 h-6" />
+                                        <span className="relative z-20">İşleniyor...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="relative z-20">{t("cart.checkout")}</span>
+                                        <div className={cn(
+                                            "relative z-20 w-8 h-8 rounded-lg flex items-center justify-center transition-transform",
+                                            quantity > 0 ? "bg-orange-500/50 group-hover/btn-container:translate-x-1" : "bg-neutral-200"
+                                        )}>
+                                            <ShoppingCart className="w-4 h-4 text-white" />
+                                        </div>
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+                    </LazyMotion>
                 </div>
             </DialogContent>
         </Dialog>

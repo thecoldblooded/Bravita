@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { Package, Clock, ChevronRight, Truck, CheckCircle, CreditCard, Building2, ClipboardList, XCircle, MapPin } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
@@ -27,7 +27,7 @@ export function OrderCard({ order, isOpen, onToggle }: OrderCardProps) {
     const itemCount = order.order_details.items.reduce((sum, item) => sum + item.quantity, 0);
 
     return (
-        <motion.div
+        <m.div
             layout
             className="bg-white rounded-2xl border border-gray-100 p-4 hover:shadow-lg hover:shadow-orange-100/50 transition-all cursor-pointer"
             onClick={onToggle}
@@ -69,7 +69,7 @@ export function OrderCard({ order, isOpen, onToggle }: OrderCardProps) {
 
             <AnimatePresence>
                 {isOpen && (
-                    <motion.div
+                    <m.div
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
@@ -174,10 +174,10 @@ export function OrderCard({ order, isOpen, onToggle }: OrderCardProps) {
                                 {t("order.details")}
                             </Link>
                         </div>
-                    </motion.div>
+                    </m.div>
                 )}
             </AnimatePresence>
-        </motion.div>
+        </m.div>
     );
 }
 

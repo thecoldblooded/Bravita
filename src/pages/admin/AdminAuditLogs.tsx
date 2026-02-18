@@ -28,7 +28,7 @@ import { useAdminTheme } from "@/contexts/AdminThemeContext";
 import { getAuditLogs, AuditLogEntry } from "@/lib/admin";
 import Loader from "@/components/ui/Loader";
 import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 // Action/Table Translations
@@ -390,7 +390,7 @@ function LogsContent() {
                     {/* Expandable Filter Panel */}
                     <AnimatePresence>
                         {showFilters && (
-                            <motion.div
+                            <m.div
                                 initial={{ height: 0, opacity: 0 }}
                                 animate={{ height: "auto", opacity: 1 }}
                                 exit={{ height: 0, opacity: 0 }}
@@ -486,7 +486,7 @@ function LogsContent() {
                                         </Button>
                                     </div>
                                 )}
-                            </motion.div>
+                            </m.div>
                         )}
                     </AnimatePresence>
                 </div>

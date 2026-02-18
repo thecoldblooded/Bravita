@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { ArrowLeft, Package, User, MapPin, Clock, Truck, CheckCircle, Edit2, Save, X, ClipboardList, RefreshCw, Building2, CreditCard } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminGuard } from "@/components/admin/AdminGuard";
@@ -311,7 +311,7 @@ function AdminOrderDetailContent() {
 
             {/* Payment Status & Action */}
             {order.payment_method === "bank_transfer" && (
-                <motion.div
+                <m.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     className={`mb-6 p-4 rounded-xl border flex flex-col md:flex-row items-center justify-between gap-4 ${order.payment_status === 'paid'
@@ -351,12 +351,12 @@ function AdminOrderDetailContent() {
                             Ödemeyi Onayla
                         </Button>
                     )}
-                </motion.div>
+                </m.div>
             )}
 
             {/* Credit Card Payment Info (Optional visualization) */}
             {order.payment_method === "credit_card" && (
-                <motion.div
+                <m.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     className={`mb-6 p-4 rounded-xl border flex items-center gap-3 ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-100'}`}
@@ -374,7 +374,7 @@ function AdminOrderDetailContent() {
                                 : "Islem otomatik olarak onaylandi."}
                         </p>
                     </div>
-                </motion.div>
+                </m.div>
             )}
 
             {/* Cancellation Dialog */}
@@ -425,7 +425,7 @@ function AdminOrderDetailContent() {
             )}
 
             {/* Status Timeline */}
-            <motion.div
+            <m.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className={cardClass + " mb-6"}
@@ -437,7 +437,7 @@ function AdminOrderDetailContent() {
                         {/* Background Line */}
                         <div className={`absolute inset-0 ${isDark ? "bg-gray-700" : "bg-gray-200"} rounded-full`} />
                         {/* Active Line */}
-                        <motion.div
+                        <m.div
                             initial={{ width: 0 }}
                             animate={{ width: `${(currentStatusIndex / (statusSteps.length - 1)) * 100}%` }}
                             className="absolute inset-y-0 left-0 bg-orange-500 rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(249,115,22,0.5)]"
@@ -466,12 +466,12 @@ function AdminOrderDetailContent() {
                                         : "cursor-pointer hover:scale-105 transition-transform"
                                     }`}
                             >
-                                <motion.div
+                                <m.div
                                     animate={isCurrent ? { scale: 1.1 } : { scale: 1 }}
                                     className={`w-12 h-12 rounded-full flex items-center justify-center relative transition-colors duration-300 ${isPast ? "bg-orange-500 text-white shadow-[0_0_15px_rgba(249,115,22,0.3)]" : isDark ? "bg-gray-700 text-gray-400" : "bg-gray-100 text-gray-400"
                                         } ${isCurrent ? "ring-4 ring-orange-100 dark:ring-orange-500/30" : ""}`}>
                                     {isCurrent && (
-                                        <motion.div
+                                        <m.div
                                             className="absolute inset-0 rounded-full bg-orange-500"
                                             initial={{ scale: 1, opacity: 0.5 }}
                                             animate={{
@@ -488,7 +488,7 @@ function AdminOrderDetailContent() {
                                         />
                                     )}
                                     <StatusIcon className="w-5 h-5 relative z-10" />
-                                </motion.div>
+                                </m.div>
                                 <span className={`text-[11px] font-semibold uppercase tracking-wider transition-colors ${isPast ? (isDark ? "text-orange-400" : "text-orange-600") : textMuted}`}>
                                     {STATUS_CONFIG[status]?.label}
                                 </span>
@@ -496,11 +496,11 @@ function AdminOrderDetailContent() {
                         );
                     })}
                 </div>
-            </motion.div>
+            </m.div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Order Details */}
-                <motion.div
+                <m.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
@@ -550,11 +550,11 @@ function AdminOrderDetailContent() {
                             </div>
                         </div>
                     </div>
-                </motion.div>
+                </m.div>
 
                 {/* Customer & Shipping */}
                 <div className="space-y-6">
-                    <motion.div
+                    <m.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
@@ -578,9 +578,9 @@ function AdminOrderDetailContent() {
                                 <p className={`font-medium ${textPrimary}`}>{order.profiles?.phone || "Belirtilmemiş"}</p>
                             </div>
                         </div>
-                    </motion.div>
+                    </m.div>
 
-                    <motion.div
+                    <m.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
@@ -600,10 +600,10 @@ function AdminOrderDetailContent() {
                                 <p className={textMuted}>Adres bilgisi bulunamadı</p>
                             )}
                         </div>
-                    </motion.div>
+                    </m.div>
 
                     {/* Tracking Number */}
-                    <motion.div
+                    <m.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.4 }}
@@ -666,13 +666,13 @@ function AdminOrderDetailContent() {
                                 </Button>
                             </div>
                         )}
-                    </motion.div>
+                    </m.div>
                 </div>
             </div>
 
             {/* Status History */}
             {history.length > 0 && (
-                <motion.div
+                <m.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5 }}
@@ -700,7 +700,7 @@ function AdminOrderDetailContent() {
                             </div>
                         ))}
                     </div>
-                </motion.div>
+                </m.div>
             )}
         </div>
     );

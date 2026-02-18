@@ -1,7 +1,7 @@
 "use client"
 
 import React, { CSSProperties, forwardRef, useEffect, useMemo, useRef, useCallback } from "react"
-import { motion, useMotionValue, transform, motionValue, MotionValue } from "framer-motion"
+import { m, useMotionValue, transform, motionValue, MotionValue } from "framer-motion"
 
 // Helper type that makes all properties of CSSProperties accept number | string
 type CSSPropertiesWithValues = {
@@ -121,14 +121,14 @@ const Letter = ({
     }, [mouseX, mouseY, updateProximity])
 
     return (
-        <motion.span
+        <m.span
             ref={ref}
             className="inline-block"
             aria-hidden="true"
             style={styleMVs}
         >
             {char}
-        </motion.span>
+        </m.span>
     )
 }
 

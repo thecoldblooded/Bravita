@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useRef } from "react"
-import { motion } from "framer-motion"
+import { m } from "framer-motion"
 import { cn } from "@/lib/utils"
 import ShineBorder from "@/components/ui/shine-border"
 
@@ -83,8 +83,8 @@ export function FeatureSteps({
                 <div className="flex flex-col md:grid md:grid-cols-2 gap-6 md:gap-10 md:items-center">
                     <div className="order-2 md:order-1 space-y-8">
                         {features.map((feature, index) => (
-                            <motion.div
-                                key={index}
+                            <m.div
+                                key={feature.step}
                                 className="flex items-center gap-6 md:gap-8"
                                 initial={{ opacity: 0.3 }}
                                 animate={{ opacity: index === currentFeature ? 1 : 0.3 }}
@@ -113,7 +113,7 @@ export function FeatureSteps({
                                         {feature.content}
                                     </p>
                                 </div>
-                            </motion.div>
+                            </m.div>
                         ))}
                     </div>
 
@@ -132,7 +132,7 @@ export function FeatureSteps({
                         >
                             {/* Placeholder while loading */}
                             {!loadedImages.has(currentFeature) && (
-                                <div className="absolute inset-0 bg-gradient-to-br from-bravita-yellow/20 to-bravita-orange/20 animate-pulse" />
+                                <div className="absolute inset-0 bg-linear-to-br from-bravita-yellow/20 to-bravita-orange/20 animate-pulse" />
                             )}
                             {/* Only load image when in view */}
                             {isInView && (
