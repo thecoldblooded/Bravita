@@ -28,6 +28,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Diagnose Supabase CLI and Docker
+        run: |
+          echo "Supabase CLI version:"
+          npx supabase --version || true
+
+          echo "Docker version:"
+          docker version || true
+
+          if docker info >/dev/null 2>&1; then
+            echo "✅ Docker daemon is reachable."
+          else
+            echo "::warning::Docker daemon is not reachable. Drift check may fail when creating shadow database."
+          fi
+
       - name: Audit dependencies
         run: npm audit --audit-level=high
 
@@ -65,7 +79,21 @@ jobs:
             echo "::warning::Missing SUPABASE_DB_PASSWORD secret. Skipping Supabase drift check."
             echo "SKIP_DRIFT=true" >> $GITHUB_ENV
           else
+            echo "Expected project ref (masked): ${SUPABASE_PROJECT_REF:0:6}*** (len=${#SUPABASE_PROJECT_REF})"
             npx supabase link --project-ref "$SUPABASE_PROJECT_REF"
+
+            LINKED_REF_FILE="supabase/.temp/project-ref"
+            if [ -f "$LINKED_REF_FILE" ]; then
+              LINKED_REF="$(tr -d '\r\n[:space:]' < "$LINKED_REF_FILE")"
+              echo "Linked project ref (masked): ${LINKED_REF:0:6}*** (len=${#LINKED_REF})"
+
+              if [ "$LINKED_REF" != "$SUPABASE_PROJECT_REF" ]; then
+                echo "::error::Linked project ref mismatch. Expected secret ref but found a different linked ref."
+                exit 1
+              fi
+            else
+              echo "::warning::Linked project-ref file not found at $LINKED_REF_FILE"
+            fi
           fi
 
       - name: Check linked migrations
@@ -75,7 +103,24 @@ jobs:
         run: |
           # F-03: Detect drift between local schema and remote DB
           # Scope to public schema to avoid false positives from managed schemas (auth/storage/realtime internals).
-          npx supabase db diff --linked --use-migra --schema public > drift.sql
+          if docker info >/dev/null 2>&1; then
+            echo "✅ Docker daemon reachable before drift check."
+          else
+            echo "::error::Docker daemon unreachable. 'supabase db diff' requires a shadow database container."
+            docker version || true
+            exit 1
+          fi
+
+          DIFF_EXIT=0
+          npx supabase db diff --linked --use-migra --schema public > drift.sql 2> drift.err || DIFF_EXIT=$?
+
+          if [ "$DIFF_EXIT" -ne 0 ]; then
+            echo "::error::supabase db diff failed with exit code $DIFF_EXIT"
+            echo "--- drift.err ---"
+            cat drift.err || true
+            exit "$DIFF_EXIT"
+          fi
+
           if [ -s drift.sql ]; then
             # If the file is not empty, check if it contains actual SQL changes
             # (migra sometimes outputs comments)
