@@ -548,7 +548,7 @@ export async function validatePromoCode(code: string, totalAmount: number, netSu
         };
     }
 
-    let discountAmount = 0;
+    let discountAmount: number;
     if (result.discount_type === 'percentage') {
         // Calculate based on Gross Total (Total including VAT)
         discountAmount = (totalAmount * result.discount_value) / 100;

@@ -112,7 +112,7 @@ export default function UpdatePassword() {
                         </div>
 
                         <Form {...form}>
-                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                            <form onSubmit={(e) => { e.preventDefault(); void form.handleSubmit(onSubmit)(e); }} className="space-y-4">
                                 <FormField
                                     control={form.control}
                                     name="password"

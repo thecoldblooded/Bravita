@@ -287,7 +287,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
       <TabsContent value="individual" className="space-y-4">
         <Form {...individualForm}>
           <form
-            onSubmit={individualForm.handleSubmit(handleIndividualSignupSubmit)}
+            onSubmit={(e) => { e.preventDefault(); void individualForm.handleSubmit(handleIndividualSignupSubmit)(e); }}
             className="space-y-4"
           >
             <FormField
@@ -566,7 +566,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
       <TabsContent value="company" className="space-y-4">
         <Form {...companyForm}>
           <form
-            onSubmit={companyForm.handleSubmit(handleCompanySignupSubmit)}
+            onSubmit={(e) => { e.preventDefault(); void companyForm.handleSubmit(handleCompanySignupSubmit)(e); }}
             className="space-y-4"
           >
             <FormField

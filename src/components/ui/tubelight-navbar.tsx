@@ -25,11 +25,14 @@ export function NavBar({ items, className, activeTab: externalActiveTab, layoutI
     const [activeTab, setActiveTab] = useState(externalActiveTab || items[0].name)
     const [isMobile, setIsMobile] = useState(false)
 
-    useEffect(() => {
+    // Sync from prop if changed (using render-time sync)
+    const [prevExternalActiveTab, setPrevExternalActiveTab] = useState(externalActiveTab);
+    if (externalActiveTab !== prevExternalActiveTab) {
+        setPrevExternalActiveTab(externalActiveTab);
         if (externalActiveTab) {
-            setActiveTab(externalActiveTab)
+            setActiveTab(externalActiveTab);
         }
-    }, [externalActiveTab])
+    }
 
     useEffect(() => {
         const handleResize = () => {

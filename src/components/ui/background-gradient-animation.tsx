@@ -97,7 +97,9 @@ export const BackgroundGradientAnimation = ({
 
     const [isSafari, setIsSafari] = useState(false);
     useEffect(() => {
-        setIsSafari(/^((?!chrome|android).)*safari/i.test(navigator.userAgent));
+        const checkSafari = () => /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        const result = checkSafari();
+        queueMicrotask(() => setIsSafari(result));
     }, []);
 
     return (

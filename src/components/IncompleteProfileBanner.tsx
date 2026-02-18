@@ -9,29 +9,18 @@ export function IncompleteProfileBanner() {
   const navigate = useNavigate();
   const location = useLocation();
   const { session, user, isLoading } = useAuth();
-  const [isVisible, setIsVisible] = useState(false);
+  // Derived visibility
+  const isCompleteProfilePage = location.pathname === "/complete-profile";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const isStub = (user as any)?.isStub === true;
 
-  useEffect(() => {
-    // Don't show on complete-profile page
-    if (location.pathname === "/complete-profile") {
-      setIsVisible(false);
-      return;
-    }
-
-    // Show banner if:
-    // 1. User is authenticated (has session)
-    // 2. Profile is not complete
-    // 3. Not a stub user (transient placeholder during load)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const isStub = (user as any)?.isStub === true;
-
-    // Show for any authenticated user with incomplete profile
-    if (!isLoading && session?.user && user && !user.profile_complete && !isStub) {
-      setIsVisible(true);
-    } else {
-      setIsVisible(false);
-    }
-  }, [isLoading, session?.user, user, user?.profile_complete, location.pathname]);
+  // Show banner if:
+  // 1. Not on complete-profile page
+  // 2. Not loading
+  // 3. User is authenticated (has session)
+  // 4. Profile is not complete
+  // 5. Not a stub user (transient placeholder during load)
+  const isVisible = !isCompleteProfilePage && !isLoading && !!session?.user && !!user && !user.profile_complete && !isStub;
 
   if (!isVisible) {
     return null;

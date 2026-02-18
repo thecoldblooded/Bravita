@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { PromoCode } from "@/lib/admin";
@@ -39,7 +39,7 @@ export function PromoCodeModal({ isOpen, onClose, onSave, promoCode }: PromoCode
         register,
         handleSubmit,
         reset,
-        watch,
+        control,
         formState: { errors, isSubmitting }
     } = useForm<PromoFormValues>({
         resolver: zodResolver(promoSchema),
@@ -50,7 +50,11 @@ export function PromoCodeModal({ isOpen, onClose, onSave, promoCode }: PromoCode
         }
     });
 
-    const discountType = watch("discount_type");
+    const discountType = useWatch({
+        control,
+        name: "discount_type",
+        defaultValue: "percentage" as const,
+    });
 
     useEffect(() => {
         if (isOpen) {

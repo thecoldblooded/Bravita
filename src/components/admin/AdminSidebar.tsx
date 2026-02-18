@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAdminTheme } from "@/contexts/AdminThemeContext";
 import { supabase } from "@/lib/supabase";
 import { m } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 const menuItems = [
     { path: "/admin/orders", label: "Siparişler", icon: Package },
@@ -21,6 +22,7 @@ export function AdminSidebar() {
     const [unreadCount, setUnreadCount] = useState(0);
     const [unreadSupportCount, setUnreadSupportCount] = useState(0);
 
+
     const displayMenuItems = [...menuItems];
     if (isSuperAdmin) {
         displayMenuItems.push({ path: "/admin/emails", label: "E-posta Yönetimi", icon: Mail });
@@ -30,24 +32,17 @@ export function AdminSidebar() {
 
     const isDark = theme === "dark";
 
-    // Mark as read when entering orders page
+    // mark as read logic moved to separate effect without sync state update
     useEffect(() => {
         if (location.pathname.startsWith('/admin/orders')) {
             const now = new Date().toISOString();
             localStorage.setItem('bravita_admin_last_view', now);
-            setUnreadCount(0);
         }
     }, [location.pathname]);
 
     // Fetch unread count
     useEffect(() => {
         const fetchUnread = async () => {
-            // If currently on orders page, unread is 0
-            if (location.pathname.startsWith('/admin/orders')) {
-                setUnreadCount(0);
-                return;
-            }
-
             const lastView = localStorage.getItem('bravita_admin_last_view') || new Date(0).toISOString();
 
             const { count } = await supabase
@@ -97,11 +92,14 @@ export function AdminSidebar() {
         window.location.href = "https://bravita.com";
     };
 
+    const displayedUnreadCount = location.pathname.startsWith('/admin/orders') ? 0 : unreadCount;
+
     return (
-        <aside className={`w-64 h-screen sticky top-0 flex flex-col transition-colors duration-300 ${isDark
-            ? "bg-slate-900 border-r border-slate-800"
-            : "bg-white border-r border-gray-100"
-            }`}>
+        <aside className={cn(
+            "fixed md:sticky top-0 z-40 h-dvh flex flex-col border-r transition-all duration-300",
+            isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200",
+            "w-65"
+        )}>
             {/* Logo */}
             <div className={`p-6 border-b ${isDark ? "border-slate-800" : "border-gray-100"}`}>
                 <div className="flex items-center justify-between">
@@ -171,9 +169,9 @@ export function AdminSidebar() {
                                 }`} />
                             <span className="font-medium">{item.label}</span>
 
-                            {item.path === "/admin/orders" && unreadCount > 0 && (
+                            {item.path === "/admin/orders" && displayedUnreadCount > 0 && (
                                 <span className="ml-auto bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
-                                    {unreadCount}
+                                    {displayedUnreadCount}
                                 </span>
                             )}
 

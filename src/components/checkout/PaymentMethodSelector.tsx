@@ -48,11 +48,14 @@ export function PaymentMethodSelector({
         cardDetails || { number: "", expiry: "", cvv: "", name: "" }
     );
 
-    useEffect(() => {
+    // Sync from prop if changed (using render-time sync)
+    const [prevCardDetails, setPrevCardDetails] = useState(cardDetails);
+    if (cardDetails !== prevCardDetails) {
+        setPrevCardDetails(cardDetails);
         if (cardDetails) {
             setLocalCardDetails(cardDetails);
         }
-    }, [cardDetails]);
+    }
 
     const formatCardNumber = (value: string) => {
         const v = value.replace(/\s+/g, "").replace(/[^0-9]/gi, "");

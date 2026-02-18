@@ -107,62 +107,48 @@ export default function ThreeDSRedirect() {
             }
         }
 
-        if (!payload) {
-            setErrorMessage("3D yönlendirme verisi bulunamadı.");
-            return;
+        const getResult = (): string | null => {
+            if (!payload) return "3D yönlendirme verisi bulunamadı.";
+
+            if (payload.redirectUrl) {
+                if (!isAllowedGatewayUrl(payload.redirectUrl)) {
+                    return "3D yönlendirme adresi güvenlik kontrolünden geçemedi.";
+                }
+                if (intentId) sessionStorage.removeItem(`threed:${intentId}`);
+                window.location.replace(payload.redirectUrl);
+                return null;
+            }
+
+            if (payload.formAction) {
+                if (!isAllowedGatewayUrl(payload.formAction)) {
+                    return "3D form adresi güvenlik kontrolünden geçemedi.";
+                }
+                if (intentId) sessionStorage.removeItem(`threed:${intentId}`);
+                submitForm(payload.formAction, payload.formFields || {});
+                return null;
+            }
+
+            if (payload.html) {
+                if (payload.html.length > MAX_HTML_PAYLOAD_LENGTH) {
+                    return "3D içerik boyutu limiti aşıldı.";
+                }
+                const parsed = parseHtmlForm(payload.html);
+                if (!parsed) return "3D içerik formu okunamadı.";
+                if (!isAllowedGatewayUrl(parsed.action)) {
+                    return "3D HTML form action güvenlik kontrolünden geçemedi.";
+                }
+                if (intentId) sessionStorage.removeItem(`threed:${intentId}`);
+                submitForm(parsed.action, parsed.fields);
+                return null;
+            }
+
+            return "3D yönlendirme verisi geçersiz.";
+        };
+
+        const error = getResult();
+        if (error) {
+            queueMicrotask(() => setErrorMessage(error));
         }
-
-        if (payload.redirectUrl) {
-            if (!isAllowedGatewayUrl(payload.redirectUrl)) {
-                setErrorMessage("3D yönlendirme adresi güvenlik kontrolünden geçemedi.");
-                return;
-            }
-
-            if (intentId) {
-                sessionStorage.removeItem(`threed:${intentId}`);
-            }
-            window.location.replace(payload.redirectUrl);
-            return;
-        }
-
-        if (payload.formAction) {
-            if (!isAllowedGatewayUrl(payload.formAction)) {
-                setErrorMessage("3D form adresi güvenlik kontrolünden geçemedi.");
-                return;
-            }
-
-            if (intentId) {
-                sessionStorage.removeItem(`threed:${intentId}`);
-            }
-            submitForm(payload.formAction, payload.formFields || {});
-            return;
-        }
-
-        if (payload.html) {
-            if (payload.html.length > MAX_HTML_PAYLOAD_LENGTH) {
-                setErrorMessage("3D içerik boyutu limiti aşıldı.");
-                return;
-            }
-
-            const parsed = parseHtmlForm(payload.html);
-            if (!parsed) {
-                setErrorMessage("3D içerik formu okunamadı.");
-                return;
-            }
-
-            if (!isAllowedGatewayUrl(parsed.action)) {
-                setErrorMessage("3D HTML form action güvenlik kontrolünden geçemedi.");
-                return;
-            }
-
-            if (intentId) {
-                sessionStorage.removeItem(`threed:${intentId}`);
-            }
-            submitForm(parsed.action, parsed.fields);
-            return;
-        }
-
-        setErrorMessage("3D yönlendirme verisi geçersiz.");
     }, [intentId, statePayload]);
 
     useEffect(() => {

@@ -20,7 +20,7 @@ const LazySection = ({
   id,
 }: LazySectionProps) => {
   const hostRef = useRef<HTMLDivElement | null>(null);
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(() => typeof window !== "undefined" && !("IntersectionObserver" in window));
 
   useEffect(() => {
     if (isVisible && once) {
@@ -32,8 +32,7 @@ const LazySection = ({
       return;
     }
 
-    if (!("IntersectionObserver" in window)) {
-      setIsVisible(true);
+    if (typeof window === "undefined" || !("IntersectionObserver" in window)) {
       return;
     }
 

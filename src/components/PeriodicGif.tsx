@@ -51,11 +51,7 @@ const PeriodicGif = ({
     };
   }, [isAnyDialogOpen]);
 
-  useEffect(() => {
-    if (isModalOpen) {
-      setIsVisible(false);
-    }
-  }, [isModalOpen]);
+  // visibility is handled directly in render via isVisible && !isModalOpen
 
   useEffect(() => {
     let hideTimeout: ReturnType<typeof setTimeout> | undefined;

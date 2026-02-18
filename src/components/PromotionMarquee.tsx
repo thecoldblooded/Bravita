@@ -23,10 +23,6 @@ const PromotionMarquee = () => {
     const [copiedCode, setCopiedCode] = useState<string | null>(null);
     const { t, i18n } = useTranslation();
 
-    useEffect(() => {
-        fetchActivePromos();
-    }, []);
-
     const fetchActivePromos = async () => {
         try {
             const { data, error } = await supabase
@@ -54,6 +50,15 @@ const PromotionMarquee = () => {
             console.error("Unexpected error in fetchActivePromos:", err);
         }
     };
+
+    useEffect(() => {
+        let ignore = false;
+        const startFetching = async () => {
+            await fetchActivePromos();
+        };
+        startFetching();
+        return () => { ignore = true; };
+    }, []);
 
     const handleCopyCode = (code: string) => {
         navigator.clipboard.writeText(code).then(() => {
@@ -155,4 +160,3 @@ const PromotionMarquee = () => {
 };
 
 export default PromotionMarquee;
-

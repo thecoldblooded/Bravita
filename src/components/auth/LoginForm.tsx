@@ -179,7 +179,7 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
       <TabsContent value="individual" className="space-y-4">
         <Form {...individualForm}>
           <form
-            onSubmit={individualForm.handleSubmit(handleIndividualLogin)}
+            onSubmit={(e) => { e.preventDefault(); void individualForm.handleSubmit(handleIndividualLogin)(e); }}
             className="space-y-4"
           >
             <FormField
@@ -302,7 +302,7 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
       <TabsContent value="company" className="space-y-4">
         <Form {...companyForm}>
           <form
-            onSubmit={companyForm.handleSubmit(handleCompanyLogin)}
+            onSubmit={(e) => { e.preventDefault(); void companyForm.handleSubmit(handleCompanyLogin)(e); }}
             className="space-y-4"
           >
             <FormField

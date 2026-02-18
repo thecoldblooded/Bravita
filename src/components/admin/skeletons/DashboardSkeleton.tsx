@@ -51,7 +51,7 @@ export function DashboardSkeleton({ className }: DashboardSkeletonProps) {
                             <Skeleton
                                 key={`area-bar-${i}`}
                                 className={`flex-1 rounded-t ${skeletonClass}`}
-                                style={{ height: `${Math.random() * 60 + 30}%` }}
+                                style={{ height: `${(i * 13) % 60 + 30}%` }}
                             />
                         ))}
                     </div>
@@ -65,7 +65,7 @@ export function DashboardSkeleton({ className }: DashboardSkeletonProps) {
                             <Skeleton
                                 key={`chart-bar-${i}`}
                                 className={`flex-1 rounded-t ${skeletonClass}`}
-                                style={{ height: `${Math.random() * 70 + 20}%` }}
+                                style={{ height: `${(i * 17) % 70 + 20}%` }}
                             />
                         ))}
                     </div>

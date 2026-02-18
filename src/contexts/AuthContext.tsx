@@ -400,7 +400,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Background Profile Sync: Update the UI once DB responds
         (async () => {
-          let userProfile = null;
+          let userProfile: UserProfile | null;
           try {
             const fetchProfile = () => supabase
               .from("profiles")
