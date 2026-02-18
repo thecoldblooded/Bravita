@@ -113,7 +113,13 @@
     "vite-plugin-svgr": "^4.5.0"
   },
   "overrides": {
+    "tar": "^7.5.9",
     "ajv": "^8.18.0",
-    "tar": "^7.5.9"
+    "eslint": {
+      "ajv": "6.12.6"
+    },
+    "@eslint/eslintrc": {
+      "ajv": "6.12.6"
+    }
   }
 }
