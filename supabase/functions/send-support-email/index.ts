@@ -11,7 +11,9 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ALLOWED_ORIGINS = [
     'https://bravita.com.tr',
     'https://www.bravita.com.tr',
-    'https://bravita.vercel.app',
+    'https://admin.bravita.com.tr',
+    'https://app.bravita.com.tr',
+    'https://future-focused-growth.netlify.app',
     'http://localhost:5173',
     'http://localhost:3000',
     'http://localhost:8080',
@@ -221,11 +223,12 @@ serve(async (req: Request) => {
             }
 
             const SUPPORT_EMAIL = Deno.env.get("SUPPORT_EMAIL_NOTIFY") || "support@bravita.com.tr";
+            const browserLink = url.toString();
             const { html } = await prepareSupportEmail(
                 supabase,
                 ticket,
                 type,
-                "#",
+                browserLink,
                 SUPPORT_EMAIL,
                 "browser_preview",
             );

@@ -12,7 +12,9 @@ const APP_WEBHOOK_SECRET = Deno.env.get("APP_WEBHOOK_SECRET");
 const ALLOWED_ORIGINS = [
     'https://bravita.com.tr',
     'https://www.bravita.com.tr',
-    'https://bravita.vercel.app',
+    'https://admin.bravita.com.tr',
+    'https://app.bravita.com.tr',
+    'https://future-focused-growth.netlify.app',
     'http://localhost:5173',
     'http://localhost:3000',
     'http://localhost:8080',
@@ -331,19 +333,20 @@ serve(async (req: Request) => {
 
             const { template, variablePolicies } = await fetchTemplateBundle(supabase, "welcome_template");
 
+            const browserLink = url.toString();
             const preview = renderTemplate({
                 template,
                 mode: "browser_preview",
                 variables: {
                     NAME: "Müşterimiz",
-                    BROWSER_LINK: "#",
+                    BROWSER_LINK: browserLink,
                     UNSUBSCRIBE_URL: "https://www.bravita.com.tr/unsubscribe",
                     SITE_URL: "https://www.bravita.com.tr",
                 },
                 variablePolicies,
                 fallbackValues: {
                     NAME: "Müşterimiz",
-                    BROWSER_LINK: "#",
+                    BROWSER_LINK: browserLink,
                     UNSUBSCRIBE_URL: "https://www.bravita.com.tr/unsubscribe",
                     SITE_URL: "https://www.bravita.com.tr",
                 },
