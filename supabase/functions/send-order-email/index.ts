@@ -11,10 +11,14 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ALLOWED_ORIGINS = [
     'https://bravita.com.tr',
     'https://www.bravita.com.tr',
+    'https://bravita.vercel.app/',
     'http://localhost:5173',
     'http://localhost:3000',
     'http://localhost:8080',
 ];
+
+const BRAVITA_SITE_URL = "https://www.bravita.com.tr";
+
 
 const ORDER_EMAIL_TYPES = new Set([
     "order_confirmation",
@@ -54,12 +58,15 @@ function isAllowedOrderEmailType(value: string): value is OrderEmailType {
 
 function getCorsHeaders(req: Request) {
     const origin = req.headers.get('Origin') || '';
+    // Use the origin if allowed, otherwise fallback to the first allowed origin
+    // For OPTIONS requests, we can be more permissive to allow the browser to see the headers
     const allowedOrigin = isAllowedOrigin(origin) ? origin : ALLOWED_ORIGINS[0];
 
     return {
         "Access-Control-Allow-Origin": allowedOrigin,
-        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-custom-header",
         "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+        "Access-Control-Expose-Headers": "Content-Length, X-JSON",
         "Vary": "Origin",
     };
 }
@@ -265,6 +272,16 @@ serve(async (req: Request) => {
             cancellation_reason,
         }: OrderEmailRequest = await req.json();
 
+        const traceId = crypto.randomUUID();
+        const requestOrigin = req.headers.get("origin") ?? "unknown";
+        const requestReferer = req.headers.get("referer") ?? "unknown";
+        const requestUserAgent = req.headers.get("user-agent") ?? "unknown";
+        const requestClientInfo = req.headers.get("x-client-info") ?? "unknown";
+
+        console.log(
+            `[TRACE ${traceId}] received order_id=${order_id} type=${incomingType} requester=${requestingUser.id} origin=${requestOrigin} referer=${requestReferer} client=${requestClientInfo} ua=${requestUserAgent}`,
+        );
+
         if (!isAllowedOrderEmailType(incomingType)) {
             throw new Error("Invalid email type");
         }
@@ -315,15 +332,23 @@ serve(async (req: Request) => {
 
         // 3.5 RATE LIMIT CHECK
         const rateLimitWindowMs = type === "order_confirmation" ? 2 * 60 * 1000 : 60 * 1000;
+        const rateLimitWindowStartIso = new Date(Date.now() - rateLimitWindowMs).toISOString();
+
         const { data: recentLogs } = await supabase
             .from("email_logs")
             .select("sent_at")
             .eq("order_id", order_id)
             .eq("email_type", type)
-            .gt("sent_at", new Date(Date.now() - rateLimitWindowMs).toISOString())
+            .gt("sent_at", rateLimitWindowStartIso)
+            .order("sent_at", { ascending: false })
             .limit(1);
 
         if (recentLogs && recentLogs.length > 0) {
+            const lastSentAt = recentLogs[0]?.sent_at ?? "unknown";
+            console.warn(
+                `[TRACE ${traceId}] rate_limit_hit order_id=${order_id} type=${type} requester=${requestingUser.id} is_admin=${isAdmin} is_owner=${isOwner} window_start=${rateLimitWindowStartIso} last_sent_at=${lastSentAt} order_status=${order.status} payment_status=${order.payment_status}`,
+            );
+
             return new Response(JSON.stringify({
                 message: "Rate limit exceeded. Email already sent recently.",
                 skipped: true
@@ -332,6 +357,10 @@ serve(async (req: Request) => {
                 status: 429,
             });
         }
+
+        console.log(
+            `[TRACE ${traceId}] rate_limit_pass order_id=${order_id} type=${type} window_start=${rateLimitWindowStartIso}`,
+        );
 
         if (type !== "order_confirmation" && order.user.order_notifications === false) {
             return new Response(JSON.stringify({ message: "User disabled notifications", skipped: true }), {
@@ -354,11 +383,12 @@ serve(async (req: Request) => {
             browserLink,
         );
 
-        if (render.blocked) {
+        if (render?.blocked) {
+            console.error(`[ERROR] Email blocked for ${order_id} due to unresolved tokens:`, render.unresolvedTokens);
             throw new Error(`Blocked by unresolved tokens: ${render.unresolvedTokens.join(", ")}`);
         }
 
-        console.log(`Sending email to ${order.user.email} with subject: ${subject}`);
+        console.log(`[INFO] Sending ${type} email to ${order.user.email}. Subject: ${subject}`);
 
         const fromName = config?.sender_name || "Bravita";
         const fromEmail = config?.sender_email || "noreply@bravita.com.tr";
@@ -422,7 +452,11 @@ serve(async (req: Request) => {
             ? "Yetkisiz erişim."
             : (status === 403 ? "Bu işlem için yetkiniz yok." : "İşlem sırasında bir hata oluştu.");
 
-        return new Response(JSON.stringify({ error: clientError }), {
+        return new Response(JSON.stringify({
+            error: clientError,
+            message: errorMessage, // Include internal message for debugging
+            status
+        }), {
             headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
             status,
         });
@@ -561,7 +595,8 @@ async function prepareEmailContent(
         "SHIPPING_COMPANY": shipping_company || order.shipping_company || "Kargo Firması",
         "TRACKING_NUMBER": tracking_number || order.tracking_number || "Takip numarası girilmedi",
         "CANCELLATION_REASON": cancellation_reason || order.cancellation_reason || "Belirtilmedi",
-        "BROWSER_LINK": browserLink
+        "BROWSER_LINK": browserLink,
+        "SITE_URL": BRAVITA_SITE_URL
     };
 
     const render = renderTemplate({

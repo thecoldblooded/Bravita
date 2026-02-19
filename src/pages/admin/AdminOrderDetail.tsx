@@ -150,9 +150,10 @@ function AdminOrderDetailContent() {
 
             // Send Email Notification for all status changes
             let emailSent = false;
+            let emailErrorMsg = "";
             if (newStatus !== "pending") {
                 try {
-                    const { error: emailError } = await supabase.functions.invoke("send-order-email", {
+                    const { data: funcData, error: funcError } = await supabase.functions.invoke("send-order-email", {
                         body: {
                             order_id: orderId,
                             type: newStatus,
@@ -162,11 +163,27 @@ function AdminOrderDetailContent() {
                         }
                     });
 
-                    if (emailError) throw emailError;
-                    emailSent = true;
+                    if (funcError) {
+                        console.error("Email edge function error:", funcError);
+                        // Try to parse error body if possible
+                        try {
+                            const errorBody = await funcError.context?.json();
+                            emailErrorMsg = errorBody?.message || errorBody?.error || funcError.message;
+                        } catch {
+                            emailErrorMsg = funcError.message;
+                        }
+                        throw funcError;
+                    }
+
+                    if (funcData?.skipped) {
+                        console.log("Email skipped:", funcData.message);
+                        emailSent = false;
+                    } else {
+                        emailSent = true;
+                    }
                 } catch (emailErr) {
-                    console.error("Email sending failed:", emailErr);
-                    toast.warning("Durum güncellendi ancak e-posta bildirimi gönderilemedi.");
+                    console.error("Email sending flow failed:", emailErr);
+                    toast.warning(`Durum güncellendi ancak e-posta bildirimi gönderilemedi: ${emailErrorMsg || "Bilinmeyen hata"}`);
                 }
             }
 
@@ -203,10 +220,8 @@ function AdminOrderDetailContent() {
             await confirmPayment(orderId);
             toast.success("Ödeme onaylandı. Sipariş işleniyor aşamasına geçti.");
 
-            // Trigger confirmation email
-            supabase.functions.invoke("send-order-email", {
-                body: { order_id: orderId, type: "order_confirmation" }
-            }).catch(err => console.error("Payment confirmation email failed:", err));
+            // order_confirmation e-postası checkout akışında zaten tetiklenir.
+            // Burada ikinci kez tetiklemiyoruz (duplicate / 429 riskini önlemek için).
 
             await loadOrder();
         } catch (error) {
