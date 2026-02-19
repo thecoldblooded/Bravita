@@ -5,6 +5,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const ALLOWED_ORIGINS = [
     "https://bravita.com.tr",
     "https://www.bravita.com.tr",
+    "https://bravita.vercel.app",
 ];
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
