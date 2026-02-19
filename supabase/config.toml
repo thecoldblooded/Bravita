@@ -20,6 +20,9 @@ verify_jwt = false
 [functions.sync-to-billionmail]
 verify_jwt = true
 
+[functions.sync-auth-templates]
+verify_jwt = true
+
 [functions.bakiyem-init-3d]
 verify_jwt = true
 

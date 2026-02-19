@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminGuard } from "@/components/admin/AdminGuard";
 import { supabase } from "@/lib/supabase";
+import { getFunctionAuthHeaders } from "@/lib/functionAuth";
 import {
     Mail,
     Settings,
@@ -78,6 +79,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Helmet } from "react-helmet-async";
 
 const SUPPORT_TICKET_SLUG = "support_ticket";
+const AUTH_SYNC_CRITICAL_SLUGS = new Set(["confirm_signup", "reset_password", "password_changed"]);
 
 const PREVIEW_DUMMY_VARS: Record<string, string> = {
     "ORDER_ID": "TEST-12345",
@@ -257,8 +259,27 @@ export default function AdminEmails() {
     const handleSaveTemplate = async () => {
         if (!editingTemplate) return;
 
+        if (!isSuperAdmin) {
+            toast.error("Bu işlem için superadmin yetkisi gereklidir.");
+            return;
+        }
+
+        const templateSlug = String(editingTemplate.slug || "").trim().toLowerCase();
+        const requiresAuthSync = AUTH_SYNC_CRITICAL_SLUGS.has(templateSlug);
+
         try {
-            const { error } = await supabase
+            const { data: originalTemplate, error: originalFetchError } = await supabase
+                .from("email_templates")
+                .select("name, subject, content_html")
+                .eq("id", editingTemplate.id)
+                .maybeSingle();
+
+            if (originalFetchError) throw originalFetchError;
+            if (!originalTemplate) {
+                throw new Error("Kaydedilecek mevcut şablon bulunamadı.");
+            }
+
+            const { error: updateError } = await supabase
                 .from("email_templates")
                 .update({
                     name: editingTemplate.name,
@@ -267,13 +288,70 @@ export default function AdminEmails() {
                 })
                 .eq("id", editingTemplate.id);
 
-            if (error) throw error;
+            if (updateError) throw updateError;
 
-            toast.success("Şablon güncellendi");
+            if (requiresAuthSync) {
+                try {
+                    const authHeaders = await getFunctionAuthHeaders();
+                    const idempotencyKey = `sync-auth-${editingTemplate.id}-${Date.now()}-${crypto.randomUUID()}`;
+
+                    const { data: syncData, error: syncError } = await supabase.functions.invoke("sync-auth-templates", {
+                        body: {
+                            slugs: [templateSlug],
+                            dry_run: false,
+                        },
+                        headers: {
+                            ...authHeaders,
+                            "x-idempotency-key": idempotencyKey,
+                        },
+                    });
+
+                    if (syncError) {
+                        let syncReason = syncError.message || "Bilinmeyen senkronizasyon hatası";
+                        try {
+                            const body = await syncError.context?.json();
+                            const nestedMessage = body?.error?.message || body?.message;
+                            if (nestedMessage) {
+                                syncReason = String(nestedMessage);
+                            }
+                        } catch {
+                            // ignore nested parse errors
+                        }
+
+                        throw new Error(syncReason);
+                    }
+
+                    if (!syncData?.success) {
+                        const syncReason = String(syncData?.error?.message || "Auth template sync başarısız oldu");
+                        throw new Error(syncReason);
+                    }
+                } catch (syncFailure) {
+                    const { error: rollbackError } = await supabase
+                        .from("email_templates")
+                        .update({
+                            name: originalTemplate.name,
+                            subject: originalTemplate.subject,
+                            content_html: originalTemplate.content_html,
+                        })
+                        .eq("id", editingTemplate.id);
+
+                    if (rollbackError) {
+                        console.error("Auth template sync rollback failed:", rollbackError);
+                        throw new Error("Auth sync başarısız oldu ve geri alma tamamlanamadı. Lütfen acil olarak teknik ekiple iletişime geçin.");
+                    }
+
+                    const reason = syncFailure instanceof Error ? syncFailure.message : "Auth template sync başarısız oldu";
+                    throw new Error(`Auth template sync başarısız: ${reason}. Değişiklik geri alındı.`);
+                }
+            }
+
+            toast.success(requiresAuthSync ? "Şablon güncellendi ve Auth ile senkronlandı" : "Şablon güncellendi");
             setIsEditorOpen(false);
             loadData();
         } catch (error) {
-            toast.error("Şablon güncellenirken hata oluştu");
+            console.error("Template save error:", error);
+            const message = error instanceof Error ? error.message : "Şablon güncellenirken hata oluştu";
+            toast.error(message);
         }
     };
 

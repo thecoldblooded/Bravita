@@ -445,18 +445,14 @@ export function renderTemplate(input: RenderTemplateInput): RenderTemplateOutput
         })
         : "";
 
-    const unifiedHtml = buildUnifiedBravitaLayout({
-        templateSlug: template.slug || "generic_email",
-        subject: renderedSubject,
-        renderedHtml,
-        values: valuesForRender,
-    });
+    // Admin panelinde kaydedilen HTML içerik source-of-truth'tür; otomatik wrapper eklenmez.
+    const finalHtml = renderedHtml;
 
-    const text = renderedTextFromTemplate || toTextFromHtml(unifiedHtml);
+    const text = renderedTextFromTemplate || toTextFromHtml(finalHtml);
 
     return {
         subject: renderedSubject,
-        html: unifiedHtml,
+        html: finalHtml,
         text,
         unresolvedTokens: unresolvedAfterPolicy,
         warnings,

@@ -106,7 +106,7 @@ Deno.test("renderTemplate respects raw_html policy", () => {
     assert(result.html.includes("<tr><td>Ürün</td></tr>"), "raw_html should not be escaped");
 });
 
-Deno.test("renderTemplate wraps output in unified Bravita layout", () => {
+Deno.test("renderTemplate returns admin html as-is without unified wrapper", () => {
     const result = renderTemplate({
         template: {
             slug: "order_confirmation",
@@ -122,14 +122,13 @@ Deno.test("renderTemplate wraps output in unified Bravita layout", () => {
         },
     });
 
-    assert(result.html.includes("E-postayı görüntülemekte sorun mu yaşıyorsunuz?"), "browser-view helper should exist");
-    assert(result.html.includes("© 2026 Bravita. Tüm hakları saklıdır."), "standard copyright footer should exist");
-    assert(result.html.includes("support@bravita.com.tr"), "support email should exist in footer");
-    assert(result.html.includes("alt=\"Bravita\""), "brand logo should exist");
-    assert(result.html.includes("🧾"), "order templates should include order emoji");
+    assert(result.html.includes("<p>Siparişiniz hazırlanıyor: ABCD1234</p>"), "template html should be rendered");
+    assert(!result.html.includes("E-postayı görüntülemekte sorun mu yaşıyorsunuz?"), "browser helper should not be auto-injected");
+    assert(!result.html.includes("© 2026 Bravita. Tüm hakları saklıdır."), "footer should not be auto-injected");
+    assert(!result.html.includes("alt=\"Bravita\""), "brand wrapper should not be auto-injected");
 });
 
-Deno.test("renderTemplate shows confirmation fallback line only when confirmation url exists", () => {
+Deno.test("renderTemplate does not inject confirmation helper line", () => {
     const withConfirmation = renderTemplate({
         template: {
             slug: "reset_password",
@@ -145,8 +144,8 @@ Deno.test("renderTemplate shows confirmation fallback line only when confirmatio
         },
     });
 
-    assert(withConfirmation.html.includes("Link çalışmıyor mu? Bunu deneyin:"), "confirmation helper text should be visible when link exists");
-    assert(withConfirmation.html.includes("https://www.bravita.com.tr/reset-password?token=abc123"), "confirmation URL should be visible in helper area");
+    assert(withConfirmation.html.includes("<p>Şifre sıfırlama bağlantınız hazır.</p>"), "template html should remain intact");
+    assert(!withConfirmation.html.includes("Link çalışmıyor mu? Bunu deneyin:"), "confirmation helper text should not be injected");
 
     const withoutConfirmation = renderTemplate({
         template: {
@@ -162,5 +161,5 @@ Deno.test("renderTemplate shows confirmation fallback line only when confirmatio
         },
     });
 
-    assert(!withoutConfirmation.html.includes("Link çalışmıyor mu? Bunu deneyin:"), "confirmation helper text should be hidden without URL");
+    assert(!withoutConfirmation.html.includes("Link çalışmıyor mu? Bunu deneyin:"), "confirmation helper text should stay absent");
 });
