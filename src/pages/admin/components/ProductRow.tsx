@@ -3,6 +3,7 @@ import { Package, Edit2, Trash2, CheckCircle, AlertCircle, X } from "lucide-reac
 import { Product } from "@/lib/admin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useTranslation } from "react-i18next";
 
 interface ProductRowProps {
     product: Product;
@@ -41,6 +42,7 @@ export function ProductRow({
     onEdit,
     onDelete
 }: ProductRowProps) {
+    const { t } = useTranslation();
     return (
         <tr
             className={`transition-all relative ${rowHoverClass} ${isHighlighted
@@ -113,6 +115,7 @@ export function ProductRow({
                                 type="number"
                                 min={product.reserved_stock}
                                 autoFocus
+                                aria-label={t("admin.products.stock_input_label", "Toplam stok miktarı")}
                             />
                         </div>
 
