@@ -20,6 +20,58 @@ const ALLOWED_ORIGINS = [
     'http://localhost:8080',
 ];
 
+const BRAVITA_SITE_URL = "https://www.bravita.com.tr";
+const CONFIGURED_APP_BASE_URL = (Deno.env.get("APP_BASE_URL") ?? "").trim();
+
+function normalizeAbsoluteBaseUrl(value: string): string | null {
+    const normalized = (value || "").trim();
+    if (!normalized) return null;
+
+    try {
+        const parsed = new URL(normalized);
+        if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
+        return parsed.origin.replace(/\/+$/, "");
+    } catch {
+        return null;
+    }
+}
+
+function resolveAppBaseUrl(req: Request): string {
+    const origin = (req.headers.get("origin") || "").trim();
+    if (origin && isAllowedOrigin(origin)) {
+        const normalizedOrigin = normalizeAbsoluteBaseUrl(origin);
+        if (normalizedOrigin) return normalizedOrigin;
+    }
+
+    const referer = (req.headers.get("referer") || "").trim();
+    if (referer) {
+        try {
+            const refererOrigin = new URL(referer).origin;
+            if (isAllowedOrigin(refererOrigin)) {
+                const normalizedRefererOrigin = normalizeAbsoluteBaseUrl(refererOrigin);
+                if (normalizedRefererOrigin) return normalizedRefererOrigin;
+            }
+        } catch {
+            // ignore invalid referer
+        }
+    }
+
+    const configuredBaseUrl = normalizeAbsoluteBaseUrl(CONFIGURED_APP_BASE_URL);
+    if (configuredBaseUrl) return configuredBaseUrl;
+
+    return BRAVITA_SITE_URL;
+}
+
+function buildWelcomePreviewLink(id: string, token: string, appBaseUrl: string): string {
+    const params = new URLSearchParams({
+        kind: "welcome",
+        id: String(id || ""),
+        token: String(token || ""),
+    });
+
+    return `${appBaseUrl}/email-preview?${params.toString()}`;
+}
+
 function isAllowedOrigin(origin: string): boolean {
     if (!origin) return false;
     if (ALLOWED_ORIGINS.includes(origin)) return true;
@@ -238,10 +290,12 @@ async function hmacSha256Hex(data: string, secret: string): Promise<string> {
     return bytesToHex(new Uint8Array(signature));
 }
 
+type SignatureValidationResult = "valid" | "expired" | "invalid";
+
 /**
  * Generates a secure signature with expiration for a given ID.
  * Format: expiration_timestamp.hmac_signature
- * Default: 7 days validity
+ * Default: 5 minutes validity
  */
 async function generateSignature(id: string) {
     const secret = SUPABASE_SERVICE_ROLE_KEY?.trim();
@@ -249,7 +303,7 @@ async function generateSignature(id: string) {
         throw new Error("Server configuration error: Missing SUPABASE_SERVICE_ROLE_KEY");
     }
 
-    const expiration = Date.now() + (7 * 24 * 60 * 60 * 1000); // 7 days
+    const expiration = Date.now() + (5 * 60 * 1000); // 5 minutes
     const data = `${id}:${expiration}`;
     const signature = await hmacSha256Hex(data, secret);
 
@@ -259,31 +313,31 @@ async function generateSignature(id: string) {
 /**
  * Validates the secure expiring signature.
  */
-async function validateSignature(id: string, token: string) {
+async function validateSignature(id: string, token: string): Promise<SignatureValidationResult> {
     try {
         const firstDot = token.indexOf(".");
-        if (firstDot <= 0 || firstDot >= token.length - 1) return false;
+        if (firstDot <= 0 || firstDot >= token.length - 1) return "invalid";
 
         const expirationStr = token.slice(0, firstDot);
         const providedSignature = token.slice(firstDot + 1).trim().toLowerCase();
-        if (!/^[a-f0-9]{64}$/.test(providedSignature)) return false;
+        if (!/^[a-f0-9]{64}$/.test(providedSignature)) return "invalid";
 
         const expiration = Number.parseInt(expirationStr, 10);
-        if (!Number.isFinite(expiration)) return false;
+        if (!Number.isFinite(expiration)) return "invalid";
 
-        if (Date.now() > expiration) return false;
+        if (Date.now() > expiration) return "expired";
 
         const secret = SUPABASE_SERVICE_ROLE_KEY?.trim();
-        if (!secret) return false;
+        if (!secret) return "invalid";
 
         const expectedSignature = await hmacSha256Hex(`${id}:${expiration}`, secret);
         const providedBytes = hexToBytes(providedSignature);
         const expectedBytes = hexToBytes(expectedSignature);
-        if (!providedBytes || !expectedBytes) return false;
+        if (!providedBytes || !expectedBytes) return "invalid";
 
-        return timingSafeEqual(providedBytes, expectedBytes);
+        return timingSafeEqual(providedBytes, expectedBytes) ? "valid" : "invalid";
     } catch {
-        return false;
+        return "invalid";
     }
 }
 
@@ -315,6 +369,7 @@ serve(async (req: Request) => {
     try {
         const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
         const url = new URL(req.url);
+        const appBaseUrl = resolveAppBaseUrl(req);
 
         // --- BROWSER VIEW (GET) ---
         if (req.method === "GET") {
@@ -322,18 +377,38 @@ serve(async (req: Request) => {
             const token = url.searchParams.get("token");
 
             if (!user_id || !token) {
-                return new Response("Geçersiz istek.", { status: 400 });
+                return new Response("Geçersiz istek.", {
+                    status: 400,
+                    headers: {
+                        ...getCorsHeaders(req),
+                        "Content-Type": "text/plain; charset=utf-8",
+                        "X-Content-Type-Options": "nosniff",
+                        "Cache-Control": "no-store",
+                    },
+                });
             }
 
             // Secure validation
-            const isValid = await validateSignature(user_id, token);
-            if (!isValid) {
-                return new Response("Yetkisiz erişim.", { status: 403 });
+            const signatureState = await validateSignature(user_id, token);
+            if (signatureState !== "valid") {
+                const previewErrorMessage = signatureState === "expired"
+                    ? "Bu önizleme bağlantısının süresi doldu. Lütfen yeni bir bağlantı isteyin."
+                    : "Bu önizleme bağlantısı geçersiz.";
+
+                return new Response(previewErrorMessage, {
+                    status: 403,
+                    headers: {
+                        ...getCorsHeaders(req),
+                        "Content-Type": "text/plain; charset=utf-8",
+                        "X-Content-Type-Options": "nosniff",
+                        "Cache-Control": "no-store",
+                    },
+                });
             }
 
             const { template, variablePolicies } = await fetchTemplateBundle(supabase, "welcome_template");
 
-            const browserLink = url.toString();
+            const browserLink = buildWelcomePreviewLink(user_id, token, appBaseUrl);
             const preview = renderTemplate({
                 template,
                 mode: "browser_preview",
@@ -353,7 +428,14 @@ serve(async (req: Request) => {
             });
 
             return new Response(preview.html, {
-                headers: { "Content-Type": "text/html; charset=utf-8" },
+                status: 200,
+                headers: {
+                    ...getCorsHeaders(req),
+                    "Content-Type": "text/html; charset=utf-8",
+                    "X-Content-Type-Options": "nosniff",
+                    "Cache-Control": "no-store",
+                    "X-Bravita-Preview-Mode": "browser_preview",
+                },
             });
         }
 
@@ -407,7 +489,7 @@ serve(async (req: Request) => {
         // Generate secure browser link
         const idForSignature = user_id || recipientEmail;
         const signature = await generateSignature(idForSignature);
-        const browserLink = `${url.origin}/functions/v1/send-welcome-email?id=${encodeURIComponent(idForSignature)}&token=${signature}`;
+        const browserLink = buildWelcomePreviewLink(idForSignature, signature, appBaseUrl);
 
         // Prepare Variables
         const variables: Record<string, string> = {

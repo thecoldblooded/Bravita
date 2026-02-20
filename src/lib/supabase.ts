@@ -3,6 +3,7 @@ import { createClient, Session } from "@supabase/supabase-js";
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const useBffAuth = import.meta.env.VITE_USE_BFF_AUTH === "true";
+const AUTH_STORAGE_KEY = "bravita-session-token";
 
 const authMemoryStore = new Map<string, string>();
 
@@ -29,7 +30,40 @@ function resolveAuthStorage() {
     const probeKey = "__bravita_auth_storage_probe__";
     window.sessionStorage.setItem(probeKey, "1");
     window.sessionStorage.removeItem(probeKey);
-    return window.sessionStorage;
+
+    const wrappedSessionStorage = {
+      getItem: (key: string): string | null => {
+        const value = window.sessionStorage.getItem(key);
+        if (key === AUTH_STORAGE_KEY) {
+          console.info("[supabase-auth-storage] getItem", {
+            key,
+            hasValue: !!value,
+            valueLength: value?.length ?? 0,
+          });
+        }
+        return value;
+      },
+      setItem: (key: string, value: string): void => {
+        window.sessionStorage.setItem(key, value);
+        if (key === AUTH_STORAGE_KEY) {
+          console.info("[supabase-auth-storage] setItem", {
+            key,
+            valueLength: value?.length ?? 0,
+          });
+        }
+      },
+      removeItem: (key: string): void => {
+        if (key === AUTH_STORAGE_KEY) {
+          console.warn("[supabase-auth-storage] removeItem", {
+            key,
+            stack: new Error("auth-storage-remove").stack,
+          });
+        }
+        window.sessionStorage.removeItem(key);
+      },
+    };
+
+    return wrappedSessionStorage;
   } catch {
     return inMemoryAuthStorage;
   }
@@ -50,7 +84,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: true,
     flowType: 'pkce',
     storage: authStorage,
-    storageKey: 'bravita-session-token',
+    storageKey: AUTH_STORAGE_KEY,
   }
 });
 

@@ -15,6 +15,7 @@ interface AuthContextType {
   session: Session | null;
   user: UserProfile | null;
   isLoading: boolean;
+  hasResolvedInitialAuth: boolean;
   isSplashScreenActive: boolean;
   isAuthenticated: boolean;
   isAdmin: boolean;
@@ -26,6 +27,29 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+type AuthDebugGlobal = typeof globalThis & {
+  __bravitaAuthContextInstances?: Array<{ id: string; href: string; createdAt: string }>;
+  __bravitaAuthContextProviderMounts?: number;
+};
+
+const getAuthDebugGlobal = (): AuthDebugGlobal => globalThis as AuthDebugGlobal;
+
+const authContextInstanceId = `authctx_${Math.random().toString(36).slice(2, 10)}`;
+
+if (typeof window !== "undefined") {
+  const debugGlobal = getAuthDebugGlobal();
+  debugGlobal.__bravitaAuthContextInstances = debugGlobal.__bravitaAuthContextInstances || [];
+  debugGlobal.__bravitaAuthContextInstances.push({
+    id: authContextInstanceId,
+    href: window.location.href,
+    createdAt: new Date().toISOString(),
+  });
+
+  if (debugGlobal.__bravitaAuthContextInstances.length > 1) {
+    console.warn("[AuthContext] Multiple context module instances detected", debugGlobal.__bravitaAuthContextInstances);
+  }
+}
 
 const getInitialUser = (session: Session | null) => {
   if (!session?.user) return null;
@@ -83,6 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(initialSession);
   const [user, setUser] = useState<UserProfile | null>(() => getInitialUser(initialSession));
   const [isLoading, setIsLoading] = useState(true);
+  const [hasResolvedInitialAuth, setHasResolvedInitialAuth] = useState(false);
   const [isSplashScreenActive, setIsSplashScreenActive] = useState(() => {
     // Only active on first load of the session
     return !sessionStorage.getItem("bravita_splash_shown");
@@ -102,8 +127,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const lastProcessedRef = useRef<string | null>(null);
-  const isInitializing = useRef(false);
+  const hasSeenFirstAuthEventRef = useRef(false);
   const isSplashScreenActiveRef = useRef(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const debugGlobal = getAuthDebugGlobal();
+    debugGlobal.__bravitaAuthContextProviderMounts = (debugGlobal.__bravitaAuthContextProviderMounts || 0) + 1;
+
+    console.info("[AuthProvider] mounted", {
+      instanceId: authContextInstanceId,
+      mounts: debugGlobal.__bravitaAuthContextProviderMounts,
+      path: window.location.pathname,
+      href: window.location.href,
+    });
+
+    return () => {
+      const globalRef = getAuthDebugGlobal();
+      globalRef.__bravitaAuthContextProviderMounts = Math.max((globalRef.__bravitaAuthContextProviderMounts || 1) - 1, 0);
+      console.info("[AuthProvider] unmounted", {
+        instanceId: authContextInstanceId,
+        mounts: globalRef.__bravitaAuthContextProviderMounts,
+        path: window.location.pathname,
+      });
+    };
+  }, []);
 
   // Safety timeout: Force loading to false if it takes too long
   useEffect(() => {
@@ -260,6 +309,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Supabase fires INITIAL_SESSION immediately upon subscription
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+      if (!hasSeenFirstAuthEventRef.current) {
+        hasSeenFirstAuthEventRef.current = true;
+        if (mounted) {
+          setHasResolvedInitialAuth(true);
+        }
+      }
+
       // Avoid processing the same session state repeatedly if events fire back-to-back
       const sessionId = newSession?.user?.id || 'none';
       if (lastProcessedRef.current === sessionId && (event === 'INITIAL_SESSION' || event === 'SIGNED_IN')) {
@@ -373,6 +429,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           });
           return;
         }
+        if (!newSession && !window.location.hash && !bffAuthEnabled) {
+          try {
+            const {
+              data: { session: recoveredSession },
+            } = await supabase.auth.getSession();
+
+            if (recoveredSession?.user) {
+              console.info("[AuthProvider] recovered session after INITIAL_SESSION null", {
+                userId: recoveredSession.user.id,
+                path: window.location.pathname,
+              });
+
+              setSession(recoveredSession);
+              const recoveredStub = getInitialUser(recoveredSession);
+              if (recoveredStub) {
+                setUserDebug(recoveredStub);
+              }
+
+              if (mounted) {
+                setIsSplashScreenActive(false);
+                setIsLoading(false);
+              }
+
+              void (async () => {
+                try {
+                  const { data: recoveredProfile } = await supabase
+                    .from("profiles")
+                    .select("*")
+                    .eq("id", recoveredSession.user.id)
+                    .maybeSingle();
+
+                  if (mounted && recoveredProfile) {
+                    setUserDebug(recoveredProfile);
+                    if (recoveredProfile.profile_complete) {
+                      localStorage.setItem("profile_known_complete", "true");
+                    }
+                  }
+                } catch (recoveryProfileError) {
+                  console.warn("Recovered session profile fetch failed:", recoveryProfileError);
+                }
+              })();
+
+              return;
+            }
+          } catch (recoveryError) {
+            console.warn("INITIAL_SESSION fallback getSession failed:", recoveryError);
+          }
+        }
+
         // Normal case - session was in event
         setIsSplashScreenActive(false);
       }
@@ -536,6 +641,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const safetyTimer = setTimeout(() => {
       if (mounted && isSplashScreenActiveRef.current) {
         // Session loading took too long, close splash screen anyway
+        setHasResolvedInitialAuth(true);
+        setIsLoading(false);
         setIsSplashScreenActive(false);
       }
     }, 2000);
@@ -610,6 +717,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     session,
     user,
     isLoading,
+    hasResolvedInitialAuth,
     isSplashScreenActive,
     isAuthenticated: !!session?.user,
     isAdmin: user?.is_admin ?? false,
@@ -626,6 +734,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
+    if (typeof window !== "undefined") {
+      const debugGlobal = getAuthDebugGlobal();
+      console.error("[useAuth] missing AuthProvider", {
+        instanceId: authContextInstanceId,
+        path: window.location.pathname,
+        href: window.location.href,
+        knownInstances: debugGlobal.__bravitaAuthContextInstances || [],
+        providerMounts: debugGlobal.__bravitaAuthContextProviderMounts || 0,
+      });
+    }
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;

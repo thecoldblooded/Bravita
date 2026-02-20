@@ -18,7 +18,57 @@ const ALLOWED_ORIGINS = [
 ];
 
 const BRAVITA_SITE_URL = "https://www.bravita.com.tr";
+const CONFIGURED_APP_BASE_URL = (Deno.env.get("APP_BASE_URL") ?? "").trim();
 
+function normalizeAbsoluteBaseUrl(value: string): string | null {
+    const normalized = (value || "").trim();
+    if (!normalized) return null;
+
+    try {
+        const parsed = new URL(normalized);
+        if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
+        return parsed.origin.replace(/\/+$/, "");
+    } catch {
+        return null;
+    }
+}
+
+function resolveAppBaseUrl(req: Request): string {
+    const origin = (req.headers.get("origin") || "").trim();
+    if (origin && isAllowedOrigin(origin)) {
+        const normalizedOrigin = normalizeAbsoluteBaseUrl(origin);
+        if (normalizedOrigin) return normalizedOrigin;
+    }
+
+    const referer = (req.headers.get("referer") || "").trim();
+    if (referer) {
+        try {
+            const refererOrigin = new URL(referer).origin;
+            if (isAllowedOrigin(refererOrigin)) {
+                const normalizedRefererOrigin = normalizeAbsoluteBaseUrl(refererOrigin);
+                if (normalizedRefererOrigin) return normalizedRefererOrigin;
+            }
+        } catch {
+            // ignore invalid referer
+        }
+    }
+
+    const configuredBaseUrl = normalizeAbsoluteBaseUrl(CONFIGURED_APP_BASE_URL);
+    if (configuredBaseUrl) return configuredBaseUrl;
+
+    return BRAVITA_SITE_URL;
+}
+
+function buildOrderPreviewLink(orderId: string, token: string, type: string, appBaseUrl: string): string {
+    const params = new URLSearchParams({
+        kind: "order",
+        id: String(orderId || ""),
+        token: String(token || ""),
+        type: String(type || "order_confirmation"),
+    });
+
+    return `${appBaseUrl}/email-preview?${params.toString()}`;
+}
 
 const ORDER_EMAIL_TYPES = new Set([
     "order_confirmation",
@@ -132,19 +182,21 @@ async function hmacSha256Hex(data: string, secret: string): Promise<string> {
     return bytesToHex(new Uint8Array(signature));
 }
 
+type SignatureValidationResult = "valid" | "expired" | "invalid";
+
 /**
- * Generates a secure signature with expiration for a given ID.
+ * Generates a secure signature with expiration for a given ID + type.
  * Format: expiration_timestamp.hmac_signature
- * Default: 7 days validity
+ * Default: 5 minutes validity
  */
-async function generateSignature(id: string) {
+async function generateSignature(id: string, type: string) {
     const secret = SUPABASE_SERVICE_ROLE_KEY?.trim();
     if (!secret) {
         throw new Error("Server configuration error: Missing SUPABASE_SERVICE_ROLE_KEY");
     }
 
-    const expiration = Date.now() + (7 * 24 * 60 * 60 * 1000); // 7 days
-    const data = `${id}:${expiration}`;
+    const expiration = Date.now() + (5 * 60 * 1000); // 5 minutes
+    const data = `${id}:${type}:${expiration}`;
     const signature = await hmacSha256Hex(data, secret);
 
     return `${expiration}.${signature}`;
@@ -153,31 +205,31 @@ async function generateSignature(id: string) {
 /**
  * Validates the secure expiring signature.
  */
-async function validateSignature(id: string, token: string) {
+async function validateSignature(id: string, type: string, token: string): Promise<SignatureValidationResult> {
     try {
         const firstDot = token.indexOf(".");
-        if (firstDot <= 0 || firstDot >= token.length - 1) return false;
+        if (firstDot <= 0 || firstDot >= token.length - 1) return "invalid";
 
         const expirationStr = token.slice(0, firstDot);
         const providedSignature = token.slice(firstDot + 1).trim().toLowerCase();
-        if (!/^[a-f0-9]{64}$/.test(providedSignature)) return false;
+        if (!/^[a-f0-9]{64}$/.test(providedSignature)) return "invalid";
 
         const expiration = Number.parseInt(expirationStr, 10);
-        if (!Number.isFinite(expiration)) return false;
+        if (!Number.isFinite(expiration)) return "invalid";
 
-        if (Date.now() > expiration) return false;
+        if (Date.now() > expiration) return "expired";
 
         const secret = SUPABASE_SERVICE_ROLE_KEY?.trim();
-        if (!secret) return false;
+        if (!secret) return "invalid";
 
-        const expectedSignature = await hmacSha256Hex(`${id}:${expiration}`, secret);
+        const expectedSignature = await hmacSha256Hex(`${id}:${type}:${expiration}`, secret);
         const providedBytes = hexToBytes(providedSignature);
         const expectedBytes = hexToBytes(expectedSignature);
-        if (!providedBytes || !expectedBytes) return false;
+        if (!providedBytes || !expectedBytes) return "invalid";
 
-        return timingSafeEqual(providedBytes, expectedBytes);
+        return timingSafeEqual(providedBytes, expectedBytes) ? "valid" : "invalid";
     } catch {
-        return false;
+        return "invalid";
     }
 }
 
@@ -202,6 +254,7 @@ serve(async (req: Request) => {
 
         const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
         const url = new URL(req.url);
+        const appBaseUrl = resolveAppBaseUrl(req);
 
         // --- BROWSER VIEW (GET) ---
         if (req.method === "GET") {
@@ -210,23 +263,64 @@ serve(async (req: Request) => {
             const requestedType = url.searchParams.get("type") || "order_confirmation";
 
             if (!order_id || !token) {
-                return new Response("Geçersiz istek.", { status: 400 });
+                return new Response("Geçersiz istek.", {
+                    status: 400,
+                    headers: {
+                        ...getCorsHeaders(req),
+                        "Content-Type": "text/plain; charset=utf-8",
+                        "X-Content-Type-Options": "nosniff",
+                        "Cache-Control": "no-store",
+                    },
+                });
             }
             if (!isAllowedOrderEmailType(requestedType)) {
-                return new Response("Geçersiz istek.", { status: 400 });
+                return new Response("Geçersiz istek.", {
+                    status: 400,
+                    headers: {
+                        ...getCorsHeaders(req),
+                        "Content-Type": "text/plain; charset=utf-8",
+                        "X-Content-Type-Options": "nosniff",
+                        "Cache-Control": "no-store",
+                    },
+                });
             }
             const type: OrderEmailType = requestedType;
+            const maskedToken = token.length > 16 ? `${token.slice(0, 8)}...${token.slice(-8)}` : token;
+            console.log(`[PREVIEW_GET] incoming order_id=${order_id} type=${type} token=${maskedToken}`);
 
             // Secure validation
-            const isValid = await validateSignature(order_id, token);
-            if (!isValid) {
-                return new Response("Yetkisiz erişim.", { status: 403 });
+            const signatureState = await validateSignature(order_id, type, token);
+            if (signatureState !== "valid") {
+                console.warn(`[PREVIEW_GET] invalid_signature order_id=${order_id} type=${type} token=${maskedToken} reason=${signatureState}`);
+                const previewErrorMessage = signatureState === "expired"
+                    ? "Bu önizleme bağlantısının süresi doldu. Lütfen yeni bir bağlantı isteyin."
+                    : "Bu önizleme bağlantısı geçersiz.";
+
+                return new Response(previewErrorMessage, {
+                    status: 403,
+                    headers: {
+                        ...getCorsHeaders(req),
+                        "Content-Type": "text/plain; charset=utf-8",
+                        "X-Content-Type-Options": "nosniff",
+                        "Cache-Control": "no-store",
+                    },
+                });
             }
+
+            console.log(`[PREVIEW_GET] signature_ok order_id=${order_id} type=${type}`);
 
             // Fetch order data for rendering
             const { data: order, error: orderError } = await fetchOrderData(supabase, order_id);
             if (orderError || !order) {
-                return new Response("Sipariş bulunamadı.", { status: 404 });
+                return new Response("Sipariş bulunamadı.", {
+                    status: 404,
+                    headers: {
+                        ...getCorsHeaders(req),
+                        "Content-Type": "text/plain; charset=utf-8",
+                        "X-Content-Type-Options": "nosniff",
+                        "Cache-Control": "no-store",
+                    },
+                });
             }
 
             const { html } = await prepareEmailContent(
@@ -236,14 +330,24 @@ serve(async (req: Request) => {
                 undefined,
                 undefined,
                 undefined,
-                undefined,
+                buildOrderPreviewLink(order_id, token, type, appBaseUrl),
+                appBaseUrl,
                 "browser_preview",
             );
+            const hasDoctype = /^\s*<!doctype/i.test(html);
+            const hasHtmlTag = /<html[\s>]/i.test(html);
+            console.log(
+                `[PREVIEW_GET] render_ready order_id=${order_id} type=${type} html_len=${html.length} has_doctype=${hasDoctype} has_html=${hasHtmlTag}`,
+            );
+
             return new Response(html, {
                 status: 200,
                 headers: {
+                    ...getCorsHeaders(req),
                     "Content-Type": "text/html; charset=UTF-8",
-                    "X-Content-Type-Options": "nosniff"
+                    "X-Content-Type-Options": "nosniff",
+                    "Cache-Control": "no-store",
+                    "X-Bravita-Preview-Mode": "browser_preview",
                 },
             });
         }
@@ -370,8 +474,8 @@ serve(async (req: Request) => {
         }
 
         // Generate secure browser link
-        const signature = await generateSignature(order_id);
-        const browserLink = `${url.origin}/functions/v1/send-order-email?id=${order_id}&token=${signature}&type=${type}`;
+        const signature = await generateSignature(order_id, type);
+        const browserLink = buildOrderPreviewLink(order_id, signature, type, appBaseUrl);
 
         const { subject, html, textContent, config, render } = await prepareEmailContent(
             supabase,
@@ -381,6 +485,7 @@ serve(async (req: Request) => {
             shipping_company,
             cancellation_reason,
             browserLink,
+            appBaseUrl,
         );
 
         if (render?.blocked) {
@@ -489,6 +594,7 @@ async function prepareEmailContent(
     shipping_company?: string,
     cancellation_reason?: string,
     browserLink?: string,
+    appBaseUrl: string = BRAVITA_SITE_URL,
     mode: "send" | "browser_preview" = "send",
 ) {
     // Map internal types to DB slugs
@@ -533,8 +639,15 @@ async function prepareEmailContent(
     const paymentMethod = order.payment_method === "credit_card" ? "Kredi Kartı" : "Havale / EFT";
 
     if (!browserLink) {
-        const signature = await generateSignature(order.id);
-        browserLink = `/functions/v1/send-order-email?id=${order.id}&token=${signature}&type=${type}`;
+        const signature = await generateSignature(order.id, type);
+        browserLink = buildOrderPreviewLink(order.id, signature, type, appBaseUrl);
+    }
+
+    if (mode === "browser_preview") {
+        const isAbsolutePreviewLink = /^https?:\/\//i.test(browserLink || "");
+        console.log(
+            `[PREVIEW_RENDER] start order_id=${order.id} type=${type} slug=${slug} browser_link=${isAbsolutePreviewLink ? "absolute" : "relative"}`,
+        );
     }
 
     const sanitize = (str: string) => str ? String(str).replace(/[&<>"']/g, (m) => {
@@ -610,6 +723,12 @@ async function prepareEmailContent(
             BROWSER_LINK: browserLink || "#",
         },
     });
+
+    if (mode === "browser_preview") {
+        console.log(
+            `[PREVIEW_RENDER] done order_id=${order.id} type=${type} blocked=${render.blocked} unresolved=${render.unresolvedTokens.length} warnings=${render.warnings.length} html_len=${render.html.length}`,
+        );
+    }
 
     const textContent = render.text || `Bravita Sipariş: ${render.subject}\nSipariş No: #${variables.ORDER_ID}`;
 

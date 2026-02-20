@@ -218,10 +218,46 @@ function AdminOrderDetailContent() {
         setIsConfirmingPayment(true);
         try {
             await confirmPayment(orderId);
-            toast.success("Ödeme onaylandı. Sipariş işleniyor aşamasına geçti.");
 
-            // order_confirmation e-postası checkout akışında zaten tetiklenir.
-            // Burada ikinci kez tetiklemiyoruz (duplicate / 429 riskini önlemek için).
+            let emailSent = false;
+            let emailErrorMsg = "";
+
+            try {
+                const { data: funcData, error: funcError } = await supabase.functions.invoke("send-order-email", {
+                    body: {
+                        order_id: orderId,
+                        type: "processing",
+                        tracking_number: order.tracking_number,
+                        shipping_company: order.shipping_company,
+                    },
+                });
+
+                if (funcError) {
+                    console.error("Processing email edge function error:", funcError);
+                    try {
+                        const errorBody = await funcError.context?.json();
+                        emailErrorMsg = errorBody?.message || errorBody?.error || funcError.message;
+                    } catch {
+                        emailErrorMsg = funcError.message;
+                    }
+                    throw funcError;
+                }
+
+                if (!funcData?.skipped) {
+                    emailSent = true;
+                } else {
+                    console.log("Processing email skipped:", funcData.message);
+                }
+            } catch (emailErr) {
+                console.error("Processing email sending flow failed:", emailErr);
+                toast.warning(`Ödeme onaylandı ancak işleniyor e-posta bildirimi gönderilemedi: ${emailErrorMsg || "Bilinmeyen hata"}`);
+            }
+
+            if (emailSent) {
+                toast.success("Ödeme onaylandı. Sipariş işleniyor aşamasına geçti ve işleniyor bildirimi gönderildi.");
+            } else {
+                toast.success("Ödeme onaylandı. Sipariş işleniyor aşamasına geçti.");
+            }
 
             await loadOrder();
         } catch (error) {

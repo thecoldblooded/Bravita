@@ -33,6 +33,7 @@ const AdminPromoCodes = lazy(() => import("@/pages/admin/AdminPromoCodes"));
 const AdminAuditLogs = lazy(() => import("@/pages/admin/AdminAuditLogs"));
 const AdminSupport = lazy(() => import("@/pages/admin/AdminSupport"));
 const AdminEmails = lazy(() => import("@/pages/admin/AdminEmails"));
+const EmailPreview = lazy(() => import("./pages/EmailPreview"));
 
 /**
  * 🚧 MAINTENANCE MODE FLAG
@@ -102,6 +103,7 @@ const AppContent = () => {
           <Route path="/3d-redirect" element={<ThreeDSRedirect />} />
           <Route path="/payment-failed" element={<PaymentFailed />} />
           <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
+          <Route path="/email-preview" element={<EmailPreview />} />
 
           {/* Admin routes */}
           <Route path="/admin" element={<ProtectedAdminRoute><AdminDashboard /></ProtectedAdminRoute>} />
@@ -118,7 +120,7 @@ const AppContent = () => {
         </Routes>
       </Suspense>
 
-      {/* Only show these on non-admin routes */}
+      {/* Non-admin route extras */}
       {!isAdminRoute && (
         <Suspense fallback={null}>
           {isLandingRoute ? (
@@ -129,7 +131,7 @@ const AppContent = () => {
               alt="Alpaca animation"
             />
           ) : null}
-          {showDeferredEnhancements ? (
+          {showDeferredEnhancements && isLandingRoute ? (
             <>
               <PromotionMarquee />
               <div className="h-12 md:h-14" aria-hidden="true" />
