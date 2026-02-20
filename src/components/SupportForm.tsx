@@ -92,9 +92,8 @@ export default function SupportForm() {
                         captchaToken: captchaToken,
                     },
                 });
-            } catch (emailError) {
-                console.error("Email notification error:", emailError);
-                // Don't fail the whole request if email fails, but log it
+            } catch {
+                // Bildirim e-postası başarısız olsa da form gönderimini bloklama
             }
 
             toast.success(t("support.success_message") || "Mesajınız başarıyla iletildi. En kısa sürede size dönüş yapacağız.");

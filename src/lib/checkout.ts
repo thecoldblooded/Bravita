@@ -229,6 +229,7 @@ export interface CardTokenizeResponse {
     success: boolean;
     cardToken?: string;
     message?: string;
+    error?: string;
 }
 
 export interface ThreeDPayload {
@@ -282,6 +283,28 @@ async function extractEdgeFunctionErrorMessage(error: unknown): Promise<{ messag
     return { status };
 }
 
+function isInvalidJwtAuthError(extracted: { message?: string; status?: number }): boolean {
+    if (extracted.status !== 401) return false;
+
+    const normalizedMessage = (extracted.message ?? "").toLowerCase();
+    return normalizedMessage.includes("invalid jwt") ||
+        (normalizedMessage.includes("jwt") && normalizedMessage.includes("invalid"));
+}
+
+function parseFunctionAuthHeaders(headers: Record<string, string>) {
+    const authHeader = headers.Authorization;
+    const userJwtHeader = headers["x-user-jwt"];
+    const authToken = authHeader?.replace(/^Bearer\s+/i, "") ?? "";
+    const userJwtToken = typeof userJwtHeader === "string" ? userJwtHeader.replace(/^Bearer\s+/i, "") : "";
+
+    return {
+        authHeader,
+        userJwtHeader,
+        authToken,
+        userJwtToken,
+    };
+}
+
 /**
  * Generate a bank transfer reference number
  */
@@ -307,53 +330,148 @@ export async function getInstallmentRates(): Promise<InstallmentRate[]> {
 }
 
 export async function initiateCardPayment(params: CardPaymentInitParams): Promise<CardPaymentInitResponse> {
-    const headers = await getFunctionAuthHeaders();
-    const { data, error } = await supabase.functions.invoke("bakiyem-init-3d", {
-        body: params,
-        headers,
-    });
+    let headers = await getFunctionAuthHeaders("checkout:initiateCardPayment");
+    let { authHeader, userJwtHeader, authToken, userJwtToken } = parseFunctionAuthHeaders(headers);
 
-    if (error) {
-        const extracted = await extractEdgeFunctionErrorMessage(error);
-        console.error("Card init function error:", extracted.status, extracted.message, error);
+    if (!authToken || !userJwtToken) {
         return {
             success: false,
-            message: extracted.message || "Kart odeme baslatilamadi",
-            error: "FUNCTION_ERROR",
+            message: "Oturum doğrulanamadı. Lütfen tekrar giriş yapıp yeniden deneyin.",
+            error: "AUTH_SESSION_REQUIRED",
         };
     }
 
+    const correlationId = params.correlationId ?? `cc-init-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+    let invokeData: any;
+    let invokeError: unknown;
+    {
+        const result = await supabase.functions.invoke("bakiyem-init-3d", {
+            body: {
+                ...params,
+                correlationId,
+            },
+            headers,
+        });
+        invokeData = result.data;
+        invokeError = result.error;
+    }
+
+    if (invokeError) {
+        let extracted = await extractEdgeFunctionErrorMessage(invokeError);
+
+        if (isInvalidJwtAuthError(extracted)) {
+            headers = await getFunctionAuthHeaders("checkout:initiateCardPayment:retry", { forceRefresh: true });
+            ({ authHeader, userJwtHeader, authToken, userJwtToken } = parseFunctionAuthHeaders(headers));
+
+            if (!authToken || !userJwtToken) {
+                return {
+                    success: false,
+                    message: "Oturum doğrulanamadı. Lütfen tekrar giriş yapıp yeniden deneyin.",
+                    error: "AUTH_SESSION_REQUIRED",
+                };
+            }
+
+            const retryResult = await supabase.functions.invoke("bakiyem-init-3d", {
+                body: {
+                    ...params,
+                    correlationId,
+                },
+                headers,
+            });
+
+            invokeData = retryResult.data;
+            invokeError = retryResult.error;
+            if (invokeError) {
+                extracted = await extractEdgeFunctionErrorMessage(invokeError);
+            }
+        }
+
+        if (invokeError) {
+            console.error("Card init function error:", extracted.status, extracted.message, invokeError);
+            const isAuthError = extracted.status === 401 || isInvalidJwtAuthError(extracted);
+            return {
+                success: false,
+                message: isAuthError ? "Oturum doğrulanamadı. Lütfen tekrar giriş yapıp yeniden deneyin." : (extracted.message || "Kart odeme baslatilamadi"),
+                error: isAuthError ? "AUTH_SESSION_REQUIRED" : "FUNCTION_ERROR",
+            };
+        }
+    }
+
     return {
-        success: !!data?.success,
-        intentId: data?.intentId,
-        reused: !!data?.reused,
-        redirectUrl: data?.redirectUrl ?? data?.threeD?.redirectUrl ?? null,
-        threeD: data?.threeD || (data?.redirectUrl ? { redirectUrl: data.redirectUrl } : undefined),
-        message: data?.message,
-        error: data?.error,
+        success: !!invokeData?.success,
+        intentId: invokeData?.intentId,
+        reused: !!invokeData?.reused,
+        redirectUrl: invokeData?.redirectUrl ?? invokeData?.threeD?.redirectUrl ?? null,
+        threeD: invokeData?.threeD || (invokeData?.redirectUrl ? { redirectUrl: invokeData.redirectUrl } : undefined),
+        message: invokeData?.message,
+        error: invokeData?.error,
     };
 }
 
 export async function tokenizeCardForPayment(params: CardTokenizeParams): Promise<CardTokenizeResponse> {
-    const headers = await getFunctionAuthHeaders();
-    const { data, error } = await supabase.functions.invoke("bakiyem-tokenize-card", {
-        body: params,
-        headers,
-    });
+    let headers = await getFunctionAuthHeaders("checkout:tokenizeCardForPayment");
+    let { authHeader, userJwtHeader, authToken, userJwtToken } = parseFunctionAuthHeaders(headers);
 
-    if (error) {
-        const extracted = await extractEdgeFunctionErrorMessage(error);
-        console.error("Card tokenize function error:", extracted.status, extracted.message, error);
+    if (!authToken || !userJwtToken) {
         return {
             success: false,
-            message: extracted.message || "Kart tokenizasyonu basarisiz",
+            message: "Oturum doğrulanamadı. Lütfen tekrar giriş yapıp yeniden deneyin.",
         };
     }
 
+    let invokeData: any;
+    let invokeError: unknown;
+    {
+        const result = await supabase.functions.invoke("bakiyem-tokenize-card", {
+            body: params,
+            headers,
+        });
+        invokeData = result.data;
+        invokeError = result.error;
+    }
+
+    if (invokeError) {
+        let extracted = await extractEdgeFunctionErrorMessage(invokeError);
+
+        if (isInvalidJwtAuthError(extracted)) {
+            headers = await getFunctionAuthHeaders("checkout:tokenizeCardForPayment:retry", { forceRefresh: true });
+            ({ authHeader, userJwtHeader, authToken, userJwtToken } = parseFunctionAuthHeaders(headers));
+
+            if (!authToken || !userJwtToken) {
+                return {
+                    success: false,
+                    message: "Oturum doğrulanamadı. Lütfen tekrar giriş yapıp yeniden deneyin.",
+                };
+            }
+
+            const retryResult = await supabase.functions.invoke("bakiyem-tokenize-card", {
+                body: params,
+                headers,
+            });
+
+            invokeData = retryResult.data;
+            invokeError = retryResult.error;
+            if (invokeError) {
+                extracted = await extractEdgeFunctionErrorMessage(invokeError);
+            }
+        }
+
+        if (invokeError) {
+            console.error("Card tokenize function error:", extracted.status, extracted.message, invokeError);
+            const isAuthError = extracted.status === 401 || isInvalidJwtAuthError(extracted);
+            return {
+                success: false,
+                message: isAuthError ? "Oturum doğrulanamadı. Lütfen tekrar giriş yapıp yeniden deneyin." : (extracted.message || "Kart tokenizasyonu basarisiz"),
+                error: isAuthError ? "AUTH_SESSION_REQUIRED" : "FUNCTION_ERROR",
+            };
+        }
+    }
+
     return {
-        success: !!data?.success,
-        cardToken: data?.cardToken,
-        message: data?.message,
+        success: !!invokeData?.success,
+        cardToken: invokeData?.cardToken,
+        message: invokeData?.message,
     };
 }
 
@@ -412,7 +530,9 @@ export async function createOrder(params: CreateOrderParams): Promise<CreateOrde
         // Send email (fire and forget)
         supabase.functions.invoke('send-order-email', {
             body: { order_id: data.order_id }
-        }).catch(err => console.error("Failed to trigger email function:", err));
+        }).catch(() => {
+            // intentionally ignore non-blocking notification failure
+        });
 
         return {
             success: true,
@@ -505,8 +625,6 @@ export async function getUserOrders(userId: string, filters?: {
     if (error) {
         if (!error.isAborted) {
             console.error("Get user orders error:", error);
-        } else {
-            console.debug("User orders fetch was aborted (expected on navigation)");
         }
         return [];
     }

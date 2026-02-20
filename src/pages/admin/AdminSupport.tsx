@@ -129,8 +129,7 @@ export default function AdminSupport() {
             const { data, error } = await query;
             if (error) throw error;
             setTickets(data || []);
-        } catch (error: unknown) {
-            console.error("Error fetching tickets:", error);
+        } catch {
             toast.error("Talepler yüklenirken hata oluştu");
         } finally {
             setIsLoading(false);
@@ -200,34 +199,21 @@ export default function AdminSupport() {
 
             // Invoke edge function for reply email
             try {
-                const { data: funcData, error: funcError } = await supabase.functions.invoke("send-support-email", {
+                await supabase.functions.invoke("send-support-email", {
                     body: {
                         ticket_id: selectedTicket.id,
                         type: "ticket_replied",
                     },
                 });
-
-                if (funcError) {
-                    console.error("Reply email Edge Function error:", funcError);
-                    try {
-                        const errorBody = await funcError.context?.json();
-                        console.error("Edge Function error body:", errorBody);
-                    } catch (bodyErr) {
-                        console.error("Reply email error body parse failed:", bodyErr);
-                    }
-                } else {
-                    // Log removed
-                }
-            } catch (e) {
-                console.error("Reply email invocation error:", e);
+            } catch {
+                // Bildirim e-postası başarısız olsa da yanıt akışını bozma
             }
 
             toast.success("Yanıt başarıyla gönderildi");
             setSelectedTicket(null);
             setReplyMessage("");
             fetchTickets();
-        } catch (error: unknown) {
-            console.error("Reply handling error:", error);
+        } catch {
             toast.error("Yanıt gönderilirken hata oluştu");
         } finally {
             setIsReplying(false);
@@ -290,8 +276,8 @@ export default function AdminSupport() {
                         type: "ticket_closed",
                     },
                 });
-            } catch (e) {
-                console.error("Closure email error:", e);
+            } catch {
+                // Bildirim e-postası başarısız olsa da kapatma akışını bozma
             }
 
             toast.success("Talep kapatıldı ve üyeye bilgi verildi");

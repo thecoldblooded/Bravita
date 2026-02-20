@@ -46,9 +46,6 @@ if (typeof window !== "undefined") {
     createdAt: new Date().toISOString(),
   });
 
-  if (debugGlobal.__bravitaAuthContextInstances.length > 1) {
-    console.warn("[AuthContext] Multiple context module instances detected", debugGlobal.__bravitaAuthContextInstances);
-  }
 }
 
 const getInitialUser = (session: Session | null) => {
@@ -136,21 +133,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const debugGlobal = getAuthDebugGlobal();
     debugGlobal.__bravitaAuthContextProviderMounts = (debugGlobal.__bravitaAuthContextProviderMounts || 0) + 1;
 
-    console.info("[AuthProvider] mounted", {
-      instanceId: authContextInstanceId,
-      mounts: debugGlobal.__bravitaAuthContextProviderMounts,
-      path: window.location.pathname,
-      href: window.location.href,
-    });
-
     return () => {
       const globalRef = getAuthDebugGlobal();
       globalRef.__bravitaAuthContextProviderMounts = Math.max((globalRef.__bravitaAuthContextProviderMounts || 1) - 1, 0);
-      console.info("[AuthProvider] unmounted", {
-        instanceId: authContextInstanceId,
-        mounts: globalRef.__bravitaAuthContextProviderMounts,
-        path: window.location.pathname,
-      });
     };
   }, []);
 
@@ -158,7 +143,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (isLoading) {
       const timer = setTimeout(() => {
-        console.warn("Auth: Loading timeout triggered. Forcing completion.");
         setIsLoading(false);
         setIsSplashScreenActive(false);
       }, 20000);
@@ -188,7 +172,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         errMsg.includes('aborterror') || errMsg.includes('aborted');
 
       if (isAborted) {
-        console.warn("refreshUserProfile: AbortError detected, retrying...");
         await new Promise(resolve => setTimeout(resolve, 200));
         result = await supabase
           .from("profiles")
@@ -399,7 +382,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   errMsg.includes('aborterror') || errMsg.includes('aborted');
 
                 if (isAborted) {
-                  console.warn("URL session profile fetch aborted, retrying...");
                   await new Promise(resolve => setTimeout(resolve, 200));
                   profileResult = await supabase
                     .from("profiles")
@@ -411,8 +393,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 if (mounted && profileResult.data) {
                   setUserDebug(profileResult.data);
                 }
-              } catch (err) {
-                console.warn("Failed to fetch profile for URL session:", err);
+              } catch {
+                // Ignore profile fetch failure during URL session hydration.
               }
             }
             // Close splash screen after handling session (whether successful or not)
@@ -420,8 +402,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               setIsSplashScreenActive(false);
               setIsLoading(false);
             }
-          }).catch(err => {
-            console.warn("Could not parse URL session:", err);
+          }).catch(() => {
             if (mounted) {
               setIsSplashScreenActive(false);
               setIsLoading(false);
@@ -436,11 +417,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             } = await supabase.auth.getSession();
 
             if (recoveredSession?.user) {
-              console.info("[AuthProvider] recovered session after INITIAL_SESSION null", {
-                userId: recoveredSession.user.id,
-                path: window.location.pathname,
-              });
-
               setSession(recoveredSession);
               const recoveredStub = getInitialUser(recoveredSession);
               if (recoveredStub) {
@@ -466,15 +442,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                       localStorage.setItem("profile_known_complete", "true");
                     }
                   }
-                } catch (recoveryProfileError) {
-                  console.warn("Recovered session profile fetch failed:", recoveryProfileError);
+                } catch {
+                  // Ignore recovered profile fetch errors.
                 }
               })();
 
               return;
             }
-          } catch (recoveryError) {
-            console.warn("INITIAL_SESSION fallback getSession failed:", recoveryError);
+          } catch {
+            // Ignore fallback recovery errors.
           }
         }
 
@@ -534,7 +510,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 }
               }
             } catch (err: unknown) {
-              console.warn("Auth: Background profile fetch failed or timed out. User is operating on secure stub.", err);
               throw err;
             }
           } catch (err: unknown) {
@@ -578,7 +553,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 }).catch(err => console.error("BillionMail sync failed:", err));
               } else if (insertError && (insertError.code === '23505' || insertError.code === '409') && mounted) {
                 // Conflict detected - profile exists but initial fetch failed. Retry fetch.
-                console.warn("Auth: Profile conflict detected. Retrying fetch...");
                 const { data: existingProfile } = await supabase
                   .from("profiles")
                   .select("*")
@@ -630,10 +604,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const { error } = await supabase.auth.setSession(toSupabaseSessionInput(bffSession));
 
           if (error) {
-            console.warn("BFF bootstrap session apply failed:", error);
+            // Ignore bootstrap apply errors in silent mode.
           }
-        } catch (error) {
-          console.warn("BFF bootstrap skipped:", error);
+        } catch {
+          // Ignore bootstrap restoration errors in silent mode.
         }
       })();
     }

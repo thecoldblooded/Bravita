@@ -108,8 +108,8 @@ export function SupportForm({ onSuccess }: SupportFormProps) {
                         captchaToken: captchaToken,
                     },
                 });
-            } catch (emailError) {
-                console.error("Email notification error:", emailError);
+            } catch {
+                // Bildirim e-postası başarısız olsa da form gönderimini bloklama
             }
 
             toast.success(t("support.success_message") || "Mesajınız başarıyla gönderildi. En kısa sürede size dönüş yapacağız.");

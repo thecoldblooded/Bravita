@@ -39,7 +39,6 @@ class BillionMailService {
      */
     async sendTransactionalEmail(templateId: string, recipient: string, params: Record<string, unknown> = {}) {
         // Placeholder for future implementation if needed via Edge Functions
-        console.warn('sendTransactionalEmail not yet implemented via Edge Functions');
         return null;
     }
 }

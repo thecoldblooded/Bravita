@@ -45,12 +45,10 @@ function DashboardContent() {
         } catch (error: unknown) {
             // Retry on AbortError (max 3 times)
             if (error instanceof Error && (error.name === 'AbortError' || error.message?.includes('AbortError'))) {
-                console.debug("Dashboard stats load was aborted (expected on navigation)");
                 retryCount.current = 0;
                 // Stop retrying but don't show error to user if it's just an abort
                 return;
             }
-            console.error("Failed to load dashboard stats:", error);
             if (manual) toast.error("Veriler alınırken hata oluştu");
         } finally {
             setIsLoading(false);

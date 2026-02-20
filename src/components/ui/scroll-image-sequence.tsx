@@ -217,8 +217,8 @@ const ScrollImageSequence = ({ className = "" }: ScrollImageSequenceProps) => {
         setIsFirstFrameReady(true);
         setLoadingProgress(1);
         drawFrame(0);
-      } catch (e) {
-        console.warn("Failed to load first frame");
+      } catch {
+        // Ignore first-frame load failure in silent mode.
       }
 
       // Phase 2: Load priority frames
@@ -228,8 +228,8 @@ const ScrollImageSequence = ({ className = "" }: ScrollImageSequenceProps) => {
           await loadImage(index);
           if (!isMounted) return;
           setLoadingProgress((loadedSetRef.current.size / frameCount) * 100);
-        } catch (e) {
-          console.warn(`Failed to load priority frame ${index}`);
+        } catch {
+          // Ignore priority-frame load failure in silent mode.
         }
       }
 

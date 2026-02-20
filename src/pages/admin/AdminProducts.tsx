@@ -117,8 +117,7 @@ function ProductsContent() {
         try {
             const settings = await getSiteSettings();
             dispatch({ type: 'SET_SETTINGS', payload: settings });
-        } catch (error) {
-            console.error("Failed to load settings:", error);
+        } catch {
         }
     }, []);
 
@@ -135,8 +134,7 @@ function ProductsContent() {
             await updateSiteSettings(siteSettings);
             toast.success("Ayarlar güncellendi");
             dispatch({ type: 'TOGGLE_SETTINGS', payload: false });
-        } catch (error) {
-            console.error(error);
+        } catch {
             toast.error("Ayarlar güncellenemedi");
         } finally {
             dispatch({ type: 'SET_SAVING_SETTINGS', payload: false });

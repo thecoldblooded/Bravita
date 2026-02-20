@@ -339,11 +339,9 @@ serve(async (req: Request) => {
         const { ticket_id, type, captchaToken } = body;
         const requestedType = String(type || "ticket_created");
 
-        console.log(`[POST] Request received: type=${requestedType}, ticket_id=${ticket_id}`);
         const authHeader = req.headers.get("Authorization");
 
         if (!ticket_id) {
-            console.error("Missing ticket_id in request body");
             throw new Error("Ticket ID is required");
         }
 
@@ -361,9 +359,7 @@ serve(async (req: Request) => {
                 const authToken = authHeader.replace("Bearer ", "");
                 const { data: authData, error: authError } = await supabase.auth.getUser(authToken);
 
-                if (authError) {
-                    console.error("Auth error verifying token:", authError.message);
-                } else {
+                if (!authError) {
                     const requestingUser = authData?.user;
                     requestingUserId = requestingUser?.id || null;
 
@@ -374,15 +370,13 @@ serve(async (req: Request) => {
                             .eq("id", requestingUserId)
                             .maybeSingle();
 
-                        if (profileError) {
-                            console.error("Error fetching profile:", profileError.message);
-                        } else {
+                        if (!profileError) {
                             isAdmin = !!(profile?.is_admin || profile?.is_superadmin);
                         }
                     }
                 }
-            } catch (authCatch) {
-                console.error("Catch in auth logic:", authCatch);
+            } catch {
+                // silently continue as non-admin/anonymous context
             }
         }
 
@@ -394,7 +388,6 @@ serve(async (req: Request) => {
             .maybeSingle();
 
         if (ticketError || !ticket) {
-            console.error(`Ticket not found or error: ${ticket_id}`, ticketError);
             throw new Error(`Ticket not found: ${ticket_id}`);
         }
 
@@ -475,7 +468,6 @@ serve(async (req: Request) => {
         });
 
         const resData = await res.json();
-        console.log("Resend response:", JSON.stringify(resData));
 
         if (!res.ok) {
             throw new Error(`Resend Error: ${JSON.stringify(resData)}`);
@@ -497,7 +489,6 @@ serve(async (req: Request) => {
 
     } catch (error: any) {
         const errorMessage = error?.message || "Unknown error";
-        console.error("Function error:", errorMessage);
 
         const status =
             errorMessage === "Unauthorized"

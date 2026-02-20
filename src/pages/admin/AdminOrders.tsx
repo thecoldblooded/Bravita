@@ -58,11 +58,9 @@ function OrdersContent() {
             setTotalCount(data.count);
         } catch (error: unknown) {
             if (error instanceof Error && (error.name === 'AbortError' || error.message?.includes('AbortError'))) {
-                console.warn("Admin orders load aborted. Retrying...");
                 setTimeout(() => loadOrders(), 1000);
                 return;
             }
-            console.error("Failed to load orders:", error);
         } finally {
             setIsLoading(false);
         }

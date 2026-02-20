@@ -106,8 +106,7 @@ export function PromoLogsModal({ isOpen, onClose, promoId, promoCode }: PromoLog
             } else {
                 setLogs([]);
             }
-        } catch (error) {
-            console.error("Logs error:", error);
+        } catch {
         } finally {
             setIsLoading(false);
         }

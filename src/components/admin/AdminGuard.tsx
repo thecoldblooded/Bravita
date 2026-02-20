@@ -36,10 +36,6 @@ export function AdminGuard({ children }: AdminGuardProps) {
         // If we are still loading verify status, stay in loading above.
         // If loading finished and not admin, show Access Denied.
 
-        if (showTimeout && !user) {
-            console.error("AdminGuard: Verification timed out.");
-        }
-
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-[#FFFBF7] p-4 text-center">
                 <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">

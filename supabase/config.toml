@@ -24,7 +24,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.bakiyem-init-3d]
-verify_jwt = true
+verify_jwt = false
 
 [functions.bakiyem-3d-return]
 verify_jwt = false
@@ -36,7 +36,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.bakiyem-tokenize-card]
-verify_jwt = true
+verify_jwt = false
 
 [functions.bakiyem-refund]
 verify_jwt = true

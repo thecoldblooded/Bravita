@@ -29,7 +29,7 @@ export function useProgressiveImageLoader({
   const [isPriorityLoaded, setIsPriorityLoaded] = useState(false);
   const [isFullyLoaded, setIsFullyLoaded] = useState(false);
   const [loadedCount, setLoadedCount] = useState(0);
-  
+
   const loadedRef = useRef<Set<number>>(new Set());
   const imagesRef = useRef<(HTMLImageElement | null)[]>(new Array(urls.length).fill(null));
 
@@ -52,12 +52,12 @@ export function useProgressiveImageLoader({
 
       try {
         const img = await loadImage(urls[index], index);
-        
+
         if (!isMounted) return;
-        
+
         loadedRef.current.add(index);
         imagesRef.current[index] = img;
-        
+
         setImages([...imagesRef.current]);
         setLoadedCount(loadedRef.current.size);
         onProgress?.(loadedRef.current.size, urls.length);
@@ -76,15 +76,15 @@ export function useProgressiveImageLoader({
         if (loadedRef.current.size === urls.length) {
           setIsFullyLoaded(true);
         }
-      } catch (error) {
-        console.warn(`Failed to load image at index ${index}:`, error);
+      } catch {
+        // Ignore individual frame load failures.
       }
     };
 
     const loadSequentially = async () => {
       // 1. Önce ilk frame'i yükle (hemen göster)
       await loadImageAndUpdate(0);
-      
+
       // 2. Öncelikli frame'leri yükle
       const priorityPromises = priorityFrames
         .filter(i => i !== 0)
@@ -98,10 +98,10 @@ export function useProgressiveImageLoader({
 
       for (let i = 0; i < remainingIndices.length; i += batchSize) {
         if (!isMounted) break;
-        
+
         const batch = remainingIndices.slice(i, i + batchSize);
         await Promise.all(batch.map(index => loadImageAndUpdate(index)));
-        
+
         // Küçük bir gecikme ile browser'a nefes aldır
         await new Promise(resolve => setTimeout(resolve, 10));
       }

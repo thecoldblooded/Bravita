@@ -32,33 +32,11 @@ function resolveAuthStorage() {
     window.sessionStorage.removeItem(probeKey);
 
     const wrappedSessionStorage = {
-      getItem: (key: string): string | null => {
-        const value = window.sessionStorage.getItem(key);
-        if (key === AUTH_STORAGE_KEY) {
-          console.info("[supabase-auth-storage] getItem", {
-            key,
-            hasValue: !!value,
-            valueLength: value?.length ?? 0,
-          });
-        }
-        return value;
-      },
+      getItem: (key: string): string | null => window.sessionStorage.getItem(key),
       setItem: (key: string, value: string): void => {
         window.sessionStorage.setItem(key, value);
-        if (key === AUTH_STORAGE_KEY) {
-          console.info("[supabase-auth-storage] setItem", {
-            key,
-            valueLength: value?.length ?? 0,
-          });
-        }
       },
       removeItem: (key: string): void => {
-        if (key === AUTH_STORAGE_KEY) {
-          console.warn("[supabase-auth-storage] removeItem", {
-            key,
-            stack: new Error("auth-storage-remove").stack,
-          });
-        }
         window.sessionStorage.removeItem(key);
       },
     };
@@ -82,10 +60,10 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: !useBffAuth,
     autoRefreshToken: !useBffAuth,
     detectSessionInUrl: true,
-    flowType: 'pkce',
+    flowType: "pkce",
     storage: authStorage,
     storageKey: AUTH_STORAGE_KEY,
-  }
+  },
 });
 
 // Singleton session promise to avoid parallel lock acquisition attempts
@@ -98,7 +76,6 @@ export async function getSessionSafe() {
       return await supabase.auth.getSession();
     } catch (err: unknown) {
       if (err instanceof Error && (err.name === 'AbortError' || err.message?.includes('AbortError'))) {
-        console.warn("getSessionSafe: Auth lock aborted, returning null session.");
         return { data: { session: null }, error: null };
       }
       throw err;

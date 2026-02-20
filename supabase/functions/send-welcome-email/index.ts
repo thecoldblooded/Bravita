@@ -449,7 +449,6 @@ serve(async (req: Request) => {
 
         const secret = req.headers.get("x-bravita-secret");
         if (secret !== APP_WEBHOOK_SECRET) {
-            console.error("Unauthorized Secret attempt");
             return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: getCorsHeaders(req) });
         }
 
@@ -520,8 +519,6 @@ serve(async (req: Request) => {
         const fromName = config?.sender_name || "Bravita";
         const fromEmail = config?.sender_email || "noreply@bravita.com.tr";
 
-        console.log(`Sending welcome email to ${recipientEmail}`);
-
         const res = await fetch("https://api.resend.com/emails", {
             method: "POST",
             headers: {
@@ -557,7 +554,6 @@ serve(async (req: Request) => {
 
     } catch (error: any) {
         const errorMessage = error?.message || "Unknown error";
-        console.error("Error in send-welcome-email:", errorMessage);
 
         const status = errorMessage === "Unauthorized"
             ? 401

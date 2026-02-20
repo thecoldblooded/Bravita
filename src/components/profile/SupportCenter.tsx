@@ -131,8 +131,8 @@ export function SupportCenter() {
                         type: "user_replied",
                     },
                 });
-            } catch (e) {
-                console.error("Reply notify error:", e);
+            } catch {
+                // Bildirim e-postası başarısız olsa da yanıt akışını bozma
             }
 
             toast.success(t("support.reply_success"));

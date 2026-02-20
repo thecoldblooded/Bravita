@@ -89,8 +89,7 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
         try {
             await onSave(formData);
             onClose();
-        } catch (error) {
-            console.error("Save error:", error);
+        } catch {
         } finally {
             setIsLoading(false);
         }

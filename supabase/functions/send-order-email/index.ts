@@ -248,7 +248,6 @@ serve(async (req: Request) => {
 
     try {
         if (!RESEND_API_KEY) {
-            console.error("RESEND_API_KEY is missing");
             throw new Error("Server configuration error: Missing email provider key");
         }
 
@@ -285,13 +284,10 @@ serve(async (req: Request) => {
                 });
             }
             const type: OrderEmailType = requestedType;
-            const maskedToken = token.length > 16 ? `${token.slice(0, 8)}...${token.slice(-8)}` : token;
-            console.log(`[PREVIEW_GET] incoming order_id=${order_id} type=${type} token=${maskedToken}`);
 
             // Secure validation
             const signatureState = await validateSignature(order_id, type, token);
             if (signatureState !== "valid") {
-                console.warn(`[PREVIEW_GET] invalid_signature order_id=${order_id} type=${type} token=${maskedToken} reason=${signatureState}`);
                 const previewErrorMessage = signatureState === "expired"
                     ? "Bu önizleme bağlantısının süresi doldu. Lütfen yeni bir bağlantı isteyin."
                     : "Bu önizleme bağlantısı geçersiz.";
@@ -306,8 +302,6 @@ serve(async (req: Request) => {
                     },
                 });
             }
-
-            console.log(`[PREVIEW_GET] signature_ok order_id=${order_id} type=${type}`);
 
             // Fetch order data for rendering
             const { data: order, error: orderError } = await fetchOrderData(supabase, order_id);
@@ -334,12 +328,6 @@ serve(async (req: Request) => {
                 appBaseUrl,
                 "browser_preview",
             );
-            const hasDoctype = /^\s*<!doctype/i.test(html);
-            const hasHtmlTag = /<html[\s>]/i.test(html);
-            console.log(
-                `[PREVIEW_GET] render_ready order_id=${order_id} type=${type} html_len=${html.length} has_doctype=${hasDoctype} has_html=${hasHtmlTag}`,
-            );
-
             return new Response(html, {
                 status: 200,
                 headers: {
@@ -363,7 +351,6 @@ serve(async (req: Request) => {
         const { data: { user: requestingUser }, error: authError } = await supabase.auth.getUser(auth_token);
 
         if (authError || !requestingUser) {
-            console.error("Auth error:", authError);
             throw new Error("Unauthorized: Invalid token");
         }
 
@@ -375,16 +362,6 @@ serve(async (req: Request) => {
             shipping_company,
             cancellation_reason,
         }: OrderEmailRequest = await req.json();
-
-        const traceId = crypto.randomUUID();
-        const requestOrigin = req.headers.get("origin") ?? "unknown";
-        const requestReferer = req.headers.get("referer") ?? "unknown";
-        const requestUserAgent = req.headers.get("user-agent") ?? "unknown";
-        const requestClientInfo = req.headers.get("x-client-info") ?? "unknown";
-
-        console.log(
-            `[TRACE ${traceId}] received order_id=${order_id} type=${incomingType} requester=${requestingUser.id} origin=${requestOrigin} referer=${requestReferer} client=${requestClientInfo} ua=${requestUserAgent}`,
-        );
 
         if (!isAllowedOrderEmailType(incomingType)) {
             throw new Error("Invalid email type");
@@ -399,7 +376,6 @@ serve(async (req: Request) => {
         const { data: order, error: orderError } = await fetchOrderData(supabase, order_id);
 
         if (orderError || !order) {
-            console.error("Order fetch error:", orderError);
             throw new Error(`Order not found: ${orderError?.message}`);
         }
 
@@ -425,12 +401,10 @@ serve(async (req: Request) => {
         ]);
 
         if (adminOnlyEmailTypes.has(type) && !isAdmin) {
-            console.error(`Access Denied: User ${requestingUser.id} tried to send admin-only email type ${type}`);
             throw new Error("Forbidden: Admin permission is required for this email type.");
         }
 
         if (type === "order_confirmation" && !isOwner && !isAdmin) {
-            console.error(`Access Denied: User ${requestingUser.id} tried to access order ${order_id} owned by ${order.user_id}`);
             throw new Error("Forbidden: You do not have permission to access this order.");
         }
 
@@ -448,11 +422,6 @@ serve(async (req: Request) => {
             .limit(1);
 
         if (recentLogs && recentLogs.length > 0) {
-            const lastSentAt = recentLogs[0]?.sent_at ?? "unknown";
-            console.warn(
-                `[TRACE ${traceId}] rate_limit_hit order_id=${order_id} type=${type} requester=${requestingUser.id} is_admin=${isAdmin} is_owner=${isOwner} window_start=${rateLimitWindowStartIso} last_sent_at=${lastSentAt} order_status=${order.status} payment_status=${order.payment_status}`,
-            );
-
             return new Response(JSON.stringify({
                 message: "Rate limit exceeded. Email already sent recently.",
                 skipped: true
@@ -461,10 +430,6 @@ serve(async (req: Request) => {
                 status: 429,
             });
         }
-
-        console.log(
-            `[TRACE ${traceId}] rate_limit_pass order_id=${order_id} type=${type} window_start=${rateLimitWindowStartIso}`,
-        );
 
         if (type !== "order_confirmation" && order.user.order_notifications === false) {
             return new Response(JSON.stringify({ message: "User disabled notifications", skipped: true }), {
@@ -489,11 +454,8 @@ serve(async (req: Request) => {
         );
 
         if (render?.blocked) {
-            console.error(`[ERROR] Email blocked for ${order_id} due to unresolved tokens:`, render.unresolvedTokens);
             throw new Error(`Blocked by unresolved tokens: ${render.unresolvedTokens.join(", ")}`);
         }
-
-        console.log(`[INFO] Sending ${type} email to ${order.user.email}. Subject: ${subject}`);
 
         const fromName = config?.sender_name || "Bravita";
         const fromEmail = config?.sender_email || "noreply@bravita.com.tr";
@@ -549,7 +511,6 @@ serve(async (req: Request) => {
 
     } catch (error: any) {
         const errorMessage = error.message || "Unknown error";
-        console.error(`Edge Function Error: ${errorMessage}`);
         const status = errorMessage === "Unauthorized: Invalid token"
             ? 401
             : (errorMessage.includes("Forbidden") ? 403 : 400);
@@ -643,13 +604,6 @@ async function prepareEmailContent(
         browserLink = buildOrderPreviewLink(order.id, signature, type, appBaseUrl);
     }
 
-    if (mode === "browser_preview") {
-        const isAbsolutePreviewLink = /^https?:\/\//i.test(browserLink || "");
-        console.log(
-            `[PREVIEW_RENDER] start order_id=${order.id} type=${type} slug=${slug} browser_link=${isAbsolutePreviewLink ? "absolute" : "relative"}`,
-        );
-    }
-
     const sanitize = (str: string) => str ? String(str).replace(/[&<>"']/g, (m) => {
         const map: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
         return map[m] || m;
@@ -723,12 +677,6 @@ async function prepareEmailContent(
             BROWSER_LINK: browserLink || "#",
         },
     });
-
-    if (mode === "browser_preview") {
-        console.log(
-            `[PREVIEW_RENDER] done order_id=${order.id} type=${type} blocked=${render.blocked} unresolved=${render.unresolvedTokens.length} warnings=${render.warnings.length} html_len=${render.html.length}`,
-        );
-    }
 
     const textContent = render.text || `Bravita Sipariş: ${render.subject}\nSipariş No: #${variables.ORDER_ID}`;
 

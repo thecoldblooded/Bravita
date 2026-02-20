@@ -228,7 +228,6 @@ export default function AdminEmails() {
             setConfigs(withRequiredConfigs(templateRows, configRows));
 
             if (lRes.error) {
-                console.error("Email log load error:", lRes.error);
                 toast.error("Gönderim logları yüklenemedi");
                 setLogs([]);
             } else {
@@ -336,7 +335,6 @@ export default function AdminEmails() {
                         .eq("id", editingTemplate.id);
 
                     if (rollbackError) {
-                        console.error("Auth template sync rollback failed:", rollbackError);
                         throw new Error("Auth sync başarısız oldu ve geri alma tamamlanamadı. Lütfen acil olarak teknik ekiple iletişime geçin.");
                     }
 
@@ -349,7 +347,6 @@ export default function AdminEmails() {
             setIsEditorOpen(false);
             loadData();
         } catch (error) {
-            console.error("Template save error:", error);
             const message = error instanceof Error ? error.message : "Şablon güncellenirken hata oluştu";
             toast.error(message);
         }
@@ -456,7 +453,6 @@ export default function AdminEmails() {
             setTestRecipient("");
             loadData();
         } catch (error: unknown) {
-            console.error("Test send error:", error);
             const errorMessage = error instanceof Error ? error.message : "Bilinmeyen hata";
             toast.error(`Gönderim başarısız: ${errorMessage}`);
         } finally {

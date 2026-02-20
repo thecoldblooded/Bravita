@@ -56,8 +56,7 @@ function AdminOrderDetailContent() {
             setHistory(historyData);
             setTrackingInput(orderData?.tracking_number || "");
             setShippingCompanyInput(orderData?.shipping_company || "Yurtiçi Kargo");
-        } catch (error) {
-            console.error("Failed to load order:", error);
+        } catch {
             toast.error("Sipariş yüklenemedi");
         } finally {
             setIsLoading(false);
@@ -164,7 +163,6 @@ function AdminOrderDetailContent() {
                     });
 
                     if (funcError) {
-                        console.error("Email edge function error:", funcError);
                         // Try to parse error body if possible
                         try {
                             const errorBody = await funcError.context?.json();
@@ -176,13 +174,11 @@ function AdminOrderDetailContent() {
                     }
 
                     if (funcData?.skipped) {
-                        console.log("Email skipped:", funcData.message);
                         emailSent = false;
                     } else {
                         emailSent = true;
                     }
-                } catch (emailErr) {
-                    console.error("Email sending flow failed:", emailErr);
+                } catch {
                     toast.warning(`Durum güncellendi ancak e-posta bildirimi gönderilemedi: ${emailErrorMsg || "Bilinmeyen hata"}`);
                 }
             }
@@ -205,8 +201,7 @@ function AdminOrderDetailContent() {
                 setShowCancelDialog(false);
                 setCancelNote("");
             }
-        } catch (error) {
-            console.error("Failed to update status:", error);
+        } catch {
             toast.error("Durum güncellenemedi");
         } finally {
             setIsUpdatingStatus(false);
@@ -233,7 +228,6 @@ function AdminOrderDetailContent() {
                 });
 
                 if (funcError) {
-                    console.error("Processing email edge function error:", funcError);
                     try {
                         const errorBody = await funcError.context?.json();
                         emailErrorMsg = errorBody?.message || errorBody?.error || funcError.message;
@@ -245,11 +239,8 @@ function AdminOrderDetailContent() {
 
                 if (!funcData?.skipped) {
                     emailSent = true;
-                } else {
-                    console.log("Processing email skipped:", funcData.message);
                 }
-            } catch (emailErr) {
-                console.error("Processing email sending flow failed:", emailErr);
+            } catch {
                 toast.warning(`Ödeme onaylandı ancak işleniyor e-posta bildirimi gönderilemedi: ${emailErrorMsg || "Bilinmeyen hata"}`);
             }
 
@@ -260,8 +251,7 @@ function AdminOrderDetailContent() {
             }
 
             await loadOrder();
-        } catch (error) {
-            console.error("Failed to confirm payment:", error);
+        } catch {
             toast.error("Ödeme onaylanamadı.");
         } finally {
             setIsConfirmingPayment(false);
@@ -276,8 +266,7 @@ function AdminOrderDetailContent() {
             setOrder((prev) => prev ? { ...prev, tracking_number: trackingInput, shipping_company: shippingCompanyInput } : null);
             setEditingTracking(false);
             toast.success("Kargo numarası kaydedildi");
-        } catch (error) {
-            console.error("Failed to update tracking:", error);
+        } catch {
             toast.error("Kargo numarası kaydedilemedi");
         } finally {
             setIsUpdatingTracking(false);

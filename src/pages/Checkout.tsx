@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { AddressSelector } from "@/components/checkout/AddressSelector";
 import { PaymentMethodSelector } from "@/components/checkout/PaymentMethodSelector";
 import { OrderSummary } from "@/components/checkout/OrderSummary";
+import { supabase } from "@/lib/supabase";
 import {
     createOrder,
     getInstallmentRates,
@@ -163,6 +164,12 @@ export default function Checkout() {
                     if (tokenizeResult.success && tokenizeResult.cardToken) {
                         cardToken = tokenizeResult.cardToken;
                     } else if (PAYMENT_TOKENIZATION_REQUIRED) {
+                        if (tokenizeResult.error === "AUTH_SESSION_REQUIRED") {
+                            toast.error(t("checkout.validation.session_expired", "Oturumunuzun süresi doldu. Lütfen tekrar giriş yapın."));
+                            await supabase.auth.signOut();
+                            window.location.href = "/";
+                            return;
+                        }
                         toast.error(tokenizeResult.message || t("checkout.validation.tokenization_failed", "Kart tokenizasyonu basarisiz"));
                         return;
                     }
@@ -195,6 +202,13 @@ export default function Checkout() {
                         },
                     }));
                     navigate(`/3d-redirect?intent=${encodeURIComponent(cardInitResult.intentId)}`);
+                    return;
+                }
+
+                if (cardInitResult.error === "AUTH_SESSION_REQUIRED") {
+                    toast.error(t("checkout.validation.session_expired", "Oturumunuzun süresi doldu. Lütfen tekrar giriş yapın."));
+                    await supabase.auth.signOut();
+                    window.location.href = "/";
                     return;
                 }
 

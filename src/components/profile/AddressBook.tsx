@@ -64,7 +64,6 @@ export function AddressBook() {
 
             if (fetchError) {
                 if (fetchError.isAborted) {
-                    console.debug("Address fetch was aborted (expected on navigation)");
                     return;
                 }
                 if (!isMountedRef.current) return;
