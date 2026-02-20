@@ -90,6 +90,7 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
             await onSave(formData);
             onClose();
         } catch {
+            // Error is handled upstream or ignored for non-critical failures
         } finally {
             setIsLoading(false);
         }

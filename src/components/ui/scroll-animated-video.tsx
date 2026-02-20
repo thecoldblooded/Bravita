@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable react-hooks/exhaustive-deps */
 import React, { CSSProperties, ReactNode, useEffect, useMemo, useRef } from "react";
 import { BackgroundGradientAnimation } from "./background-gradient-animation";
 
@@ -193,24 +191,22 @@ const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
         [initialBoxSize, overlayBlur]
     );
 
+    // Memoize the stringified lenis options to avoid complex dependency expression in useEffect
+    const stringifiedLenisOptions = JSON.stringify(lenisOptions);
+
     // Scroll + GSAP wiring
+    /* eslint-disable @typescript-eslint/no-explicit-any */
     useEffect(() => {
         if (!isClient) return;
         const currentRoot = rootRef.current;
 
 
-        let gsap: any;
-
-        let ScrollTrigger: any;
-
-        let CustomEase: any;
-
-        let LenisCtor: any;
-
-        let lenis: any;
-
-
-        let mainTl: any;
+        let gsap: unknown;
+        let ScrollTrigger: unknown;
+        let CustomEase: unknown;
+        let Lenis: unknown;
+        let lenis: unknown;
+        let mainTl: unknown;
         let overlayDarkenEl: HTMLDivElement | null = null;
 
         let rafCb: ((t: number) => void) | null = null;
@@ -241,15 +237,15 @@ const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
                 (CustomEasePkg as any).CustomEase ||
                 CustomEasePkg;
 
-            gsap.registerPlugin(ScrollTrigger, CustomEase);
+            (gsap as any).registerPlugin(ScrollTrigger, CustomEase);
 
             if (cancelled) return;
 
             if (smoothScroll) {
                 const try1 = await import("@studio-freight/lenis").catch(() => null);
-                LenisCtor = try1?.default || (try1 as any)?.Lenis;
-                if (LenisCtor) {
-                    lenis = new LenisCtor({
+                Lenis = try1?.default || (try1 as any)?.Lenis; // Changed from LenisCtor
+                if (Lenis) {
+                    lenis = new (Lenis as any)({ // Changed from LenisCtor
                         duration: 0.8,
                         smoothWheel: true,
                         gestureOrientation: "vertical",
@@ -260,10 +256,10 @@ const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
 
                     (window as any).lenis = lenis;
 
-                    rafCb = (time: number) => lenis?.raf(time * 1000);
-                    gsap.ticker.add(rafCb);
-                    gsap.ticker.lagSmoothing(0);
-                    lenis?.on?.("scroll", ScrollTrigger.update);
+                    rafCb = (time: number) => (lenis as any)?.raf(time * 1000);
+                    (gsap as any).ticker.add(rafCb);
+                    (gsap as any).ticker.lagSmoothing(0);
+                    (lenis as any)?.on?.("scroll", (ScrollTrigger as any).update);
                 }
             }
 
@@ -300,7 +296,7 @@ const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
 
             if (!triggerEl || !container || !overlayEl) return;
 
-            mainTl = gsap.timeline({
+            mainTl = (gsap as any).timeline({
                 scrollTrigger: {
                     trigger: triggerEl,
                     start: "top 50%",
@@ -328,7 +324,7 @@ const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
             })();
 
             // Initial states
-            gsap.set(container, {
+            (gsap as any).set(container, {
                 width: target.width,
                 height: target.height,
                 borderRadius: target.borderRadius,
@@ -336,15 +332,15 @@ const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
                 filter: "none",
                 clipPath: "inset(0 0 0 0)",
             });
-            gsap.set(overlayEl, { clipPath: "inset(100% 0 0 0)" });
+            (gsap as any).set(overlayEl, { clipPath: "inset(100% 0 0 0)" });
             if (overlayContent) {
-                gsap.set(overlayContent, {
+                (gsap as any).set(overlayContent, {
                     filter: `blur(var(--overlay-blur))`,
                     scale: 1.05,
                 });
-                gsap.set([overlayContent, overlayCaption], { y: 30 });
+                (gsap as any).set([overlayContent, overlayCaption], { y: 30 });
             } else if (overlayCaption) {
-                gsap.set(overlayCaption, { y: 30 });
+                (gsap as any).set(overlayCaption, { y: 30 });
             }
 
             // Determine final (small) size
@@ -360,7 +356,7 @@ const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
             //     : initialBoxSize;
 
             // Animate the container to shrink
-            mainTl
+            (mainTl as any)
                 .to(
                     container,
                     {
@@ -409,7 +405,7 @@ const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
             if (videoEl) {
                 const tryPlay = () => videoEl.play().catch(() => { /* ignore */ });
                 tryPlay();
-                ScrollTrigger.create({
+                (ScrollTrigger as any).create({
                     trigger: triggerEl,
                     start: "top 40%",
                     onEnter: tryPlay,
@@ -456,11 +452,12 @@ const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
                 (lenis as any)?.destroy?.();
 
                 if ((window as any).lenis === lenis) {
-
                     (window as any).lenis = undefined;
                 }
             } catch { /* ignore */ }
         };
+        // We use stringifiedLenisOptions for stable dependency check
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
         initialBoxSize,
         targetSize,
@@ -473,8 +470,10 @@ const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
         showHeroExitAnimation,
         sticky,
         smoothScroll,
-        JSON.stringify(lenisOptions),
+        isClient, // Added missing dependency
+        stringifiedLenisOptions, // Replaced JSON.stringify(lenisOptions)
     ]);
+    /* eslint-enable @typescript-eslint/no-explicit-any */
 
     return (
         <div

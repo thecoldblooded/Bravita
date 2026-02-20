@@ -107,6 +107,7 @@ export function PromoLogsModal({ isOpen, onClose, promoId, promoCode }: PromoLog
                 setLogs([]);
             }
         } catch {
+            // Fail silently as logs are non-critical and we show an empty state if they fail to load
         } finally {
             setIsLoading(false);
         }

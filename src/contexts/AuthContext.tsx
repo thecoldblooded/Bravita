@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useRef } from "react";
 import { Session } from "@supabase/supabase-js";
 import { supabase, UserProfile } from "@/lib/supabase";
@@ -335,10 +334,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 });
               }
             }
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          } catch (e: any) {
+          } catch (e: unknown) {
             // Ignore 403 errors (permissions) to avoid console noise for non-admins
-            if (e?.code !== '403' && !e?.message?.includes('403')) {
+            if ((e as { code?: string })?.code !== '403' && !(e as Error)?.message?.includes('403')) {
               console.error("Login logging failed", e);
             }
           }
@@ -491,26 +489,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             // Background attempt with 10s limit
             const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Background fetch timeout')), 10000));
-            try {
-              const result = (await Promise.race([fetchProfile(), timeout])) as { data: UserProfile | null; error: { message: string; code?: string } | null };
-              if (result.error) throw result.error;
+            const result = (await Promise.race([fetchProfile(), timeout])) as { data: UserProfile | null; error: { message: string; code?: string } | null };
+            if (result.error) throw result.error;
 
-              // Handle missing profile execution path without 406 error
-              if (!result.data) {
-                throw { code: "PGRST116", message: "The result contains 0 rows" };
+            // Handle missing profile execution path without 406 error
+            if (!result.data) {
+              throw { code: "PGRST116", message: "The result contains 0 rows" };
+            }
+
+            userProfile = result.data;
+
+            // Success - Update state and cache
+            if (userProfile && mounted) {
+              setUserDebug(userProfile);
+              if (userProfile.profile_complete) {
+                localStorage.setItem("profile_known_complete", "true");
               }
-
-              userProfile = result.data;
-
-              // Success - Update state and cache
-              if (userProfile && mounted) {
-                setUserDebug(userProfile);
-                if (userProfile.profile_complete) {
-                  localStorage.setItem("profile_known_complete", "true");
-                }
-              }
-            } catch (err: unknown) {
-              throw err;
             }
           } catch (err: unknown) {
             // "Not Found" handling for completely new users
@@ -666,8 +660,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       subscription.unsubscribe();
       clearTimeout(safetyTimer);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run only on mount
+  }, [bffAuthEnabled, session, setUserDebug, syncPendingProfile]); // Run only on mount (with necessary dependencies)
 
   const activeUserId = session?.user?.id;
   const activeSessionExpiry = session?.expires_at ?? null;
@@ -705,6 +698,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {

@@ -118,6 +118,7 @@ function ProductsContent() {
             const settings = await getSiteSettings();
             dispatch({ type: 'SET_SETTINGS', payload: settings });
         } catch {
+            // Ignore settings load failures – default values will be used
         }
     }, []);
 

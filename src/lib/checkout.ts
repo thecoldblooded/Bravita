@@ -343,7 +343,7 @@ export async function initiateCardPayment(params: CardPaymentInitParams): Promis
 
     const correlationId = params.correlationId ?? `cc-init-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-    let invokeData: any;
+    let invokeData: unknown;
     let invokeError: unknown;
     {
         const result = await supabase.functions.invoke("bakiyem-init-3d", {
@@ -398,14 +398,24 @@ export async function initiateCardPayment(params: CardPaymentInitParams): Promis
         }
     }
 
+    const data = invokeData as {
+        success?: boolean;
+        intentId?: string;
+        reused?: boolean;
+        redirectUrl?: string;
+        threeD?: { redirectUrl?: string };
+        message?: string;
+        error?: string;
+    };
+
     return {
-        success: !!invokeData?.success,
-        intentId: invokeData?.intentId,
-        reused: !!invokeData?.reused,
-        redirectUrl: invokeData?.redirectUrl ?? invokeData?.threeD?.redirectUrl ?? null,
-        threeD: invokeData?.threeD || (invokeData?.redirectUrl ? { redirectUrl: invokeData.redirectUrl } : undefined),
-        message: invokeData?.message,
-        error: invokeData?.error,
+        success: !!data?.success,
+        intentId: data?.intentId,
+        reused: !!data?.reused,
+        redirectUrl: data?.redirectUrl ?? data?.threeD?.redirectUrl ?? null,
+        threeD: data?.threeD || (data?.redirectUrl ? { redirectUrl: data.redirectUrl } : undefined),
+        message: data?.message,
+        error: data?.error,
     };
 }
 
@@ -420,7 +430,7 @@ export async function tokenizeCardForPayment(params: CardTokenizeParams): Promis
         };
     }
 
-    let invokeData: any;
+    let invokeData: unknown;
     let invokeError: unknown;
     {
         const result = await supabase.functions.invoke("bakiyem-tokenize-card", {
@@ -468,10 +478,11 @@ export async function tokenizeCardForPayment(params: CardTokenizeParams): Promis
         }
     }
 
+    const data = invokeData as { success?: boolean; cardToken?: string; message?: string };
     return {
-        success: !!invokeData?.success,
-        cardToken: invokeData?.cardToken,
-        message: invokeData?.message,
+        success: !!data?.success,
+        cardToken: data?.cardToken,
+        message: data?.message,
     };
 }
 
