@@ -514,7 +514,11 @@ serve(async (req: Request) => {
       asText(matchedRecord?.ResultMessage ?? detailInquiryData?.ResultMessage ?? detailInquiryJson?.ResultMessage ?? inquiryData?.ResultMessage ?? inquiryJson?.ResultMessage) ||
       "";
 
-    const isActuallySuccess = !callbackIndicatesFailure && (callbackIndicatesSuccess || inquiryIndicatesSuccess);
+    const isActuallySuccess = !callbackIndicatesFailure && (
+      (hashValidation.provided && hashValidation.isValid && callbackIndicatesSuccess) ||
+      inquiryIndicatesSuccess
+    );
+
     const effectiveFailureCode = callbackOutcomeFromHash === "f"
       ? "3d_auth_failed"
       : callbackMessageIndicatesFailure && isSuccessResultCode(resultCode)
