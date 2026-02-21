@@ -65,7 +65,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
 export function CartModal({ open, onOpenChange }: CartModalProps) {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { user, isAuthenticated } = useAuth();
+    const { user, isAuthenticated, refreshUserProfile } = useAuth();
     const { addToCart, clearCart, applyPromoCode, removePromoCode, promoCode: contextPromoCode, settings } = useCart();
 
     const [state, dispatch] = useReducer(cartReducer, {
@@ -186,7 +186,12 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
             return;
         }
 
-        if (user && !user.profile_complete) {
+        let effectiveUser = user;
+        if (effectiveUser?.isStub) {
+            effectiveUser = await refreshUserProfile();
+        }
+
+        if (effectiveUser && !effectiveUser.isStub && !effectiveUser.profile_complete) {
             toast.error(t("cart.profile_incomplete") || "Lütfen önce profilinizi tamamlayın");
             onOpenChange(false);
             navigate("/complete-profile");

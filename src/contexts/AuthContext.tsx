@@ -22,7 +22,7 @@ interface AuthContextType {
   profileComplete: boolean;
   isPasswordRecovery: boolean;
   refreshSession: () => Promise<void>;
-  refreshUserProfile: () => Promise<void>;
+  refreshUserProfile: () => Promise<UserProfile | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -154,8 +154,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isSplashScreenActiveRef.current = isSplashScreenActive;
   }, [isSplashScreenActive]);
 
-  const refreshUserProfile = useCallback(async () => {
-    if (!session?.user?.id) return;
+  const refreshUserProfile = useCallback(async (): Promise<UserProfile | null> => {
+    if (!session?.user?.id) return null;
 
     try {
       let result = await supabase
@@ -181,15 +181,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (result.error) {
         console.error("Profile fetch error:", result.error);
-        return;
+        return null;
       }
 
       if (result.data) {
         setUserDebug(result.data);
+        return result.data;
       }
     } catch (error) {
       console.error("Failed to refresh user profile:", error);
     }
+
+    return null;
   }, [session?.user?.id, setUserDebug]);
 
   const refreshSession = useCallback(async () => {

@@ -77,7 +77,7 @@ const Header = () => {
   const { t, i18n } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated, user, isLoading } = useAuth();
+  const { isAuthenticated, user, refreshUserProfile } = useAuth();
 
   // Grouped scroll and UI state to reduce useState calls
   const [scrollState, setScrollState] = useState({
@@ -98,6 +98,8 @@ const Header = () => {
   const isProfilePage = location.pathname === "/profile";
   const isCheckoutPage = location.pathname === "/checkout";
   const isUserReady = isAuthenticated && user;
+  const isStubUser = (user as { isStub?: boolean } | null)?.isStub === true;
+  const isProfileCompletionBlocked = isAuthenticated && !!user && !isStubUser && !user.profile_complete;
 
   const getCurrentLanguage = () => {
     const storedLang = localStorage.getItem('i18nextLng');
@@ -316,21 +318,31 @@ const Header = () => {
                 <a
                   href={!isAuthenticated ? "#contact" : undefined}
                   onClick={(e) => {
-                    if (isAuthenticated && user && !user?.profile_complete) {
+                    if (isAuthenticated) {
                       e.preventDefault();
+
+                      if (!user) {
+                        return;
+                      }
+
+                      if (isStubUser) {
+                        void refreshUserProfile();
+                        openCart();
+                        return;
+                      }
+
+                      if (user.profile_complete) {
+                        openCart();
+                      }
+                      return;
                     }
-                    if (isAuthenticated && user?.profile_complete) {
-                      e.preventDefault();
-                      openCart();
-                    }
-                    if (!isAuthenticated) {
-                      e.preventDefault();
-                      setAuthModalOpen(true);
-                    }
+
+                    e.preventDefault();
+                    setAuthModalOpen(true);
                   }}
                   className={cn(
                     "px-4 md:px-6 py-2.5 rounded-full font-black text-sm transition-all duration-300 active:scale-95 shadow-lg whitespace-nowrap",
-                    isUserReady && !user?.profile_complete
+                    isProfileCompletionBlocked
                       ? isScrolled
                         ? "bg-gray-400 text-gray-600 shadow-gray-200/50 cursor-not-allowed opacity-60"
                         : "bg-gray-200 text-gray-500 shadow-gray-200/30 cursor-not-allowed opacity-60"
@@ -338,7 +350,7 @@ const Header = () => {
                         ? "bg-orange-600 text-white shadow-orange-200/50 hover:bg-orange-700 cursor-pointer"
                         : "bg-white text-orange-600 shadow-gray-200/30 hover:bg-gray-50 cursor-pointer"
                   )}
-                  title={isUserReady && !user?.profile_complete ? t("auth.profile_completion_required") : ""}
+                  title={isProfileCompletionBlocked ? t("auth.profile_completion_required") : ""}
                 >
                   {t('nav.buy')}
                 </a>

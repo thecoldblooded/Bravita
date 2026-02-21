@@ -128,6 +128,7 @@ export default function Checkout() {
     };
 
     const handlePlaceOrder = async () => {
+
         if (!user || !checkoutData.addressId) return;
         if (!isAgreed) {
             toast.error(t("checkout.validation.agreements_required", "Lütfen sözleşmeleri onaylayın."));
