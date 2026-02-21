@@ -707,12 +707,20 @@ async function prepareSupportEmail(
     const latestUserMessage = extractLatestUserMessage(ticket.message || "");
 
     // 2. Prepare Variables
-    const variables: Record<string, string> = {
+    const CATEGORY_LABELS: Record<string, string> = {
+        general: "Genel Sorular",
+        order_issue: "Sipariş Sorunu",
+        product_info: "Ürün Bilgisi",
+        delivery: "Teslimat Hakkında",
+        other: "Diğer",
+    };
+
+    const variables = {
         "NAME": ticket.name || "Müşteri",
         "EMAIL": ticket.email || "",
         "SUBJECT": ticket.subject || "Destek Talebi",
         "TICKET_ID": ticket.id.substring(0, 8).toUpperCase(),
-        "CATEGORY": ticket.category || "Genel",
+        "CATEGORY": CATEGORY_LABELS[ticket.category] || ticket.category || "Genel Sorular",
         "USER_MESSAGE": latestUserMessage,
         "ADMIN_REPLY": ticket.admin_reply || "",
         "BROWSER_LINK": browserLink || "#",
