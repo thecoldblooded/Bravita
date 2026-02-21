@@ -560,7 +560,7 @@ serve(async (req: Request) => {
         // 4. Prepare Email Content
         const signature = await generateSignature(ticket_id, normalizedType);
         const browserLink = buildSupportPreviewLink(ticket_id, signature, normalizedType, appBaseUrl);
-        const { subject, html, text, to, config, render, defaultFromName, defaultFromEmail } = await prepareSupportEmail(
+        const { subject, html, text, to, bcc, config, render, defaultFromName, defaultFromEmail } = await prepareSupportEmail(
             supabase,
             ticket,
             normalizedType,
@@ -592,6 +592,10 @@ serve(async (req: Request) => {
             html,
             text,
         };
+
+        if (bcc) {
+            resendPayload.bcc = bcc;
+        }
 
         const replyTo = config?.reply_to || (normalizedType === "ticket_replied" ? SUPPORT_EMAIL : ticket.email);
         if (replyTo) {
@@ -669,7 +673,6 @@ serve(async (req: Request) => {
                 : (status === 403
                     ? "Bu işlem için yetkiniz yok."
                     : (status === 500 ? "Sunucu yapılandırma hatası." : "İstek işlenemedi."));
-
         return new Response(JSON.stringify({ error: clientError }), {
             headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
             status,
@@ -729,7 +732,17 @@ async function prepareSupportEmail(
     });
 
     // 3. Set recipient and sender
-    const to = (type === "ticket_created" || type === "user_replied") ? [supportEmail] : [ticket.email];
+    let to: string[];
+    let bcc: string[] | undefined;
+
+    if (type === "user_replied") {
+        to = [supportEmail];
+    } else if (type === "ticket_created") {
+        to = [ticket.email];
+        bcc = [supportEmail];
+    } else {
+        to = [ticket.email];
+    }
 
     const defaultFromName = type === "ticket_created" ? "Bravita Sistem" : "Bravita Destek";
     const defaultFromEmail = type === "ticket_created" ? "noreply@bravita.com.tr" : "support@bravita.com.tr";
@@ -741,6 +754,7 @@ async function prepareSupportEmail(
         html: render.html,
         text,
         to,
+        bcc,
         config,
         render,
         defaultFromName,
