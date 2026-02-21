@@ -101,15 +101,21 @@ export function SupportForm({ onSuccess }: SupportFormProps) {
             }
 
             try {
-                await supabase.functions.invoke("send-support-email", {
+                const { error: notifyError } = await supabase.functions.invoke("send-support-email", {
                     body: {
                         ticket_id: ticket.id,
                         type: "ticket_created",
                         captchaToken: captchaToken,
                     },
                 });
-            } catch {
-                // Bildirim e-postası başarısız olsa da form gönderimini bloklama
+
+                if (notifyError) {
+                    console.error("Support notify email failed:", notifyError);
+                    toast.warning("Talebiniz kaydedildi ancak destek bildirimi gönderilemedi.");
+                }
+            } catch (notifyUnexpectedError) {
+                console.error("Support notify email unexpected failure:", notifyUnexpectedError);
+                toast.warning("Talebiniz kaydedildi ancak destek bildirimi gönderilemedi.");
             }
 
             toast.success(t("support.success_message") || "Mesajınız başarıyla gönderildi. En kısa sürede size dönüş yapacağız.");

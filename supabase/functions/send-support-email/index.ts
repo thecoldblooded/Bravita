@@ -100,6 +100,70 @@ function isAllowedSupportEmailType(value: string): value is SupportEmailType {
     return SUPPORT_EMAIL_TYPES.has(value as SupportEmailType);
 }
 
+function truncateForLog(value: unknown, maxLength = 160): string {
+    const normalized = String(value ?? "").replace(/\s+/g, " ").trim();
+    if (!normalized) return "";
+    if (normalized.length <= maxLength) return normalized;
+    return `${normalized.slice(0, maxLength)}…`;
+}
+
+function redactEmailForLog(email: string): string {
+    const normalized = String(email || "").trim().toLowerCase();
+    if (!normalized || !normalized.includes("@")) return normalized ? "***" : "";
+
+    const [local, domain] = normalized.split("@");
+    if (!domain) return "***";
+
+    const safeLocal = local.length <= 2
+        ? `${local[0] ?? "*"}*`
+        : `${local.slice(0, 2)}***`;
+
+    return `${safeLocal}@${domain}`;
+}
+
+function isUserConversationSegment(header: string): boolean {
+    const normalized = String(header || "").toLowerCase();
+    if (!normalized) return false;
+    if (normalized.includes("admin")) return false;
+
+    return normalized.includes("kullanıcı")
+        || normalized.includes("user")
+        || normalized.includes("müşteri")
+        || normalized.includes("musteri")
+        || normalized.includes("yeni mesaj");
+}
+
+function extractLatestUserMessage(rawMessage: string): string {
+    const normalized = String(rawMessage || "").replace(/\r\n/g, "\n").trim();
+    if (!normalized) return "";
+
+    const parts = normalized.split(/\n\n--- (.*?) ---\n/g);
+    if (parts.length === 1) {
+        return normalized;
+    }
+
+    const userMessages: string[] = [];
+    const firstChunk = String(parts[0] || "").trim();
+    if (firstChunk) {
+        userMessages.push(firstChunk);
+    }
+
+    for (let i = 1; i < parts.length; i += 2) {
+        const header = String(parts[i] || "").trim();
+        const content = String(parts[i + 1] || "").trim();
+        if (!content) continue;
+        if (isUserConversationSegment(header)) {
+            userMessages.push(content);
+        }
+    }
+
+    return userMessages[userMessages.length - 1] || firstChunk || normalized;
+}
+
+function logSupportDebug(event: string, payload: Record<string, unknown> = {}) {
+    console.log(`[send-support-email][${new Date().toISOString()}] ${event}`, payload);
+}
+
 function getCorsHeaders(req: Request) {
     const origin = req.headers.get('Origin') || '';
     const allowedOrigin = isAllowedOrigin(origin) ? origin : ALLOWED_ORIGINS[0];
@@ -350,6 +414,13 @@ serve(async (req: Request) => {
         }
         const normalizedType: SupportEmailType = requestedType;
 
+        logSupportDebug("request_received", {
+            ticket_id: String(ticket_id),
+            type: normalizedType,
+            has_auth_header: !!authHeader && authHeader !== "Bearer anon",
+            has_captcha_token: typeof captchaToken === "string" && captchaToken.trim().length > 0,
+        });
+
         // 0. Authorization Context
         let isAdmin = false;
         let requestingUserId: string | null = null;
@@ -380,6 +451,13 @@ serve(async (req: Request) => {
             }
         }
 
+        logSupportDebug("auth_context", {
+            ticket_id: String(ticket_id),
+            type: normalizedType,
+            requesting_user_id: requestingUserId,
+            is_admin: isAdmin,
+        });
+
         // 1. Get Ticket Data early for ownership checks
         const { data: ticket, error: ticketError } = await supabase
             .from("support_tickets")
@@ -388,8 +466,24 @@ serve(async (req: Request) => {
             .maybeSingle();
 
         if (ticketError || !ticket) {
+            logSupportDebug("ticket_fetch_failed", {
+                ticket_id: String(ticket_id),
+                type: normalizedType,
+                db_error: ticketError?.message || null,
+            });
             throw new Error(`Ticket not found: ${ticket_id}`);
         }
+
+        logSupportDebug("ticket_loaded", {
+            ticket_id: String(ticket_id),
+            type: normalizedType,
+            ticket_status: ticket.status || null,
+            has_user_id: !!ticket.user_id,
+            ticket_email: redactEmailForLog(ticket.email || ""),
+            message_length: String(ticket.message || "").length,
+            has_conversation_history: String(ticket.message || "").includes("\n\n--- "),
+            admin_reply_length: String(ticket.admin_reply || "").length,
+        });
 
         // 2. Authorization matrix by action type
         if ((normalizedType === "ticket_replied" || normalizedType === "ticket_closed") && !isAdmin) {
@@ -406,24 +500,58 @@ serve(async (req: Request) => {
             }
         }
 
-        // 3. CAPTCHA validation (fail-close) for non-admin ticket creation flow
+        // 3. CAPTCHA validation for non-admin ticket creation flow
         if (normalizedType === "ticket_created" && !isAdmin) {
-            const hCaptchaSecret = Deno.env.get("HCAPTCHA_SECRET_KEY");
-            if (!hCaptchaSecret) {
-                throw new Error("Server configuration error: captcha secret missing");
-            }
-            if (!captchaToken) {
+            if (!captchaToken || !String(captchaToken).trim()) {
+                logSupportDebug("captcha_token_missing", {
+                    ticket_id: String(ticket_id),
+                    type: normalizedType,
+                });
                 throw new Error("Captcha token is required for guest submission");
             }
 
-            const verifyRes = await fetch("https://hcaptcha.com/siteverify", {
-                method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: `response=${captchaToken}&secret=${hCaptchaSecret}`
-            });
-            const verifyData = await verifyRes.json();
-            if (!verifyData.success) {
-                throw new Error("Invalid Captcha Token");
+            const hCaptchaSecret = Deno.env.get("HCAPTCHA_SECRET_KEY");
+            if (!hCaptchaSecret) {
+                logSupportDebug("captcha_secret_missing_soft_fail", {
+                    ticket_id: String(ticket_id),
+                    type: normalizedType,
+                });
+            } else {
+                try {
+                    const verifyRes = await fetch("https://hcaptcha.com/siteverify", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                        body: `response=${encodeURIComponent(String(captchaToken))}&secret=${encodeURIComponent(hCaptchaSecret)}`,
+                    });
+
+                    const verifyData = await verifyRes.json();
+                    if (!verifyData.success) {
+                        logSupportDebug("captcha_verify_failed", {
+                            ticket_id: String(ticket_id),
+                            type: normalizedType,
+                            verify_errors: verifyData?.["error-codes"] || null,
+                            hostname: verifyData?.hostname || null,
+                        });
+                        throw new Error("Invalid Captcha Token");
+                    }
+
+                    logSupportDebug("captcha_verify_passed", {
+                        ticket_id: String(ticket_id),
+                        type: normalizedType,
+                        hostname: verifyData?.hostname || null,
+                    });
+                } catch (captchaError: any) {
+                    const captchaMessage = String(captchaError?.message || "");
+                    if (captchaMessage === "Invalid Captcha Token") {
+                        throw captchaError;
+                    }
+
+                    logSupportDebug("captcha_verify_error_soft_fail", {
+                        ticket_id: String(ticket_id),
+                        type: normalizedType,
+                        error: truncateForLog(captchaMessage, 240),
+                    });
+                }
             }
         }
 
@@ -439,6 +567,19 @@ serve(async (req: Request) => {
             browserLink,
             SUPPORT_EMAIL,
         );
+
+        const latestUserMessage = extractLatestUserMessage(ticket.message || "");
+
+        logSupportDebug("email_prepared", {
+            ticket_id: String(ticket_id),
+            type: normalizedType,
+            recipient_count: Array.isArray(to) ? to.length : 0,
+            recipients: Array.isArray(to) ? to.map((email: string) => redactEmailForLog(email)) : [],
+            blocked: render.blocked,
+            unresolved_tokens: render.unresolvedTokens,
+            warning_count: Array.isArray(render.warnings) ? render.warnings.length : 0,
+            user_message_preview: truncateForLog(latestUserMessage, 120),
+        });
 
         if (render.blocked) {
             throw new Error(`Blocked by unresolved tokens: ${render.unresolvedTokens.join(", ")}`);
@@ -458,6 +599,14 @@ serve(async (req: Request) => {
         }
 
         // 5. Send via Resend
+        logSupportDebug("resend_dispatch", {
+            ticket_id: String(ticket_id),
+            type: normalizedType,
+            to: Array.isArray(to) ? to.map((email: string) => redactEmailForLog(email)) : [],
+            reply_to: redactEmailForLog(String(replyTo || "")),
+            subject_preview: truncateForLog(subject, 80),
+        });
+
         const res = await fetch("https://api.resend.com/emails", {
             method: "POST",
             headers: {
@@ -470,8 +619,20 @@ serve(async (req: Request) => {
         const resData = await res.json();
 
         if (!res.ok) {
+            logSupportDebug("resend_failed", {
+                ticket_id: String(ticket_id),
+                type: normalizedType,
+                status: res.status,
+                resend_response: truncateForLog(JSON.stringify(resData), 600),
+            });
             throw new Error(`Resend Error: ${JSON.stringify(resData)}`);
         }
+
+        logSupportDebug("resend_succeeded", {
+            ticket_id: String(ticket_id),
+            type: normalizedType,
+            resend_id: resData?.id || null,
+        });
 
         return new Response(JSON.stringify({
             success: true,
@@ -496,6 +657,11 @@ serve(async (req: Request) => {
                 : (errorMessage.includes("Forbidden")
                     ? 403
                     : (errorMessage.includes("Server configuration error") ? 500 : 400));
+
+        logSupportDebug("request_failed", {
+            status,
+            error: truncateForLog(errorMessage, 500),
+        });
 
         const clientError =
             status === 401
@@ -535,6 +701,8 @@ async function prepareSupportEmail(
     // 1. Fetch template/config/policy bundle via shared renderer
     const { template, config, variablePolicies } = await fetchTemplateBundle(supabase, slug);
 
+    const latestUserMessage = extractLatestUserMessage(ticket.message || "");
+
     // 2. Prepare Variables
     const variables: Record<string, string> = {
         "NAME": ticket.name || "Müşteri",
@@ -542,7 +710,7 @@ async function prepareSupportEmail(
         "SUBJECT": ticket.subject || "Destek Talebi",
         "TICKET_ID": ticket.id.substring(0, 8).toUpperCase(),
         "CATEGORY": ticket.category || "Genel",
-        "USER_MESSAGE": ticket.message || "",
+        "USER_MESSAGE": latestUserMessage,
         "ADMIN_REPLY": ticket.admin_reply || "",
         "BROWSER_LINK": browserLink || "#",
         "SITE_URL": "https://www.bravita.com.tr",
