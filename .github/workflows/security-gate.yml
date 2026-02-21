@@ -82,10 +82,12 @@ jobs:
             echo "Expected project ref (masked): ${SUPABASE_PROJECT_REF:0:6}*** (len=${#SUPABASE_PROJECT_REF})"
             npx supabase link --project-ref "$SUPABASE_PROJECT_REF"
 
+
             LINKED_REF_FILE="supabase/.temp/project-ref"
             if [ -f "$LINKED_REF_FILE" ]; then
               LINKED_REF="$(tr -d '\r\n[:space:]' < "$LINKED_REF_FILE")"
               echo "Linked project ref (masked): ${LINKED_REF:0:6}*** (len=${#LINKED_REF})"
+
 
               if [ "$LINKED_REF" != "$SUPABASE_PROJECT_REF" ]; then
                 echo "::error::Linked project ref mismatch. Expected secret ref but found a different linked ref."
@@ -111,8 +113,10 @@ jobs:
             exit 1
           fi
 
+
           DIFF_EXIT=0
           npx supabase db diff --linked --use-migra --schema public > drift.sql 2> drift.err || DIFF_EXIT=$?
+
 
           if [ "$DIFF_EXIT" -ne 0 ]; then
             echo "::error::supabase db diff failed with exit code $DIFF_EXIT"
