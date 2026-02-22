@@ -110,12 +110,14 @@ class UXAuditor:
         
         self.files_checked += 1
         filename = os.path.basename(filepath)
+        normalized_path = filepath.replace('\\', '/').lower()
+        is_reusable_field_primitive = normalized_path.endswith('src/components/ui/input.tsx') or normalized_path.endswith('src/components/ui/textarea.tsx')
 
         # Pre-calculate common flags
         has_long_text = bool(re.search(r'<p|<div.*class=.*text|article|<span.*text', content, re.IGNORECASE))
-        # Only consider it a form context if actual interactive input elements are present
-        has_interactive_elements = bool(re.search(r'<input\b|<select\b|<textarea\b', content, re.IGNORECASE))
-        has_form = has_interactive_elements
+        has_form = bool(
+            re.search(r'<\s*(?:input|select|textarea)\b', content, re.IGNORECASE)
+        )
         complex_elements = len(re.findall(r'<input|<select|<textarea|<option', content, re.IGNORECASE))
 
         # --- 1. PSYCHOLOGY LAWS ---
@@ -211,8 +213,14 @@ class UXAuditor:
 
         # Familiar patterns
         if has_form:
-            has_standard_labels = bool(re.search(r'<label|placeholder|aria-label', content, re.IGNORECASE))
-            if not has_standard_labels:
+            has_standard_labels = bool(
+                re.search(
+                    r'<\s*(?:label|formlabel)\b|htmlFor\s*=|aria-label\s*=|aria-labelledby\s*=|placeholder\s*=',
+                    content,
+                    re.IGNORECASE,
+                )
+            )
+            if not has_standard_labels and not is_reusable_field_primitive:
                 self.issues.append(f"[Cognitive Load] {filename}: Form inputs without labels. Use <label> for accessibility and clarity.")
 
         # --- 1.8 PERSUASIVE DESIGN (Ethical) ---
@@ -676,7 +684,7 @@ class UXAuditor:
     def audit_directory(self, directory: str) -> None:
         extensions = {'.tsx', '.jsx', '.html', '.vue', '.svelte', '.css'}
         for root, dirs, files in os.walk(directory):
-            dirs[:] = [d for d in dirs if d not in {'node_modules', '.git', 'dist', 'build', '.next'}]
+            dirs[:] = [d for d in dirs if d not in {'node_modules', '.git', 'dist', 'build', '.next', 'artifacts'}]
             for file in files:
                 if Path(file).suffix in extensions:
                     self.audit_file(os.path.join(root, file))

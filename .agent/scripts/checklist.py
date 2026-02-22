@@ -20,22 +20,12 @@ Priority Order:
     P6: Performance (lighthouse - requires URL)
 """
 
+import builtins
 import sys
 import subprocess
 import argparse
-import io
 from pathlib import Path
-from typing import List, Tuple, Optional
-
-# Force UTF-8 encoding for standard streams on Windows
-if sys.platform == "win32":
-    try:
-        if hasattr(sys.stdout, 'reconfigure'):
-            sys.stdout.reconfigure(encoding='utf-8')
-        if hasattr(sys.stderr, 'reconfigure'):
-            sys.stderr.reconfigure(encoding='utf-8')
-    except Exception:
-        pass
+from typing import List, Optional
 
 # ANSI colors for terminal output
 class Colors:
@@ -48,30 +38,86 @@ class Colors:
     ENDC = '\033[0m'
     BOLD = '\033[1m'
 
-def safe_print(text: str):
-    """Print text safely handling potential encoding errors"""
+ICON_FALLBACKS = {
+    "🚀": "[START]",
+    "📋": "[CORE]",
+    "⚡": "[PERF]",
+    "📊": "[SUMMARY]",
+    "🔄": "[RUN]",
+    "✅": "[OK]",
+    "❌": "[FAIL]",
+    "⚠️": "[WARN]",
+    "⚠": "[WARN]",
+    "⏭️": "[SKIP]",
+    "⏭": "[SKIP]",
+    "✨": "*",
+}
+
+
+
+def supports_unicode_output() -> bool:
+    encoding = sys.stdout.encoding or "utf-8"
+    sample = "".join(ICON_FALLBACKS.keys())
+
     try:
-        print(text)
+        sample.encode(encoding)
+        return True
+    except (UnicodeEncodeError, LookupError):
+        return False
+
+
+UNICODE_OUTPUT = supports_unicode_output()
+
+
+def normalize_symbols(text: str) -> str:
+    if UNICODE_OUTPUT:
+        return text
+
+    normalized = text
+    for symbol, replacement in ICON_FALLBACKS.items():
+        normalized = normalized.replace(symbol, replacement)
+
+    return normalized
+
+
+
+def safe_print(*args, sep=' ', end='\n', file=None, flush=False):
+    target = file if file is not None else sys.stdout
+
+    if args:
+        text = sep.join(str(arg) for arg in args)
+    else:
+        text = ""
+
+    text = normalize_symbols(text)
+
+    try:
+        builtins.print(text, sep='', end=end, file=target, flush=flush)
     except UnicodeEncodeError:
-        # Fallback: remove non-ASCII characters
-        print(text.encode('ascii', 'ignore').decode('ascii'))
+        encoding = getattr(target, "encoding", None) or "utf-8"
+        fallback = text.encode(encoding, errors="replace").decode(encoding, errors="replace")
+        builtins.print(fallback, sep='', end=end, file=target, flush=flush)
+
+
+print = safe_print
+
 
 def print_header(text: str):
-    safe_print(f"\n{Colors.BOLD}{Colors.CYAN}{'='*60}{Colors.ENDC}")
-    safe_print(f"{Colors.BOLD}{Colors.CYAN}{text.center(60)}{Colors.ENDC}")
-    safe_print(f"{Colors.BOLD}{Colors.CYAN}{'='*60}{Colors.ENDC}\n")
+    print(f"\n{Colors.BOLD}{Colors.CYAN}{'='*60}{Colors.ENDC}")
+    print(f"{Colors.BOLD}{Colors.CYAN}{text.center(60)}{Colors.ENDC}")
+    print(f"{Colors.BOLD}{Colors.CYAN}{'='*60}{Colors.ENDC}\n")
 
 def print_step(text: str):
-    safe_print(f"{Colors.BOLD}{Colors.BLUE}>> {text}{Colors.ENDC}")
+    print(f"{Colors.BOLD}{Colors.BLUE}🔄 {text}{Colors.ENDC}")
 
 def print_success(text: str):
-    safe_print(f"{Colors.GREEN}[OK] {text}{Colors.ENDC}")
+    print(f"{Colors.GREEN}✅ {text}{Colors.ENDC}")
 
 def print_warning(text: str):
-    safe_print(f"{Colors.YELLOW}[!] {text}{Colors.ENDC}")
+    print(f"{Colors.YELLOW}⚠️  {text}{Colors.ENDC}")
 
 def print_error(text: str):
-    safe_print(f"{Colors.RED}[X] {text}{Colors.ENDC}")
+    print(f"{Colors.RED}❌ {text}{Colors.ENDC}")
 
 # Define priority-ordered checks
 CORE_CHECKS = [
@@ -116,6 +162,7 @@ def run_script(name: str, script_path: Path, project_path: str, url: Optional[st
             cmd,
             capture_output=True,
             text=True,
+            errors="replace",
             timeout=300  # 5 minute timeout
         )
         
@@ -152,22 +199,22 @@ def print_summary(results: List[dict]):
     failed_count = sum(1 for r in results if not r["passed"] and not r.get("skipped"))
     skipped_count = sum(1 for r in results if r.get("skipped"))
     
-    safe_print(f"Total Checks: {len(results)}")
-    safe_print(f"{Colors.GREEN}Passed: {passed_count}{Colors.ENDC}")
-    safe_print(f"{Colors.RED}Failed: {failed_count}{Colors.ENDC}")
-    safe_print(f"{Colors.YELLOW}Skipped: {skipped_count}{Colors.ENDC}")
+    print(f"Total Checks: {len(results)}")
+    print(f"{Colors.GREEN}✅ Passed: {passed_count}{Colors.ENDC}")
+    print(f"{Colors.RED}❌ Failed: {failed_count}{Colors.ENDC}")
+    print(f"{Colors.YELLOW}⏭️  Skipped: {skipped_count}{Colors.ENDC}")
     print()
     
     # Detailed results
     for r in results:
         if r.get("skipped"):
-            status = f"{Colors.YELLOW}[S]{Colors.ENDC}"
+            status = f"{Colors.YELLOW}⏭️ {Colors.ENDC}"
         elif r["passed"]:
-            status = f"{Colors.GREEN}[V]{Colors.ENDC}"
+            status = f"{Colors.GREEN}✅{Colors.ENDC}"
         else:
-            status = f"{Colors.RED}[X]{Colors.ENDC}"
+            status = f"{Colors.RED}❌{Colors.ENDC}"
         
-        safe_print(f"{status} {r['name']}")
+        print(f"{status} {r['name']}")
     
     print()
     
@@ -200,7 +247,7 @@ Examples:
         print_error(f"Project path does not exist: {project_path}")
         sys.exit(1)
     
-    print_header("ANTIGRAVITY KIT - MASTER CHECKLIST")
+    print_header("🚀 ANTIGRAVITY KIT - MASTER CHECKLIST")
     print(f"Project: {project_path}")
     print(f"URL: {args.url if args.url else 'Not provided (performance checks skipped)'}")
     
