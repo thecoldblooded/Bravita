@@ -406,7 +406,7 @@
         "apply": "Apply",
         "payment": {
             "credit_card": "Credit Card / Debit Card",
-            "credit_card_desc": "Test mode - Any card number accepted",
+            "credit_card_desc": "Secure card payment with 3D Secure",
             "bank_transfer": "Bank Transfer / EFT",
             "bank_transfer_desc": "Payment by transfer to bank account",
             "bank_transfer_short": "Transfer",

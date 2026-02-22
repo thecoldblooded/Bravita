@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { m } from "framer-motion";
-import { CreditCard, Building2, Check, AlertCircle, Lock } from "lucide-react";
+import { CreditCard, Building2, Check, AlertCircle, Lock, Copy, CheckCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useTranslation } from "react-i18next";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
 
 interface CardDetails {
     number: string;
@@ -47,6 +48,14 @@ export function PaymentMethodSelector({
     const [localCardDetails, setLocalCardDetails] = useState<CardDetails>(
         cardDetails || { number: "", expiry: "", cvv: "", name: "" }
     );
+    const [copiedItem, setCopiedItem] = useState<string | null>(null);
+
+    const copyToClipboard = (text: string, itemId: string) => {
+        navigator.clipboard.writeText(text);
+        setCopiedItem(itemId);
+        toast.success(t("common.copied", "Kopyalandı!"));
+        setTimeout(() => setCopiedItem(null), 2000);
+    };
 
     // Sync from prop if changed (using render-time sync)
     const [prevCardDetails, setPrevCardDetails] = useState(cardDetails);
@@ -279,17 +288,56 @@ export function PaymentMethodSelector({
                         <h3 className="font-medium text-blue-900 mb-4">{t("order.bank_info", "Banka Hesap Bilgileri")}</h3>
 
                         <div className="space-y-3 text-sm">
-                            <div className="flex justify-between">
-                                <span className="text-gray-600">{t("order.bank_name", "Banka:")}</span>
-                                <span className="font-medium text-gray-900">{BANK_INFO.bankName}</span>
+                            <div className="flex justify-between items-center gap-4">
+                                <span className="text-gray-600 shrink-0">{t("order.bank_name", "Banka:")}</span>
+                                <div className="flex items-center gap-2 justify-end w-full">
+                                    <span className="font-medium text-gray-900 text-right">{BANK_INFO.bankName}</span>
+                                    <button
+                                        onClick={() => copyToClipboard(BANK_INFO.bankName, 'bankName')}
+                                        className="p-1 hover:bg-blue-100 rounded shrink-0 transition-colors"
+                                        title={t("common.copy", "Kopyala")}
+                                    >
+                                        {copiedItem === 'bankName' ? (
+                                            <CheckCircle className="w-4 h-4 text-green-500" />
+                                        ) : (
+                                            <Copy className="w-4 h-4 text-blue-500" />
+                                        )}
+                                    </button>
+                                </div>
                             </div>
-                            <div className="flex justify-between">
-                                <span className="text-gray-600">{t("order.iban", "IBAN:")}</span>
-                                <span className="font-mono text-gray-900">{BANK_INFO.iban}</span>
+                            <div className="flex justify-between items-center gap-4">
+                                <span className="text-gray-600 shrink-0">{t("order.iban", "IBAN:")}</span>
+                                <div className="flex items-center gap-2 justify-end w-full">
+                                    <span className="font-mono text-gray-900 text-sm md:text-base text-right">{BANK_INFO.iban}</span>
+                                    <button
+                                        onClick={() => copyToClipboard(BANK_INFO.iban.replace(/\s/g, ""), 'iban')}
+                                        className="p-1 hover:bg-blue-100 rounded shrink-0 transition-colors"
+                                        title={t("common.copy", "Kopyala")}
+                                    >
+                                        {copiedItem === 'iban' ? (
+                                            <CheckCircle className="w-4 h-4 text-green-500" />
+                                        ) : (
+                                            <Copy className="w-4 h-4 text-blue-500" />
+                                        )}
+                                    </button>
+                                </div>
                             </div>
-                            <div className="flex justify-between">
-                                <span className="text-gray-600">{t("order.account_holder", "Hesap Sahibi:")}</span>
-                                <span className="font-medium text-gray-900">{BANK_INFO.accountHolder}</span>
+                            <div className="flex justify-between items-center gap-4">
+                                <span className="text-gray-600 shrink-0">{t("order.account_holder", "Hesap Sahibi:")}</span>
+                                <div className="flex items-center gap-2 justify-end w-full text-right">
+                                    <span className="font-medium text-gray-900 text-xs md:text-sm">{BANK_INFO.accountHolder}</span>
+                                    <button
+                                        onClick={() => copyToClipboard(BANK_INFO.accountHolder, 'accountHolder')}
+                                        className="p-1 hover:bg-blue-100 rounded shrink-0 self-start transition-colors"
+                                        title={t("common.copy", "Kopyala")}
+                                    >
+                                        {copiedItem === 'accountHolder' ? (
+                                            <CheckCircle className="w-4 h-4 text-green-500" />
+                                        ) : (
+                                            <Copy className="w-4 h-4 text-blue-500" />
+                                        )}
+                                    </button>
+                                </div>
                             </div>
                         </div>
 

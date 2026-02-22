@@ -327,17 +327,20 @@ const Header = () => {
 
                       if (isStubUser) {
                         void refreshUserProfile();
+                        if (e.currentTarget?.blur) e.currentTarget.blur();
                         openCart();
                         return;
                       }
 
                       if (user.profile_complete) {
+                        if (e.currentTarget?.blur) e.currentTarget.blur();
                         openCart();
                       }
                       return;
                     }
 
                     e.preventDefault();
+                    if (e.currentTarget?.blur) e.currentTarget.blur();
                     setAuthModalOpen(true);
                   }}
                   className={cn(
@@ -362,7 +365,10 @@ const Header = () => {
                 <m.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => setAuthModalOpen(true)}
+                  onClick={(e) => {
+                    if (e.currentTarget?.blur) e.currentTarget.blur();
+                    setAuthModalOpen(true);
+                  }}
                   className={cn(
                     "px-3 md:px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 active:scale-95 border cursor-pointer",
                     isScrolled

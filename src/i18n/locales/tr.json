@@ -411,7 +411,7 @@
         "apply": "Uygula",
         "payment": {
             "credit_card": "Kredi Kartı / Banka Kartı",
-            "credit_card_desc": "Test ortamı - Herhangi bir kart numarası kabul edilir",
+            "credit_card_desc": "3D Secure ile güvenli kart ödemesi",
             "bank_transfer": "Havale / EFT",
             "bank_transfer_desc": "Banka hesabına havale ile ödeme",
             "bank_transfer_short": "Havale",

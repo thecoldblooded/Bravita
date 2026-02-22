@@ -58,7 +58,7 @@ export default function OrderConfirmation() {
     const [order, setOrder] = useState<Order | null>(null);
     const [bankInfo, setBankInfo] = useState<BankInfo | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [copied, setCopied] = useState(false);
+    const [copiedItem, setCopiedItem] = useState<string | null>(null);
 
     useEffect(() => {
         async function fetchData() {
@@ -86,11 +86,11 @@ export default function OrderConfirmation() {
         }
     }, [order, clearCart]);
 
-    const copyToClipboard = (text: string) => {
+    const copyToClipboard = (text: string, itemId: string) => {
         navigator.clipboard.writeText(text);
-        setCopied(true);
+        setCopiedItem(itemId);
         toast.success(t("common.copied", "Kopyalandı!"));
-        setTimeout(() => setCopied(false), 2000);
+        setTimeout(() => setCopiedItem(null), 2000);
     };
 
     if (isLoading) {
@@ -187,19 +187,16 @@ export default function OrderConfirmation() {
                         </h3>
 
                         <div className="space-y-3 text-sm">
-                            <div className="flex justify-between items-center">
-                                <span className="text-gray-600">{t("order.bank_name", "Banka:")}</span>
-                                <span className="font-medium text-gray-900">{bankInfo?.bankName}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-gray-600">{t("order.iban", "IBAN:")}</span>
-                                <div className="flex items-center gap-2">
-                                    <span className="font-mono text-gray-900">{bankInfo?.iban}</span>
+                            <div className="flex justify-between items-center gap-4">
+                                <span className="text-gray-600 shrink-0">{t("order.bank_name", "Banka:")}</span>
+                                <div className="flex items-center gap-2 justify-end w-full">
+                                    <span className="font-medium text-gray-900 text-right">{bankInfo?.bankName}</span>
                                     <button
-                                        onClick={() => bankInfo && copyToClipboard(bankInfo.iban.replace(/\s/g, ""))}
-                                        className="p-1 hover:bg-blue-100 rounded"
+                                        onClick={() => bankInfo && copyToClipboard(bankInfo.bankName, 'bankName')}
+                                        className="p-1 hover:bg-blue-100 rounded shrink-0 transition-colors"
+                                        title={t("common.copy", "Kopyala")}
                                     >
-                                        {copied ? (
+                                        {copiedItem === 'bankName' ? (
                                             <CheckCircle className="w-4 h-4 text-green-500" />
                                         ) : (
                                             <Copy className="w-4 h-4 text-blue-500" />
@@ -207,9 +204,39 @@ export default function OrderConfirmation() {
                                     </button>
                                 </div>
                             </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-gray-600">{t("order.account_holder", "Hesap Sahibi:")}</span>
-                                <span className="font-medium text-gray-900">{bankInfo?.accountHolder}</span>
+                            <div className="flex justify-between items-center gap-4">
+                                <span className="text-gray-600 shrink-0">{t("order.iban", "IBAN:")}</span>
+                                <div className="flex items-center gap-2 justify-end w-full">
+                                    <span className="font-mono text-gray-900 text-sm md:text-base text-right">{bankInfo?.iban}</span>
+                                    <button
+                                        onClick={() => bankInfo && copyToClipboard(bankInfo.iban.replace(/\s/g, ""), 'iban')}
+                                        className="p-1 hover:bg-blue-100 rounded shrink-0 transition-colors"
+                                        title={t("common.copy", "Kopyala")}
+                                    >
+                                        {copiedItem === 'iban' ? (
+                                            <CheckCircle className="w-4 h-4 text-green-500" />
+                                        ) : (
+                                            <Copy className="w-4 h-4 text-blue-500" />
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="flex justify-between items-center gap-4">
+                                <span className="text-gray-600 shrink-0">{t("order.account_holder", "Hesap Sahibi:")}</span>
+                                <div className="flex items-center gap-2 justify-end w-full text-right">
+                                    <span className="font-medium text-gray-900 text-xs md:text-sm">{bankInfo?.accountHolder}</span>
+                                    <button
+                                        onClick={() => bankInfo && copyToClipboard(bankInfo.accountHolder, 'accountHolder')}
+                                        className="p-1 hover:bg-blue-100 rounded shrink-0 self-start transition-colors"
+                                        title={t("common.copy", "Kopyala")}
+                                    >
+                                        {copiedItem === 'accountHolder' ? (
+                                            <CheckCircle className="w-4 h-4 text-green-500" />
+                                        ) : (
+                                            <Copy className="w-4 h-4 text-blue-500" />
+                                        )}
+                                    </button>
+                                </div>
                             </div>
                             <div className="flex justify-between items-center">
                                 <span className="text-gray-600">{t("order.amount", "Tutar:")}</span>

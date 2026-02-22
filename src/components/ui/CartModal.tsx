@@ -82,12 +82,14 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
 
     useScrollLock(open);
 
-    const { data: productData } = useQuery({
+    const { data: productData, isLoading, isFetching } = useQuery({
         queryKey: ['productPrice', 'bravita-multivitamin'],
         queryFn: () => getProductPrice("bravita-multivitamin"),
         enabled: open,
         staleTime: 1000 * 60 * 5
     });
+
+    const isPriceLoading = isLoading || (!productData && isFetching);
 
     const PRICING = useMemo(() => ({
         UNIT_PRICE: productData?.price ?? 600,
@@ -239,89 +241,110 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
                     </div>
                 </DialogHeader>
 
-                <div className="px-8 pb-8 pt-4 space-y-6">
+                <div className="px-8 pb-8 pt-4 space-y-6 min-h-100">
                     <LazyMotion features={domAnimation}>
-                        <CartItem
-                            t={t}
-                            quantity={quantity}
-                            increment={increment}
-                            decrement={decrement}
-                            serverPrice={PRICING.UNIT_PRICE}
-                            serverOriginalPrice={productData?.original_price ?? null}
-                        />
+                        {isPriceLoading ? (
+                            <div className="flex flex-col items-center justify-center h-full pt-20 pb-10 space-y-4">
+                                <m.div
+                                    animate={{
+                                        scale: [1, 1.05, 1],
+                                        opacity: [0.8, 1, 0.8]
+                                    }}
+                                    transition={{
+                                        duration: 1.5,
+                                        repeat: Infinity,
+                                        ease: "easeInOut"
+                                    }}
+                                >
+                                    <img src={bravitaGif} alt="Loading" className="w-20 h-20" />
+                                </m.div>
+                                <p className="text-neutral-500 font-medium animate-pulse">{t("common.calculating_price", "Güncel fiyat hesaplanıyor...")}</p>
+                            </div>
+                        ) : (
+                            <>
+                                <CartItem
+                                    t={t}
+                                    quantity={quantity}
+                                    increment={increment}
+                                    decrement={decrement}
+                                    serverPrice={PRICING.UNIT_PRICE}
+                                    serverOriginalPrice={productData?.original_price ?? null}
+                                />
 
-                        <div className="h-px bg-neutral-100/80" />
+                                <div className="h-px bg-neutral-100/80" />
 
-                        <CartSummary
-                            t={t}
-                            subtotal={subtotal}
-                            localAppliedPromo={localAppliedPromo}
-                            discountAmount={discountAmount}
-                            vatAmount={vatAmountBeforeDiscount}
-                            shipping={shipping}
-                            total={total}
-                            remainingForFreeShipping={remainingForFreeShipping}
-                        />
+                                <CartSummary
+                                    t={t}
+                                    subtotal={subtotal}
+                                    localAppliedPromo={localAppliedPromo}
+                                    discountAmount={discountAmount}
+                                    vatAmount={vatAmountBeforeDiscount}
+                                    shipping={shipping}
+                                    total={total}
+                                    remainingForFreeShipping={remainingForFreeShipping}
+                                />
 
-                        <PromoCodeInput
-                            t={t}
-                            inputPromoCode={inputPromoCode}
-                            setInputPromoCode={(val) => dispatch({ type: 'SET_PROMO_INPUT', payload: val })}
-                            localAppliedPromo={localAppliedPromo}
-                            setLocalAppliedPromo={(val) => dispatch({ type: 'SET_APPLIED_PROMO', payload: val })}
-                            handleApplyPromoCode={handleApplyPromoCode}
-                            isApplyingPromo={isApplyingPromo}
-                        />
+                                <PromoCodeInput
+                                    t={t}
+                                    inputPromoCode={inputPromoCode}
+                                    setInputPromoCode={(val) => dispatch({ type: 'SET_PROMO_INPUT', payload: val })}
+                                    localAppliedPromo={localAppliedPromo}
+                                    setLocalAppliedPromo={(val) => dispatch({ type: 'SET_APPLIED_PROMO', payload: val })}
+                                    handleApplyPromoCode={handleApplyPromoCode}
+                                    isApplyingPromo={isApplyingPromo}
+                                />
 
-                        <div className="relative group/btn-container">
-                            <AnimatePresence>
-                                {quantity > 0 && (
-                                    <m.div
-                                        initial={{ opacity: 0, scale: 0.8 }}
-                                        animate={{ opacity: [0.5, 1, 0.5], scale: [1, 1.02, 1] }}
-                                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                                        className="absolute -inset-1 bg-orange-600/20 rounded-3xl blur-xl z-0"
-                                    />
-                                )}
-                            </AnimatePresence>
+                                <div className="relative group/btn-container">
+                                    <AnimatePresence>
+                                        {quantity > 0 && (
+                                            <m.div
+                                                initial={{ opacity: 0, scale: 0.8 }}
+                                                animate={{ opacity: [0.5, 1, 0.5], scale: [1, 1.02, 1] }}
+                                                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                                                className="absolute -inset-1 bg-orange-600/20 rounded-3xl blur-xl z-0"
+                                            />
+                                        )}
+                                    </AnimatePresence>
 
-                            <Button
-                                disabled={quantity === 0 || isCheckingOut}
-                                onClick={handleCheckout}
-                                className={cn(
-                                    "relative w-full h-16 rounded-[1.25rem] font-black text-lg transition-all duration-500 border-none active:scale-[0.98] flex items-center justify-center gap-3 overflow-hidden z-10",
-                                    quantity > 0 && !isCheckingOut
-                                        ? "bg-orange-600 hover:bg-orange-700 text-white shadow-[0_10px_30px_rgba(238,64,54,0.25)]"
-                                        : "bg-neutral-100 text-neutral-400 cursor-not-allowed"
-                                )}
-                            >
-                                {quantity > 0 && !isCheckingOut && (
-                                    <m.div
-                                        initial={{ x: "-100%" }}
-                                        animate={{ x: "200%" }}
-                                        transition={{ repeat: Infinity, duration: 3, ease: "linear", repeatDelay: 1 }}
-                                        className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent skew-x-[-20deg] z-10"
-                                    />
-                                )}
+                                    <Button
+                                        disabled={quantity === 0 || isCheckingOut}
+                                        onClick={handleCheckout}
+                                        className={cn(
+                                            "relative w-full h-16 rounded-[1.25rem] font-black text-lg transition-all duration-500 border-none active:scale-[0.98] flex items-center justify-center gap-3 overflow-hidden z-10",
+                                            quantity > 0 && !isCheckingOut
+                                                ? "bg-orange-600 hover:bg-orange-700 text-white shadow-[0_10px_30px_rgba(238,64,54,0.25)]"
+                                                : "bg-neutral-100 text-neutral-400 cursor-not-allowed"
+                                        )}
+                                    >
+                                        {quantity > 0 && !isCheckingOut && (
+                                            <m.div
+                                                initial={{ x: "-100%" }}
+                                                animate={{ x: "200%" }}
+                                                transition={{ repeat: Infinity, duration: 3, ease: "linear", repeatDelay: 1 }}
+                                                className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent skew-x-[-20deg] z-10"
+                                            />
+                                        )}
 
-                                {isCheckingOut ? (
-                                    <>
-                                        <img src={bravitaGif} alt="Loading" className="w-6 h-6" />
-                                        <span className="relative z-20">İşleniyor...</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <span className="relative z-20">{t("cart.checkout")}</span>
-                                        <div className={cn(
-                                            "relative z-20 w-8 h-8 rounded-lg flex items-center justify-center transition-transform",
-                                            quantity > 0 ? "bg-orange-500/50 group-hover/btn-container:translate-x-1" : "bg-neutral-200"
-                                        )}>
-                                            <ShoppingCart className="w-4 h-4 text-white" />
-                                        </div>
-                                    </>
-                                )}
-                            </Button>
-                        </div>
+                                        {isCheckingOut ? (
+                                            <>
+                                                <img src={bravitaGif} alt="Loading" className="w-6 h-6" />
+                                                <span className="relative z-20">İşleniyor...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <span className="relative z-20">{t("cart.checkout")}</span>
+                                                <div className={cn(
+                                                    "relative z-20 w-8 h-8 rounded-lg flex items-center justify-center transition-transform",
+                                                    quantity > 0 ? "bg-orange-500/50 group-hover/btn-container:translate-x-1" : "bg-neutral-200"
+                                                )}>
+                                                    <ShoppingCart className="w-4 h-4 text-white" />
+                                                </div>
+                                            </>
+                                        )}
+                                    </Button>
+                                </div>
+                            </>
+                        )}
                     </LazyMotion>
                 </div>
             </DialogContent>
