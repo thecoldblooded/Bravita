@@ -9,42 +9,36 @@ type FailureMessage = {
 };
 
 const MOKA_BANK_CODE_MESSAGES: Record<string, FailureMessage> = {
-    "002": {
-        primary: "Kartınızın limiti veya bakiyesi bu ödeme için yetersiz görünüyor.",
-        guidance: "Kart limitinizi kontrol edip tekrar deneyin veya farklı bir kart kullanın.",
-    },
-    "003": {
-        primary: "Kart numarası geçerli formatta değil.",
-        guidance: "Kart numarasını boşluksuz ve doğru şekilde girerek tekrar deneyin.",
-    },
-    "006": {
-        primary: "Kartın son kullanma tarihi hatalı görünüyor.",
-        guidance: "Ay/yıl bilgisini kart üzerindeki tarih ile aynı olacak şekilde güncelleyin.",
-    },
-    "012": {
-        primary: "Kart bilgileri doğrulanamadı (kart numarası veya CVV hatalı olabilir).",
-        guidance: "Kart numarası, son kullanma tarihi ve CVV alanlarını tekrar kontrol edin.",
-    },
-    "015": {
-        primary: "CVV (güvenlik kodu) hatalı girildi.",
-        guidance: "Kartın arka yüzündeki 3 haneli CVV kodunu kontrol ederek tekrar deneyin.",
-    },
-    "024": {
-        primary: "3D doğrulama alındı ancak banka ödemeyi tamamlayamadı.",
-        guidance: "Banka geçici olarak işlemi reddetmiş olabilir. Birkaç dakika sonra tekrar deneyin.",
-    },
-    "025": {
-        primary: "3D doğrulama adımı banka tarafında başarısız oldu.",
-        guidance: "Telefonunuza gelen 3D doğrulama adımını tamamlayarak yeniden deneyin.",
-    },
-    "026": {
-        primary: "Kartınız veya bankanız 3D Secure işlemlerine uygun değil.",
-        guidance: "3D Secure destekleyen farklı bir kart ile ödeme yapmayı deneyin.",
-    },
-    "029": {
-        primary: "Kartınız internet/e-ticaret işlemlerine kapalı görünüyor.",
-        guidance: "Mobil bankacılık uygulamanızdan e-ticaret yetkisini açıp tekrar deneyin.",
-    },
+    "000": { primary: "Genel Hata" },
+    "001": { primary: "Kart Sahibi Onayı Alınamadı" },
+    "002": { primary: "Limit Yetersiz" },
+    "003": { primary: "Kredi Kartı Numarası Geçerli Formatta Değil" },
+    "004": { primary: "Genel Red" },
+    "005": { primary: "Kart Sahibine Açık Olmayan İşlem" },
+    "006": { primary: "Kartın Son Kullanma Tarihi Hatali" },
+    "007": { primary: "Geçersiz İşlem" },
+    "008": { primary: "Bankaya Bağlanılamadı" },
+    "009": { primary: "Tanımsız Hata Kodu" },
+    "010": { primary: "Banka SSL Hatası" },
+    "011": { primary: "Manual Onay İçin Bankayı Arayınız" },
+    "012": { primary: "Kart Bilgileri Hatalı - Kart No veya CVV2" },
+    "013": { primary: "Visa MC Dışındaki Kartlar 3D Secure Desteklemiyor" },
+    "014": { primary: "Geçersiz Hesap Numarası" },
+    "015": { primary: "Geçersiz CVV" },
+    "016": { primary: "Onay Mekanizması Mevcut Değil" },
+    "017": { primary: "Sistem Hatası" },
+    "018": { primary: "Çalıntı Kart" },
+    "019": { primary: "Kayıp Kart" },
+    "020": { primary: "Kısıtlı Kart" },
+    "021": { primary: "Zaman Aşımı" },
+    "022": { primary: "Geçersiz İşyeri" },
+    "023": { primary: "Sahte Onay" },
+    "024": { primary: "3D Onayı Alındı Ancak Para Karttan Çekilemedi" },
+    "025": { primary: "3D Onay Alma Hatası" },
+    "026": { primary: "Kart Sahibi Banka veya Kart 3D-Secure Üyesi Değil" },
+    "027": { primary: "Kullanıcı Bu İşlemi Yapmaya Yetkili Değil" },
+    "028": { primary: "Fraud Olasılığı" },
+    "029": { primary: "Kartınız e-ticaret İşlemlerine Kapalıdır" },
 };
 
 function normalizeBankCode(value: string): string {
