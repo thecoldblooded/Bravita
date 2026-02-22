@@ -646,10 +646,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.addEventListener('error', handleGlobalError);
 
     // Explicitly handle visibility change to prevent race conditions
-    const handleVisibilityChange = async () => {
-      if (document.visibilityState === 'visible' && session) {
-        // Optional: Debounce or throttle checks if needed
-        // But usually suppressing the error is enough
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        // Optional: Debounce or throttle checks if needed.
       }
     };
 
@@ -663,7 +662,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       subscription.unsubscribe();
       clearTimeout(safetyTimer);
     };
-  }, [bffAuthEnabled, session, setUserDebug, syncPendingProfile]); // Run only on mount (with necessary dependencies)
+  }, [bffAuthEnabled, setUserDebug, syncPendingProfile]); // Initialize listener once; avoid resubscribe race on session updates.
 
   const activeUserId = session?.user?.id;
   const activeSessionExpiry = session?.expires_at ?? null;

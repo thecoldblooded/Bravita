@@ -28,9 +28,9 @@ interface PaymentMethodSelectorProps {
 }
 
 const BANK_INFO = {
-    bankName: "Ziraat Bankası",
-    iban: "TR00 0000 0000 0000 0000 0000 00",
-    accountHolder: "Bravita Sağlık A.Ş.",
+    bankName: "Türkiye İş Bankası",
+    iban: "TR28 0006 4000 0014 3730 2995 49",
+    accountHolder: "VALCO İLAÇ ARGE LABORATUVAR HİZMETLERİ VE DANIŞMANLIK LİMİTED ŞİRKETİ",
     referenceNote: "Sipariş numaranızı açıklama kısmına yazınız.",
 };
 
@@ -174,7 +174,7 @@ export function PaymentMethodSelector({
                         <span className="text-sm text-yellow-400">{t("checkout.card.threed_info", "3D doğrulama sonrasi banka ekranina yonlendirilirsiniz.")}</span>
                     </div>
 
-                    <div className="space-y-4">
+                    <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
                         <div className="space-y-2">
                             <Label htmlFor="cardName" className="text-gray-300">{t("checkout.card.name", "Kart Üzerindeki İsim")}</Label>
                             <Input
@@ -182,7 +182,7 @@ export function PaymentMethodSelector({
                                 value={localCardDetails.name}
                                 onChange={(e) => handleCardChange("name", e.target.value)}
                                 placeholder={t("checkout.card.name_placeholder", "AD SOYAD")}
-                                autoComplete="off"
+                                autoComplete="cc-name"
                                 className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 uppercase"
                             />
                         </div>
@@ -195,7 +195,7 @@ export function PaymentMethodSelector({
                                 onChange={(e) => handleCardChange("number", e.target.value)}
                                 placeholder="0000 0000 0000 0000"
                                 maxLength={19}
-                                autoComplete="off"
+                                autoComplete="cc-number"
                                 className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 font-mono text-lg tracking-wider"
                             />
                         </div>
@@ -209,7 +209,7 @@ export function PaymentMethodSelector({
                                     onChange={(e) => handleCardChange("expiry", e.target.value)}
                                     placeholder={t("checkout.card.expiry_placeholder")}
                                     maxLength={7}
-                                    autoComplete="off"
+                                    autoComplete="cc-exp"
                                     className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 font-mono"
                                 />
                             </div>
@@ -222,7 +222,7 @@ export function PaymentMethodSelector({
                                     onChange={(e) => handleCardChange("cvv", e.target.value)}
                                     placeholder="•••"
                                     maxLength={3}
-                                    autoComplete="off"
+                                    autoComplete="cc-csc"
                                     className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 font-mono"
                                 />
                             </div>
@@ -253,7 +253,7 @@ export function PaymentMethodSelector({
                                 {t("checkout.payment.commission_applied", "Uygulanan komisyon: %{{rate}}", { rate: selectedInstallmentRate.toFixed(2) })}
                             </p>
                         </div>
-                    </div>
+                    </form>
 
                     <div className="flex items-center gap-2 mt-4 justify-center bg-gray-700/50 p-3 rounded-xl border border-gray-600/50">
                         <div className="p-1.5 bg-green-500/10 rounded-full">

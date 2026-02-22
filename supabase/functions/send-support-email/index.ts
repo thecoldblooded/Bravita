@@ -383,6 +383,7 @@ serve(async (req: Request) => {
                 type,
                 browserLink,
                 SUPPORT_EMAIL,
+                appBaseUrl,
                 "browser_preview",
             );
 
@@ -500,12 +501,14 @@ serve(async (req: Request) => {
             }
         }
 
-        // 3. CAPTCHA validation for non-admin ticket creation flow
-        if (normalizedType === "ticket_created" && !isAdmin) {
+        // 3. CAPTCHA validation only for guest ticket creation flow
+        const isGuestTicketCreation = normalizedType === "ticket_created" && !isAdmin && !requestingUserId;
+        if (isGuestTicketCreation) {
             if (!captchaToken || !String(captchaToken).trim()) {
                 logSupportDebug("captcha_token_missing", {
                     ticket_id: String(ticket_id),
                     type: normalizedType,
+                    requesting_user_id: requestingUserId,
                 });
                 throw new Error("Captcha token is required for guest submission");
             }
@@ -553,6 +556,12 @@ serve(async (req: Request) => {
                     });
                 }
             }
+        } else if (normalizedType === "ticket_created" && !isAdmin) {
+            logSupportDebug("captcha_skipped_authenticated_user", {
+                ticket_id: String(ticket_id),
+                type: normalizedType,
+                requesting_user_id: requestingUserId,
+            });
         }
 
         const SUPPORT_EMAIL = Deno.env.get("SUPPORT_EMAIL_NOTIFY") || "support@bravita.com.tr";
@@ -566,6 +575,7 @@ serve(async (req: Request) => {
             normalizedType,
             browserLink,
             SUPPORT_EMAIL,
+            appBaseUrl,
         );
 
         const latestUserMessage = extractLatestUserMessage(ticket.message || "");
@@ -689,6 +699,7 @@ async function prepareSupportEmail(
     type: string,
     browserLink: string,
     supportEmail: string,
+    appBaseUrl: string = BRAVITA_SITE_URL,
     mode: "send" | "browser_preview" = "send",
 ) {
     // Map internal types to DB slugs
@@ -724,7 +735,8 @@ async function prepareSupportEmail(
         "USER_MESSAGE": latestUserMessage,
         "ADMIN_REPLY": ticket.admin_reply || "",
         "BROWSER_LINK": browserLink || "#",
-        "SITE_URL": "https://www.bravita.com.tr",
+        "ACTION_URL": `${appBaseUrl}/profile?tab=support`,
+        "SITE_URL": appBaseUrl,
     };
 
     const render = renderTemplate({
@@ -735,7 +747,7 @@ async function prepareSupportEmail(
         fallbackValues: {
             NAME: "Müşteri",
             BROWSER_LINK: browserLink || "#",
-            SITE_URL: "https://www.bravita.com.tr",
+            SITE_URL: appBaseUrl,
         },
     });
 

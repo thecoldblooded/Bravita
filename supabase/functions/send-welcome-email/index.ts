@@ -415,15 +415,15 @@ serve(async (req: Request) => {
                 variables: {
                     NAME: "Müşterimiz",
                     BROWSER_LINK: browserLink,
-                    UNSUBSCRIBE_URL: "https://www.bravita.com.tr/unsubscribe",
-                    SITE_URL: "https://www.bravita.com.tr",
+                    UNSUBSCRIBE_URL: `${appBaseUrl}/unsubscribe`,
+                    SITE_URL: appBaseUrl,
                 },
                 variablePolicies,
                 fallbackValues: {
                     NAME: "Müşterimiz",
                     BROWSER_LINK: browserLink,
-                    UNSUBSCRIBE_URL: "https://www.bravita.com.tr/unsubscribe",
-                    SITE_URL: "https://www.bravita.com.tr",
+                    UNSUBSCRIBE_URL: `${appBaseUrl}/unsubscribe`,
+                    SITE_URL: appBaseUrl,
                 },
             });
 
@@ -495,8 +495,8 @@ serve(async (req: Request) => {
             "NAME": recipientName,
             "EMAIL": recipientEmail,
             "BROWSER_LINK": browserLink,
-            "UNSUBSCRIBE_URL": "https://www.bravita.com.tr/unsubscribe",
-            "SITE_URL": "https://www.bravita.com.tr",
+            "UNSUBSCRIBE_URL": `${appBaseUrl}/unsubscribe`,
+            "SITE_URL": appBaseUrl,
         };
 
         const render = renderTemplate({
@@ -507,8 +507,8 @@ serve(async (req: Request) => {
             fallbackValues: {
                 NAME: "Müşterimiz",
                 BROWSER_LINK: browserLink || "#",
-                UNSUBSCRIBE_URL: "https://www.bravita.com.tr/unsubscribe",
-                SITE_URL: "https://www.bravita.com.tr",
+                UNSUBSCRIBE_URL: `${appBaseUrl}/unsubscribe`,
+                SITE_URL: appBaseUrl,
             },
         });
 

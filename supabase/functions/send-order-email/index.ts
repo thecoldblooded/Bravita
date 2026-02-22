@@ -663,7 +663,8 @@ async function prepareEmailContent(
         "TRACKING_NUMBER": tracking_number || order.tracking_number || "Takip numarası girilmedi",
         "CANCELLATION_REASON": cancellation_reason || order.cancellation_reason || "Belirtilmedi",
         "BROWSER_LINK": browserLink,
-        "SITE_URL": BRAVITA_SITE_URL
+        "ACTION_URL": `${appBaseUrl}/profile?tab=orders`,
+        "SITE_URL": appBaseUrl
     };
 
     const render = renderTemplate({
@@ -673,7 +674,7 @@ async function prepareEmailContent(
         variablePolicies,
         fallbackValues: {
             NAME: "Müşterimiz",
-            SITE_URL: "https://www.bravita.com.tr",
+            SITE_URL: appBaseUrl,
             BROWSER_LINK: browserLink || "#",
         },
     });
