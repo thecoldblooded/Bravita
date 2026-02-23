@@ -70,7 +70,10 @@ const PromotionMarquee = () => {
             attributeFilter: ['data-user-menu-open', 'data-support-open']
         });
 
-        fetchActivePromos();
+        const startFetching = async () => {
+            await fetchActivePromos();
+        };
+        startFetching();
 
         return () => observer.disconnect();
     }, []);
