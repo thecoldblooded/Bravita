@@ -36,8 +36,8 @@ export function ProductGridSkeleton({
 
             {/* Product Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[...Array(count)].map((_, i) => (
-                    <div key={`product-skeleton-${i}`} className={cardClass}>
+                {[...Array(count)].map(() => (
+                    <div key={crypto.randomUUID()} className={cardClass}>
                         {/* Product Image */}
                         <Skeleton className={`h-48 w-full ${skeletonClass}`} />
 

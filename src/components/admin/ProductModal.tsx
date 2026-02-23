@@ -31,7 +31,12 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
         is_active: true,
     });
 
-    useEffect(() => {
+    const [prevProduct, setPrevProduct] = useState(product);
+    const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+
+    if (product !== prevProduct || isOpen !== prevIsOpen) {
+        setPrevProduct(product);
+        setPrevIsOpen(isOpen);
         if (product) {
             setFormData({
                 name: product.name,
@@ -57,7 +62,7 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
                 is_active: true,
             });
         }
-    }, [product, isOpen]);
+    }
 
     const handleChange = <K extends keyof Product>(field: K, value: Product[K]) => {
         setFormData(prev => ({ ...prev, [field]: value }));

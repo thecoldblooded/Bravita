@@ -43,10 +43,23 @@ export function PromoCodeModal({ isOpen, onClose, onSave, promoCode }: PromoCode
         formState: { errors, isSubmitting }
     } = useForm<PromoFormValues>({
         resolver: zodResolver(promoSchema),
-        defaultValues: {
+        values: isOpen && promoCode ? {
+            code: promoCode.code,
+            discount_type: promoCode.discount_type,
+            discount_value: promoCode.discount_value,
+            min_order_amount: promoCode.min_order_amount || undefined,
+            max_discount_amount: promoCode.max_discount_amount || undefined,
+            start_date: promoCode.start_date ? promoCode.start_date.split("T")[0] : undefined,
+            end_date: promoCode.end_date ? promoCode.end_date.split("T")[0] : undefined,
+            usage_limit: promoCode.usage_limit || undefined,
+            is_active: promoCode.is_active,
+        } : {
             is_active: true,
             discount_type: "percentage",
-            start_date: new Date().toISOString().split("T")[0], // Default today
+            code: "",
+            discount_value: 0,
+            min_order_amount: 0,
+            start_date: new Date().toISOString().split("T")[0],
         }
     });
 
@@ -55,33 +68,6 @@ export function PromoCodeModal({ isOpen, onClose, onSave, promoCode }: PromoCode
         name: "discount_type",
         defaultValue: "percentage" as const,
     });
-
-    useEffect(() => {
-        if (isOpen) {
-            if (promoCode) {
-                reset({
-                    code: promoCode.code,
-                    discount_type: promoCode.discount_type,
-                    discount_value: promoCode.discount_value,
-                    min_order_amount: promoCode.min_order_amount || undefined,
-                    max_discount_amount: promoCode.max_discount_amount || undefined,
-                    start_date: promoCode.start_date ? promoCode.start_date.split("T")[0] : undefined,
-                    end_date: promoCode.end_date ? promoCode.end_date.split("T")[0] : undefined,
-                    usage_limit: promoCode.usage_limit || undefined,
-                    is_active: promoCode.is_active,
-                });
-            } else {
-                reset({
-                    is_active: true,
-                    discount_type: "percentage",
-                    code: "",
-                    discount_value: 0,
-                    min_order_amount: 0,
-                    start_date: new Date().toISOString().split("T")[0],
-                });
-            }
-        }
-    }, [isOpen, promoCode, reset]);
 
     const onSubmit = async (data: PromoFormValues) => {
         await onSave({

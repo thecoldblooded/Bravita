@@ -69,6 +69,7 @@ export function OrderSummary({
 
     // Local input state
     const [inputPromoCode, setInputPromoCode] = useState(promoCode || "");
+    const [prevPromoCode, setPrevPromoCode] = useState(promoCode);
     const [isApplyingPromo, setIsApplyingPromo] = useState(false);
 
     // Brute force protection state
@@ -85,9 +86,10 @@ export function OrderSummary({
         : 0;
     const payableTotal = Number((baseForCommission + commissionAmount).toFixed(2));
 
-    useEffect(() => {
-        if (promoCode) setInputPromoCode(promoCode);
-    }, [promoCode]);
+    if (promoCode !== prevPromoCode) {
+        setPrevPromoCode(promoCode);
+        setInputPromoCode(promoCode || "");
+    }
 
     useEffect(() => {
         async function fetchAddress() {

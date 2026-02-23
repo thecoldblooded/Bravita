@@ -126,8 +126,8 @@ export function SalesAgreements({ user, address, items, totals, paymentMethod }:
 
                     <p className="mt-2"><strong>{t('checkout.agreements.pre_info.exceptions_title')}</strong></p>
                     <ul className="list-disc pl-4 space-y-1">
-                        {(t('checkout.agreements.pre_info.exceptions_list', { returnObjects: true }) as string[]).map((item, index) => (
-                            <li key={`exception-${index}`}>{item}</li>
+                        {(t('checkout.agreements.pre_info.exceptions_list', { returnObjects: true }) as string[]).map((item) => (
+                            <li key={crypto.randomUUID()}>{item}</li>
                         ))}
                     </ul>
 

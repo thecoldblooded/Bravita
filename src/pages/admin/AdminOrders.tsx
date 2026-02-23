@@ -252,8 +252,8 @@ function OrdersContent() {
             >
                 {isLoading ? (
                     <div className={`divide-y ${dividerClass}`}>
-                        {[...Array(8)].map((_, i) => (
-                            <div key={`order-skeleton-${i}`} className="grid grid-cols-12 gap-4 px-6 py-5">
+                        {[...Array(8)].map(() => (
+                            <div key={crypto.randomUUID()} className="grid grid-cols-12 gap-4 px-6 py-5">
                                 <div className="col-span-3 flex items-center gap-3">
                                     <Skeleton className="h-10 w-10 rounded-lg" />
                                     <div>

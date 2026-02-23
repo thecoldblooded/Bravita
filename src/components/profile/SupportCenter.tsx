@@ -347,8 +347,8 @@ export function SupportCenter() {
                                             <h3 className="text-lg font-bold text-gray-900">{ticket.subject}</h3>
 
                                             <div className="mt-6 space-y-6">
-                                                {parseConversation(ticket.message).map((msg, idx) => (
-                                                    <div key={`msg-${ticket.id}-${idx}`} className={cn("flex gap-3", msg.isAdmin ? "flex-row" : "flex-row-reverse")}>
+                                                {parseConversation(ticket.message).map((msg) => (
+                                                    <div key={crypto.randomUUID()} className={cn("flex gap-3", msg.isAdmin ? "flex-row" : "flex-row-reverse")}>
                                                         <div className={cn(
                                                             "w-8 h-8 rounded-full flex items-center justify-center shrink-0 border",
                                                             msg.isAdmin ? "bg-orange-50 border-orange-200 text-orange-600" : "bg-gray-50 border-gray-200 text-gray-600"

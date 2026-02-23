@@ -407,8 +407,8 @@ export default function AdminSupport() {
 
                         <div className="divide-y divide-border">
                             {isLoading ? (
-                                Array(5).fill(0).map((_, i) => (
-                                    <div key={`ticket-skeleton-${i}`} className="px-6 py-6 space-y-2">
+                                Array(5).fill(0).map(() => (
+                                    <div key={crypto.randomUUID()} className="px-6 py-6 space-y-2">
                                         <Skeleton className="h-4 w-1/3" />
                                         <Skeleton className="h-3 w-1/2" />
                                     </div>
@@ -511,8 +511,8 @@ export default function AdminSupport() {
                                 </div>
 
                                 <div className="space-y-4 max-h-100 overflow-y-auto pr-2 custom-scrollbar">
-                                    {parseConversation(selectedTicket.message).map((msg, idx) => (
-                                        <div key={`msg-${msg.header}-${idx}`} className={cn("flex gap-3", msg.isAdmin ? "flex-row-reverse" : "flex-row text-left")}>
+                                    {parseConversation(selectedTicket.message).map((msg) => (
+                                        <div key={crypto.randomUUID()} className={cn("flex gap-3", msg.isAdmin ? "flex-row-reverse" : "flex-row text-left")}>
                                             <div className={cn(
                                                 "w-8 h-8 rounded-full flex items-center justify-center shrink-0 border shadow-sm",
                                                 msg.isAdmin ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-border"

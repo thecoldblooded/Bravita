@@ -65,15 +65,14 @@ export function SupportForm({ onSuccess }: SupportFormProps) {
             subject: "",
             message: "",
         },
+        values: {
+            name: authUser?.full_name || "",
+            email: authUser?.email || "",
+            category: "general",
+            subject: "",
+            message: "",
+        },
     });
-
-    // Pre-fill form if user is logged in
-    useEffect(() => {
-        if (authUser) {
-            form.setValue("name", authUser.full_name || "");
-            form.setValue("email", authUser.email || "");
-        }
-    }, [authUser, form]);
 
     const onSubmit = async (values: SupportFormValues) => {
         if (!captchaToken) {

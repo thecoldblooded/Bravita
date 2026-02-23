@@ -91,7 +91,7 @@ const PromotionMarquee = () => {
             : `${validUntilBase} ${endDate}`;
 
         return (
-            <div key={`${promo.id}-${idx}`} className="flex items-center space-x-6 md:space-x-8 px-6 md:px-8 whitespace-nowrap group">
+            <div key={crypto.randomUUID()} className="flex items-center space-x-6 md:space-x-8 px-6 md:px-8 whitespace-nowrap group">
                 <button
                     onClick={() => handleCopyCode(promo.code)}
                     className="flex items-center space-x-2 bg-white/10 hover:bg-orange-500/20 px-3 py-1 rounded-full border border-white/10 hover:border-orange-500/40 transition-all cursor-pointer group-hover:scale-105 active:scale-95"
