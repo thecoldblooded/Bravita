@@ -53,7 +53,7 @@ jobs:
         run: npm run lint
 
       - name: React Doctor
-        uses: millionco/react-doctor@0.0.1
+        run: npx react-doctor@latest -y --no-ami
 
       - name: Build
         run: npm run build
