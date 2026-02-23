@@ -1,28 +1,28 @@
 import { useTranslation } from "react-i18next";
 
 const ingredients = [
-  { name: "Citicoline", amount: "300 mg", percent: "-" },
-  { name: "L-Arjinin", amount: "250 mg", percent: "-" },
-  { name: "Taurin", amount: "83.333 mg", percent: "-" },
-  { name: "Vitamin C", amount: "66.667 mg", percent: "84%" },
-  { name: "Fosfotidilserin", amount: "10 mg", percent: "-" },
-  { name: "Vitamin B3 (Niyasin)", amount: "10 mg", percent: "62%" },
-  { name: "Çinko", amount: "5 mg", percent: "50%" },
-  { name: "Vitamin B5", amount: "4.333 mg", percent: "72%" },
-  { name: "Vitamin B2", amount: "1.1 mg", percent: "79%" },
-  { name: "Vitamin B1", amount: "1 mg", percent: "91%" },
-  { name: "Vitamin E", amount: "1 mg", percent: "83%" },
-  { name: "Mangan", amount: "0.84 mg", percent: "30%" },
-  { name: "Vitamin B6", amount: "0.6 mg", percent: "43%" },
-  { name: "Retinil Palmitat", amount: "0.4 mg", percent: "50%" },
-  { name: "Vitamin B9 (Folik Asit)", amount: "0.133 mg", percent: "66%" },
-  { name: "İyot", amount: "0.075 mg", percent: "50%" },
-  { name: "Krom", amount: "0.058 mg", percent: "145%" },
-  { name: "Selenyum", amount: "0.0562 mg", percent: "102%" },
-  { name: "Molibden", amount: "0.03 mg", percent: "50%" },
-  { name: "Biyotin", amount: "0.015 mg", percent: "30%" },
-  { name: "Vitamin D", amount: "0.01 mg (400 IU)", percent: "200%" },
-  { name: "Vitamin B12", amount: "0.002 mg", percent: "80%" },
+  { key: "citicoline", amount5ml: "300", nrv5ml: "-", amount10ml: "600", nrv10ml: "-" },
+  { key: "l_arginine", amount5ml: "250", nrv5ml: "-", amount10ml: "500", nrv10ml: "-" },
+  { key: "taurine", amount5ml: "83.333", nrv5ml: "-", amount10ml: "166.666", nrv10ml: "-" },
+  { key: "vitamin_c", amount5ml: "66.667", nrv5ml: "84", amount10ml: "133.334", nrv10ml: "266.668" },
+  { key: "phosphatidylserine", amount5ml: "10", nrv5ml: "-", amount10ml: "20", nrv10ml: "-" },
+  { key: "vitamin_b3", amount5ml: "10", nrv5ml: "62", amount10ml: "20", nrv10ml: "124" },
+  { key: "zinc", amount5ml: "5", nrv5ml: "50", amount10ml: "10", nrv10ml: "100" },
+  { key: "vitamin_b5", amount5ml: "4.333", nrv5ml: "72", amount10ml: "8.666", nrv10ml: "144" },
+  { key: "vitamin_b2", amount5ml: "1.1", nrv5ml: "79", amount10ml: "2.2", nrv10ml: "158" },
+  { key: "vitamin_b1", amount5ml: "1", nrv5ml: "91", amount10ml: "2", nrv10ml: "182" },
+  { key: "vitamin_e", amount5ml: "1", nrv5ml: "83", amount10ml: "2", nrv10ml: "166" },
+  { key: "manganese", amount5ml: "0.84", nrv5ml: "30", amount10ml: "1.68", nrv10ml: "60" },
+  { key: "vitamin_b6", amount5ml: "0.6", nrv5ml: "43", amount10ml: "1.2", nrv10ml: "86" },
+  { key: "retinyl_palmitate", amount5ml: "0.4", nrv5ml: "50", amount10ml: "0.8", nrv10ml: "100" },
+  { key: "vitamin_b9", amount5ml: "0.133", nrv5ml: "66", amount10ml: "0.266", nrv10ml: "132" },
+  { key: "iodine", amount5ml: "0.075", nrv5ml: "50", amount10ml: "0.15", nrv10ml: "100" },
+  { key: "chromium", amount5ml: "0.058", nrv5ml: "145", amount10ml: "0.116", nrv10ml: "290" },
+  { key: "selenium", amount5ml: "0.0562", nrv5ml: "102", amount10ml: "0.1124", nrv10ml: "204" },
+  { key: "molybdenum", amount5ml: "0.03", nrv5ml: "50", amount10ml: "0.06", nrv10ml: "100" },
+  { key: "biotin", amount5ml: "0.015", nrv5ml: "30", amount10ml: "0.03", nrv10ml: "60" },
+  { key: "vitamin_d", amount5ml: "0,01 (400 IU)", nrv5ml: "200", amount10ml: "0,02 (800 IU)", nrv10ml: "400" },
+  { key: "vitamin_b12", amount5ml: "0.002", nrv5ml: "80", amount10ml: "0.004", nrv10ml: "160" },
 ];
 
 const Ingredients = () => {
@@ -41,25 +41,34 @@ const Ingredients = () => {
           </p>
         </div>
 
-        <div className="max-w-4xl mx-auto bg-card rounded-3xl shadow-card overflow-hidden border border-border">
-          <div className="bg-primary/10 px-6 py-4 grid grid-cols-3 gap-4 font-bold text-xs md:text-base">
-            <span>{t('ingredients.header_name')}</span>
-            <span className="text-center">{t('ingredients.header_amount')}</span>
-            <span className="text-right">{t('ingredients.header_nrv')}</span>
-          </div>
+        <div className="max-w-6xl mx-auto bg-card rounded-3xl shadow-card overflow-hidden border border-border">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[760px]">
+              <thead className="bg-primary/10">
+                <tr className="text-xs md:text-base">
+                  <th className="px-6 py-4 text-left font-bold">{t('ingredients.header_name')}</th>
+                  <th className="px-6 py-4 text-center font-bold">{t('ingredients.header_amount_5ml')}</th>
+                  <th className="px-6 py-4 text-center font-bold">{t('ingredients.header_nrv_5ml')}</th>
+                  <th className="px-6 py-4 text-center font-bold">{t('ingredients.header_amount_10ml')}</th>
+                  <th className="px-6 py-4 text-right font-bold">{t('ingredients.header_nrv_10ml')}</th>
+                </tr>
+              </thead>
 
-          <div className="divide-y divide-border">
-            {ingredients.map((ingredient, index) => (
-              <div
-                key={ingredient.name}
-                className={`px-6 py-3 grid grid-cols-3 gap-4 text-xs md:text-base hover:bg-secondary/30 transition-colors ${index % 2 === 0 ? 'bg-secondary/10' : ''
-                  }`}
-              >
-                <span className="font-medium">{ingredient.name}</span>
-                <span className="text-center text-muted-foreground">{ingredient.amount}</span>
-                <span className="text-right font-semibold text-primary">{ingredient.percent}</span>
-              </div>
-            ))}
+              <tbody className="divide-y divide-border">
+                {ingredients.map((ingredient, index) => (
+                  <tr
+                    key={ingredient.key}
+                    className={`text-xs md:text-base hover:bg-secondary/30 transition-colors ${index % 2 === 0 ? 'bg-secondary/10' : ''}`}
+                  >
+                    <td className="px-6 py-3 font-medium">{t(`ingredients.items.${ingredient.key}`)}</td>
+                    <td className="px-6 py-3 text-center text-muted-foreground">{ingredient.amount5ml}</td>
+                    <td className="px-6 py-3 text-center font-semibold text-primary">{ingredient.nrv5ml}</td>
+                    <td className="px-6 py-3 text-center text-muted-foreground">{ingredient.amount10ml}</td>
+                    <td className="px-6 py-3 text-right font-semibold text-primary">{ingredient.nrv10ml}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
 
