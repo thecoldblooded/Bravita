@@ -1,4 +1,5 @@
 import { supabase, getSessionSafe, safeQuery } from "@/lib/supabase";
+import { isBffAuthEnabled, refreshBffSession } from "@/lib/bffAuth";
 import { getFunctionAuthHeaders } from "@/lib/functionAuth";
 async function extractEdgeFunctionErrorMessage(error: unknown): Promise<{ message?: string; status?: number; code?: string }> {
     const err = error as { context?: Response; response?: Response } | null;
@@ -444,55 +445,107 @@ export async function voidCardPayment(orderId: string): Promise<CardVoidResult> 
 }
 
 export async function refundCardPayment(orderId: string, amountCents?: number): Promise<CardRefundResult> {
-    let headers = await getFunctionAuthHeaders("admin:refundCardPayment");
     const body: { orderId: string; amountCents?: number } = { orderId };
 
     if (Number.isFinite(amountCents) && Number(amountCents) > 0) {
         body.amountCents = Number(amountCents);
     }
 
-    let invokeData: unknown = null;
-    let invokeError: unknown = null;
+    const invokeWithExplicitAuthToken = async (token: string) => {
+        const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/bakiyem-refund`;
+        const anonKey = String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? "").trim();
 
-    {
-        const result = await supabase.functions.invoke("bakiyem-refund", {
-            body,
-            headers,
-        });
-        invokeData = result.data;
-        invokeError = result.error;
-    }
-
-    if (invokeError) {
-        let extracted = await extractEdgeFunctionErrorMessage(invokeError);
-        const shouldRetryAuth = extracted.status === 401;
-
-        if (shouldRetryAuth) {
-            headers = await getFunctionAuthHeaders("admin:refundCardPayment:retry", { forceRefresh: true });
-            const retryResult = await supabase.functions.invoke("bakiyem-refund", {
-                body,
-                headers,
-            });
-            invokeData = retryResult.data;
-            invokeError = retryResult.error;
-            if (invokeError) {
-                extracted = await extractEdgeFunctionErrorMessage(invokeError);
-            }
+        if (!anonKey) {
+            return {
+                ok: false,
+                status: 500,
+                payload: {
+                    message: "Supabase anon key eksik",
+                    error: "MISSING_ANON_KEY",
+                },
+            } as const;
         }
 
-        if (invokeError) {
+        const res = await fetch(functionUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${anonKey}`,
+                "x-user-jwt": token,
+                apikey: anonKey,
+            },
+            body: JSON.stringify(body),
+        });
+
+        const payload = await res.json().catch(() => ({} as { message?: string; error?: string }));
+
+        if (!res.ok) {
+            return {
+                ok: false,
+                status: res.status,
+                payload,
+            } as const;
+        }
+
+        return {
+            ok: true,
+            status: res.status,
+            payload,
+        } as const;
+    };
+
+    const getSessionAccessToken = async () => {
+        const { data } = await getSessionSafe();
+        return data?.session?.access_token?.trim() ?? "";
+    };
+
+    let accessToken = await getSessionAccessToken();
+    if (!accessToken && isBffAuthEnabled()) {
+        const refreshed = await refreshBffSession();
+        accessToken = refreshed?.access_token?.trim() ?? "";
+    }
+
+    if (!accessToken) {
+        return {
+            success: false,
+            pending: false,
+            message: "Oturum doğrulanamadı. Lütfen tekrar giriş yapıp yeniden deneyin.",
+            error: "AUTH_SESSION_REQUIRED",
+        };
+    }
+
+    let result = await invokeWithExplicitAuthToken(accessToken);
+
+    if (!result.ok && result.status === 401) {
+        const refreshedHeaders = await getFunctionAuthHeaders("admin:refundCardPayment:retry", { forceRefresh: true });
+        const retryToken = (refreshedHeaders["x-user-jwt"] ?? "").replace(/^Bearer\s+/i, "").trim() ||
+            (refreshedHeaders.Authorization ?? "").replace(/^Bearer\s+/i, "").trim();
+
+        if (!retryToken) {
             return {
                 success: false,
                 pending: false,
-                message: extracted.status === 401
-                    ? "Oturum doğrulanamadı. Lütfen tekrar giriş yapıp yeniden deneyin."
-                    : "Refund istegi gonderilemedi",
-                error: extracted.message || (invokeError as { message?: string })?.message || "FUNCTION_ERROR",
+                message: "Oturum doğrulanamadı. Lütfen tekrar giriş yapıp yeniden deneyin.",
+                error: "AUTH_SESSION_REQUIRED",
             };
         }
+
+        result = await invokeWithExplicitAuthToken(retryToken);
     }
 
-    const data = invokeData as { success?: boolean; pending?: boolean; message?: string; error?: string } | null;
+    if (!result.ok) {
+        const payload = result.payload as { message?: string; error?: string };
+        return {
+            success: false,
+            pending: false,
+            message: result.status === 401
+                ? "Oturum doğrulanamadı. Lütfen tekrar giriş yapıp yeniden deneyin."
+                : (payload.message || "Refund istegi gonderilemedi"),
+            error: payload.error || payload.message || "FUNCTION_ERROR",
+        };
+    }
+
+    const data = result.payload as { success?: boolean; pending?: boolean; message?: string; error?: string } | null;
     const success = data?.success === true;
     const pending = data?.pending === true;
 
