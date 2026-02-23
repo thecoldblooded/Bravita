@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useReducer, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { AlertTriangle, Loader2, Mail } from "lucide-react";
@@ -103,53 +103,103 @@ function getClientErrorMessage(status: number, body: string): string {
     return `Önizleme alınamadı (HTTP ${status}).`;
 }
 
+async function fetchPreviewHtml(requestUrl: string, signal: AbortSignal): Promise<string> {
+    const response = await fetch(requestUrl, {
+        method: "GET",
+        headers: {
+            Accept: "text/html, text/plain;q=0.9,*/*;q=0.8",
+        },
+        signal,
+    });
+
+    const body = await response.text();
+
+    if (!response.ok) {
+        throw new Error(getClientErrorMessage(response.status, body));
+    }
+
+    if (!body.trim()) {
+        throw new Error("Önizleme yanıtı boş döndü.");
+    }
+
+    return body;
+}
+
+type EmailPreviewState = {
+    html: string;
+    isLoading: boolean;
+    error: string | null;
+};
+
+type EmailPreviewAction =
+    | { type: "INVALID_REQUEST"; error: string }
+    | { type: "LOAD_START" }
+    | { type: "LOAD_SUCCESS"; html: string }
+    | { type: "LOAD_ERROR"; error: string };
+
+function emailPreviewReducer(state: EmailPreviewState, action: EmailPreviewAction): EmailPreviewState {
+    switch (action.type) {
+        case "INVALID_REQUEST":
+            return {
+                html: "",
+                isLoading: false,
+                error: action.error,
+            };
+        case "LOAD_START":
+            return {
+                ...state,
+                isLoading: true,
+                error: null,
+            };
+        case "LOAD_SUCCESS":
+            return {
+                html: action.html,
+                isLoading: false,
+                error: null,
+            };
+        case "LOAD_ERROR":
+            return {
+                html: "",
+                isLoading: false,
+                error: action.error,
+            };
+        default:
+            return state;
+    }
+}
+
 export default function EmailPreview() {
     const location = useLocation();
 
-    const [html, setHtml] = useState("");
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [state, dispatch] = useReducer(emailPreviewReducer, {
+        html: "",
+        isLoading: true,
+        error: null,
+    });
     const [reloadTick, setReloadTick] = useState(0);
 
     const resolved = useMemo(() => resolvePreviewRequest(location.search), [location.search]);
+    const { html, isLoading, error } = state;
 
     useEffect(() => {
         const request = resolved.request;
 
         if (!request) {
-            setHtml("");
-            setIsLoading(false);
-            setError(resolved.error || "Önizleme bağlantısı doğrulanamadı.");
+            dispatch({
+                type: "INVALID_REQUEST",
+                error: resolved.error || "Önizleme bağlantısı doğrulanamadı.",
+            });
             return;
         }
 
         const controller = new AbortController();
 
         const loadPreview = async () => {
-            setIsLoading(true);
-            setError(null);
+            dispatch({ type: "LOAD_START" });
 
             try {
-                const response = await fetch(request.requestUrl, {
-                    method: "GET",
-                    headers: {
-                        Accept: "text/html, text/plain;q=0.9,*/*;q=0.8",
-                    },
-                    signal: controller.signal,
-                });
-
-                const body = await response.text();
-
-                if (!response.ok) {
-                    throw new Error(getClientErrorMessage(response.status, body));
-                }
-
-                const trimmed = body.trim();
-                if (!trimmed) {
-                    throw new Error("Önizleme yanıtı boş döndü.");
-                }
-
-                setHtml(body);
+                const body = await fetchPreviewHtml(request.requestUrl, controller.signal);
+                dispatch({ type: "LOAD_SUCCESS", html: body });
             } catch (fetchError: unknown) {
                 if (fetchError instanceof Error && fetchError.name === "AbortError") {
                     return;
@@ -159,14 +209,11 @@ export default function EmailPreview() {
                     ? fetchError.message
                     : "Önizleme yüklenirken beklenmeyen bir hata oluştu.";
 
-                setHtml("");
-                setError(message);
-            } finally {
-                setIsLoading(false);
+                dispatch({ type: "LOAD_ERROR", error: message });
             }
         };
 
-        loadPreview();
+        void loadPreview();
 
         return () => controller.abort();
     }, [resolved.request, resolved.error, reloadTick]);

@@ -53,13 +53,14 @@ const getInitialUser = (session: Session | null) => {
   // Trust only signed app_metadata for privilege hints.
   const isAdminFromMetadata = !!session.user.app_metadata?.is_admin;
   const isSuperAdminFromMetadata = !!session.user.app_metadata?.is_superadmin;
+  const stubPhone = session.user.user_metadata?.phone || session.user.phone || null;
 
   // Create a minimal stub user - will be replaced by actual profile from DB
   return {
     id: session.user.id,
     email: session.user.email || "",
     full_name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || null,
-    phone: session.user.user_metadata?.phone || session.user.phone || null,
+    phone: stubPhone,
     profile_complete: false,
     phone_verified: false,
     user_type: "individual",

@@ -24,30 +24,40 @@ export function ProfileInfo() {
     const [isSaving, setIsSaving] = useState(false);
     const hasInitialized = useRef(false);
 
-    // Initialize form data when user is loaded or changed from stub
     useEffect(() => {
-        if (user) {
-            const isStub = user.isStub;
+        if (!user) return;
 
-            // If we're not initialized yet, OR if we're currently a stub and new data is NOT a stub
-            // OR if the form is empty but the user object has data
-            const shouldInitialize = !hasInitialized.current ||
-                (hasInitialized.current && !isStub && formData.full_name === "" && user.full_name);
+        const isStub = !!user.isStub;
+        const incomingFullName = user.full_name || "";
+        const incomingPhone = user.phone || "";
+        const incomingEmail = user.email || "";
 
-            if (shouldInitialize) {
-                setFormData({
-                    full_name: user.full_name || "",
-                    phone: user.phone || "",
-                    email: user.email || "",
-                });
+        setFormData((prev) => {
+            const shouldInitialize =
+                !hasInitialized.current ||
+                (!isStub && prev.full_name === "" && incomingFullName !== "") ||
+                (!isStub && prev.phone === "" && incomingPhone !== "") ||
+                (!isStub && prev.email === "" && incomingEmail !== "");
 
-                // Only mark as fully initialized and locked if it's NOT a stub
-                if (!isStub) {
-                    hasInitialized.current = true;
-                }
+            if (!shouldInitialize) {
+                return prev;
             }
+
+            return {
+                full_name: prev.full_name || incomingFullName,
+                phone: prev.phone || incomingPhone,
+                email: prev.email || incomingEmail,
+            };
+        });
+
+        if (!isStub) {
+            hasInitialized.current = true;
         }
-    }, [user, formData.full_name]); // Re-run when user object changes
+    }, [user]);
+
+    useEffect(() => {
+        void refreshUserProfile();
+    }, [refreshUserProfile]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

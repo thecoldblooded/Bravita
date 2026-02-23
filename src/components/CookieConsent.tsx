@@ -90,7 +90,7 @@ const CookieConsent = () => {
                                     <p className="text-sm md:text-[15px] leading-relaxed text-zinc-300">
                                         {t('cookie_consent.description')}
                                     </p>
-                                    <a href="#" className="inline-block font-semibold text-orange-200 underline underline-offset-4 hover:text-orange-100 transition-colors">
+                                    <a href="/privacy" className="inline-block font-semibold text-orange-200 underline underline-offset-4 hover:text-orange-100 transition-colors">
                                         {t('footer.privacy')}
                                     </a>
                                 </div>

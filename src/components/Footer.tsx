@@ -122,22 +122,40 @@ function Footer() {
                 {section.title}
               </h4>
               <ul className="space-y-3">
-                {section.links.map((link) => (
-                  <li key={link.label} className="relative">
-                    <a
-                      href={encodeURI(link.href)}
-                      onClick={(e) => {
-                        if (link.href.startsWith("#") && document.querySelector(link.href)) {
-                          e.preventDefault();
-                          document.querySelector(link.href)?.scrollIntoView({ behavior: 'smooth' });
-                        }
-                      }}
-                      className="text-neutral-400 hover:text-bravita-orange transition-colors"
-                    >
-                      {link.label}
-                    </a>
-                  </li>
-                ))}
+                {section.links.map((link) => {
+                  const isHashLink = link.href.startsWith("#");
+                  const isPlaceholderLink = link.href === "#";
+
+                  if (isHashLink) {
+                    return (
+                      <li key={link.label} className="relative">
+                        <button
+                          type="button"
+                          disabled={isPlaceholderLink}
+                          onClick={() => {
+                            if (!isPlaceholderLink) {
+                              document.querySelector(link.href)?.scrollIntoView({ behavior: "smooth" });
+                            }
+                          }}
+                          className="text-neutral-400 hover:text-bravita-orange transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {link.label}
+                        </button>
+                      </li>
+                    );
+                  }
+
+                  return (
+                    <li key={link.label} className="relative">
+                      <a
+                        href={encodeURI(link.href)}
+                        className="text-neutral-400 hover:text-bravita-orange transition-colors"
+                      >
+                        {link.label}
+                      </a>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           ))}

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type FormEvent } from "react";
 import loginVideo from "@/assets/optimized/login-compressed.mp4";
 import logoImg from "@/assets/bravita-logo.webp";
 import { useTranslation } from "react-i18next";
@@ -92,6 +92,11 @@ export default function UpdatePassword() {
         }
     };
 
+    const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        void form.handleSubmit(onSubmit)(event);
+    };
+
     return (
         <div className="min-h-screen bg-[#FFFBF7] flex items-center justify-center p-4">
             <Card className="w-full max-w-4xl grid lg:grid-cols-2 overflow-hidden shadow-xl border-none">
@@ -112,7 +117,7 @@ export default function UpdatePassword() {
                         </div>
 
                         <Form {...form}>
-                            <form onSubmit={(e) => { e.preventDefault(); void form.handleSubmit(onSubmit)(e); }} className="space-y-4">
+                            <form onSubmit={handleFormSubmit} className="space-y-4">
                                 <FormField
                                     control={form.control}
                                     name="password"
