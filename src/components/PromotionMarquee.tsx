@@ -19,6 +19,7 @@ interface PromoCode {
 }
 
 const PromotionMarquee = () => {
+    const [isHidden, setIsHidden] = useState(false);
     const [promos, setPromos] = useState<PromoCode[]>([]);
     const [copiedCode, setCopiedCode] = useState<string | null>(null);
     const { t, i18n } = useTranslation();
@@ -52,12 +53,26 @@ const PromotionMarquee = () => {
     };
 
     useEffect(() => {
-        let ignore = false;
-        const startFetching = async () => {
-            await fetchActivePromos();
+        const checkVisibility = () => {
+            if (typeof document === 'undefined') return;
+            const isMenuOpen = document.body.dataset.userMenuOpen === "true";
+            const isSupportOpen = document.body.dataset.supportOpen === "true";
+            setIsHidden(isMenuOpen || isSupportOpen);
         };
-        startFetching();
-        return () => { ignore = true; };
+
+        // Initial check
+        checkVisibility();
+
+        // Observe body attributes for changes
+        const observer = new MutationObserver(checkVisibility);
+        observer.observe(document.body, {
+            attributes: true,
+            attributeFilter: ['data-user-menu-open', 'data-support-open']
+        });
+
+        fetchActivePromos();
+
+        return () => observer.disconnect();
     }, []);
 
     const handleCopyCode = (code: string) => {
@@ -68,7 +83,7 @@ const PromotionMarquee = () => {
         });
     };
 
-    if (promos.length === 0) return null;
+    if (promos.length === 0 || isHidden) return null;
 
     // Format the promo message
     const getPromoText = (promo: PromoCode, idx: number) => {
@@ -141,16 +156,24 @@ const PromotionMarquee = () => {
           .promo-marquee-wrapper:hover .promo-marquee-container {
             animation-play-state: paused;
           }
-          @media (max-width: 767px) {
-            body[data-user-menu-open="true"] .promo-marquee-wrapper,
-            body[data-support-open="true"] .promo-marquee-wrapper {
-              display: none !important;
+          /* Hide marquee and its spacer when user menu or support is open to reduce clutter and overlapping */
+          body[data-user-menu-open="true"] .promo-marquee-wrapper,
+          body[data-support-open="true"] .promo-marquee-wrapper,
+          body[data-user-menu-open="true"] .promo-marquee-spacer,
+          body[data-support-open="true"] .promo-marquee-spacer {
+            display: none !important;
+          }
+
+          /* On mobile, ensure it doesn't overlap with important UI or if the screen is too small */
+          @media (max-width: 480px) {
+            .promo-marquee-wrapper {
+              font-size: 10px;
             }
           }
         `}
             </style>
             <div
-                className="promo-marquee-wrapper fixed bottom-0 left-0 right-0 z-999 bg-black/95 backdrop-blur-md border-t border-white/10 py-2 shadow-[0_-8px_30px_rgba(0,0,0,0.8)] overflow-hidden"
+                className="promo-marquee-wrapper fixed bottom-0 left-0 right-0 z-40 bg-black/95 backdrop-blur-md border-t border-white/10 py-2 shadow-[0_-8px_30px_rgba(0,0,0,0.8)] overflow-hidden"
             >
                 <div
                     className="promo-marquee-container"

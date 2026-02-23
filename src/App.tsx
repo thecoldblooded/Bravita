@@ -135,7 +135,7 @@ const AppContent = () => {
           {showDeferredEnhancements && isLandingRoute ? (
             <>
               <PromotionMarquee />
-              <div className="h-12 md:h-14" aria-hidden="true" />
+              <div className="promo-marquee-spacer h-12 md:h-14" aria-hidden="true" />
             </>
           ) : null}
           <CookieConsent />

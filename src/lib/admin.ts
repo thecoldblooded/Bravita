@@ -1,5 +1,45 @@
 import { supabase, getSessionSafe, safeQuery } from "@/lib/supabase";
 import { getFunctionAuthHeaders } from "@/lib/functionAuth";
+async function extractEdgeFunctionErrorMessage(error: unknown): Promise<{ message?: string; status?: number; code?: string }> {
+    const err = error as { context?: Response; response?: Response } | null;
+    const response = err?.context instanceof Response
+        ? err.context
+        : err?.response instanceof Response
+            ? err.response
+            : undefined;
+
+    const status = typeof response?.status === "number" ? response.status : undefined;
+    if (!response) return { status };
+
+    const contentType = response.headers?.get?.("content-type") ?? "";
+    try {
+        if (contentType.includes("application/json")) {
+            const body = await response.clone().json().catch(() => null);
+            if (body && typeof body === "object") {
+                const maybeMessage = (body as { message?: unknown; error?: unknown }).message ??
+                    (body as { error?: unknown }).error;
+                const maybeCode = (body as { code?: unknown }).code;
+                const normalizedMessage = typeof maybeMessage === "string" && maybeMessage.trim().length > 0
+                    ? maybeMessage.trim()
+                    : undefined;
+                const normalizedCode = typeof maybeCode === "string" && maybeCode.trim().length > 0
+                    ? maybeCode.trim()
+                    : undefined;
+
+                if (normalizedMessage || normalizedCode) {
+                    return { status, message: normalizedMessage, code: normalizedCode };
+                }
+            }
+        }
+
+        const text = await response.clone().text().catch(() => "");
+        if (text.trim().length > 0) return { status, message: text.trim() };
+    } catch {
+        // Ignore parse errors - fall back to default message.
+    }
+
+    return { status };
+}
 
 // Order status types
 export type OrderStatus = "pending" | "processing" | "preparing" | "shipped" | "delivered" | "cancelled";
@@ -350,21 +390,49 @@ export async function updateOrderStatus(
 }
 
 export async function voidCardPayment(orderId: string): Promise<CardVoidResult> {
-    const headers = await getFunctionAuthHeaders();
-    const { data, error } = await supabase.functions.invoke("bakiyem-void", {
-        body: { orderId },
-        headers,
-    });
+    let headers = await getFunctionAuthHeaders("admin:voidCardPayment");
+    let invokeData: unknown = null;
+    let invokeError: unknown = null;
 
-    if (error) {
-        return {
-            success: false,
-            pending: false,
-            message: "Void istegi gonderilemedi",
-            error: error.message || "FUNCTION_ERROR",
-        };
+    {
+        const result = await supabase.functions.invoke("bakiyem-void", {
+            body: { orderId },
+            headers,
+        });
+        invokeData = result.data;
+        invokeError = result.error;
     }
 
+    if (invokeError) {
+        let extracted = await extractEdgeFunctionErrorMessage(invokeError);
+        const shouldRetryAuth = extracted.status === 401;
+
+        if (shouldRetryAuth) {
+            headers = await getFunctionAuthHeaders("admin:voidCardPayment:retry", { forceRefresh: true });
+            const retryResult = await supabase.functions.invoke("bakiyem-void", {
+                body: { orderId },
+                headers,
+            });
+            invokeData = retryResult.data;
+            invokeError = retryResult.error;
+            if (invokeError) {
+                extracted = await extractEdgeFunctionErrorMessage(invokeError);
+            }
+        }
+
+        if (invokeError) {
+            return {
+                success: false,
+                pending: false,
+                message: extracted.status === 401
+                    ? "Oturum doğrulanamadı. Lütfen tekrar giriş yapıp yeniden deneyin."
+                    : "Void istegi gonderilemedi",
+                error: extracted.message || (invokeError as { message?: string })?.message || "FUNCTION_ERROR",
+            };
+        }
+    }
+
+    const data = invokeData as { success?: boolean; pending?: boolean; message?: string; error?: string } | null;
     const success = data?.success === true;
     const pending = data?.pending === true;
     return {
@@ -376,27 +444,55 @@ export async function voidCardPayment(orderId: string): Promise<CardVoidResult> 
 }
 
 export async function refundCardPayment(orderId: string, amountCents?: number): Promise<CardRefundResult> {
-    const headers = await getFunctionAuthHeaders();
+    let headers = await getFunctionAuthHeaders("admin:refundCardPayment");
     const body: { orderId: string; amountCents?: number } = { orderId };
 
     if (Number.isFinite(amountCents) && Number(amountCents) > 0) {
         body.amountCents = Number(amountCents);
     }
 
-    const { data, error } = await supabase.functions.invoke("bakiyem-refund", {
-        body,
-        headers,
-    });
+    let invokeData: unknown = null;
+    let invokeError: unknown = null;
 
-    if (error) {
-        return {
-            success: false,
-            pending: false,
-            message: "Refund istegi gonderilemedi",
-            error: error.message || "FUNCTION_ERROR",
-        };
+    {
+        const result = await supabase.functions.invoke("bakiyem-refund", {
+            body,
+            headers,
+        });
+        invokeData = result.data;
+        invokeError = result.error;
     }
 
+    if (invokeError) {
+        let extracted = await extractEdgeFunctionErrorMessage(invokeError);
+        const shouldRetryAuth = extracted.status === 401;
+
+        if (shouldRetryAuth) {
+            headers = await getFunctionAuthHeaders("admin:refundCardPayment:retry", { forceRefresh: true });
+            const retryResult = await supabase.functions.invoke("bakiyem-refund", {
+                body,
+                headers,
+            });
+            invokeData = retryResult.data;
+            invokeError = retryResult.error;
+            if (invokeError) {
+                extracted = await extractEdgeFunctionErrorMessage(invokeError);
+            }
+        }
+
+        if (invokeError) {
+            return {
+                success: false,
+                pending: false,
+                message: extracted.status === 401
+                    ? "Oturum doğrulanamadı. Lütfen tekrar giriş yapıp yeniden deneyin."
+                    : "Refund istegi gonderilemedi",
+                error: extracted.message || (invokeError as { message?: string })?.message || "FUNCTION_ERROR",
+            };
+        }
+    }
+
+    const data = invokeData as { success?: boolean; pending?: boolean; message?: string; error?: string } | null;
     const success = data?.success === true;
     const pending = data?.pending === true;
 
