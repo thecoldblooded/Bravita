@@ -127,6 +127,18 @@ function callbackAckResponse(): Response {
   });
 }
 
+function extractHost(rawUrl: string): string {
+  try {
+    return new URL(rawUrl).host;
+  } catch {
+    return rawUrl;
+  }
+}
+
+function containsMerchantConfigHint(value: string): boolean {
+  return /(üye\s*işyeri|uye\s*isyeri|merchant|bayi|dealer|isyeri|işyeri|terminal|acquirer)/i.test(value);
+}
+
 serve(async (req: Request) => {
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
   const url = new URL(req.url);
@@ -145,32 +157,84 @@ serve(async (req: Request) => {
   try {
     const { data: intentRow } = await supabase
       .from("payment_intents")
-      .select("gateway_trx_code, threed_session_ref")
+      .select("gateway_trx_code, threed_session_ref, status, gateway_status, created_at, updated_at")
       .eq("id", intentId)
       .maybeSingle();
     const gatewayTrxCode = asText(intentRow?.gateway_trx_code);
+    const intentStateSnapshot = {
+      status: asText(intentRow?.status),
+      gatewayStatus: asText(intentRow?.gateway_status),
+      createdAt: asText(intentRow?.created_at),
+      updatedAt: asText(intentRow?.updated_at),
+    };
+    const runtimeConfigSnapshot = {
+      baseUrlHost: extractHost(BAKIYEM_BASE_URL),
+      dealerCodePresent: BAKIYEM_DEALER_CODE.length > 0,
+      dealerCodeLength: BAKIYEM_DEALER_CODE.length,
+      apiUsernamePresent: BAKIYEM_API_USERNAME.length > 0,
+      apiUsernameLength: BAKIYEM_API_USERNAME.length,
+      apiPasswordPresent: BAKIYEM_API_PASSWORD.length > 0,
+      apiPasswordLength: BAKIYEM_API_PASSWORD.length,
+    };
 
     let callbackData: any = {};
+    let callbackSource = "empty";
     const contentType = req.headers.get("content-type") || "";
+    const callbackQueryParams = Object.fromEntries(url.searchParams.entries());
+    const callbackQueryKeyList = Object.keys(callbackQueryParams || {}).sort();
+    const requestHeaderSnapshot = {
+      origin: req.headers.get("origin") || "",
+      referer: req.headers.get("referer") || "",
+      secFetchSite: req.headers.get("sec-fetch-site") || "",
+      secFetchMode: req.headers.get("sec-fetch-mode") || "",
+      contentLength: req.headers.get("content-length") || "",
+      xForwardedFor: req.headers.get("x-forwarded-for") || "",
+      xRealIp: req.headers.get("x-real-ip") || "",
+      cfRay: req.headers.get("cf-ray") || "",
+    };
 
     // 1. Parse Callback Data (Moka sends results via POST form-data usually)
     if (req.method === "POST") {
       if (contentType.includes("application/x-www-form-urlencoded") || contentType.includes("multipart/form-data")) {
         const formData = await req.formData();
         callbackData = Object.fromEntries(formData.entries());
+        callbackSource = "post_form";
       } else if (contentType.includes("application/json")) {
         callbackData = await req.json().catch(() => ({}));
+        callbackSource = "post_json";
+      } else {
+        callbackSource = "post_unknown";
       }
     } else {
       // Check query params just in case
       callbackData = Object.fromEntries(url.searchParams.entries());
+      callbackSource = "query";
     }
+
+    const callbackKeyList = Object.keys(callbackData || {}).sort();
 
     // Always log the incoming callback hit using allowed 'inquiry' operation
     await supabase.from("payment_transactions").insert({
       intent_id: intentId,
       operation: "inquiry",
-      request_payload: { method: req.method, contentType, callbackData },
+      request_payload: {
+        type: "callback_received_v2",
+        method: req.method,
+        contentType,
+        callbackSource,
+        callbackKeyList,
+        callbackQueryKeyList,
+        callbackTransport: {
+          isPostCallback,
+          isLikelyBrowserCallback,
+          shouldRedirectClient,
+          userAgent,
+          headers: requestHeaderSnapshot,
+        },
+        intentStateSnapshot,
+        callbackData,
+        callbackQueryParams,
+      },
       success: true
     });
 
@@ -245,7 +309,20 @@ serve(async (req: Request) => {
     const normalizedCallbackAnyTrxCode = normalizeComparable(
       callbackData?.TrxCode ?? callbackData?.trxCode ?? callbackData?.threeDTrxCode ?? callbackData?.ThreeDTrxCode,
     );
-    const callbackKeyList = Object.keys(callbackData || {}).sort();
+
+    const { data: recentIntentTransactions } = await supabase
+      .from("payment_transactions")
+      .select("operation, success, created_at, error_code")
+      .eq("intent_id", intentId)
+      .order("created_at", { ascending: false })
+      .limit(12);
+
+    const recentIntentTxSummary = (recentIntentTransactions ?? []).map((tx: any) => ({
+      operation: asText(tx?.operation),
+      success: Boolean(tx?.success),
+      createdAt: asText(tx?.created_at),
+      errorCode: asText(tx?.error_code),
+    }));
 
     // 2. Perform detail inquiry first (Java parity), then list inquiry as fallback context.
     const detailRequestPayload: JsonRecord = {
@@ -301,6 +378,50 @@ serve(async (req: Request) => {
 
     const inquiryData = inquiryJson?.Data;
     const inquiryPaymentList = extractProviderRecordList(inquiryData);
+
+    const detailPaymentDetail = asRecord(detailInquiryData?.PaymentDetail);
+    const detailPaymentTrxList = extractProviderRecordList(detailInquiryData?.PaymentTrxDetailList);
+    const detailPrimaryTrx = detailPaymentTrxList[0] ?? null;
+
+    const providerSignalSnapshot = {
+      callback: {
+        resultCode: callbackNormalized.resultCode,
+        bankResultCode: callbackNormalized.bankResultCode,
+        resultMessage: callbackNormalized.resultMessage,
+        trxCode: callbackNormalized.trxCode,
+        otherTrxCode: callbackNormalized.otherTrxCode,
+      },
+      detailPaymentDetail: {
+        resultCode: asText(detailPaymentDetail?.ResultCode),
+        resultMessage: asText(detailPaymentDetail?.ResultMessage),
+        mokaResultCode: asText(detailPaymentDetail?.MokaResultCode),
+        mokaResultMessage: asText(detailPaymentDetail?.MokaResultMessage),
+        bankCode: asText(detailPaymentDetail?.BankCode),
+        mdStatus: asText(detailPaymentDetail?.MdStatus),
+        trxStatus: asText(detailPaymentDetail?.TrxStatus),
+        paymentStatus: asText(detailPaymentDetail?.PaymentStatus),
+      },
+      detailPrimaryTrx: {
+        resultCode: asText(detailPrimaryTrx?.ResultCode),
+        resultMessage: asText(detailPrimaryTrx?.ResultMessage),
+        mokaResultCode: asText(detailPrimaryTrx?.MokaResultCode),
+        mokaResultMessage: asText(detailPrimaryTrx?.MokaResultMessage),
+        bankCode: asText(detailPrimaryTrx?.BankCode),
+        virtualPosOrderId: asText(detailPrimaryTrx?.VirtualPosOrderId),
+        trxCode: asText(detailPrimaryTrx?.TrxCode),
+        otherTrxCode: asText(detailPrimaryTrx?.OtherTrxCode),
+      },
+    };
+
+    const merchantConfigHintSource = [
+      callbackNormalized.resultMessage,
+      asText(detailPaymentDetail?.ResultMessage),
+      asText(detailPaymentDetail?.MokaResultMessage),
+      asText(detailPrimaryTrx?.ResultMessage),
+      asText(detailPrimaryTrx?.MokaResultMessage),
+    ].filter((value) => value.length > 0);
+
+    const hasMerchantConfigHint = merchantConfigHintSource.some((value) => containsMerchantConfigHint(value));
 
     const matchedDetailByOtherTrxCode = detailRecords.find((item: any) =>
       normalizeComparable(item?.OtherTrxCode) === normalizedShortTrxCode
@@ -393,6 +514,24 @@ serve(async (req: Request) => {
                     : matchedByCallbackTrxCode ? "list:callback_trx_code"
                       : "none";
 
+    const callbackBankResultCodeRaw = asText(callbackNormalized.bankResultCode).trim();
+    const consistencyChecks = {
+      callbackOtherTrxMatchesShortTrxCode:
+        normalizedCallbackOtherTrxCode.length > 0 && normalizedCallbackOtherTrxCode === normalizedShortTrxCode,
+      callbackTrxMatchesDetailVirtualPosOrderId:
+        normalizedCallbackTrxCode.length > 0 &&
+        normalizedCallbackTrxCode === normalizeComparable(detailPrimaryTrx?.VirtualPosOrderId),
+      callbackTrxMatchesDetailTrxCode:
+        normalizedCallbackTrxCode.length > 0 &&
+        normalizedCallbackTrxCode === normalizeComparable(detailPrimaryTrx?.TrxCode),
+      callbackBankResultCodeMatchesDetailResultCode:
+        callbackBankResultCodeRaw.length > 0 &&
+        toLowerSafe(callbackBankResultCodeRaw) === toLowerSafe(detailPrimaryTrx?.ResultCode),
+      callbackBankResultCodeMatchesDetailMokaResultCode:
+        callbackBankResultCodeRaw.length > 0 &&
+        toLowerSafe(callbackBankResultCodeRaw) === toLowerSafe(detailPrimaryTrx?.MokaResultCode),
+    };
+
     // Log detail inquiry result
     await supabase.from("payment_transactions").insert({
       intent_id: intentId,
@@ -416,10 +555,20 @@ serve(async (req: Request) => {
       intent_id: intentId,
       operation: "inquiry",
       request_payload: {
-        type: "status_diagnostics_v3",
+        type: "status_diagnostics_v4",
         shortTrxCode,
         gatewayTrxCode,
         callbackKeyList,
+        callbackQueryKeyList,
+        callbackSource,
+        callbackTransport: {
+          isPostCallback,
+          isLikelyBrowserCallback,
+          shouldRedirectClient,
+          userAgent,
+          headers: requestHeaderSnapshot,
+        },
+        intentStateSnapshot,
         callbackNormalized,
         normalizedIdentifiers: {
           normalizedShortTrxCode,
@@ -440,7 +589,8 @@ serve(async (req: Request) => {
           dataType: Array.isArray(inquiryData) ? "array" : typeof inquiryData,
           hasPaymentListArray: Array.isArray(inquiryData?.PaymentList),
           paymentListCount: inquiryPaymentList.length
-        }
+        },
+        recentIntentTxSummary,
       },
       response_payload: {
         matchedDetailByOtherTrxCode: !!matchedDetailByOtherTrxCode,
@@ -463,8 +613,53 @@ serve(async (req: Request) => {
         selectedProviderRecordForDebug,
         detailRecordIdSnapshot,
         listRecordIdSnapshot,
+        hashValidationOutcome: hashValidation.matchedOutcome,
+        recentIntentTxCount: recentIntentTxSummary.length,
       },
       success: true
+    });
+
+    await supabase.from("payment_transactions").insert({
+      intent_id: intentId,
+      operation: "inquiry",
+      request_payload: {
+        type: "merchant_config_diagnostics_v1",
+        runtimeConfigSnapshot,
+        callbackSource,
+        callbackKeyList,
+        callbackQueryKeyList,
+        callbackTransport: {
+          isPostCallback,
+          isLikelyBrowserCallback,
+          shouldRedirectClient,
+          userAgent,
+          headers: requestHeaderSnapshot,
+        },
+        callbackNormalized,
+        providerSignalSnapshot,
+        merchantConfigHintSource,
+        hasMerchantConfigHint,
+        shortTrxCode,
+        gatewayTrxCode,
+        normalizedIdentifiers: {
+          normalizedShortTrxCode,
+          normalizedGatewayTrxCode,
+          normalizedCallbackTrxCode,
+          normalizedCallbackOtherTrxCode,
+          normalizedCallbackAnyTrxCode,
+        },
+        selectedProviderRecordSource,
+      },
+      response_payload: {
+        consistencyChecks,
+        detailPaymentDetail,
+        detailPrimaryTrx,
+        detailPaymentTrxCount: detailPaymentTrxList.length,
+        detailRecordIdSnapshot,
+        listRecordIdSnapshot,
+        hashValidation,
+      },
+      success: true,
     });
 
     // 3. Status logic
@@ -534,7 +729,7 @@ serve(async (req: Request) => {
       intent_id: intentId,
       operation: "inquiry",
       request_payload: {
-        type: "status_eval_compare_v4",
+        type: "status_eval_compare_v5",
         resultCode,
         effectiveFailureCode,
         trxStatus,
@@ -546,8 +741,29 @@ serve(async (req: Request) => {
         callbackMessageIndicatesFailure,
         isActuallySuccess,
         likelyUpstreamDecline,
+        callbackSource,
+        callbackTransport: {
+          isPostCallback,
+          isLikelyBrowserCallback,
+          shouldRedirectClient,
+          userAgent,
+          headers: requestHeaderSnapshot,
+          callbackKeyCount: callbackKeyList.length,
+          callbackQueryKeyCount: callbackQueryKeyList.length,
+        },
         callbackNormalized,
         callbackHashValidation: hashValidation,
+        intentStateSnapshot,
+        decisionInputs: {
+          callbackOutcomeFromHash,
+          callbackHasHashOutcome,
+          callbackResultCode,
+          callbackIsSuccessful,
+          callbackBankResultCode,
+          inquiryResultCode,
+          inquiryTrxStatus,
+          inquiryPaymentStatus,
+        },
         selectedProviderRecordSource,
         detailInquiryResultCode: asText(detailInquiryJson?.ResultCode),
         listInquiryResultCode: asText(inquiryJson?.ResultCode),

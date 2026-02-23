@@ -45,11 +45,21 @@ function normalizeBankCode(value: string): string {
     const trimmed = value.trim();
     if (!trimmed) return "";
 
-    const digitsOnly = trimmed.replace(/\D/g, "");
-    if (!digitsOnly) return trimmed;
+    // Turn "03" -> "003", but leave "3d_auth_failed" as is
+    if (/^\d+$/.test(trimmed)) {
+        return trimmed.length <= 3 ? trimmed.padStart(3, "0") : trimmed;
+    }
 
-    return digitsOnly.length <= 3 ? digitsOnly.padStart(3, "0") : digitsOnly;
+    return trimmed;
 }
+
+const CODE_FIRST_MESSAGE_KEYS = new Set([
+    "3d_auth_failed",
+    "failed",
+    "fail",
+    "callback_declined",
+    "invalid_3d_payload",
+]);
 
 function getFallbackMessage(code: string): FailureMessage {
     switch (code) {
@@ -78,6 +88,8 @@ function getFallbackMessage(code: string): FailureMessage {
                 primary: "3D yönlendirme verisi geçersiz.",
                 guidance: "Ödemeyi yeniden başlatıp tekrar deneyin.",
             };
+        case "callback_declined":
+        case "3d_auth_failed":
         case "failed":
         case "fail":
             return {
@@ -110,6 +122,10 @@ export default function PaymentFailed() {
     }, [location.search]);
 
     const failureMessage = useMemo(() => {
+        if (CODE_FIRST_MESSAGE_KEYS.has(code)) {
+            return getFallbackMessage(code);
+        }
+
         const directBankMessage = bankCode ? MOKA_BANK_CODE_MESSAGES[bankCode] : undefined;
 
         if (directBankMessage) {

@@ -34,7 +34,7 @@ const ProductShowcase = () => {
     <section className="py-20 md:py-32 bg-linear-to-b from-background via-secondary/20 to-background overflow-hidden">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
-          <span className="text-primary font-bold text-sm uppercase tracking-wider">{t('product.badge')}</span>
+
           <h2 className="text-3xl md:text-5xl font-extrabold mt-2 mb-4">
             {t('product.title')} <span className="text-gradient">{t('product.title_accent')}</span>
           </h2>

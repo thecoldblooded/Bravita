@@ -370,7 +370,6 @@ const Hero = () => {
     t("hero.ingredients.arginine"),
     t("hero.ingredients.taurin"),
     t("hero.ingredients.phospho"),
-    t("hero.ingredients.amino"),
     t("hero.ingredients.multimineral"),
     t("hero.ingredients.multivitamin"),
   ];
@@ -421,17 +420,6 @@ const Hero = () => {
       floatAmount: 18,
     },
     {
-      id: "amino",
-      name: t("hero.ingredients.amino"),
-      start: [620, 860],
-      mobileStart: [150, 470],
-      delay: 1.8,
-      duration: 6,
-      size: 105,
-      mobileSize: 50,
-      floatAmount: 14,
-    },
-    {
       id: "multimineral",
       name: t("hero.ingredients.multimineral"),
       start: [960, 420],
@@ -445,8 +433,8 @@ const Hero = () => {
     {
       id: "multivitamin",
       name: t("hero.ingredients.multivitamin"),
-      start: [960, 850],
-      mobileStart: [500, 520],
+      start: [620, 860],
+      mobileStart: [150, 470],
       delay: 2,
       duration: 6.5,
       size: 111,

@@ -113,7 +113,7 @@ export function AuthModal({
     <Dialog open={open} onOpenChange={onOpenChange} modal>
       <DialogContent
         className="max-w-4xl p-0 overflow-hidden h-dvh max-h-dvh md:h-auto md:max-h-150 border-none shadow-2xl"
-        onOpenAutoFocus={(e) => e.preventDefault()}
+
       >
         <div className="flex flex-col md:flex-row h-full overflow-hidden">
           {/* Left Section - Forms */}

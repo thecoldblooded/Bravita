@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import ScrollReveal from "@/components/ui/scroll-reveal";
@@ -31,6 +31,25 @@ import { useTranslation } from "react-i18next";
 
 const Index = () => {
   const { t } = useTranslation();
+  const [shouldEagerLoadFooter, setShouldEagerLoadFooter] = useState(
+    () => typeof window !== "undefined" && window.location.hash.startsWith("#legal:")
+  );
+
+  useEffect(() => {
+    const trackLegalHashIntent = () => {
+      if (window.location.hash.startsWith("#legal:")) {
+        setShouldEagerLoadFooter(true);
+      }
+    };
+
+    trackLegalHashIntent();
+    window.addEventListener("hashchange", trackLegalHashIntent);
+
+    return () => {
+      window.removeEventListener("hashchange", trackLegalHashIntent);
+    };
+  }, []);
+
   // Banner in Header handles incomplete profile notification
   // No auto-redirect needed
 
@@ -90,11 +109,17 @@ const Index = () => {
           </Suspense>
         </LazySection>
       </main>
-      <LazySection placeholder={<SectionFallback minHeight="40vh" />} rootMargin="250px 0px">
+      {shouldEagerLoadFooter ? (
         <Suspense fallback={<SectionFallback minHeight="40vh" />}>
           <Footer />
         </Suspense>
-      </LazySection>
+      ) : (
+        <LazySection placeholder={<SectionFallback minHeight="40vh" />} rootMargin="250px 0px">
+          <Suspense fallback={<SectionFallback minHeight="40vh" />}>
+            <Footer />
+          </Suspense>
+        </LazySection>
+      )}
     </div>
   );
 };

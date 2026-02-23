@@ -61,7 +61,7 @@
         }
     },
     "product": {
-        "badge": "Product",
+        "badge": "",
         "title": "Delicious and",
         "title_accent": "Nutritious",
         "description": "Delicious liquid formula with natural tutti frutti and vanilla flavor that children will love.",
@@ -145,6 +145,10 @@
         "reg_no": "Registration No: TR-06-K-094361",
         "quick_links": "Quick Links",
         "legal_support": "Legal & Support",
+        "legal_terms": "Terms of Use",
+        "legal_privacy": "Privacy Policy",
+        "legal_cookies": "Cookie Policy",
+        "legal_notice": "Legal Notice",
         "contact": "Contact",
         "privacy": "Privacy Policy",
         "kvkk": "KVKK",
@@ -162,10 +166,11 @@
         "accept": "Accept",
         "reject": "Not now",
         "customize": "Customize",
-        "preferences_title": "Cookie Preferences",
+        "preferences_title": "Types of Cookies Used",
         "necessary": "Necessary Cookies",
-        "analytics": "Analytics Cookies",
-        "marketing": "Marketing Cookies",
+        "analytics": "Performance and Analytics Cookies",
+        "functional": "Functional Cookies",
+        "marketing": "Advertising/Marketing Cookies",
         "always_on": "Always on",
         "save_preferences": "Save Preferences"
     },
@@ -454,7 +459,11 @@
             "expiry_invalid": "Card expiry date is invalid",
             "tokenization_failed": "Card tokenization failed",
             "threed_init_failed": "Could not initiate 3D payment",
-            "too_many_attempts": "Too many failed attempts. Please try again after {{minutes}} minutes."
+            "too_many_attempts": "Too many failed attempts. Please try again after {{minutes}} minutes.",
+            "card_info_rejected": "Card details could not be verified by the bank. Please check card number, expiry (MM/YY), and CVV, then try again.",
+            "buyer_blocked": "The security system temporarily blocked this attempt. Please wait 2-3 minutes and retry, or use a different card.",
+            "gateway_config_error": "A temporary verification issue occurred in the payment integration. Please try again shortly.",
+            "threed_auth_failed": "3D verification failed or was interrupted. Please complete the bank verification step and try again."
         },
         "bank_transfer_hint": "* Bank transfer details will be sent via email after order confirmation.",
         "promo_placeholder": "Promo Code",
@@ -484,14 +493,14 @@
                 "payment_desc": "Information on how many installments the order total will be paid is available on the order summary page. Your bank may organize campaigns and apply a number of installments higher than the number of installments you selected, and services such as installment postponement may be offered. Such campaigns are at the initiative of your bank and information about campaigns is given on our pages if it is within the knowledge of our company. Starting from the account cut-off date of your credit card, the order total will be divided by the number of installments and reflected on your credit card summary by your bank. The bank may not distribute the installment amounts equally to the months by taking into account the fractional differences. The creation of your detailed payment plan is at the initiative of your bank.",
                 "table_header": "Product Name / Quantity / Sales Price",
                 "total": "Total",
-                "article_2_text": "2) Packaging, shipping and delivery costs are covered by the BUYER. The shipping fee is 0.00 -TL and the shipping price is added to the total order amount. It is not included in the product price. Delivery will be made by hand to the BUYER's address specified above via the contracted cargo company. Even if the BUYER is not present at the address at the time of delivery, our Company will be deemed to have fulfilled its performance completely and completely. Therefore, the SELLER is not responsible for the damages and expenses arising from the BUYER's late delivery and/or non-delivery of the product. The SELLER is responsible for delivering the product subject to the contract intact, complete, in accordance with the qualifications specified in the order and with warranty documents and user manuals, if any.",
+                "article_2_text": "2) Packaging, shipping, and delivery costs are borne by the BUYER. The shipping fee is 0.00 TL and is added to the total order amount; it is not included in the product price. Delivery is made to the BUYER's address specified above via the contracted cargo company. If the BUYER is not present at the delivery address, the SELLER is deemed to have fulfilled the delivery obligation in accordance with applicable legislation. Therefore, the SELLER is not responsible for damages arising from late receipt or non-receipt of the product by the BUYER. The SELLER is responsible for delivering the product intact, complete, and in accordance with the specifications in the order, together with warranty documents/user manuals where applicable.",
                 "article_3_text": "3) The product will be delivered within 30 days at the latest from the contract date. All responsibility belongs to the SELLER until the delivery of the product.",
                 "article_4_text": "4) The consumer (BUYER) has the right to withdraw from this Distance Sales Agreement within 14 (fourteen) days without giving any reason and without paying any penal clause. The CONSUMER is obliged to return the goods subject to the contract to the seller or the carrier determined by the seller within 10 days from the date on which he uses his right of withdrawal. The withdrawal period starts on the day the contract is established in contracts regarding service performance; in contracts regarding the delivery of goods, it starts on the day the consumer or the third party determined by the consumer receives the goods. However, the consumer can also use the right of withdrawal within the period from the establishment of the contract to the delivery of the goods.",
                 "article_4_calc": "In determining the withdrawal period;",
                 "article_4_list_a": "a) For goods that are the subject of a single order and delivered separately, the day the consumer or the third party determined by the consumer receives the last good,",
                 "article_4_list_b": "b) For goods consisting of more than one part, the day the consumer or the third party determined by the consumer receives the last part,",
                 "article_4_list_c": "c) In contracts where the regular delivery of the goods takes place for a certain period of time, the day the consumer or the third party determined by the consumer receives the first good is taken as a basis.",
-                "article_4_link": "You can notify your withdrawal request via the easy return option on your personal membership page on www.hepsiburada.com before the withdrawal period expires.",
+                "article_4_link": "You may submit your withdrawal notice before the withdrawal period expires via your account order detail page on www.bravita.com.tr or by sending an email to support@bravita.com.tr.",
                 "exceptions_title": "The consumer cannot use the right of withdrawal in the following contracts:",
                 "exceptions_list": [
                     "a) Contracts for goods or services whose prices vary depending on fluctuations in the financial markets and are not under the control of the SELLER or the provider.",
@@ -506,9 +515,9 @@
                     "j) Contracts for services started to be performed with the approval of the consumer before the withdrawal period expires."
                 ],
                 "article_5_text": "5) If the consumer purchases any digital content, information regarding the technical protection measures that will affect the functionality of the digital content and the hardware or software with which the digital content works, which the SELLER knows or is reasonably expected to know, is included in the promotional content on the page where the purchased product is offered for sale.",
-                "article_6_text": "6) Consumer complaints and objections: If you have a complaint about your order and/or the product subject to your order and/or any issue related to your order, you can forward your complaints to the SELLER via the contact information specified above. In disputes arising from this contract; Turkish Courts are authorized; Turkish Law is the applicable law.",
+                "article_6_text": "6) Consumer complaints and objections: If you have any complaint regarding your order and/or the product subject to your order, you may submit your complaint to the SELLER via the contact information provided above. In disputes arising from this contract, Turkish Law applies; applications may be made before authorized Consumer Arbitration Committees and Consumer Courts in accordance with the applicable legislation.",
                 "article_7_text": "7) The Preliminary Information Form and the Distance Sales Agreement are preliminary protocols for products whose sale requires official transactions to be carried out before official authorities in accordance with relevant legislation.",
-                "article_8_text": "8) The Consumer accepts, declares and undertakes that benefitting from the campaign offered under the name \"bring old-take new\" on the Website depends on fulfilling the campaign conditions fully and on time."
+                "article_8_text": "8) The CONSUMER accepts, declares, and undertakes that benefiting from discounts, promotions, and campaigns offered on the Website is subject to full and timely compliance with the relevant campaign conditions."
             },
             "sales_agreement": {
                 "header": "DISTANCE SALES AGREEMENT",
@@ -519,7 +528,7 @@
                 "article_2_title": "ARTICLE 2- SUBJECT",
                 "article_2_text": "The subject of this contract is the determination of the rights and obligations of the parties in accordance with the provisions of the Law on the Protection of the Consumer No. 6502 regarding the sale and delivery of the product whose qualifications and sales price are specified below, which the CONSUMER has ordered electronically from the website.",
                 "article_3_title": "ARTICLE 3- INFORMATION ABOUT THE PRODUCT SUBJECT TO THE CONTRACT, PAYMENT AND DELIVERY",
-                "article_3_1_text": "3.1- Name, quantity, sales price including VAT, payment method and basic characteristics of the goods or services subject to the contact",
+                "article_3_1_text": "3.1- Name, quantity, sales price including VAT, payment method, and basic characteristics of the goods or services subject to the contract",
                 "article_3_2_text": "3.2- Payment Method : {{method}}. Information on how many installments the order total will be paid is available on the order summary page.",
                 "article_3_3_text": "3.3- Since forward sales are made only with credit cards belonging to Banks, the CONSUMER accepts that he/she will also confirm the relevant interest rates and default interest information from his/her bank.",
                 "article_3_4_title": "3.4 - Return Procedure:",

@@ -248,9 +248,10 @@ export interface CardPaymentInitResponse {
     threeD?: ThreeDPayload;
     message?: string;
     error?: string;
+    code?: string;
 }
 
-async function extractEdgeFunctionErrorMessage(error: unknown): Promise<{ message?: string; status?: number }> {
+async function extractEdgeFunctionErrorMessage(error: unknown): Promise<{ message?: string; status?: number; code?: string }> {
     const err = error as { context?: Response; response?: Response } | null;
     const response = err?.context instanceof Response
         ? err.context
@@ -268,8 +269,16 @@ async function extractEdgeFunctionErrorMessage(error: unknown): Promise<{ messag
             if (body && typeof body === "object") {
                 const maybeMessage = (body as { message?: unknown; error?: unknown }).message ??
                     (body as { error?: unknown }).error;
-                if (typeof maybeMessage === "string" && maybeMessage.trim().length > 0) {
-                    return { status, message: maybeMessage.trim() };
+                const maybeCode = (body as { code?: unknown }).code;
+                const normalizedMessage = typeof maybeMessage === "string" && maybeMessage.trim().length > 0
+                    ? maybeMessage.trim()
+                    : undefined;
+                const normalizedCode = typeof maybeCode === "string" && maybeCode.trim().length > 0
+                    ? maybeCode.trim()
+                    : undefined;
+
+                if (normalizedMessage || normalizedCode) {
+                    return { status, message: normalizedMessage, code: normalizedCode };
                 }
             }
         }
@@ -388,12 +397,13 @@ export async function initiateCardPayment(params: CardPaymentInitParams): Promis
         }
 
         if (invokeError) {
-            console.error("Card init function error:", extracted.status, extracted.message, invokeError);
+            console.error("Card init function error:", extracted.status, extracted.code, extracted.message, invokeError);
             const isAuthError = extracted.status === 401 || isInvalidJwtAuthError(extracted);
             return {
                 success: false,
                 message: isAuthError ? "Oturum doğrulanamadı. Lütfen tekrar giriş yapıp yeniden deneyin." : (extracted.message || "Kart odeme baslatilamadi"),
                 error: isAuthError ? "AUTH_SESSION_REQUIRED" : "FUNCTION_ERROR",
+                code: extracted.code,
             };
         }
     }
@@ -406,6 +416,7 @@ export async function initiateCardPayment(params: CardPaymentInitParams): Promis
         threeD?: { redirectUrl?: string };
         message?: string;
         error?: string;
+        code?: string;
     };
 
     return {
@@ -416,6 +427,7 @@ export async function initiateCardPayment(params: CardPaymentInitParams): Promis
         threeD: data?.threeD || (data?.redirectUrl ? { redirectUrl: data.redirectUrl } : undefined),
         message: data?.message,
         error: data?.error,
+        code: data?.code,
     };
 }
 

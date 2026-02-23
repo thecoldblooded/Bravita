@@ -56,12 +56,12 @@
             },
             "heart": {
                 "title": "Özel Bileşen Kompleksi",
-                "desc": "Sitikolin – Fosfatidilserin – Taurin – L-Arjinin ile hücresel yapı taşları ve metabolik süreçlerde yer alan besin bileşenleri içerir. Beslenme destekleyici kompleks formül."
+                "desc": "Sitikolin – Fosfatidilserin – Taurin – L-Arjinin ile Hücresel yapı taşları ve metabolik süreçlerde yer alan besin bileşenleri içerir. Beslenme destekleyici kompleks formül."
             }
         }
     },
     "product": {
-        "badge": "Ürün",
+        "badge": "",
         "title": "Lezzetli ve",
         "title_accent": "Besleyici",
         "description": "Çocukların severek tüketeceği, doğal tutti frutti ve vanilya aromalı sıvı formül",
@@ -145,6 +145,10 @@
         "reg_no": "Kayıt No: TR-06-K-094361",
         "quick_links": "Hızlı Linkler",
         "legal_support": "Yasal & Destek",
+        "legal_terms": "Kullanım Koşulları",
+        "legal_privacy": "Gizlilik Politikası",
+        "legal_cookies": "Çerez Politikası",
+        "legal_notice": "Yasal Uyarı",
         "contact": "İletişim",
         "privacy": "Gizlilik Politikası",
         "kvkk": "KVKK",
@@ -162,10 +166,11 @@
         "accept": "Kabul Et",
         "reject": "Şimdilik Hayır",
         "customize": "Özelleştir",
-        "preferences_title": "Çerez Tercihleri",
+        "preferences_title": "Kullanılan Çerez Türleri",
         "necessary": "Zorunlu Çerezler",
-        "analytics": "Analitik Çerezler",
-        "marketing": "Pazarlama Çerezleri",
+        "analytics": "Performans ve Analitik Çerezleri",
+        "functional": "İşlevsel Çerezler",
+        "marketing": "Reklam/Pazarlama Çerezleri",
         "always_on": "Her zaman açık",
         "save_preferences": "Tercihleri Kaydet"
     },
@@ -459,7 +464,11 @@
             "expiry_invalid": "Kart son kullanma tarihi geçersiz",
             "tokenization_failed": "Kart tokenizasyonu başarısız",
             "threed_init_failed": "3D ödeme başlatılamadı",
-            "too_many_attempts": "Çok fazla hatalı deneme. Lütfen {{minutes}} dakika sonra tekrar deneyin."
+            "too_many_attempts": "Çok fazla hatalı deneme. Lütfen {{minutes}} dakika sonra tekrar deneyin.",
+            "card_info_rejected": "Kart bilgileri banka tarafından doğrulanamadı. Kart numarası, son kullanma tarihi (AA/YY) ve CVV alanlarını kontrol edip tekrar deneyin.",
+            "buyer_blocked": "Güvenlik sistemi bu denemeyi geçici olarak engelledi. 2-3 dakika bekleyip tekrar deneyin veya farklı kart kullanın.",
+            "gateway_config_error": "Ödeme entegrasyonunda geçici bir doğrulama sorunu oluştu. Lütfen kısa süre sonra tekrar deneyin.",
+            "threed_auth_failed": "3D doğrulama başarısız oldu veya yarıda kaldı. Lütfen bankadaki doğrulama adımını tamamlayarak tekrar deneyin."
         },
         "agreements": {
             "pre_info_title": "Ön Bilgilendirme Formu",
@@ -484,14 +493,14 @@
                 "payment_desc": "Sipariş özeti sayfasında sipariş toplamının kaç taksitle ödeneceği bilgisi bulunmaktadır. Bankanız kampanyalar düzenleyerek sizin seçtiğiniz taksit adedinin daha üstünde bir taksit adedi uygulayabilir, taksit öteleme gibi hizmetler sunulabilir. Bu tür kampanyalar bankanızın inisiyatifindedir ve şirketimizin bilgisi dâhilinde olması durumunda sayfalarımızda kampanyalar hakkında bilgi verilmektedir. Kredi kartınızın hesap kesim tarihinden itibaren sipariş toplamı taksit adedine bölünerek kredi kartı özetinize bankanız tarafından yansıtılacaktır. Banka taksit tutarlarını küsurat farklarını dikkate alarak aylara eşit olarak dağıtmayabilir. Detaylı ödeme planınızın oluşturulması bankanız inisiyatifindedir.",
                 "table_header": "Ürün Adı / Adet / Satış Bedeli",
                 "total": "Toplam",
-                "article_2_text": "2) Paketleme, kargo ve teslim masrafları ALICI tarafından karşılanmaktadır. Kargo ücreti 0,00 -TL olup, kargo fiyatı sipariş toplam tutarına eklenmektedir. Ürün bedeline dahil değildir. Teslimat , anlaşmalı kargo şirketi aracılığı ile, ALICI'nın yukarıda belirtilen adresinde elden teslim edilecektir. Teslim anında ALICI'nın adresinde bulunmaması durumunda dahi Firmamız edimini tam ve eksiksiz olarak yerine getirmiş olarak kabul edilecektir. Bu nedenle, ALICI'nın ürünü geç teslim almasından ve/veya hiç teslim almamasından kaynaklanan zararlardan ve giderlerden SATICI sorumlu değildir. SATICI, sözleşme konusu ürünün sağlam, eksiksiz, siparişte belirtilen niteliklere uygun ve varsa garanti belgeleri ve kullanım kılavuzları ile teslim edilmesinden sorumludur.",
+                "article_2_text": "2) Paketleme, kargo ve teslim masrafları ALICI tarafından karşılanmaktadır. Kargo ücreti 0,00 TL olup sipariş toplam tutarına eklenir; ürün bedeline dahil değildir. Teslimat, anlaşmalı kargo şirketi aracılığıyla ALICI'nın yukarıda belirtilen adresine yapılır. ALICI'nın teslimat adresinde bulunmaması halinde, SATICI teslim yükümlülüğünü mevzuat kapsamında yerine getirmiş sayılır. Bu nedenle ürünün geç teslim alınmasından veya hiç teslim alınmamasından kaynaklanan zararlardan SATICI sorumlu değildir. SATICI, sözleşme konusu ürünü sağlam, eksiksiz, siparişte belirtilen niteliklere uygun ve varsa garanti belgesi/kullanım kılavuzu ile teslim etmekle yükümlüdür.",
                 "article_3_text": "3) Ürün sözleşme tarihinden itibaren en geç 30 gün içerisinde teslim edilecektir. Ürününün teslim edilmesi anına kadar tüm sorumluluk SATICI’ya aittir.",
-                "article_4_text": "4) Tüketici (ALICI), 14 (ondört) gün içinde herhangi bir gerekçe göstermeksizin ve cezai şart ödemeksizin işbu Mesafeli Satış Sözleşmesin’den cayma hakkına sahiptir. TÜKETİCİ, sözleşme konusu malı, cayma hakkını kullandığı tarihten itibaren 10 gün içinde satıcıya ya da satıcının belirlediği taşıyıcıya iade etmekle yükümlüdür. Cayma hakkı süresi, hizmet ifasına ilişkin sözleşmelerde sözleşmenin kurulduğu gün; mal teslimine ilişkin sözleşmelerde ise tüketicinin veya tüketici tarafından belirlenen üçüncü kişinin malı teslim aldığı gün başlar. Ancak tüketici, sözleşmenin kurulmasından malın teslimine kadar olan süre içinde de cayma hakkını kullanabilir.",
+                "article_4_text": "4) Tüketici (ALICI), 14 (ondört) gün içinde herhangi bir gerekçe göstermeksizin ve cezai şart ödemeksizin işbu Mesafeli Satış Sözleşmesi'nden cayma hakkına sahiptir. TÜKETİCİ, sözleşme konusu malı, cayma hakkını kullandığı tarihten itibaren 10 gün içinde satıcıya ya da satıcının belirlediği taşıyıcıya iade etmekle yükümlüdür. Cayma hakkı süresi, hizmet ifasına ilişkin sözleşmelerde sözleşmenin kurulduğu gün; mal teslimine ilişkin sözleşmelerde ise tüketicinin veya tüketici tarafından belirlenen üçüncü kişinin malı teslim aldığı gün başlar. Ancak tüketici, sözleşmenin kurulmasından malın teslimine kadar olan süre içinde de cayma hakkını kullanabilir.",
                 "article_4_calc": "Cayma hakkı süresinin belirlenmesinde;",
                 "article_4_list_a": "a) Tek sipariş konusu olup ayrı ayrı teslim edilen mallarda, tüketicinin veya tüketici tarafından belirlenen üçüncü kişinin son malı teslim aldığı gün,",
                 "article_4_list_b": "b) Birden fazla parçadan oluşan mallarda, tüketicinin veya tüketici tarafından belirlenen üçüncü kişinin son parçayı teslim aldığı gün,",
                 "article_4_list_c": "c) Belirli bir süre boyunca malın düzenli tesliminin yapıldığı sözleşmelerde, tüketicinin veya tüketici tarafından belirlenen üçüncü kişinin ilk malı teslim aldığı gün esas alınır.",
-                "article_4_link": "Cayma bildiriminizi cayma hakkı süresi dolmadan www.hepsiburada.com ‘da yer alan kişisel üyelik sayfanızdaki kolay iade seçeneği üzerinden gerçekleştirebilirsiniz.",
+                "article_4_link": "Cayma bildiriminizi, cayma hakkı süresi dolmadan www.bravita.com.tr üzerinden hesabınızdaki sipariş detay sayfasından veya support@bravita.com.tr adresine e-posta göndererek iletebilirsiniz.",
                 "exceptions_title": "Tüketici aşağıdaki sözleşmelerde cayma hakkını kullanamaz:",
                 "exceptions_list": [
                     "a) Fiyatı finansal piyasalardaki dalgalanmalara bağlı olarak değişen ve SATICI veya sağlayıcının kontrolünde olmayan mal veya hizmetlere ilişkin sözleşmeler.",
@@ -506,9 +515,9 @@
                     "h) Cayma hakkı süresi sona ermeden önce, tüketicinin onayı ile ifasına başlanan hizmetlere ilişkin sözleşmeler."
                 ],
                 "article_5_text": "5) Tüketicinin herhangi bir dijital içerik satın alması halinde dijital içeriklerin işlevselliğini etkileyecek teknik koruma önlemleri ve SATICI’nın bildiği ya da makul olarak bilmesinin beklendiği, dijital içeriğin hangi donanım ya da yazılımla birlikte çalışabileceğine ilişkin bilgiler satın alınan ürünün satışa sunulduğu sayfadaki tanıtım içeriğinde yer almaktadır.",
-                "article_6_text": "6) Tüketicilerin şikayet ve itirazları: Siparişinize ve/veya siparişinize konu ürüne ve/veya şiparişinizle ilgili herhangi bir konuda şikayetinizin olması halinde şikayetlerinizi yukarıda belirtilen iletişim bilgileri vasıtasıyla SATICI’ya iletebilirsiniz. İşbu sözleşme ile ilgili çıkacak ihtilaflarda; Türk Mahkemeleri yetkili olup; uygulanacak hukuk Türk Hukuku’dur.",
+                "article_6_text": "6) Tüketicilerin şikayet ve itirazları: Siparişinize ve/veya siparişinize konu ürüne ilişkin herhangi bir şikayetiniz olması halinde, şikayetlerinizi yukarıda belirtilen iletişim bilgileri aracılığıyla SATICI'ya iletebilirsiniz. İşbu sözleşmeden doğabilecek uyuşmazlıklarda Türk Hukuku uygulanır; başvurular, mevzuata göre yetkili Tüketici Hakem Heyetleri ve Tüketici Mahkemeleri nezdinde yapılabilir.",
                 "article_7_text": "7) Satışı ilgili mevzuatlar gereği resmi merciler nezdinde gerçekleştirilecek resmi işlemler ile tamamlanması öngörülen ürünler için Ön Bilgilendirme Formu ve Mesafeli Satış Sözleşmesi bir ön protokol niteliğindedir.",
-                "article_8_text": "8) Tüketici, İnternet Sitesi üzerinden \"eskiyi getir-yeniyi götür\" adı altında sunulan kampanyadan yararlanmasının kampanya koşullarını tam ve zamanında yerine getirmesi şartına bağlı olduğunu kabul, beyan ve taahhüt eder."
+                "article_8_text": "8) TÜKETİCİ, İnternet Sitesi üzerinden sunulan indirim, promosyon ve kampanyalardan yararlanmanın, ilgili kampanya koşullarının eksiksiz ve süresinde yerine getirilmesine bağlı olduğunu kabul, beyan ve taahhüt eder."
             },
             "sales_agreement": {
                 "header": "MESAFELİ SATIŞ SÖZLEŞMESİ",

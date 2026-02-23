@@ -254,6 +254,7 @@ function IndividualSignupTab({
                   <Input
                     placeholder={t("auth.placeholders.email")}
                     type="email"
+                    autoComplete="email"
                     {...field}
                     disabled={isLoading}
                   />
@@ -272,6 +273,7 @@ function IndividualSignupTab({
                 <FormControl>
                   <Input
                     placeholder={t("auth.placeholders.full_name")}
+                    autoComplete="name"
                     {...field}
                     disabled={isLoading}
                   />
@@ -314,6 +316,7 @@ function IndividualSignupTab({
                   <Input
                     placeholder={t("auth.placeholders.password")}
                     type="password"
+                    autoComplete="new-password"
                     {...field}
                     disabled={isLoading}
                   />
@@ -334,6 +337,7 @@ function IndividualSignupTab({
                   <Input
                     placeholder={t("auth.placeholders.confirm_password")}
                     type="password"
+                    autoComplete="new-password"
                     {...field}
                     disabled={isLoading}
                   />
@@ -351,6 +355,7 @@ function IndividualSignupTab({
                 <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                   <FormControl>
                     <Checkbox
+                      name={field.name}
                       checked={field.value}
                       onCheckedChange={field.onChange}
                       disabled={isLoading}
@@ -360,9 +365,7 @@ function IndividualSignupTab({
                     <FormLabel className="font-normal cursor-pointer">
                       {t("auth.agree_terms")}{" "}
                       <a
-                        href="/terms"
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        href="#legal:terms"
                         className="text-orange-600 hover:underline"
                       >
                         {t("auth.terms_link")}
@@ -380,6 +383,7 @@ function IndividualSignupTab({
                 <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                   <FormControl>
                     <Checkbox
+                      name={field.name}
                       checked={field.value}
                       onCheckedChange={field.onChange}
                       disabled={isLoading}
@@ -389,9 +393,7 @@ function IndividualSignupTab({
                     <FormLabel className="font-normal cursor-pointer">
                       {t("auth.agree_privacy")}{" "}
                       <a
-                        href="/privacy"
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        href="#legal:privacy"
                         className="text-orange-600 hover:underline"
                       >
                         {t("auth.privacy_link")}
@@ -409,6 +411,7 @@ function IndividualSignupTab({
                 <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                   <FormControl>
                     <Checkbox
+                      name={field.name}
                       checked={field.value}
                       onCheckedChange={field.onChange}
                       disabled={isLoading}
@@ -418,9 +421,7 @@ function IndividualSignupTab({
                     <FormLabel className="font-normal cursor-pointer">
                       {t("auth.agree_kvkk")}{" "}
                       <a
-                        href="/kvkk"
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        href="#legal:kvkk"
                         className="text-orange-600 hover:underline"
                       >
                         {t("auth.kvkk_link")}
@@ -535,7 +536,12 @@ function CompanySignupTab({
               <FormItem>
                 <FormLabel>{t("auth.username")}</FormLabel>
                 <FormControl>
-                  <Input placeholder={t("auth.username")} {...field} disabled={isLoading} />
+                  <Input
+                    placeholder={t("auth.username")}
+                    autoComplete="username"
+                    {...field}
+                    disabled={isLoading}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -549,7 +555,12 @@ function CompanySignupTab({
               <FormItem>
                 <FormLabel>{t("auth.company_name")}</FormLabel>
                 <FormControl>
-                  <Input placeholder={t("auth.company_name")} {...field} disabled={isLoading} />
+                  <Input
+                    placeholder={t("auth.company_name")}
+                    autoComplete="organization"
+                    {...field}
+                    disabled={isLoading}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -566,6 +577,7 @@ function CompanySignupTab({
                   <Input
                     placeholder={t("auth.email_placeholder")}
                     type="email"
+                    autoComplete="email"
                     {...field}
                     disabled={isLoading}
                   />
@@ -585,6 +597,7 @@ function CompanySignupTab({
                   <Input
                     placeholder={t("auth.placeholders.password")}
                     type="password"
+                    autoComplete="new-password"
                     {...field}
                     disabled={isLoading}
                   />
@@ -605,6 +618,7 @@ function CompanySignupTab({
                   <Input
                     placeholder={t("auth.placeholders.confirm_password")}
                     type="password"
+                    autoComplete="new-password"
                     {...field}
                     disabled={isLoading}
                   />
@@ -622,6 +636,7 @@ function CompanySignupTab({
                 <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                   <FormControl>
                     <Checkbox
+                      name={field.name}
                       checked={field.value}
                       onCheckedChange={field.onChange}
                       disabled={isLoading}
@@ -631,9 +646,7 @@ function CompanySignupTab({
                     <FormLabel className="font-normal cursor-pointer">
                       {t("auth.agree_terms")}{" "}
                       <a
-                        href="/terms"
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        href="#legal:terms"
                         className="text-orange-600 hover:underline"
                       >
                         {t("auth.terms_link")}
@@ -651,6 +664,7 @@ function CompanySignupTab({
                 <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                   <FormControl>
                     <Checkbox
+                      name={field.name}
                       checked={field.value}
                       onCheckedChange={field.onChange}
                       disabled={isLoading}
@@ -660,9 +674,7 @@ function CompanySignupTab({
                     <FormLabel className="font-normal cursor-pointer">
                       {t("auth.agree_privacy")}{" "}
                       <a
-                        href="/privacy"
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        href="#legal:privacy"
                         className="text-orange-600 hover:underline"
                       >
                         {t("auth.privacy_link")}
@@ -680,6 +692,7 @@ function CompanySignupTab({
                 <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                   <FormControl>
                     <Checkbox
+                      name={field.name}
                       checked={field.value}
                       onCheckedChange={field.onChange}
                       disabled={isLoading}
@@ -689,9 +702,7 @@ function CompanySignupTab({
                     <FormLabel className="font-normal cursor-pointer">
                       {t("auth.agree_kvkk")}{" "}
                       <a
-                        href="/kvkk"
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        href="#legal:kvkk"
                         className="text-orange-600 hover:underline"
                       >
                         {t("auth.kvkk_link")}

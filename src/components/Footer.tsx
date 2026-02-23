@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   Mail,
   Phone,
@@ -10,19 +10,35 @@ import {
   Users,
 } from "lucide-react";
 import { FooterBackgroundGradient, TextHoverEffect } from "@/components/ui/hover-footer";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useTranslation } from "react-i18next";
 import { FreeVisitorCounter } from "@rundevelrun/free-visitor-counter";
+import { getLegalDocuments, getLegalLocale, type LegalDocumentKey } from "@/content/legalDocuments";
 
 // Lazy load heavy logos
 const bravitaLogo = new URL("@/assets/bravita-logo.webp", import.meta.url).href;
 const valcoLogo = new URL("@/assets/valco-logo.webp", import.meta.url).href;
 
 const VISITOR_SESSION_KEY = "bravita_visitor_counted";
+const LEGAL_KEYS = ["terms", "privacy", "cookies", "legalNotice", "kvkk"] as const;
+
+const isLegalDocumentKey = (value: string): value is LegalDocumentKey =>
+  (LEGAL_KEYS as readonly string[]).includes(value);
 
 function Footer() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [isInView, setIsInView] = useState(false);
+  const [activeLegalKey, setActiveLegalKey] = useState<LegalDocumentKey | null>(null);
   const footerRef = useRef<HTMLElement>(null);
+  const legalLocale = getLegalLocale(i18n.language);
+  const legalDocuments = useMemo(() => getLegalDocuments(legalLocale), [legalLocale]);
+  const activeLegalDocument = activeLegalKey ? legalDocuments[activeLegalKey] : null;
 
   useEffect(() => {
     const footer = footerRef.current;
@@ -42,6 +58,28 @@ function Footer() {
     return () => observer.disconnect();
   }, []);
 
+
+  useEffect(() => {
+    const openLegalFromHash = () => {
+      const hash = window.location.hash;
+      if (!hash.startsWith("#legal:")) {
+        return;
+      }
+
+      const hashKey = hash.replace("#legal:", "");
+      if (isLegalDocumentKey(hashKey)) {
+        setActiveLegalKey(hashKey);
+      }
+    };
+
+    openLegalFromHash();
+    window.addEventListener("hashchange", openLegalFromHash);
+
+    return () => {
+      window.removeEventListener("hashchange", openLegalFromHash);
+    };
+  }, []);
+
   // Footer link data
   const footerLinks = [
     {
@@ -56,9 +94,11 @@ function Footer() {
     {
       title: t('footer.legal_support'),
       links: [
-        { label: t('footer.contact'), href: "#contact" },
-        { label: t('footer.privacy'), href: "#" },
-        { label: t('footer.kvkk'), href: "#" },
+        { label: t('footer.legal_terms'), href: "#legal:terms" },
+        { label: t('footer.legal_privacy'), href: "#legal:privacy" },
+        { label: t('footer.legal_cookies'), href: "#legal:cookies" },
+        { label: t('footer.legal_notice'), href: "#legal:legalNotice" },
+        { label: t('footer.kvkk'), href: "#legal:kvkk" },
       ],
     },
   ];
@@ -67,8 +107,8 @@ function Footer() {
   const contactInfo = [
     {
       icon: <Mail size={18} className="text-bravita-orange" />,
-      text: "info@valcoilac.com.tr",
-      href: "mailto:info@valcoilac.com.tr",
+      text: "support@bravita.com.tr",
+      href: "mailto:support@bravita.com.tr",
     },
     {
       icon: <Phone size={18} className="text-bravita-orange" />,
@@ -123,8 +163,31 @@ function Footer() {
               </h4>
               <ul className="space-y-3">
                 {section.links.map((link) => {
-                  const isHashLink = link.href.startsWith("#");
+                  const legalKey = link.href.startsWith("#legal:")
+                    ? (link.href.replace("#legal:", "") as LegalDocumentKey)
+                    : null;
+                  const isLegalModalLink = legalKey !== null;
+                  const isHashLink = link.href.startsWith("#") && !isLegalModalLink;
                   const isPlaceholderLink = link.href === "#";
+
+                  if (isLegalModalLink) {
+                    return (
+                      <li key={link.label} className="relative">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveLegalKey(legalKey);
+                            if (window.location.hash !== `#legal:${legalKey}`) {
+                              window.history.replaceState(null, "", `#legal:${legalKey}`);
+                            }
+                          }}
+                          className="text-neutral-400 hover:text-bravita-orange transition-colors"
+                        >
+                          {link.label}
+                        </button>
+                      </li>
+                    );
+                  }
 
                   if (isHashLink) {
                     return (
@@ -256,6 +319,64 @@ function Footer() {
       <div className="md:flex hidden h-120 -mt-20 -mb-36 justify-center items-center">
         <TextHoverEffect text="BRAVITA" className="z-50 translate-y-20 md:translate-y-0" />
       </div>
+
+      <Dialog
+        open={activeLegalKey !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setActiveLegalKey(null);
+            if (window.location.hash.startsWith("#legal:")) {
+              window.history.replaceState(
+                null,
+                "",
+                `${window.location.pathname}${window.location.search}`
+              );
+            }
+          }
+        }}
+      >
+        <DialogContent
+          data-lenis-prevent
+          data-lenis-prevent-wheel
+          data-lenis-prevent-touch
+          className="max-w-3xl max-h-[85vh] overflow-y-auto border-none bg-[#1f1915] text-neutral-100 shadow-2xl [&>button]:text-neutral-300 [&>button]:hover:text-white"
+        >
+          {activeLegalDocument ? (
+            <>
+              <DialogHeader className="pr-8">
+                <DialogTitle className="text-2xl font-black text-white">{activeLegalDocument.title}</DialogTitle>
+                <DialogDescription className="text-neutral-300 leading-relaxed">
+                  {activeLegalDocument.description}
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-6 pr-1">
+                {activeLegalDocument.sections.map((section) => (
+                  <section key={section.heading} className="space-y-3 border-t border-white/10 pt-4 first:border-t-0 first:pt-0">
+                    <h5 className="text-base md:text-lg font-bold text-white">{section.heading}</h5>
+
+                    <div className="space-y-2">
+                      {section.paragraphs.map((paragraph, paragraphIndex) => (
+                        <p key={`${section.heading}-paragraph-${paragraphIndex}`} className="text-sm md:text-[15px] leading-relaxed text-neutral-200">
+                          {paragraph}
+                        </p>
+                      ))}
+                    </div>
+
+                    {section.items && section.items.length > 0 ? (
+                      <ul className="list-disc pl-5 space-y-2 text-sm md:text-[15px] text-neutral-200 leading-relaxed">
+                        {section.items.map((item, itemIndex) => (
+                          <li key={`${section.heading}-item-${itemIndex}`}>{item}</li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </section>
+                ))}
+              </div>
+            </>
+          ) : null}
+        </DialogContent>
+      </Dialog>
 
       <FooterBackgroundGradient />
     </footer>

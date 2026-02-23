@@ -163,6 +163,7 @@ function IndividualLoginTab({
                   <Input
                     placeholder={t("auth.email_placeholder")}
                     type="email"
+                    autoComplete="email"
                     {...field}
                     disabled={isLoading}
                   />
@@ -192,6 +193,7 @@ function IndividualLoginTab({
                   <Input
                     placeholder="••••••••"
                     type="password"
+                    autoComplete="current-password"
                     {...field}
                     disabled={isLoading}
                   />
@@ -260,7 +262,12 @@ function CompanyLoginTab({
               <FormItem>
                 <FormLabel>{t("auth.username")}</FormLabel>
                 <FormControl>
-                  <Input placeholder={t("auth.username")} {...field} disabled={isLoading} />
+                  <Input
+                    placeholder={t("auth.username")}
+                    autoComplete="username"
+                    {...field}
+                    disabled={isLoading}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -277,6 +284,7 @@ function CompanyLoginTab({
                   <Input
                     placeholder="••••••••"
                     type="password"
+                    autoComplete="current-password"
                     {...field}
                     disabled={isLoading}
                   />

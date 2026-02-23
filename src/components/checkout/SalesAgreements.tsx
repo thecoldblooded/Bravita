@@ -71,6 +71,13 @@ export function SalesAgreements({ user, address, items, totals, paymentMethod }:
     const buyerEmail = user?.email || "-";
 
     const paymentMethodText = paymentMethod === "credit_card" ? t('checkout.payment.credit_card') : t('checkout.payment.bank_transfer');
+    const companyInfo = {
+        title: "Valco İlaç Medikal Kozmetik Sanayi ve Ticaret Limited Şirketi",
+        address: "Prof. Dr. Ahmet Taner Kışlalı Mah. Alacaatlı Cad. No:30/5A Çankaya - Ankara",
+        phone: "444 51 73",
+        customerService: "444 51 73",
+        email: "support@bravita.com.tr",
+    };
 
     return (
         <div className="mt-8">
@@ -78,22 +85,20 @@ export function SalesAgreements({ user, address, items, totals, paymentMethod }:
                 <div className="space-y-2">
                     <h4 className="font-bold text-gray-900">{t('checkout.agreements.seller')}:</h4>
                     <p>
-                        {t('checkout.agreements.title_label')}: D-Market Elektronik Hizmetler ve Ticaret A.Ş.<br />
-                        {t('checkout.agreements.address_label')}: Kuştepe Mah. Mecidiyeköy Yolu Cad. Trump Towers No:12 Kule:2 Kat:2 Şişli/İSTANBUL<br />
-                        {t('checkout.agreements.phone_label')}: 0212 705 68 00<br />
-                        {t('checkout.agreements.fax_label')}: 0216 592 65 28<br />
-                        {t('checkout.agreements.customer_service_label')}: 0850 252 40 00<br />
-                        {t('checkout.agreements.mersis_label')}: 0265017991000011
+                        {t('checkout.agreements.title_label')}: {companyInfo.title}<br />
+                        {t('checkout.agreements.address_label')}: {companyInfo.address}<br />
+                        {t('checkout.agreements.phone_label')}: {companyInfo.phone}<br />
+                        {t('checkout.agreements.customer_service_label')}: {companyInfo.customerService}<br />
+                        Email: {companyInfo.email}
                     </p>
 
                     <h4 className="font-bold text-gray-900 mt-4">{t('checkout.agreements.intermediary')}</h4>
                     <p>
-                        {t('checkout.agreements.title_label')}: D-MARKET ELEKTRONİK HİZMETLER VE TİCARET A.Ş<br />
-                        {t('checkout.agreements.address_label')}: Kuştepe Mah. Mecidiyeköy Yolu Cad. No:12 Trump Towers Kule 2 Kat 2 Şişli/İstanbul<br />
-                        {t('checkout.agreements.vkn_label')}: 2650179910 – Boğaziçi Kurumlar V.D.<br />
-                        {t('checkout.agreements.phone_label')}: 0850 252 40 00<br />
-                        {t('checkout.agreements.customer_service_label')}: 0850 252 40 00<br />
-                        {t('checkout.agreements.mersis_label')}: 0265017991000011
+                        {t('checkout.agreements.title_label')}: {companyInfo.title} (www.bravita.com.tr)<br />
+                        {t('checkout.agreements.address_label')}: {companyInfo.address}<br />
+                        {t('checkout.agreements.phone_label')}: {companyInfo.phone}<br />
+                        {t('checkout.agreements.customer_service_label')}: {companyInfo.customerService}<br />
+                        Email: {companyInfo.email}
                     </p>
 
                     <h3 className="font-bold text-center my-4 text-gray-900">{t('checkout.agreements.pre_info.header')}</h3>
@@ -141,7 +146,7 @@ export function SalesAgreements({ user, address, items, totals, paymentMethod }:
 
                     <div className="mt-4 pt-4 border-t border-gray-200">
                         <h4 className="font-bold text-gray-900">{t('checkout.agreements.seller')}:</h4>
-                        <p>D-Market Elektronik Hizmetler ve Ticaret A.Ş.</p>
+                        <p>{companyInfo.title}</p>
                         <h4 className="font-bold mt-2 text-gray-900">{t('checkout.agreements.buyer')}:</h4>
                         <p>{buyerName} - {fullAddress}</p>
                         <p>{t('checkout.agreements.date')} : {currentDate}</p>
@@ -155,10 +160,10 @@ export function SalesAgreements({ user, address, items, totals, paymentMethod }:
                     <p><strong>{t('checkout.agreements.sales_agreement.article_1_title')}</strong></p>
                     <div className="pl-4">
                         <p><strong>{t('checkout.agreements.sales_agreement.article_1_1_title')}:</strong></p>
-                        <p>{t('checkout.agreements.title_label')}: D-Market Elektronik Hizmetler ve Ticaret A.Ş.</p>
-                        <p>{t('checkout.agreements.address_label')}: Kuştepe Mah. Mecidiyeköy Yolu Cad. Trump Towers No:12 Kule:2 Kat:2 Şişli/İSTANBUL</p>
-                        <p>{t('checkout.agreements.phone_label')}: 0212 705 68 00</p>
-                        <p>{t('checkout.agreements.mersis_label')}: 0265017991000011</p>
+                        <p>{t('checkout.agreements.title_label')}: {companyInfo.title}</p>
+                        <p>{t('checkout.agreements.address_label')}: {companyInfo.address}</p>
+                        <p>{t('checkout.agreements.phone_label')}: {companyInfo.phone}</p>
+                        <p>Email: {companyInfo.email}</p>
                     </div>
                     <div className="pl-4 mt-2">
                         <p><strong>{t('checkout.agreements.buyer_consumer')}:</strong></p>
@@ -169,8 +174,9 @@ export function SalesAgreements({ user, address, items, totals, paymentMethod }:
                     </div>
                     <div className="pl-4 mt-2">
                         <p><strong>{t('checkout.agreements.sales_agreement.article_1_3_title')}:</strong></p>
-                        <p>{t('checkout.agreements.title_label')}: D-MARKET ELEKTRONİK HİZMETLER VE TİCARET A.Ş</p>
-                        <p>{t('checkout.agreements.address_label')}: Kuştepe Mah. Mecidiyeköy Yolu Cad. No:12 Trump Towers Kule 2 Kat 2 Şişli/İstanbul</p>
+                        <p>{t('checkout.agreements.title_label')}: {companyInfo.title} (www.bravita.com.tr)</p>
+                        <p>{t('checkout.agreements.address_label')}: {companyInfo.address}</p>
+                        <p>{t('checkout.agreements.phone_label')}: {companyInfo.phone}</p>
                     </div>
 
                     <p className="mt-4"><strong>{t('checkout.agreements.sales_agreement.article_2_title')}</strong></p>
@@ -213,7 +219,7 @@ export function SalesAgreements({ user, address, items, totals, paymentMethod }:
 
                     <div className="mt-4 pt-4 border-t border-gray-200">
                         <h4 className="font-bold text-gray-900">{t('checkout.agreements.seller')}:</h4>
-                        <p>D-Market Elektronik Hizmetler ve Ticaret A.Ş.</p>
+                        <p>{companyInfo.title}</p>
                         <h4 className="font-bold mt-2 text-gray-900">{t('checkout.agreements.buyer_consumer')}:</h4>
                         <p>{buyerName}</p>
                         <p>{t('checkout.agreements.date')} : {currentDate}</p>

@@ -9,6 +9,7 @@ const CookieConsent = () => {
     const [isVisible, setIsVisible] = useState(false);
     const [showCustomize, setShowCustomize] = useState(false);
     const [analyticsEnabled, setAnalyticsEnabled] = useState(true);
+    const [functionalEnabled, setFunctionalEnabled] = useState(true);
     const [marketingEnabled, setMarketingEnabled] = useState(false);
 
     useEffect(() => {
@@ -28,6 +29,7 @@ const CookieConsent = () => {
             JSON.stringify({
                 necessary: true,
                 analytics: true,
+                functional: true,
                 marketing: true,
             })
         );
@@ -55,6 +57,7 @@ const CookieConsent = () => {
             JSON.stringify({
                 necessary: true,
                 analytics: analyticsEnabled,
+                functional: functionalEnabled,
                 marketing: marketingEnabled,
             })
         );
@@ -90,8 +93,8 @@ const CookieConsent = () => {
                                     <p className="text-sm md:text-[15px] leading-relaxed text-zinc-300">
                                         {t('cookie_consent.description')}
                                     </p>
-                                    <a href="/privacy" className="inline-block font-semibold text-orange-200 underline underline-offset-4 hover:text-orange-100 transition-colors">
-                                        {t('footer.privacy')}
+                                    <a href="/#legal:cookies" className="inline-block font-semibold text-orange-200 underline underline-offset-4 hover:text-orange-100 transition-colors">
+                                        {t('footer.legal_cookies')}
                                     </a>
                                 </div>
 
@@ -145,6 +148,16 @@ const CookieConsent = () => {
                                                     type="checkbox"
                                                     checked={analyticsEnabled}
                                                     onChange={(event) => setAnalyticsEnabled(event.target.checked)}
+                                                    className="h-4 w-4 accent-orange-500"
+                                                />
+                                            </label>
+
+                                            <label className="flex items-center justify-between text-sm text-zinc-100">
+                                                <span>{t("cookie_consent.functional")}</span>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={functionalEnabled}
+                                                    onChange={(event) => setFunctionalEnabled(event.target.checked)}
                                                     className="h-4 w-4 accent-orange-500"
                                                 />
                                             </label>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { m, AnimatePresence } from "framer-motion";
 import { ArrowLeft, ArrowRight, Check, MapPin, CreditCard, Package } from "lucide-react";
@@ -29,6 +29,11 @@ const getSteps = (t: (key: string, options?: Record<string, unknown>) => string)
 
 const PAYMENT_USE_TOKENIZATION = String(import.meta.env.VITE_PAYMENT_USE_TOKENIZATION ?? "false").toLowerCase() === "true";
 const PAYMENT_TOKENIZATION_REQUIRED = String(import.meta.env.VITE_PAYMENT_TOKENIZATION_REQUIRED ?? "false").toLowerCase() === "true";
+const PRE_3D_FAILURE_CODES = new Set([
+    "PaymentDealer.CheckCardInfo.InvalidCardInfo",
+    "PaymentDealer.Fraud.BuyerBlocked",
+    "PaymentDealer.CheckKey.Invalid",
+]);
 
 interface CheckoutData {
     addressId: string | null;
@@ -46,6 +51,7 @@ export default function Checkout() {
     const { t } = useTranslation();
     const steps = getSteps(t);
     const navigate = useNavigate();
+    const location = useLocation();
     const { user, isAuthenticated } = useAuth();
     const { cartItems, cartTotal, clearCart, promoCode: contextPromoCode } = useCart();
     const [currentStep, setCurrentStep] = useState(1);
@@ -58,6 +64,7 @@ export default function Checkout() {
     const [installmentRates, setInstallmentRates] = useState<InstallmentRate[]>([]);
 
     const [isAgreed, setIsAgreed] = useState(false);
+    const [cardAttemptCount, setCardAttemptCount] = useState(0);
 
     // Redirect if not authenticated or cart is empty (but not if order was just placed)
     const [orderPlaced, setOrderPlaced] = useState(false);
@@ -86,6 +93,20 @@ export default function Checkout() {
         loadInstallmentRates();
     }, []);
 
+    useEffect(() => {
+        setCardAttemptCount(0);
+    }, [checkoutData.cardDetails?.number, checkoutData.cardDetails?.expiry, checkoutData.cardDetails?.cvv, checkoutData.cardDetails?.name, checkoutData.installmentNumber]);
+
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const failedCode = (params.get("code") || "").trim().toLowerCase();
+        if (!failedCode) return;
+
+        if (["failed", "fail", "3d_auth_failed", "callback_declined", "invalid_3d_payload"].includes(failedCode)) {
+            toast.error(t("checkout.validation.threed_auth_failed", "3D doğrulama başarısız oldu veya yarıda kaldı. Lütfen bankadaki doğrulama adımını tamamlayarak tekrar deneyin."));
+        }
+    }, [location.search, t]);
+
     const canProceed = () => {
         switch (currentStep) {
             case 1:
@@ -95,7 +116,7 @@ export default function Checkout() {
                     const card = checkoutData.cardDetails;
                     if (!card) return false;
 
-                    const cleanNumber = card.number.replace(/\s/g, "");
+                    const cleanNumber = card.number.replace(/\D/g, "");
                     const isNumberValid = cleanNumber.length === 16;
                     const isExpiryValid = /^(\d{2})\/(\d{2}|\d{4})$/.test(card.expiry.trim()); // MM/YY or MM/YYYY
                     const isCvvValid = card.cvv.length === 3;
@@ -156,7 +177,7 @@ export default function Checkout() {
                     const tokenizeResult = await tokenizeCardForPayment({
                         customerCode: user.id,
                         cardHolderFullName: checkoutData.cardDetails.name.trim(),
-                        cardNumber: checkoutData.cardDetails.number.replace(/\s/g, ""),
+                        cardNumber: checkoutData.cardDetails.number.replace(/\D/g, ""),
                         expMonth: expiryMatch[1],
                         expYear,
                         cvcNumber: checkoutData.cardDetails.cvv,
@@ -213,7 +234,34 @@ export default function Checkout() {
                     return;
                 }
 
-                toast.error(cardInitResult.message || t("checkout.validation.threed_init_failed", "3D ödeme başlatılamadı"));
+                const resolvedFailureCode = (cardInitResult.code || cardInitResult.error || "").trim();
+                const defaultInitMessage = t("checkout.validation.threed_init_failed", "3D ödeme başlatılamadı");
+                const fallbackInitMessage = cardInitResult.message || defaultInitMessage;
+
+                if (PRE_3D_FAILURE_CODES.has(resolvedFailureCode)) {
+                    const nextAttempts = cardAttemptCount + 1;
+                    setCardAttemptCount(nextAttempts);
+
+                    if (resolvedFailureCode === "PaymentDealer.CheckCardInfo.InvalidCardInfo") {
+                        toast.error(t("checkout.validation.card_info_rejected", "Kart bilgileri banka tarafından doğrulanamadı. Kart numarası, son kullanma tarihi (AA/YY) ve CVV alanlarını kontrol edip tekrar deneyin."));
+                    } else if (resolvedFailureCode === "PaymentDealer.Fraud.BuyerBlocked") {
+                        toast.error(t("checkout.validation.buyer_blocked", "Güvenlik sistemi bu denemeyi geçici olarak engelledi. 2-3 dakika bekleyip tekrar deneyin veya farklı kart kullanın."));
+                    } else if (resolvedFailureCode === "PaymentDealer.CheckKey.Invalid") {
+                        toast.error(t("checkout.validation.gateway_config_error", "Ödeme entegrasyonunda geçici bir doğrulama sorunu oluştu. Lütfen kısa süre sonra tekrar deneyin."));
+                    } else {
+                        toast.error(fallbackInitMessage);
+                    }
+
+                    if (nextAttempts >= 2) {
+                        const qs = new URLSearchParams();
+                        qs.set("code", resolvedFailureCode || "failed");
+                        if (cardInitResult.message) qs.set("msg", cardInitResult.message);
+                        navigate(`/payment-failed?${qs.toString()}`);
+                    }
+                    return;
+                }
+
+                toast.error(fallbackInitMessage);
                 return;
             }
 

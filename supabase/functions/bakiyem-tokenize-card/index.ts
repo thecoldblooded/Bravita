@@ -15,7 +15,7 @@ const DEFAULT_ALLOWED_ORIGINS = [
   "http://localhost:5173",
   "http://localhost:8080"
 ];
-const ALLOWED_ORIGINS = (Deno.env.get("PAYMENT_ALLOWED_ORIGINS") ?? "").split(",").map((value)=>value.trim()).filter((value)=>value.length > 0);
+const ALLOWED_ORIGINS = (Deno.env.get("PAYMENT_ALLOWED_ORIGINS") ?? "").split(",").map((value) => value.trim()).filter((value) => value.length > 0);
 const ACTIVE_ALLOWED_ORIGINS = ALLOWED_ORIGINS.length > 0 ? ALLOWED_ORIGINS : DEFAULT_ALLOWED_ORIGINS;
 function isAllowedOrigin(origin) {
   if (!origin) return false;
@@ -23,7 +23,7 @@ function isAllowedOrigin(origin) {
   try {
     const parsed = new URL(origin);
     return (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") && (parsed.protocol === "http:" || parsed.protocol === "https:");
-  } catch  {
+  } catch {
     return false;
   }
 }
@@ -48,9 +48,9 @@ async function sha256Hex(input) {
   const bytes = new TextEncoder().encode(input);
   const hashBuffer = await crypto.subtle.digest("SHA-256", bytes);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map((byte)=>byte.toString(16).padStart(2, "0")).join("");
+  return hashArray.map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
-serve(async (req)=>{
+serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", {
     headers: corsHeaders(req)
   });
@@ -96,7 +96,7 @@ serve(async (req)=>{
     const customerRequest = {
       CustomerCode: customerCode,
       CardHolderFullName: body.cardHolderFullName,
-      CardNumber: body.cardNumber.replace(/\s/g, ""),
+      CardNumber: body.cardNumber.replace(/\D/g, ""),
       ExpMonth: body.expMonth,
       ExpYear: body.expYear,
       CvcNumber: body.cvcNumber
@@ -114,7 +114,7 @@ serve(async (req)=>{
       },
       body: JSON.stringify(addCardRequest)
     });
-    const addCardJson = await addCardRaw.json().catch(()=>({}));
+    const addCardJson = await addCardRaw.json().catch(() => ({}));
     const addCardToken = addCardJson?.Data?.CardToken ?? null;
     if (addCardRaw.ok && addCardJson?.ResultCode === "Success" && addCardToken) {
       return response(req, 200, {
@@ -136,7 +136,7 @@ serve(async (req)=>{
       },
       body: JSON.stringify(addCustomerRequest)
     });
-    const addCustomerJson = await addCustomerRaw.json().catch(()=>({}));
+    const addCustomerJson = await addCustomerRaw.json().catch(() => ({}));
     const addCustomerToken = addCustomerJson?.Data?.CardToken ?? null;
     if (addCustomerRaw.ok && addCustomerJson?.ResultCode === "Success" && addCustomerToken) {
       return response(req, 200, {

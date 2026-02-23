@@ -393,7 +393,7 @@ serve(async (req) => {
     const isTokenized = cardToken.length > 0;
     const paymentDealerRequest = {
       CardHolderFullName: isTokenized ? "" : cardHolderName,
-      CardNumber: isTokenized ? "" : body.cardDetails?.number?.replace(/\s/g, "") ?? "",
+      CardNumber: isTokenized ? "" : body.cardDetails?.number?.replace(/\D/g, "") ?? "",
       ExpMonth: isTokenized ? "" : parsedExpiry?.month.padStart(2, "0") ?? "",
       ExpYear: isTokenized ? "" : parsedExpiry?.year ?? "",
       CvcNumber: isTokenized ? "" : (body.cardDetails?.cvv ?? "").replace(/\D/g, ""),
@@ -500,10 +500,17 @@ serve(async (req) => {
           errorMessage = "Güvenlik nedeniyle ödeme sistemi tarafından engellendi. Farklı bir kart, telefon numarası veya e-posta deneyin (Test ortamında sık denemelerde olur).";
         } else if (gatewayResultCode === "PaymentDealer.CheckKey.Invalid") {
           errorMessage = "Banka/Ödeme kuruluşu entegrasyon hatası (Geçersiz CheckKey/Şifre).";
+        } else if (gatewayResultCode === "PaymentDealer.CheckCardInfo.InvalidCardInfo") {
+          errorMessage = "Kart bilgileri doğrulanamadı. Kart numarası / son kullanma tarihi / CVV değerlerini kontrol edin.";
         } else {
           errorMessage = "3D gateway failure";
         }
       }
+
+      await supabase.from("payment_intents").update({
+        status: "failed",
+        gateway_status: `init_failed:${gatewayResultCode || "UNKNOWN"}`
+      }).eq("id", intentId).in("status", ["pending", "awaiting_3d"]);
 
       return jsonResponse(req, 400, {
         success: false,

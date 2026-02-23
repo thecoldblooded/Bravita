@@ -30,12 +30,8 @@ const BenefitDescription = ({ text }: { text: string }) => {
 
   return (
     <div className="flex flex-col h-full w-full">
-      <p className="text-gray-600 leading-relaxed text-sm md:text-[15px] mb-6 grow">
-        {mainText.trim()}
-      </p>
-
       {ingredients.length > 0 && (
-        <div className="mt-auto">
+        <div className="mb-4">
           <div className="flex flex-wrap gap-2">
             {ingredients.map((item) => (
               <span
@@ -48,6 +44,10 @@ const BenefitDescription = ({ text }: { text: string }) => {
           </div>
         </div>
       )}
+
+      <p className="text-gray-600 leading-relaxed text-sm md:text-[15px]">
+        {mainText.trim()}
+      </p>
     </div>
   );
 };
@@ -124,7 +124,6 @@ const Benefits = () => {
                   <benefit.icon className={`w-7 h-7 text-${benefit.color}`} />
                 </div>
 
-                <h3 className="text-xl font-bold mb-3 text-gray-900">{benefit.title}</h3>
                 <div className="text-gray-600 leading-relaxed text-base flex-1 flex flex-col w-full">
                   <BenefitDescription text={benefit.description} />
                 </div>

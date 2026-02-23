@@ -4,7 +4,10 @@ const COOKIE_CONSENT_KEY = "cookie_consent";
 const COOKIE_PREFERENCES_KEY = "cookie_preferences";
 
 type CookiePreferences = {
+  necessary?: boolean;
   analytics?: boolean;
+  functional?: boolean;
+  marketing?: boolean;
 };
 
 const hasAnalyticsConsent = (): boolean => {
@@ -64,12 +67,18 @@ const appendContentSquareScript = (): void => {
 };
 
 const scheduleAfterIdle = (task: () => void): void => {
-  if ("requestIdleCallback" in window) {
-    window.requestIdleCallback(task, { timeout: 2000 });
+  const requestIdleCallbackFn = (
+    globalThis as typeof globalThis & {
+      requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number;
+    }
+  ).requestIdleCallback;
+
+  if (typeof requestIdleCallbackFn === "function") {
+    requestIdleCallbackFn(task, { timeout: 2000 });
     return;
   }
 
-  window.setTimeout(task, 1200);
+  globalThis.setTimeout(task, 1200);
 };
 
 let scriptLoadScheduled = false;
