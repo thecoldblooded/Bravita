@@ -814,7 +814,11 @@ serve(async (req: Request) => {
       }
 
       if (shouldRedirectClient) {
-        return Response.redirect(`${uiOrigin}/order-confirmation?orderId=${orderData?.order_id || orderData?.orderId || ""}`, 302);
+        const resolvedOrderId = orderData?.order_id || orderData?.orderId || "";
+        if (!resolvedOrderId) {
+          return Response.redirect(`${uiOrigin}/payment-failed?intent=${intentId}&code=missing_order_id`, 302);
+        }
+        return Response.redirect(`${uiOrigin}/order-confirmation/${encodeURIComponent(resolvedOrderId)}`, 302);
       }
       return callbackAckResponse();
     }

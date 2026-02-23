@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useLocation } from "react-router-dom";
 import { m } from "framer-motion";
 import { Check, Package, MapPin, CreditCard, Building2, ArrowRight, Copy, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -54,18 +54,31 @@ interface BankInfo {
 export default function OrderConfirmation() {
     const { t } = useTranslation();
     const { orderId } = useParams<{ orderId: string }>();
+    const location = useLocation();
     const { clearCart } = useCart();
     const [order, setOrder] = useState<Order | null>(null);
     const [bankInfo, setBankInfo] = useState<BankInfo | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [copiedItem, setCopiedItem] = useState<string | null>(null);
 
+    const resolvedOrderId = (() => {
+        const fromPath = (orderId || "").trim();
+        if (fromPath) return fromPath;
+        const params = new URLSearchParams(location.search);
+        return (params.get("orderId") || params.get("order_id") || "").trim();
+    })();
+
     useEffect(() => {
         async function fetchData() {
-            if (!orderId) return;
+            if (!resolvedOrderId) {
+                setOrder(null);
+                setBankInfo(null);
+                setIsLoading(false);
+                return;
+            }
             setIsLoading(true);
             const [orderData, bankData] = await Promise.all([
-                getOrderById(orderId),
+                getOrderById(resolvedOrderId),
                 getBankDetails()
             ]);
             setOrder(orderData as Order);
@@ -73,7 +86,7 @@ export default function OrderConfirmation() {
             setIsLoading(false);
         }
         fetchData();
-    }, [orderId]);
+    }, [resolvedOrderId]);
 
     useEffect(() => {
         if (!order) return;

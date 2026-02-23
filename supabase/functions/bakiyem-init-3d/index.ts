@@ -340,6 +340,43 @@ serve(async (req) => {
       message: insertError.message
     });
     const intentId = intent.id;
+
+    const { error: reservationError } = await supabase.rpc("reserve_stock_for_intent_v1", {
+      p_intent_id: intentId,
+      p_ttl_minutes: 15,
+    });
+
+    if (reservationError) {
+      await supabase.from("payment_transactions").insert({
+        intent_id: intentId,
+        operation: "reserve_stock",
+        success: false,
+        error_message: reservationError.message,
+      });
+
+      await supabase
+        .from("payment_intents")
+        .update({
+          status: "failed",
+          gateway_status: `reserve_failed:${reservationError.message.substring(0, 80)}`,
+        })
+        .eq("id", intentId)
+        .in("status", ["pending", "awaiting_3d"]);
+
+      return jsonResponse(req, 400, {
+        success: false,
+        message: "Stok rezerve edilemedi",
+        code: "RESERVATION_FAILED",
+      });
+    }
+
+    await supabase.from("payment_transactions").insert({
+      intent_id: intentId,
+      operation: "reserve_stock",
+      success: true,
+      request_payload: { p_ttl_minutes: 15 },
+    });
+
     const { data: profile } = await supabase.from("profiles").select("*").eq("id", userId).single();
     const { data: addr } = await supabase.from("addresses").select("*").eq("id", body.shippingAddressId).single();
     const cardHolderName = asText(body.cardDetails?.name || profile?.full_name || "Bravita Customer").substring(0, 100).trim();

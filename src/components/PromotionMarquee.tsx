@@ -141,6 +141,12 @@ const PromotionMarquee = () => {
           .promo-marquee-wrapper:hover .promo-marquee-container {
             animation-play-state: paused;
           }
+          @media (max-width: 767px) {
+            body[data-user-menu-open="true"] .promo-marquee-wrapper,
+            body[data-support-open="true"] .promo-marquee-wrapper {
+              display: none !important;
+            }
+          }
         `}
             </style>
             <div

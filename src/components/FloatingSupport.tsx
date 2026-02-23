@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { LifeBuoy, X } from "lucide-react";
@@ -19,6 +19,18 @@ interface FloatingSupportProps {
 export default function FloatingSupport({ className }: FloatingSupportProps) {
     const { t } = useTranslation();
     const [open, setOpen] = useState(false);
+
+    // Track open state for global UI coordination (e.g. hiding marquee on mobile)
+    useEffect(() => {
+        if (typeof document !== 'undefined') {
+            document.body.dataset.supportOpen = open ? "true" : "false";
+        }
+        return () => {
+            if (typeof document !== 'undefined') {
+                document.body.dataset.supportOpen = "false";
+            }
+        };
+    }, [open]);
 
     return (
         <Popover open={open} onOpenChange={setOpen}>

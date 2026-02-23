@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, lazy, Suspense } from "react";
+import { useState, useEffect, useMemo, useRef, lazy, Suspense, useCallback, memo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { NavBar } from "@/components/ui/tubelight-navbar";
 import { Home, Heart, List, HelpCircle, Info, ChevronUp, type LucideIcon } from "lucide-react";
@@ -272,7 +272,7 @@ interface HeaderLogoProps {
   onScrollTop: () => void;
 }
 
-function HeaderLogo({ pathname, isScrolled, onScrollTop }: HeaderLogoProps) {
+const HeaderLogo = memo(({ pathname, isScrolled, onScrollTop }: HeaderLogoProps) => {
   if (pathname === "/") {
     return (
       <button type="button" className="inline-block bg-transparent border-0 p-0" onClick={onScrollTop}>
@@ -286,7 +286,9 @@ function HeaderLogo({ pathname, isScrolled, onScrollTop }: HeaderLogoProps) {
       <BravitaLogo isScrolled={isScrolled} />
     </Link>
   );
-}
+});
+
+HeaderLogo.displayName = "HeaderLogo";
 
 interface LanguageToggleButtonProps {
   isScrolled: boolean;
@@ -296,13 +298,13 @@ interface LanguageToggleButtonProps {
   onToggleLanguage: () => void;
 }
 
-function LanguageToggleButton({
+const LanguageToggleButton = memo(({
   isScrolled,
   currentFlagSrc,
   currentFlagAlt,
   languageToggleLabel,
   onToggleLanguage,
-}: LanguageToggleButtonProps) {
+}: LanguageToggleButtonProps) => {
   return (
     <m.button
       onClick={onToggleLanguage}
@@ -326,7 +328,9 @@ function LanguageToggleButton({
       />
     </m.button>
   );
-}
+});
+
+LanguageToggleButton.displayName = "LanguageToggleButton";
 
 interface HeaderActionButtonsProps {
   isScrolled: boolean;
@@ -340,7 +344,7 @@ interface HeaderActionButtonsProps {
   onOpenAuthModal: () => void;
 }
 
-function HeaderActionButtons({
+const HeaderActionButtons = memo(({
   isScrolled,
   isAuthenticated,
   isUserReady,
@@ -350,7 +354,7 @@ function HeaderActionButtons({
   profileCompletionRequiredTitle,
   onBuyClick,
   onOpenAuthModal,
-}: HeaderActionButtonsProps) {
+}: HeaderActionButtonsProps) => {
   return (
     <div className="flex items-center gap-2 md:gap-4">
       {isUserReady || !isAuthenticated ? (
@@ -398,7 +402,9 @@ function HeaderActionButtons({
       )}
     </div>
   );
-}
+});
+
+HeaderActionButtons.displayName = "HeaderActionButtons";
 
 interface HeaderPrimaryBarProps {
   pathname: string;
@@ -422,7 +428,7 @@ interface HeaderPrimaryBarProps {
   onOpenAuthModal: () => void;
 }
 
-function HeaderPrimaryBar({
+const HeaderPrimaryBar = memo(({
   pathname,
   isScrolled,
   isProfilePage,
@@ -442,7 +448,7 @@ function HeaderPrimaryBar({
   onToggleLanguage,
   onBuyClick,
   onOpenAuthModal,
-}: HeaderPrimaryBarProps) {
+}: HeaderPrimaryBarProps) => {
   return (
     <header
       className={cn(
@@ -483,7 +489,9 @@ function HeaderPrimaryBar({
       </div>
     </header>
   );
-}
+});
+
+HeaderPrimaryBar.displayName = "HeaderPrimaryBar";
 
 interface HeaderMobileNavProps {
   isProfilePage: boolean;
@@ -616,15 +624,15 @@ const Header = () => {
   const currentFlagAlt = isTurkishSelected ? "Turkiye" : "United States";
   const languageToggleLabel = isTurkishSelected ? "Switch language to English" : "Dili Turkceye cevir";
 
-  const handleScrollTop = () => {
+  const handleScrollTop = useCallback(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+  }, []);
 
-  const handleOpenAuthModal = () => {
+  const handleOpenAuthModal = useCallback(() => {
     setAuthModalOpen(true);
-  };
+  }, []);
 
-  const handleBuyClick = () => {
+  const handleBuyClick = useCallback(() => {
     if (isAuthenticated) {
       if (!user) {
         return;
@@ -644,7 +652,7 @@ const Header = () => {
     }
 
     setAuthModalOpen(true);
-  };
+  }, [isAuthenticated, user, isStubUser, refreshUserProfile, openCart]);
 
   return (
     <>

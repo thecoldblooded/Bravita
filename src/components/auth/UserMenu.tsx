@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo, memo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { m, AnimatePresence } from "framer-motion";
@@ -21,7 +21,7 @@ interface MenuItemProps {
   delay?: number;
 }
 
-const MenuItem = ({ icon, label, onClick, variant = "default", delay = 0 }: MenuItemProps) => (
+const MenuItem = memo(({ icon, label, onClick, variant = "default", delay = 0 }: MenuItemProps) => (
   <m.button
     initial={{ opacity: 0, x: -10 }}
     animate={{ opacity: 1, x: 0 }}
@@ -52,7 +52,9 @@ const MenuItem = ({ icon, label, onClick, variant = "default", delay = 0 }: Menu
       ${variant === "danger" ? "text-red-400" : "text-orange-400"}
     `} />
   </m.button>
-);
+));
+
+MenuItem.displayName = "MenuItem";
 
 export function UserMenu() {
   const { t } = useTranslation();
@@ -61,10 +63,31 @@ export function UserMenu() {
   const { logout, isLoading } = useAuthOperations();
   const [isOpen, setIsOpen] = useState(false);
 
-  if (!session?.user || !user) {
-    return null;
-  }
+  const handleMenuItemClick = useCallback((path: string) => {
+    navigate(path);
+    setIsOpen(false);
+  }, [navigate]);
 
+  // Track open state for global UI coordination (e.g. hiding marquee on mobile)
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.body.dataset.userMenuOpen = isOpen ? "true" : "false";
+    }
+    return () => {
+      if (typeof document !== 'undefined') {
+        document.body.dataset.userMenuOpen = "false";
+      }
+    };
+  }, [isOpen]);
+
+  const menuItems = useMemo(() => [
+    // Admin Panel - only visible for admin users
+    ...(isAdmin ? [{ icon: <Shield className="w-4 h-4" />, label: t("auth.admin_panel", "Admin Panel"), path: "/admin", isAdmin: true }] : []),
+    { icon: <User className="w-4 h-4" />, label: t("auth.profile"), path: "/profile?tab=profile" },
+    { icon: <MapPin className="w-4 h-4" />, label: t("auth.addresses"), path: "/profile?tab=addresses" },
+    { icon: <ShoppingBag className="w-4 h-4" />, label: t("auth.my_orders"), path: "/profile?tab=orders" },
+    { icon: <Settings className="w-4 h-4" />, label: t("auth.settings"), path: "/profile?tab=settings" },
+  ], [isAdmin, t]);
   const handleLogout = async () => {
     // Close menu immediately for instant feedback
     setIsOpen(false);
@@ -82,19 +105,14 @@ export function UserMenu() {
     navigate("/", { replace: true });
   };
 
+  if (!session?.user || !user) {
+    return null;
+  }
+
   const displayName =
     user.user_type === "individual"
       ? user.full_name || user.email
       : user.company_name || user.email;
-
-  const menuItems = [
-    // Admin Panel - only visible for admin users
-    ...(isAdmin ? [{ icon: <Shield className="w-4 h-4" />, label: t("auth.admin_panel", "Admin Panel"), path: "/admin", isAdmin: true }] : []),
-    { icon: <User className="w-4 h-4" />, label: t("auth.profile"), path: "/profile?tab=profile" },
-    { icon: <MapPin className="w-4 h-4" />, label: t("auth.addresses"), path: "/profile?tab=addresses" },
-    { icon: <ShoppingBag className="w-4 h-4" />, label: t("auth.my_orders"), path: "/profile?tab=orders" },
-    { icon: <Settings className="w-4 h-4" />, label: t("auth.settings"), path: "/profile?tab=settings" },
-  ];
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
@@ -147,10 +165,7 @@ export function UserMenu() {
                   key={item.path}
                   icon={item.icon}
                   label={item.label}
-                  onClick={() => {
-                    navigate(item.path);
-                    setIsOpen(false);
-                  }}
+                  onClick={() => handleMenuItemClick(item.path)}
                   delay={0.05 * (index + 1)}
                 />
               ))}

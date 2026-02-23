@@ -102,6 +102,7 @@ const AppContent = () => {
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/3d-redirect" element={<ThreeDSRedirect />} />
           <Route path="/payment-failed" element={<PaymentFailed />} />
+          <Route path="/order-confirmation" element={<OrderConfirmation />} />
           <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
           <Route path="/email-preview" element={<EmailPreview />} />
 
