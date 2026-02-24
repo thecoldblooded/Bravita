@@ -1,6 +1,18 @@
-drop policy "Users read installment rates" on "public"."installment_rates";
-
 set check_function_bodies = off;
+
+do $$
+begin
+  if exists (
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'installment_rates'
+      and policyname = 'Users read installment rates'
+  ) then
+    drop policy "Users read installment rates" on public.installment_rates;
+  end if;
+end
+$$;
 
 CREATE OR REPLACE FUNCTION public.calculate_order_quote_v1(p_user_id uuid, p_items jsonb, p_shipping_address_id uuid, p_payment_method text DEFAULT 'credit_card'::text, p_installment_number integer DEFAULT 1, p_promo_code text DEFAULT NULL::text)
  RETURNS jsonb
@@ -866,12 +878,24 @@ $function$
 ;
 
 
-  create policy "Allow public read access to installment rates"
-  on "public"."installment_rates"
-  as permissive
-  for select
-  to public
-using (true);
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'installment_rates'
+      and policyname = 'Allow public read access to installment rates'
+  ) then
+    create policy "Allow public read access to installment rates"
+    on public.installment_rates
+    as permissive
+    for select
+    to public
+    using (true);
+  end if;
+end
+$$;
 
 
 
