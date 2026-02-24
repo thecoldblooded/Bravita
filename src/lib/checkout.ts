@@ -542,11 +542,15 @@ export async function createOrder(params: CreateOrderParams): Promise<CreateOrde
         }
 
         // Check the success flag returned by the function
-        if (!data.success) {
+        if (!data?.success) {
+            const rpcErrorCode = typeof data?.error === "string" && data.error.trim().length > 0
+                ? data.error.trim()
+                : "RPC_LOGIC_ERROR";
+
             return {
                 success: false,
-                message: data.message || "Sipariş oluşturulamadı",
-                error: "RPC_LOGIC_ERROR",
+                message: data?.message || "Sipariş oluşturulamadı",
+                error: rpcErrorCode,
             };
         }
 

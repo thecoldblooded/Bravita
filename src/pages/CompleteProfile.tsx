@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,8 @@ function getValidationMessages(t: TFunction) {
     cityRequired: t("auth.city_required"),
     districtRequired: "İlçe zorunludur", // TODO: Add translation key
     postalCodeRequired: t("auth.postal_code_required"),
+    phoneRequired: t("auth.validation.phone_required"),
+    phoneInvalid: t("auth.validation.phone_invalid"),
   };
 }
 
@@ -47,6 +50,10 @@ export default function CompleteProfile() {
     city: z.string().min(2, messages.cityRequired),
     district: z.string().min(2, messages.districtRequired),
     postalCode: z.string().min(3, messages.postalCodeRequired),
+    phone: z
+      .string()
+      .min(1, messages.phoneRequired)
+      .refine((value) => isValidPhoneNumber(value), messages.phoneInvalid),
   });
 
   type ProfileForm = z.infer<typeof profileSchema>;
@@ -60,6 +67,7 @@ export default function CompleteProfile() {
       city: "",
       district: "",
       postalCode: "",
+      phone: user?.phone || "",
     },
   });
 
@@ -123,6 +131,7 @@ export default function CompleteProfile() {
           email: session.user.email || "",
           full_name: data.fullName,
           user_type: "individual",
+          phone: data.phone,
           profile_complete: true,
           updated_at: new Date().toISOString(),
         });
@@ -288,6 +297,28 @@ export default function CompleteProfile() {
                         placeholder="Örn: 34000"
                         {...field}
                         disabled={isLoading}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={profileForm.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("auth.phone")}</FormLabel>
+                    <FormControl>
+                      <PhoneInput
+                        international
+                        countryCallingCodeEditable={false}
+                        defaultCountry="TR"
+                        value={field.value || ""}
+                        onChange={(value) => field.onChange(value || "")}
+                        disabled={isLoading}
+                        className="h-11 rounded-xl border border-gray-200 px-4"
                       />
                     </FormControl>
                     <FormMessage />

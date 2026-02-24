@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { isValidPhoneNumber } from "react-phone-number-input";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { m, AnimatePresence } from "framer-motion";
@@ -68,6 +69,13 @@ export default function Checkout() {
 
     // Redirect if not authenticated or cart is empty (but not if order was just placed)
     const [orderPlaced, setOrderPlaced] = useState(false);
+    const hasValidPhone = !!user?.phone && isValidPhoneNumber(user.phone);
+    const isPurchaseBlocked = !!user && (!user.profile_complete || !hasValidPhone);
+    const purchaseBlockCode = !user?.profile_complete
+        ? "PROFILE_INCOMPLETE"
+        : !hasValidPhone
+            ? "PHONE_REQUIRED"
+            : null;
 
     useEffect(() => {
         if (orderPlaced) return; // Don't redirect if order was just placed
@@ -77,12 +85,23 @@ export default function Checkout() {
             navigate("/");
             return;
         }
+
+        if (user && isPurchaseBlocked) {
+            toast.error(
+                purchaseBlockCode === "PHONE_REQUIRED"
+                    ? t("auth.validation.phone_required", "Lütfen geçerli bir telefon numarası girin")
+                    : t("cart.profile_incomplete", "Lütfen önce profilinizi tamamlayın"),
+            );
+            navigate("/complete-profile");
+            return;
+        }
+
         if (cartItems.length === 0) {
             toast.error(t("cart.empty", "Sepetiniz boş"));
             navigate("/");
             return;
         }
-    }, [isAuthenticated, cartItems, navigate, orderPlaced, t]);
+    }, [isAuthenticated, user, isPurchaseBlocked, purchaseBlockCode, cartItems, navigate, orderPlaced, t]);
 
     useEffect(() => {
         async function loadInstallmentRates() {
@@ -151,6 +170,15 @@ export default function Checkout() {
     const handlePlaceOrder = async () => {
 
         if (!user || !checkoutData.addressId) return;
+        if (isPurchaseBlocked) {
+            toast.error(
+                purchaseBlockCode === "PHONE_REQUIRED"
+                    ? t("auth.validation.phone_required", "Lütfen geçerli bir telefon numarası girin")
+                    : t("cart.profile_incomplete", "Lütfen önce profilinizi tamamlayın"),
+            );
+            navigate("/complete-profile");
+            return;
+        }
         if (!isAgreed) {
             toast.error(t("checkout.validation.agreements_required", "Lütfen sözleşmeleri onaylayın."));
             return;
@@ -238,6 +266,16 @@ export default function Checkout() {
                 const defaultInitMessage = t("checkout.validation.threed_init_failed", "3D ödeme başlatılamadı");
                 const fallbackInitMessage = cardInitResult.message || defaultInitMessage;
 
+                if (resolvedFailureCode === "PROFILE_INCOMPLETE" || resolvedFailureCode === "PHONE_REQUIRED") {
+                    toast.error(
+                        resolvedFailureCode === "PHONE_REQUIRED"
+                            ? t("auth.validation.phone_required", "Lütfen geçerli bir telefon numarası girin")
+                            : t("cart.profile_incomplete", "Lütfen önce profilinizi tamamlayın"),
+                    );
+                    navigate("/complete-profile");
+                    return;
+                }
+
                 if (PRE_3D_FAILURE_CODES.has(resolvedFailureCode)) {
                     const nextAttempts = cardAttemptCount + 1;
                     setCardAttemptCount(nextAttempts);
@@ -283,7 +321,16 @@ export default function Checkout() {
                 navigate(`/order-confirmation/${bankTransferResult.orderId}`);
                 setTimeout(() => clearCart(), 100);
             } else {
-                toast.error(bankTransferResult.message || t("errors.order_failed", "Sipariş oluşturulamadı"));
+                if (bankTransferResult.error === "PROFILE_INCOMPLETE" || bankTransferResult.error === "PHONE_REQUIRED") {
+                    toast.error(
+                        bankTransferResult.error === "PHONE_REQUIRED"
+                            ? t("auth.validation.phone_required", "Lütfen geçerli bir telefon numarası girin")
+                            : t("cart.profile_incomplete", "Lütfen önce profilinizi tamamlayın"),
+                    );
+                    navigate("/complete-profile");
+                } else {
+                    toast.error(bankTransferResult.message || t("errors.order_failed", "Sipariş oluşturulamadı"));
+                }
             }
         } catch (error) {
             console.error("Order creation error:", error);
@@ -431,7 +478,7 @@ export default function Checkout() {
                     ) : (
                         <Button
                             onClick={handlePlaceOrder}
-                            disabled={isProcessing || !canProceed()}
+                            disabled={isProcessing || !canProceed() || isPurchaseBlocked}
                             className="px-8 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold"
                         >
                             {isProcessing ? (

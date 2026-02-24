@@ -1,7 +1,10 @@
 import { useEffect, useMemo } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AlertTriangle, ArrowLeft, RefreshCw } from "lucide-react";
+import { isValidPhoneNumber } from "react-phone-number-input";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 type FailureMessage = {
     primary: string;
@@ -106,6 +109,10 @@ function getFallbackMessage(code: string): FailureMessage {
 
 export default function PaymentFailed() {
     const location = useLocation();
+    const navigate = useNavigate();
+    const { user } = useAuth();
+    const hasValidPhone = !!user?.phone && isValidPhoneNumber(user.phone);
+    const isPurchaseBlocked = !!user && (!user.profile_complete || !hasValidPhone);
 
     const { code, intent, bankCode, trxStatus, gatewayMessage } = useMemo(() => {
         const params = new URLSearchParams(location.search);
@@ -152,6 +159,20 @@ export default function PaymentFailed() {
         }
     }, [intent]);
 
+    const handleRetry = () => {
+        if (isPurchaseBlocked) {
+            toast.error(
+                !user?.profile_complete
+                    ? "Lütfen önce profilinizi tamamlayın"
+                    : "Lütfen geçerli bir telefon numarası girin",
+            );
+            navigate("/complete-profile");
+            return;
+        }
+
+        navigate("/checkout");
+    };
+
     return (
         <div className="min-h-screen bg-linear-to-b from-red-50/50 to-white flex items-center justify-center px-4 py-10">
             <div className="w-full max-w-xl rounded-2xl border border-red-100 bg-white p-6 shadow-lg">
@@ -183,12 +204,10 @@ export default function PaymentFailed() {
                 ) : null}
 
                 <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <Link to="/checkout" className="w-full">
-                        <Button className="w-full bg-orange-500 text-white hover:bg-orange-600">
-                            <RefreshCw className="mr-2 h-4 w-4" />
-                            Tekrar Dene
-                        </Button>
-                    </Link>
+                    <Button className="w-full bg-orange-500 text-white hover:bg-orange-600" onClick={handleRetry}>
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Tekrar Dene
+                    </Button>
 
                     <Link to="/" className="w-full">
                         <Button variant="outline" className="w-full border-gray-200">

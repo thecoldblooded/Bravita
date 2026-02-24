@@ -1,6 +1,9 @@
 import { useReducer, useEffect, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { m } from "framer-motion";
 import { Package, Search, Filter, ArrowUpDown, XCircle } from "lucide-react";
+import { toast } from "sonner";
+import { isValidPhoneNumber } from "react-phone-number-input";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { getUserOrders } from "@/lib/checkout";
@@ -71,8 +74,11 @@ function orderReducer(state: OrderState, action: OrderAction): OrderState {
 
 export function OrderHistory() {
     const { t } = useTranslation();
+    const navigate = useNavigate();
     const { user } = useAuth();
     const { openCart } = useCart();
+    const hasValidPhone = !!user?.phone && isValidPhoneNumber(user.phone);
+    const isPurchaseBlocked = !!user && (!user.profile_complete || !hasValidPhone);
 
     const [state, dispatch] = useReducer(orderReducer, initialState);
     const {
@@ -114,6 +120,20 @@ export function OrderHistory() {
 
     const handleClearFilters = () => {
         dispatch({ type: 'CLEAR_FILTERS' });
+    };
+
+    const handleStartShopping = () => {
+        if (isPurchaseBlocked) {
+            toast.error(
+                !user?.profile_complete
+                    ? t("cart.profile_incomplete", "Lütfen önce profilinizi tamamlayın")
+                    : t("auth.validation.phone_required", "Lütfen geçerli bir telefon numarası girin"),
+            );
+            navigate("/complete-profile");
+            return;
+        }
+
+        openCart();
     };
 
     if (isLoading) {
@@ -196,7 +216,7 @@ export function OrderHistory() {
                         {t("profile.orders.empty_state_desc")}
                     </p>
                     <button
-                        onClick={openCart}
+                        onClick={handleStartShopping}
                         className="px-6 py-2 bg-orange-500 text-white rounded-full font-medium hover:bg-orange-600 transition-colors"
                     >
                         {t("profile.orders.start_shopping")}

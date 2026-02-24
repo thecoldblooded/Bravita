@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Loader2, ShieldAlert } from "lucide-react";
+import { isValidPhoneNumber } from "react-phone-number-input";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ThreeDPayload {
     redirectUrl?: string | null;
@@ -79,8 +82,11 @@ import { Helmet } from "react-helmet-async";
 export default function ThreeDSRedirect() {
     const navigate = useNavigate();
     const location = useLocation();
+    const { user } = useAuth();
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const statePayload = useMemo(() => (location.state as RedirectState | null) ?? null, [location.state]);
+    const hasValidPhone = !!user?.phone && isValidPhoneNumber(user.phone);
+    const isPurchaseBlocked = !!user && (!user.profile_complete || !hasValidPhone);
 
     const intentId = useMemo(() => {
         const params = new URLSearchParams(location.search);
@@ -162,6 +168,20 @@ export default function ThreeDSRedirect() {
         return () => clearTimeout(timeout);
     }, [errorMessage, intentId, navigate]);
 
+    const handleReturnToCheckout = () => {
+        if (isPurchaseBlocked) {
+            toast.error(
+                !user?.profile_complete
+                    ? "Lütfen önce profilinizi tamamlayın"
+                    : "Lütfen geçerli bir telefon numarası girin",
+            );
+            navigate("/complete-profile");
+            return;
+        }
+
+        navigate("/checkout");
+    };
+
     return (
         <div className="min-h-screen bg-linear-to-b from-orange-50/50 to-white flex items-center justify-center px-4">
             <Helmet>
@@ -182,7 +202,7 @@ export default function ThreeDSRedirect() {
                         <p className="mt-2 text-sm text-gray-600">{errorMessage}</p>
                         <Button
                             className="mt-4 w-full bg-orange-500 text-white hover:bg-orange-600"
-                            onClick={() => navigate("/checkout")}
+                            onClick={handleReturnToCheckout}
                         >
                             Checkout'a Dön
                         </Button>

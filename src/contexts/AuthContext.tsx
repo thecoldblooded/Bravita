@@ -235,13 +235,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem("pending_profile");
       localStorage.removeItem("profile_complete_pending");
 
-      // Ensure a profile row exists and mark complete
+      // Ensure a profile row exists without auto-completing it
       const profilePayload = {
         id: userId,
         full_name: profileData.full_name,
         phone: profileData.phone,
-        phone_verified: true,
-        profile_complete: true,
+        phone_verified: false,
+        profile_complete: false,
         updated_at: new Date().toISOString(),
       };
 
@@ -466,12 +466,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // OPTIMISTIC UPDATE: Unlock UI instantly using secure session metadata
         // This ensures the app is interactive in milliseconds even if DB is slow.
         const initialStub = getInitialUser(newSession);
-
-        // Auto-complete stub if we've seen this user complete their profile before
-        const knownComplete = localStorage.getItem("profile_known_complete") === "true";
-        if (initialStub && knownComplete) {
-          initialStub.profile_complete = true;
-        }
 
         setUserDebug(initialStub);
 

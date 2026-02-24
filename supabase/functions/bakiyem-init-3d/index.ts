@@ -296,10 +296,18 @@ serve(async (req) => {
       p_installment_number: body.installmentNumber || 1,
       p_promo_code: body.promoCode ?? null
     });
-    if (quoteError || !quoteData?.success) return jsonResponse(req, 400, {
-      success: false,
-      message: quoteError?.message || "Quote failure"
-    });
+    if (quoteError || !quoteData?.success) {
+      const quoteFailureCode = typeof quoteData?.error === "string" && quoteData.error.trim().length > 0
+        ? quoteData.error.trim()
+        : "QUOTE_FAILURE";
+
+      return jsonResponse(req, 400, {
+        success: false,
+        message: quoteData?.message || quoteError?.message || "Quote failure",
+        code: quoteFailureCode,
+        error: quoteFailureCode,
+      });
+    }
     const paymentTotalCents = Number(quoteData.paid_total_cents);
     if (!Number.isFinite(paymentTotalCents) || paymentTotalCents <= 0) {
       return jsonResponse(req, 400, {
