@@ -197,6 +197,14 @@ const TextCursorProximity = forwardRef<HTMLSpanElement, TextProps>(
                 ref={ref}
                 className={`${className} inline`}
                 onClick={onClick}
+                role={onClick ? "button" : undefined}
+                tabIndex={onClick ? 0 : undefined}
+                onKeyDown={(e) => {
+                    if (onClick && (e.key === "Enter" || e.key === " ")) {
+                        e.preventDefault();
+                        onClick(e as unknown as React.MouseEvent<HTMLSpanElement>);
+                    }
+                }}
                 {...props}
             >
                 {words.map((word, wordIndex) => (

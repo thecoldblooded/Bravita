@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { LazyMotion, domAnimation, m } from 'framer-motion';
 
 interface ScrollRevealProps {
     children: React.ReactNode;
@@ -31,26 +31,28 @@ const ScrollReveal = ({
     };
 
     return (
-        <motion.div
-            initial={{
-                opacity: 0,
-                ...getInitialPosition()
-            }}
-            whileInView={{
-                opacity: 1,
-                x: 0,
-                y: 0
-            }}
-            viewport={{ once: true, amount: threshold }}
-            transition={{
-                duration: duration,
-                delay: delay,
-                ease: [0.21, 0.47, 0.32, 0.98]
-            }}
-            className={className}
-        >
-            {children}
-        </motion.div>
+        <LazyMotion features={domAnimation}>
+            <m.div
+                initial={{
+                    opacity: 0,
+                    ...getInitialPosition()
+                }}
+                whileInView={{
+                    opacity: 1,
+                    x: 0,
+                    y: 0
+                }}
+                viewport={{ once: true, amount: threshold }}
+                transition={{
+                    duration: duration,
+                    delay: delay,
+                    ease: [0.21, 0.47, 0.32, 0.98]
+                }}
+                className={className}
+            >
+                {children}
+            </m.div>
+        </LazyMotion>
     );
 };
 

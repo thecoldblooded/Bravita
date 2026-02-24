@@ -26,7 +26,7 @@ export function AuthModal({
   defaultTab = "login",
 }: AuthModalProps) {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<"login" | "signup">(defaultTab);
+  const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
 
   // Sync activeTab with defaultTab when modal opens
   React.useEffect(() => {
@@ -39,73 +39,21 @@ export function AuthModal({
     onOpenChange(false);
   };
 
-  // Ultra-strict scroll lock for mobile and desktop including Lenis
+  // Strict scroll lock for Lenis
   React.useEffect(() => {
     if (!open) return;
 
-    // 1. Handle Lenis (Smooth Scroll)
+    // Handle Lenis (Smooth Scroll)
     const lenis = (window as unknown as { lenis: { stop: () => void; start: () => void } }).lenis;
     if (lenis) {
       lenis.stop();
     }
-
-    // 2. Standard Scroll Lock
-    const scrollY = window.scrollY;
-    const originalOverflow = document.body.style.overflow;
-    const originalPosition = document.body.style.position;
-    const originalTop = document.body.style.top;
-    const originalWidth = document.body.style.width;
-
-    document.body.style.position = 'fixed';
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.width = '100%';
-    document.body.style.overflow = 'hidden';
-
-    // 3. Final barrier against touch bleed - but allow scrolling inside modal
-    const preventDefault = (e: TouchEvent) => {
-      if (e.touches.length > 1) return;
-      const target = e.target as HTMLElement;
-      // Allow scrolling inside elements with overflow-y-auto or inside dialog content
-      const isInsideScrollable = target.closest('.overflow-y-auto, [role="dialog"], [data-radix-dialog-content]');
-      if (!isInsideScrollable) {
-        e.preventDefault();
-      }
-    };
-
-    document.addEventListener('touchmove', preventDefault, { passive: false });
-
-    const handleWheel = (e: WheelEvent) => {
-      const target = e.target as HTMLElement;
-      const isInsideScrollable = target.closest('.overflow-y-auto, [role="dialog"], [data-radix-dialog-content]');
-      if (!isInsideScrollable) {
-        e.preventDefault();
-      } else {
-        // Stop propagation to prevent Lenis or other listeners from seeing it
-        e.stopPropagation();
-      }
-    };
-
-    document.addEventListener('wheel', handleWheel, { passive: false });
 
     return () => {
       // Restore Lenis
       if (lenis) {
         lenis.start();
       }
-
-      // Restore standard scroll
-      const savedScrollY = parseInt(document.body.style.top || '0') * -1;
-      document.body.style.position = originalPosition;
-      document.body.style.top = originalTop;
-      document.body.style.width = originalWidth;
-      document.body.style.overflow = originalOverflow;
-
-      if (!isNaN(savedScrollY)) {
-        window.scrollTo(0, savedScrollY);
-      }
-
-      document.removeEventListener('touchmove', preventDefault);
-      document.removeEventListener('wheel', handleWheel);
     };
   }, [open]);
 

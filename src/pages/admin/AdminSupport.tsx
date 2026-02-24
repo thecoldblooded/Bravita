@@ -417,7 +417,15 @@ export default function AdminSupport() {
                                 tickets.map((ticket) => (
                                     <div
                                         key={ticket.id}
+                                        role="button"
+                                        tabIndex={0}
                                         onClick={() => setSelectedTicket(ticket)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter" || e.key === " ") {
+                                                e.preventDefault();
+                                                setSelectedTicket(ticket);
+                                            }
+                                        }}
                                         className={`grid grid-cols-12 gap-4 px-6 py-5 transition-colors cursor-pointer items-center ${rowHover}`}
                                     >
                                         <div className="col-span-3">

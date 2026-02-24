@@ -1,23 +1,54 @@
-import { useState, useEffect } from "react";
+import { useEffect, useReducer } from "react";
 import { m, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { Cookie } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+type CookieState = {
+    isVisible: boolean;
+    showCustomize: boolean;
+    analyticsEnabled: boolean;
+    functionalEnabled: boolean;
+    marketingEnabled: boolean;
+};
+
+type CookieAction =
+    | { type: 'SET_VISIBLE'; payload: boolean }
+    | { type: 'TOGGLE_CUSTOMIZE' }
+    | { type: 'SET_ANALYTICS'; payload: boolean }
+    | { type: 'SET_FUNCTIONAL'; payload: boolean }
+    | { type: 'SET_MARKETING'; payload: boolean }
+    | { type: 'HIDE' };
+
 const CookieConsent = () => {
     const { t } = useTranslation();
-    const [isVisible, setIsVisible] = useState(false);
-    const [showCustomize, setShowCustomize] = useState(false);
-    const [analyticsEnabled, setAnalyticsEnabled] = useState(true);
-    const [functionalEnabled, setFunctionalEnabled] = useState(true);
-    const [marketingEnabled, setMarketingEnabled] = useState(false);
+    const [state, dispatch] = useReducer(
+        (state: CookieState, action: CookieAction): CookieState => {
+            switch (action.type) {
+                case 'SET_VISIBLE': return { ...state, isVisible: action.payload };
+                case 'TOGGLE_CUSTOMIZE': return { ...state, showCustomize: !state.showCustomize };
+                case 'SET_ANALYTICS': return { ...state, analyticsEnabled: action.payload };
+                case 'SET_FUNCTIONAL': return { ...state, functionalEnabled: action.payload };
+                case 'SET_MARKETING': return { ...state, marketingEnabled: action.payload };
+                case 'HIDE': return { ...state, isVisible: false };
+                default: return state;
+            }
+        },
+        {
+            isVisible: false,
+            showCustomize: false,
+            analyticsEnabled: true,
+            functionalEnabled: true,
+            marketingEnabled: false,
+        }
+    );
 
     useEffect(() => {
         // Check if user has already made a choice
         const consent = localStorage.getItem("cookie_consent");
         if (!consent) {
             // Small delay for better UX
-            const timer = setTimeout(() => setIsVisible(true), 1000);
+            const timer = setTimeout(() => dispatch({ type: 'SET_VISIBLE', payload: true }), 1000);
             return () => clearTimeout(timer);
         }
     }, []);
@@ -33,7 +64,7 @@ const CookieConsent = () => {
                 marketing: true,
             })
         );
-        setIsVisible(false);
+        dispatch({ type: 'HIDE' });
         window.dispatchEvent(new CustomEvent("cookie-consent-updated", { detail: { pending: false } }));
     };
 
@@ -42,12 +73,12 @@ const CookieConsent = () => {
         // On next page load, banner should be shown again.
         localStorage.removeItem("cookie_consent");
         localStorage.removeItem("cookie_preferences");
-        setIsVisible(false);
+        dispatch({ type: 'HIDE' });
         window.dispatchEvent(new CustomEvent("cookie-consent-updated", { detail: { pending: false } }));
     };
 
     const handleCustomize = () => {
-        setShowCustomize((prev) => !prev);
+        dispatch({ type: 'TOGGLE_CUSTOMIZE' });
     };
 
     const handleSavePreferences = () => {
@@ -56,18 +87,18 @@ const CookieConsent = () => {
             "cookie_preferences",
             JSON.stringify({
                 necessary: true,
-                analytics: analyticsEnabled,
-                functional: functionalEnabled,
-                marketing: marketingEnabled,
+                analytics: state.analyticsEnabled,
+                functional: state.functionalEnabled,
+                marketing: state.marketingEnabled,
             })
         );
-        setIsVisible(false);
+        dispatch({ type: 'HIDE' });
         window.dispatchEvent(new CustomEvent("cookie-consent-updated", { detail: { pending: false } }));
     };
 
     return (
         <AnimatePresence>
-            {isVisible && (
+            {state.isVisible && (
                 <m.div
                     initial={{ y: 100, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
@@ -79,7 +110,7 @@ const CookieConsent = () => {
                     <div className="w-full">
                         <div className="relative overflow-hidden rounded-[26px] border border-orange-300/20 bg-[#171821]/96 backdrop-blur-xl shadow-2xl p-5 md:p-6">
                             <div
-                                className="pointer-events-none absolute inset-y-0 left-0 w-[66%] bg-gradient-to-br from-[#22232d]/95 via-[#1c1f29]/92 to-[#15171f]/88"
+                                className="pointer-events-none absolute inset-y-0 left-0 w-[66%] bg-linear-to-br from-[#22232d]/95 via-[#1c1f29]/92 to-[#15171f]/88"
                                 style={{ clipPath: "polygon(0 0, 82% 0, 62% 100%, 0 100%)" }}
                             />
                             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_100%_0%,rgba(246,139,40,0.18)_0%,rgba(246,139,40,0)_42%),radial-gradient(circle_at_18%_100%,rgba(253,184,19,0.14)_0%,rgba(253,184,19,0)_45%)]" />
@@ -116,7 +147,7 @@ const CookieConsent = () => {
                                         </Button>
                                         <Button
                                             onClick={handleAccept}
-                                            className="h-11 px-6 rounded-xl bg-gradient-to-r from-orange-500 to-amber-400 text-white hover:from-orange-400 hover:to-amber-300 shadow-lg shadow-orange-500/30 col-span-2 sm:col-span-1 whitespace-nowrap"
+                                            className="h-11 px-6 rounded-xl bg-linear-to-r from-orange-500 to-amber-400 text-white hover:from-orange-400 hover:to-amber-300 shadow-lg shadow-orange-500/30 col-span-2 sm:col-span-1 whitespace-nowrap"
                                         >
                                             {t('cookie_consent.accept')}
                                         </Button>
@@ -125,7 +156,7 @@ const CookieConsent = () => {
                             </div>
 
                             <AnimatePresence>
-                                {showCustomize && (
+                                {state.showCustomize && (
                                     <m.div
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
@@ -146,8 +177,8 @@ const CookieConsent = () => {
                                                 <span>{t("cookie_consent.analytics")}</span>
                                                 <input
                                                     type="checkbox"
-                                                    checked={analyticsEnabled}
-                                                    onChange={(event) => setAnalyticsEnabled(event.target.checked)}
+                                                    checked={state.analyticsEnabled}
+                                                    onChange={(event) => dispatch({ type: 'SET_ANALYTICS', payload: event.target.checked })}
                                                     className="h-4 w-4 accent-orange-500"
                                                 />
                                             </label>
@@ -156,8 +187,8 @@ const CookieConsent = () => {
                                                 <span>{t("cookie_consent.functional")}</span>
                                                 <input
                                                     type="checkbox"
-                                                    checked={functionalEnabled}
-                                                    onChange={(event) => setFunctionalEnabled(event.target.checked)}
+                                                    checked={state.functionalEnabled}
+                                                    onChange={(event) => dispatch({ type: 'SET_FUNCTIONAL', payload: event.target.checked })}
                                                     className="h-4 w-4 accent-orange-500"
                                                 />
                                             </label>
@@ -166,8 +197,8 @@ const CookieConsent = () => {
                                                 <span>{t("cookie_consent.marketing")}</span>
                                                 <input
                                                     type="checkbox"
-                                                    checked={marketingEnabled}
-                                                    onChange={(event) => setMarketingEnabled(event.target.checked)}
+                                                    checked={state.marketingEnabled}
+                                                    onChange={(event) => dispatch({ type: 'SET_MARKETING', payload: event.target.checked })}
                                                     className="h-4 w-4 accent-orange-500"
                                                 />
                                             </label>

@@ -400,9 +400,9 @@ function LogsContent() {
                                 <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4 pt-4 border-t ${isDark ? "border-gray-700" : "border-gray-100"}`}>
                                     {/* Action Type */}
                                     <div>
-                                        <label className={`text-xs font-medium mb-1.5 block ${isDark ? "text-gray-400" : "text-gray-500"}`}>İşlem Tipi</label>
+                                        <label htmlFor="actionFilter" className={`text-xs font-medium mb-1.5 block ${isDark ? "text-gray-400" : "text-gray-500"}`}>İşlem Tipi</label>
                                         <Select value={actionFilter} onValueChange={setActionFilter}>
-                                            <SelectTrigger className={`h-10 ${isDark ? "bg-gray-900 border-gray-700 text-white" : "bg-white"}`}>
+                                            <SelectTrigger id="actionFilter" className={`h-10 ${isDark ? "bg-gray-900 border-gray-700 text-white" : "bg-white"}`}>
                                                 <SelectValue placeholder="Tümü" />
                                             </SelectTrigger>
                                             <SelectContent className={isDark ? "bg-gray-900 border-gray-700 text-white" : ""}>
@@ -416,9 +416,9 @@ function LogsContent() {
 
                                     {/* Target Table */}
                                     <div>
-                                        <label className={`text-xs font-medium mb-1.5 block ${isDark ? "text-gray-400" : "text-gray-500"}`}>Hedef Tablo</label>
+                                        <label htmlFor="tableFilter" className={`text-xs font-medium mb-1.5 block ${isDark ? "text-gray-400" : "text-gray-500"}`}>Hedef Tablo</label>
                                         <Select value={tableFilter} onValueChange={setTableFilter}>
-                                            <SelectTrigger className={`h-10 ${isDark ? "bg-gray-900 border-gray-700 text-white" : "bg-white"}`}>
+                                            <SelectTrigger id="tableFilter" className={`h-10 ${isDark ? "bg-gray-900 border-gray-700 text-white" : "bg-white"}`}>
                                                 <SelectValue placeholder="Tümü" />
                                             </SelectTrigger>
                                             <SelectContent className={isDark ? "bg-gray-900 border-gray-700 text-white" : ""}>
@@ -432,8 +432,9 @@ function LogsContent() {
 
                                     {/* Date From */}
                                     <div>
-                                        <label className={`text-xs font-medium mb-1.5 block ${isDark ? "text-gray-400" : "text-gray-500"}`}>Başlangıç Tarihi</label>
+                                        <label htmlFor="dateFrom" className={`text-xs font-medium mb-1.5 block ${isDark ? "text-gray-400" : "text-gray-500"}`}>Başlangıç Tarihi</label>
                                         <Input
+                                            id="dateFrom"
                                             type="date"
                                             value={dateFrom}
                                             onChange={e => setDateFrom(e.target.value)}
@@ -443,8 +444,9 @@ function LogsContent() {
 
                                     {/* Date To */}
                                     <div>
-                                        <label className={`text-xs font-medium mb-1.5 block ${isDark ? "text-gray-400" : "text-gray-500"}`}>Bitiş Tarihi</label>
+                                        <label htmlFor="dateTo" className={`text-xs font-medium mb-1.5 block ${isDark ? "text-gray-400" : "text-gray-500"}`}>Bitiş Tarihi</label>
                                         <Input
+                                            id="dateTo"
                                             type="date"
                                             value={dateTo}
                                             onChange={e => setDateTo(e.target.value)}

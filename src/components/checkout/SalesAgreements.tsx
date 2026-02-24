@@ -46,8 +46,16 @@ function AgreementItem({ title, children }: { title: string, children: React.Rea
                 className="relative overflow-hidden bg-white"
             >
                 <div
+                    role="button"
+                    tabIndex={0}
                     className="p-4 text-xs text-gray-500 space-y-4"
                     onClick={() => !isOpen && setIsOpen(true)}
+                    onKeyDown={(e) => {
+                        if ((e.key === "Enter" || e.key === " ") && !isOpen) {
+                            e.preventDefault();
+                            setIsOpen(true);
+                        }
+                    }}
                     style={{ cursor: !isOpen ? 'pointer' : 'text' }}
                 >
                     {children}

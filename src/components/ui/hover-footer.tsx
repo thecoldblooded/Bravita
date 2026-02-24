@@ -1,6 +1,6 @@
 "use client";
 import React, { useRef, useEffect, useState } from "react";
-import { motion } from "motion/react";
+import { m, LazyMotion, domAnimation } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 export const TextHoverEffect = ({
@@ -31,101 +31,103 @@ export const TextHoverEffect = ({
     }, [cursor]);
 
     return (
-        <svg
-            ref={svgRef}
-            width="100%"
-            height="100%"
-            viewBox="0 0 300 100"
-            xmlns="http://www.w3.org/2000/svg"
-            onMouseEnter={() => setHovered(true)}
-            onMouseLeave={() => setHovered(false)}
-            onMouseMove={(e) => setCursor({ x: e.clientX, y: e.clientY })}
-            className={cn("select-none uppercase pointer-events-none", className)}
-        >
-            <defs>
-                <linearGradient
-                    id="textGradient"
-                    gradientUnits="userSpaceOnUse"
-                    cx="50%"
-                    cy="50%"
-                    r="25%"
-                >
-                    {hovered && (
-                        <>
-                            <stop offset="0%" stopColor="#FB923C" />
-                            <stop offset="25%" stopColor="#ef4444" />
-                            <stop offset="50%" stopColor="#FBBF24" />
-                            <stop offset="75%" stopColor="#06b6d4" />
-                            <stop offset="100%" stopColor="#10b981" />
-                        </>
-                    )}
-                </linearGradient>
+        <LazyMotion features={domAnimation}>
+            <svg
+                ref={svgRef}
+                width="100%"
+                height="100%"
+                viewBox="0 0 300 100"
+                xmlns="http://www.w3.org/2000/svg"
+                onMouseEnter={() => setHovered(true)}
+                onMouseLeave={() => setHovered(false)}
+                onMouseMove={(e) => setCursor({ x: e.clientX, y: e.clientY })}
+                className={cn("select-none uppercase pointer-events-none", className)}
+            >
+                <defs>
+                    <linearGradient
+                        id="textGradient"
+                        gradientUnits="userSpaceOnUse"
+                        cx="50%"
+                        cy="50%"
+                        r="25%"
+                    >
+                        {hovered && (
+                            <>
+                                <stop offset="0%" stopColor="#FB923C" />
+                                <stop offset="25%" stopColor="#ef4444" />
+                                <stop offset="50%" stopColor="#FBBF24" />
+                                <stop offset="75%" stopColor="#06b6d4" />
+                                <stop offset="100%" stopColor="#10b981" />
+                            </>
+                        )}
+                    </linearGradient>
 
-                <motion.radialGradient
-                    id="revealMask"
-                    gradientUnits="userSpaceOnUse"
-                    r="20%"
-                    initial={{ cx: "50%", cy: "50%" }}
-                    animate={maskPosition}
-                    transition={{ duration: duration ?? 0, ease: "easeOut" }}
+                    <m.radialGradient
+                        id="revealMask"
+                        gradientUnits="userSpaceOnUse"
+                        r="20%"
+                        initial={{ cx: "50%", cy: "50%" }}
+                        animate={maskPosition}
+                        transition={{ duration: duration ?? 0, ease: "easeOut" }}
+                    >
+                        <stop offset="0%" stopColor="white" />
+                        <stop offset="100%" stopColor="black" />
+                    </m.radialGradient>
+                    <mask id="textMask">
+                        <rect
+                            x="0"
+                            y="0"
+                            width="100%"
+                            height="100%"
+                            fill="url(#revealMask)"
+                        />
+                    </mask>
+                </defs>
+                <text
+                    x="50%"
+                    y="50%"
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    strokeWidth="0.3"
+                    className="fill-transparent stroke-neutral-200 font-[helvetica] text-7xl font-bold dark:stroke-neutral-800 pointer-events-auto cursor-pointer"
+                    style={{ opacity: hovered ? 0.7 : 0 }}
                 >
-                    <stop offset="0%" stopColor="white" />
-                    <stop offset="100%" stopColor="black" />
-                </motion.radialGradient>
-                <mask id="textMask">
-                    <rect
-                        x="0"
-                        y="0"
-                        width="100%"
-                        height="100%"
-                        fill="url(#revealMask)"
-                    />
-                </mask>
-            </defs>
-            <text
-                x="50%"
-                y="50%"
-                textAnchor="middle"
-                dominantBaseline="middle"
-                strokeWidth="0.3"
-                className="fill-transparent stroke-neutral-200 font-[helvetica] text-7xl font-bold dark:stroke-neutral-800 pointer-events-auto cursor-pointer"
-                style={{ opacity: hovered ? 0.7 : 0 }}
-            >
-                {text}
-            </text>
-            <motion.text
-                x="50%"
-                y="50%"
-                textAnchor="middle"
-                dominantBaseline="middle"
-                strokeWidth="0.3"
-                className="fill-transparent stroke-bravita-orange font-[helvetica] text-7xl font-bold 
-        dark:stroke-bravita-orange/50 pointer-events-none"
-                initial={{ strokeDashoffset: 1000, strokeDasharray: 1000 }}
-                animate={{
-                    strokeDashoffset: 0,
-                    strokeDasharray: 1000,
-                }}
-                transition={{
-                    duration: 4,
-                    ease: "easeInOut",
-                }}
-            >
-                {text}
-            </motion.text>
-            <text
-                x="50%"
-                y="50%"
-                textAnchor="middle"
-                dominantBaseline="middle"
-                stroke="url(#textGradient)"
-                strokeWidth="0.3"
-                mask="url(#textMask)"
-                className="fill-transparent font-[helvetica] text-7xl font-bold pointer-events-none"
-            >
-                {text}
-            </text>
-        </svg>
+                    {text}
+                </text>
+                <m.text
+                    x="50%"
+                    y="50%"
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    strokeWidth="0.3"
+                    className="fill-transparent stroke-bravita-orange font-[helvetica] text-7xl font-bold 
+            dark:stroke-bravita-orange/50 pointer-events-none"
+                    initial={{ strokeDashoffset: 1000, strokeDasharray: 1000 }}
+                    animate={{
+                        strokeDashoffset: 0,
+                        strokeDasharray: 1000,
+                    }}
+                    transition={{
+                        duration: 4,
+                        ease: "easeInOut",
+                    }}
+                >
+                    {text}
+                </m.text>
+                <text
+                    x="50%"
+                    y="50%"
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    stroke="url(#textGradient)"
+                    strokeWidth="0.3"
+                    mask="url(#textMask)"
+                    className="fill-transparent font-[helvetica] text-7xl font-bold pointer-events-none"
+                >
+                    {text}
+                </text>
+            </svg>
+        </LazyMotion>
     );
 };
 

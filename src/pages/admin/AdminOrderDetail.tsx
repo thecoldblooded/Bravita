@@ -428,10 +428,11 @@ function AdminOrderDetailContent() {
 
                         <div className="space-y-4">
                             <div>
-                                <label className={`text-sm font-medium ${textPrimary} block mb-1`}>
+                                <label htmlFor="cancelNote" className={`text-sm font-medium ${textPrimary} block mb-1`}>
                                     İptal Nedeni <span className="text-red-500">*</span>
                                 </label>
                                 <textarea
+                                    id="cancelNote"
                                     value={cancelNote}
                                     onChange={(e) => setCancelNote(e.target.value)}
                                     className={`w-full border rounded-md p-2 text-sm min-h-25 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none ${isDark ? "bg-gray-700 border-gray-600 text-white" : ""}`}
@@ -524,7 +525,6 @@ function AdminOrderDetailContent() {
                                                 ease: "easeOut",
                                                 repeatDelay: 0.2
                                             }}
-                                            style={{ willChange: "transform, opacity" }}
                                         />
                                     )}
                                     <StatusIcon className="w-5 h-5 relative z-10" />

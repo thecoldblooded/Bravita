@@ -21,7 +21,7 @@ interface MenuItemProps {
   delay?: number;
 }
 
-const MenuItem = memo(({ icon, label, onClick, variant = "default", delay = 0 }: MenuItemProps) => (
+const MenuItem = ({ icon, label, onClick, variant = "default", delay = 0 }: MenuItemProps) => (
   <m.button
     initial={{ opacity: 0, x: -10 }}
     animate={{ opacity: 1, x: 0 }}
@@ -52,7 +52,7 @@ const MenuItem = memo(({ icon, label, onClick, variant = "default", delay = 0 }:
       ${variant === "danger" ? "text-red-400" : "text-orange-400"}
     `} />
   </m.button>
-));
+);
 
 MenuItem.displayName = "MenuItem";
 

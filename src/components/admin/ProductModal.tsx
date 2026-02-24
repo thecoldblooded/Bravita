@@ -31,38 +31,35 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
         is_active: true,
     });
 
-    const [prevProduct, setPrevProduct] = useState(product);
-    const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
-
-    if (product !== prevProduct || isOpen !== prevIsOpen) {
-        setPrevProduct(product);
-        setPrevIsOpen(isOpen);
-        if (product) {
-            setFormData({
-                name: product.name,
-                slug: product.slug,
-                price: product.price,
-                original_price: product.original_price,
-                stock: product.stock,
-                max_quantity_per_order: product.max_quantity_per_order,
-                description: product.description || "",
-                image_url: product.image_url || "",
-                is_active: product.is_active,
-            });
-        } else {
-            setFormData({
-                name: "",
-                slug: "",
-                price: 0,
-                original_price: undefined,
-                stock: 0,
-                max_quantity_per_order: 10,
-                description: "",
-                image_url: "",
-                is_active: true,
-            });
+    useEffect(() => {
+        if (isOpen) {
+            if (product) {
+                setFormData({
+                    name: product.name,
+                    slug: product.slug,
+                    price: product.price,
+                    original_price: product.original_price,
+                    stock: product.stock,
+                    max_quantity_per_order: product.max_quantity_per_order,
+                    description: product.description || "",
+                    image_url: product.image_url || "",
+                    is_active: product.is_active,
+                });
+            } else {
+                setFormData({
+                    name: "",
+                    slug: "",
+                    price: 0,
+                    original_price: undefined,
+                    stock: 0,
+                    max_quantity_per_order: 10,
+                    description: "",
+                    image_url: "",
+                    is_active: true,
+                });
+            }
         }
-    }
+    }, [isOpen, product]);
 
     const handleChange = <K extends keyof Product>(field: K, value: Product[K]) => {
         setFormData(prev => ({ ...prev, [field]: value }));

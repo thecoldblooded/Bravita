@@ -73,7 +73,6 @@ export function ProductRow({
                             ease: "easeOut",
                             repeatDelay: 0.1
                         }}
-                        style={{ willChange: "box-shadow, border-color" }}
                     />
                 )}
                 <div className="flex items-center gap-3">
@@ -114,7 +113,6 @@ export function ProductRow({
                                 className={`h-8 text-sm ${isDark ? "bg-gray-600 border-gray-500 text-white" : ""}`}
                                 type="number"
                                 min={product.reserved_stock}
-                                autoFocus
                                 aria-label={t("admin.products.stock_input_label", "Toplam stok miktarı")}
                             />
                         </div>

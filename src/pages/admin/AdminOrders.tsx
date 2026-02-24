@@ -291,20 +291,38 @@ function OrdersContent() {
                             <div className="col-span-3">Müşteri</div>
                             <div className="col-span-2">Durum</div>
                             <div
+                                role="button"
+                                tabIndex={0}
                                 className={`col-span-2 flex items-center gap-1 cursor-pointer ${isDark ? "hover:text-white" : "hover:text-gray-900"}`}
                                 onClick={() => {
                                     if (sortBy === "total") setSortOrder(sortOrder === "asc" ? "desc" : "asc");
                                     else { setSortBy("total"); setSortOrder("desc"); }
+                                }}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter" || e.key === " ") {
+                                        e.preventDefault();
+                                        if (sortBy === "total") setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                                        else { setSortBy("total"); setSortOrder("desc"); }
+                                    }
                                 }}
                             >
                                 Tutar {sortBy === "total" && (sortOrder === "asc" ? "↑" : "↓")}
                                 <ArrowUpDown className="w-3 h-3" />
                             </div>
                             <div
+                                role="button"
+                                tabIndex={0}
                                 className={`col-span-2 flex items-center gap-1 cursor-pointer ${isDark ? "hover:text-white" : "hover:text-gray-900"}`}
                                 onClick={() => {
                                     if (sortBy === "created_at") setSortOrder(sortOrder === "asc" ? "desc" : "asc");
                                     else { setSortBy("created_at"); setSortOrder("desc"); }
+                                }}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter" || e.key === " ") {
+                                        e.preventDefault();
+                                        if (sortBy === "created_at") setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                                        else { setSortBy("created_at"); setSortOrder("desc"); }
+                                    }
                                 }}
                             >
                                 Tarih {sortBy === "created_at" && (sortOrder === "asc" ? "↑" : "↓")}
