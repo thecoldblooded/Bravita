@@ -23,6 +23,7 @@ export function ProfileInfo() {
     });
     const [isSaving, setIsSaving] = useState(false);
     const hasInitialized = useRef(false);
+    const hasUserEdited = useRef(false);
 
     useEffect(() => {
         if (!user) return;
@@ -32,9 +33,11 @@ export function ProfileInfo() {
         const incomingPhone = user.phone || "";
         const incomingEmail = user.email || "";
 
+        const hasInitializedSnapshot = hasInitialized.current;
+
         setFormData((prev) => {
             const shouldInitialize =
-                !hasInitialized.current ||
+                !hasInitializedSnapshot ||
                 (!isStub && prev.full_name === "" && incomingFullName !== "") ||
                 (!isStub && prev.phone === "" && incomingPhone !== "") ||
                 (!isStub && prev.email === "" && incomingEmail !== "");
@@ -43,10 +46,21 @@ export function ProfileInfo() {
                 return prev;
             }
 
+            const shouldUseAuthoritativeProfile =
+                !isStub &&
+                !hasInitializedSnapshot &&
+                !hasUserEdited.current;
+
             return {
-                full_name: prev.full_name || incomingFullName,
-                phone: prev.phone || incomingPhone,
-                email: prev.email || incomingEmail,
+                full_name: shouldUseAuthoritativeProfile
+                    ? incomingFullName
+                    : (prev.full_name || incomingFullName),
+                phone: shouldUseAuthoritativeProfile
+                    ? incomingPhone
+                    : (prev.phone || incomingPhone),
+                email: shouldUseAuthoritativeProfile
+                    ? incomingEmail
+                    : (prev.email || incomingEmail),
             };
         });
 
@@ -137,7 +151,10 @@ export function ProfileInfo() {
                     <Input
                         id="full_name"
                         value={formData.full_name}
-                        onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                        onChange={(e) => {
+                            hasUserEdited.current = true;
+                            setFormData({ ...formData, full_name: e.target.value });
+                        }}
                         placeholder={t("profile.info.full_name_placeholder")}
                     />
                 </div>
@@ -150,7 +167,10 @@ export function ProfileInfo() {
                         defaultCountry="TR"
                         placeholder={t("profile.info.phone_placeholder")}
                         value={formData.phone}
-                        onChange={(value) => setFormData({ ...formData, phone: value || "" })}
+                        onChange={(value) => {
+                            hasUserEdited.current = true;
+                            setFormData({ ...formData, phone: value || "" });
+                        }}
                         disabled={isSaving}
                         className="flex h-10 rounded-md border border-gray-300 bg-white px-3 py-2 text-base ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     />
