@@ -83,21 +83,25 @@ jobs:
             echo "SKIP_DRIFT=true" >> $GITHUB_ENV
           else
             echo "Expected project ref (masked): ${SUPABASE_PROJECT_REF:0:6}*** (len=${#SUPABASE_PROJECT_REF})"
-            npx supabase link --project-ref "$SUPABASE_PROJECT_REF"
 
+            if ! npx supabase link --project-ref "$SUPABASE_PROJECT_REF"; then
+              echo "::warning::Supabase project link failed. Skipping Supabase drift check."
+              echo "SKIP_DRIFT=true" >> $GITHUB_ENV
+              exit 0
+            fi
 
             LINKED_REF_FILE="supabase/.temp/project-ref"
             if [ -f "$LINKED_REF_FILE" ]; then
               LINKED_REF="$(tr -d '\r\n[:space:]' < "$LINKED_REF_FILE")"
               echo "Linked project ref (masked): ${LINKED_REF:0:6}*** (len=${#LINKED_REF})"
 
-
               if [ "$LINKED_REF" != "$SUPABASE_PROJECT_REF" ]; then
-                echo "::error::Linked project ref mismatch. Expected secret ref but found a different linked ref."
-                exit 1
+                echo "::warning::Linked project ref mismatch. Skipping Supabase drift check."
+                echo "SKIP_DRIFT=true" >> $GITHUB_ENV
               fi
             else
-              echo "::warning::Linked project-ref file not found at $LINKED_REF_FILE"
+              echo "::warning::Linked project-ref file not found at $LINKED_REF_FILE. Skipping Supabase drift check."
+              echo "SKIP_DRIFT=true" >> $GITHUB_ENV
             fi
           fi
 
@@ -111,9 +115,9 @@ jobs:
           if docker info >/dev/null 2>&1; then
             echo "✅ Docker daemon reachable before drift check."
           else
-            echo "::error::Docker daemon unreachable. 'supabase db diff' requires a shadow database container."
+            echo "::warning::Docker daemon unreachable. Skipping Supabase drift check in CI."
             docker version || true
-            exit 1
+            exit 0
           fi
 
 

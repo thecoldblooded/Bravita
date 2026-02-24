@@ -165,7 +165,7 @@ export async function getSiteSettings(): Promise<SiteSettings> {
         console.error('Error fetching site settings:', error);
         // Fallback to defaults
         return {
-            vat_rate: 0.20,
+            vat_rate: 0.01,
             shipping_cost: 49.90,
             free_shipping_threshold: 1500.00,
             bank_name: "Ziraat Bankası",

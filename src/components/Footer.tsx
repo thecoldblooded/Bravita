@@ -125,7 +125,7 @@ function Footer() {
   ];
 
   return (
-    <footer ref={footerRef} className="bg-[#2e241e] relative h-fit rounded-[3rem] overflow-hidden m-4 md:m-8 pb-24">
+    <footer ref={footerRef} className="bg-[#2e241e] relative z-10 h-fit rounded-[3rem] overflow-hidden m-4 md:m-8 pb-24">
       <div className="max-w-7xl mx-auto p-8 md:p-14 z-40 relative">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 md:gap-8 lg:gap-16 pb-12">
 

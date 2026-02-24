@@ -46,7 +46,7 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-const VAT_RATE = 0.20;
+const VAT_RATE = 0.01;
 
 export function CartProvider({ children }: { children: ReactNode }) {
     const [isCartOpen, setIsCartOpen] = useState(false);
@@ -175,7 +175,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }, [removePromoCode]);
 
     const [settings, setSettings] = useState({
-        vat_rate: 0.20,
+        vat_rate: 0.01,
         shipping_cost: 0,
         free_shipping_threshold: 0
     });

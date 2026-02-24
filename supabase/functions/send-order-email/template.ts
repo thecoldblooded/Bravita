@@ -43,7 +43,7 @@ export const AWAITING_PAYMENT_HTML = `<!DOCTYPE html>
                             <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 30px;">
                                 <tr><td style="padding: 8px 0; color: #6B7280; font-size: 14px;">Ara Toplam</td><td align="right" style="padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600;">₺{{SUBTOTAL}}</td></tr>
                                 <tr><td style="padding: 8px 0; color: #22C55E; font-size: 14px;">İndirim</td><td align="right" style="padding: 8px 0; color: #22C55E; font-size: 14px; font-weight: 600;">-₺{{DISCOUNT}}</td></tr>
-                                <tr><td style="padding: 8px 0; color: #6B7280; font-size: 14px;">KDV (%20)</td><td align="right" style="padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600;">₺{{TAX}}</td></tr>
+                                <tr><td style="padding: 8px 0; color: #6B7280; font-size: 14px;">KDV (%1)</td><td align="right" style="padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600;">₺{{TAX}}</td></tr>
                                 <tr><td style="border-top: 1px solid #E5E7EB; padding: 16px 0 0; color: #111827; font-size: 18px; font-weight: 800;">Toplam</td><td align="right" style="border-top: 1px solid #E5E7EB; padding: 16px 0 0; color: #F97316; font-size: 24px; font-weight: 800;">₺{{TOTAL}}</td></tr>
                             </table>
 
@@ -111,7 +111,7 @@ export const ORDER_CONFIRMATION_HTML = `<!DOCTYPE html>
                             <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 30px;">
                                 <tr><td style="padding: 8px 0; color: #6B7280; font-size: 14px;">Ara Toplam</td><td align="right" style="padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600;">₺{{SUBTOTAL}}</td></tr>
                                 <tr><td style="padding: 8px 0; color: #22C55E; font-size: 14px;">İndirim</td><td align="right" style="padding: 8px 0; color: #22C55E; font-size: 14px; font-weight: 600;">-₺{{DISCOUNT}}</td></tr>
-                                <tr><td style="padding: 8px 0; color: #6B7280; font-size: 14px;">KDV (%20)</td><td align="right" style="padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600;">₺{{TAX}}</td></tr>
+                                <tr><td style="padding: 8px 0; color: #6B7280; font-size: 14px;">KDV (%1)</td><td align="right" style="padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600;">₺{{TAX}}</td></tr>
                                 <tr><td style="border-top: 1px solid #E5E7EB; padding: 16px 0 0; color: #111827; font-size: 18px; font-weight: 800;">Toplam</td><td align="right" style="border-top: 1px solid #E5E7EB; padding: 16px 0 0; color: #F97316; font-size: 24px; font-weight: 800;">₺{{TOTAL}}</td></tr>
                             </table>
 

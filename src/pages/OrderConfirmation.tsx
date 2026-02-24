@@ -304,7 +304,7 @@ export default function OrderConfirmation() {
                         )}
 
                         <div className="flex justify-between">
-                            <span className="text-gray-500">{t("cart.vat", "KDV (%20)")}</span>
+                            <span className="text-gray-500">{t("cart.vat", "KDV (%1)")}</span>
                             <span className="text-gray-900">₺{order.order_details.vat_amount}</span>
                         </div>
                         {order.order_details.shipping_cost !== undefined && (

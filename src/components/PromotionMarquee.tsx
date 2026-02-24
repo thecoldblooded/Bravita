@@ -57,11 +57,15 @@ const PromotionMarquee = () => {
             if (typeof document === 'undefined') return;
             const isMenuOpen = document.body.dataset.userMenuOpen === "true";
             const isSupportOpen = document.body.dataset.supportOpen === "true";
-            setIsHidden(isMenuOpen || isSupportOpen);
+            const isMobile = window.innerWidth < 768;
+            setIsHidden((isMenuOpen || isSupportOpen) && isMobile);
         };
 
         // Initial check
         checkVisibility();
+
+        // Also check on window resize
+        window.addEventListener('resize', checkVisibility);
 
         // Observe body attributes for changes
         const observer = new MutationObserver(checkVisibility);
@@ -75,7 +79,10 @@ const PromotionMarquee = () => {
         };
         startFetching();
 
-        return () => observer.disconnect();
+        return () => {
+            window.removeEventListener('resize', checkVisibility);
+            observer.disconnect();
+        };
     }, []);
 
     const handleCopyCode = (code: string) => {
@@ -159,12 +166,14 @@ const PromotionMarquee = () => {
           .promo-marquee-wrapper:hover .promo-marquee-container {
             animation-play-state: paused;
           }
-          /* Hide marquee and its spacer when user menu or support is open to reduce clutter and overlapping */
-          body[data-user-menu-open="true"] .promo-marquee-wrapper,
-          body[data-support-open="true"] .promo-marquee-wrapper,
-          body[data-user-menu-open="true"] .promo-marquee-spacer,
-          body[data-support-open="true"] .promo-marquee-spacer {
-            display: none !important;
+          /* Hide marquee and its spacer when user menu or support is open to reduce clutter and overlapping - ONLY ON MOBILE */
+          @media (max-width: 767px) {
+            body[data-user-menu-open="true"] .promo-marquee-wrapper,
+            body[data-support-open="true"] .promo-marquee-wrapper,
+            body[data-user-menu-open="true"] .promo-marquee-spacer,
+            body[data-support-open="true"] .promo-marquee-spacer {
+              display: none !important;
+            }
           }
 
           /* On mobile, ensure it doesn't overlap with important UI or if the screen is too small */
