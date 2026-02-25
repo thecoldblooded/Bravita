@@ -4,7 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const ALLOWED_ORIGINS = [
     "https://bravita.com.tr",
-    "https://bravita.vervel.app",
+    "https://bravita.vercel.app",
     "https://www.bravita.com.tr",
     "https://bravita.vercel.app",
 ];

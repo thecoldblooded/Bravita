@@ -19,7 +19,7 @@ const BAKIYEM_SOFTWARE_NAME = (Deno.env.get("BAKIYEM_SOFTWARE_NAME") ?? "Bravita
 const THREED_PAYLOAD_ENC_KEY = (Deno.env.get("THREED_PAYLOAD_ENC_KEY") ?? "").trim();
 const DEFAULT_ALLOWED_ORIGINS = [
   "https://bravita.com.tr",
-  "https://bravita.vervel.app",
+  "https://bravita.vercel.app",
   "https://www.bravita.com.tr",
   "http://localhost:8080"
 ];
@@ -426,7 +426,21 @@ serve(async (req) => {
     const paymentAmount = amountFromCents(paymentTotalCents);
     const gatewayInstallmentNumber = normalizeGatewayInstallmentNumber(quoteData.installment_number ?? body.installmentNumber ?? 1);
     const requestOrigin = req.headers.get("origin") ?? "";
-    const uiOrigin = isAllowedOrigin(requestOrigin) ? requestOrigin : APP_BASE_URL;
+    const isRequestOriginAllowed = isAllowedOrigin(requestOrigin);
+    const uiOrigin = isRequestOriginAllowed ? requestOrigin : APP_BASE_URL;
+    const hasVercelOriginInAllowlist = ACTIVE_ALLOWED_ORIGINS.includes("https://bravita.vercel.app");
+
+    console.info("bakiyem-init-3d ui-origin resolution", {
+      intentId,
+      requestOrigin,
+      isRequestOriginAllowed,
+      resolvedUiOrigin: uiOrigin,
+      appBaseUrl: APP_BASE_URL,
+      hasVercelOriginInAllowlist,
+      activeAllowedOriginsSample: ACTIVE_ALLOWED_ORIGINS.slice(0, 8),
+      activeAllowedOriginsCount: ACTIVE_ALLOWED_ORIGINS.length,
+    });
+
     const redirectUrl = new URL(BAKIYEM_REDIRECT_URL);
     redirectUrl.searchParams.set("MyTrxCode", intentId);
     redirectUrl.searchParams.set("uiOrigin", uiOrigin);
@@ -467,6 +481,13 @@ serve(async (req) => {
     };
     const requestDiagnostics = {
       intentId,
+      requestOrigin,
+      isRequestOriginAllowed,
+      resolvedUiOrigin: uiOrigin,
+      appBaseUrl: APP_BASE_URL,
+      hasVercelOriginInAllowlist,
+      activeAllowedOriginsSample: ACTIVE_ALLOWED_ORIGINS.slice(0, 8),
+      activeAllowedOriginsCount: ACTIVE_ALLOWED_ORIGINS.length,
       requestedPayloadProfile: payloadProfile,
       payloadProfileEffective,
       payloadProfileSource,

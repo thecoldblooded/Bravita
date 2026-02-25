@@ -9,7 +9,7 @@ const DEFAULT_APP_BASE_URL = "https://bravita.com.tr";
 
 const DEFAULT_ALLOWED_ORIGINS = [
   "https://bravita.com.tr",
-  "https://bravita.vervel.app",
+  "https://bravita.vercel.app",
   "https://www.bravita.com.tr",
   "http://localhost:8080",
 ];
@@ -189,8 +189,23 @@ function getApproxPayloadCharSize(value: unknown): number {
 serve(async (req: Request) => {
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
   const url = new URL(req.url);
-  const uiOrigin = resolveUiOrigin(url.searchParams.get("uiOrigin"));
+  const uiOriginParamRaw = url.searchParams.get("uiOrigin");
+  const uiOriginParam = (uiOriginParamRaw ?? "").trim();
+  const uiOriginParamAllowed = isAllowedOrigin(uiOriginParam);
+  const uiOrigin = resolveUiOrigin(uiOriginParamRaw);
+  const hasVercelOriginInAllowlist = ACTIVE_ALLOWED_ORIGINS.includes("https://bravita.vercel.app");
   const intentId = url.searchParams.get("MyTrxCode") || url.searchParams.get("intentId");
+
+  console.info("bakiyem-3d-return ui-origin resolution", {
+    intentId,
+    uiOriginParam,
+    uiOriginParamAllowed,
+    resolvedUiOrigin: uiOrigin,
+    hasVercelOriginInAllowlist,
+    activeAllowedOriginsSample: ACTIVE_ALLOWED_ORIGINS.slice(0, 8),
+    activeAllowedOriginsCount: ACTIVE_ALLOWED_ORIGINS.length,
+  });
+
   const isPostCallback = req.method === "POST";
   const userAgent = req.headers.get("user-agent") || "";
   const isLikelyBrowserCallback = /mozilla|chrome|safari|firefox|edg/i.test(userAgent.toLowerCase());

@@ -10,7 +10,7 @@ const BAKIYEM_API_USERNAME = Deno.env.get("BAKIYEM_API_USERNAME") ?? "";
 const BAKIYEM_API_PASSWORD = Deno.env.get("BAKIYEM_API_PASSWORD") ?? "";
 const DEFAULT_ALLOWED_ORIGINS = [
   "https://bravita.com.tr",
-  "https://bravita.vervel.app",
+  "https://bravita.vercel.app",
   "https://www.bravita.com.tr",
   "http://localhost:8080"
 ];
