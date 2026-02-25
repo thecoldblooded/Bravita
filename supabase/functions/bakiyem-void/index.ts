@@ -17,8 +17,6 @@ const DEFAULT_ALLOWED_ORIGINS = [
   "https://bravita.com.tr",
   "https://bravita.vervel.app",
   "https://www.bravita.com.tr",
-  "https://bravita.vercel.app",
-  "http://localhost:5173",
   "http://localhost:8080",
 ];
 

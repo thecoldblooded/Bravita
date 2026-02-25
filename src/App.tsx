@@ -11,6 +11,7 @@ import UnderConstruction from "@/components/UnderConstruction";
 import { initializeConsentAwareAnalytics } from "@/lib/performance/loadContentSquare";
 import periodicAlpacaGif from "@/assets/alpaca.gif";
 import { ImageWithFallback } from "@/components/ImageWithFallback";
+import WelcomeAnimation from "@/components/WelcomeAnimation";
 
 // Admin pages
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -147,6 +148,9 @@ const AppContent = () => {
 
 const App = () => {
   const { isSplashScreenActive, isPasswordRecovery } = useAuth();
+  const [showWelcome, setShowWelcome] = useState(() => {
+    return typeof window !== "undefined" && window.location.hash.includes("type=signup");
+  });
 
   useEffect(() => {
     const teardownAnalytics = initializeConsentAwareAnalytics();
@@ -167,7 +171,9 @@ const App = () => {
               <Toaster />
               <Sonner />
 
-              {isSplashScreenActive ? (
+              {showWelcome ? (
+                <WelcomeAnimation onComplete={() => setShowWelcome(false)} />
+              ) : isSplashScreenActive ? (
                 <div className="fixed inset-0 bg-[#FFFBF7] z-50 flex flex-col items-center justify-center">
                   <div className="relative w-32 h-32 mb-4 flex items-center justify-center">
                     <ImageWithFallback />

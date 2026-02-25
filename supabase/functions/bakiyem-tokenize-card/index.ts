@@ -12,8 +12,6 @@ const DEFAULT_ALLOWED_ORIGINS = [
   "https://bravita.com.tr",
   "https://bravita.vervel.app",
   "https://www.bravita.com.tr",
-  "https://bravita.vercel.app",
-  "http://localhost:5173",
   "http://localhost:8080"
 ];
 const ALLOWED_ORIGINS = (Deno.env.get("PAYMENT_ALLOWED_ORIGINS") ?? "").split(",").map((value) => value.trim()).filter((value) => value.length > 0);
