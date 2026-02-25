@@ -11,6 +11,7 @@ const APP_WEBHOOK_SECRET = Deno.env.get("APP_WEBHOOK_SECRET");
 
 const ALLOWED_ORIGINS = [
     'https://bravita.com.tr',
+    'https://bravita.vervel.app',
     'https://www.bravita.com.tr',
     'https://admin.bravita.com.tr',
     'https://app.bravita.com.tr',

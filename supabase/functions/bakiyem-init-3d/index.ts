@@ -19,6 +19,7 @@ const BAKIYEM_SOFTWARE_NAME = (Deno.env.get("BAKIYEM_SOFTWARE_NAME") ?? "Bravita
 const THREED_PAYLOAD_ENC_KEY = (Deno.env.get("THREED_PAYLOAD_ENC_KEY") ?? "").trim();
 const DEFAULT_ALLOWED_ORIGINS = [
   "https://bravita.com.tr",
+  "https://bravita.vervel.app",
   "https://www.bravita.com.tr",
   "https://bravita.vercel.app",
   "http://localhost:5173",

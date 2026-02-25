@@ -12,6 +12,7 @@ const SUPABASE_PROJECT_REF = Deno.env.get("SUPABASE_PROJECT_REF") || deriveProje
 
 const ALLOWED_ORIGINS = [
     "https://bravita.com.tr",
+    "https://bravita.vervel.app",
     "https://www.bravita.com.tr",
     "https://bravita.vercel.app",
     "http://localhost:5173",

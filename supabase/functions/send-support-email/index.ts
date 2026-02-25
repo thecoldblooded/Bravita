@@ -10,6 +10,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const ALLOWED_ORIGINS = [
     'https://bravita.com.tr',
+    'https://bravita.vervel.app',
     'https://www.bravita.com.tr',
     'https://admin.bravita.com.tr',
     'https://app.bravita.com.tr',
