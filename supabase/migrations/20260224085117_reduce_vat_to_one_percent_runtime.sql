@@ -86,4 +86,4 @@ SET content_html = REPLACE(content_html, 'KDV (%20)', 'KDV (%1)'),
     updated_at = NOW()
 WHERE content_html LIKE '%KDV (%20)%';
 
-COMMIT;
+COMMIT;;

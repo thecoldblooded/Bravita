@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
+import { getFunctionAuthHeaders } from "@/lib/functionAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -119,17 +120,30 @@ export function SupportCenter() {
                     status: "open",
                     updated_at: new Date().toISOString()
                 })
-                .eq("id", ticket.id);
+                .eq("id", ticket.id)
+                .eq("user_id", user?.id ?? "");
 
             if (error) throw error;
 
             // Admini bilgilendir
             try {
+                const authHeaders = await getFunctionAuthHeaders("support:center_user_replied_notification");
+                const anonKey = String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? "").trim();
+                const invokeHeaders: Record<string, string> = {
+                    ...authHeaders,
+                    ...(anonKey ? { apikey: anonKey } : {}),
+                };
+
+                if (!invokeHeaders.Authorization && anonKey) {
+                    invokeHeaders.Authorization = `Bearer ${anonKey}`;
+                }
+
                 await supabase.functions.invoke("send-support-email", {
                     body: {
                         ticket_id: ticket.id,
                         type: "user_replied",
                     },
+                    headers: invokeHeaders,
                 });
             } catch {
                 // Bildirim e-postası başarısız olsa da yanıt akışını bozma
@@ -181,11 +195,23 @@ export function SupportCenter() {
             fetchTickets();
 
             try {
+                const authHeaders = await getFunctionAuthHeaders("support:center_ticket_created_notification");
+                const anonKey = String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? "").trim();
+                const invokeHeaders: Record<string, string> = {
+                    ...authHeaders,
+                    ...(anonKey ? { apikey: anonKey } : {}),
+                };
+
+                if (!invokeHeaders.Authorization && anonKey) {
+                    invokeHeaders.Authorization = `Bearer ${anonKey}`;
+                }
+
                 const { error: notifyError } = await supabase.functions.invoke("send-support-email", {
                     body: {
                         ticket_id: ticket.id,
                         type: "ticket_created",
                     },
+                    headers: invokeHeaders,
                 });
 
                 if (notifyError) {

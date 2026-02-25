@@ -27,13 +27,9 @@ export function AdminThemeProvider({ children }: { children: ReactNode }) {
         // Save to localStorage
         localStorage.setItem(THEME_STORAGE_KEY, theme);
 
-        // Apply theme class to document
-        const root = document.documentElement;
-        if (theme === "dark") {
-            root.classList.add("admin-dark");
-        } else {
-            root.classList.remove("admin-dark");
-        }
+        // Clean up: always remove admin-dark from documentElement
+        // The class is applied locally via AdminLayout, not globally
+        document.documentElement.classList.remove("admin-dark");
     }, [theme]);
 
     const toggleTheme = () => {

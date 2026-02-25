@@ -67,15 +67,13 @@ const {
 await signupWithEmail({
   email: 'user@example.com',
   password: 'SecurePass123!',
-  phone: '+90500000000',
-  userType: 'individual'
+  phone: '+90500000000'
 });
 
 // Login
 await loginWithEmail({
   email: 'user@example.com',
-  password: 'SecurePass123!',
-  userType: 'individual'
+  password: 'SecurePass123!'
 });
 
 // Logout
@@ -168,10 +166,9 @@ if (!isAuthenticated) {
 const { user } = useAuth();
 
 user?.email           // User email
-user?.full_name       // For individuals
-user?.company_name    // For companies
+user?.full_name       // Display name
 user?.phone           // Verified phone
-user?.user_type       // 'individual' or 'company'
+user?.user_type       // 'individual'
 ```
 
 ### **Handle 2FA SMS**

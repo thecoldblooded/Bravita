@@ -342,8 +342,8 @@ function LogsContent() {
                             <ArrowLeft className="w-5 h-5" />
                         </Button>
                         <div>
-                            <h1 className={`text-2xl font-bold flex items-center gap-3 ${isDark ? "text-white" : "text-gray-900"}`}>
-                                <ShieldCheck className="w-8 h-8 text-orange-500" />
+                            <h1 className={`text-3xl font-black flex items-center gap-3 ${isDark ? "text-white" : "text-gray-900"}`}>
+                                <span className="bg-orange-500 w-2 h-8 rounded-full" />
                                 Sistem Denetim Logları
                             </h1>
                             <p className={`text-sm mt-1 ${isDark ? "text-gray-400" : "text-gray-500"}`}>

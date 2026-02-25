@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { getFunctionAuthHeaders } from "@/lib/functionAuth";
 import Loader from "@/components/ui/Loader";
 import { Mail, User, MessageSquare, Tag } from "lucide-react";
 
@@ -58,8 +59,7 @@ export default function SupportForm() {
     });
 
     const onSubmit = async (values: SupportFormValues) => {
-        const skipCaptcha = import.meta.env.VITE_SKIP_CAPTCHA === "true";
-        if (!captchaToken && !skipCaptcha) {
+        if (!captchaToken) {
             toast.error(t("auth.captcha_required"));
             return;
         }
@@ -85,12 +85,24 @@ export default function SupportForm() {
             // 2. Call Edge Function for email notification (we will implement this next)
             // We don't await this to keep the UI responsive, or we can await it if we want to ensure it sent
             try {
+                const authHeaders = await getFunctionAuthHeaders("support:public_create_ticket_notification");
+                const anonKey = String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? "").trim();
+                const invokeHeaders: Record<string, string> = {
+                    ...authHeaders,
+                    ...(anonKey ? { apikey: anonKey } : {}),
+                };
+
+                if (!invokeHeaders.Authorization && anonKey) {
+                    invokeHeaders.Authorization = `Bearer ${anonKey}`;
+                }
+
                 const { error: notifyError } = await supabase.functions.invoke("send-support-email", {
                     body: {
                         ticket_id: ticket.id,
                         type: "ticket_created",
-                        captchaToken: captchaToken,
+                        captchaToken,
                     },
+                    headers: invokeHeaders,
                 });
 
                 if (notifyError) {

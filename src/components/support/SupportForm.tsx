@@ -6,6 +6,7 @@ import * as z from "zod";
 import { useTranslation } from "react-i18next";
 import { supabase, type UserProfile } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { getFunctionAuthHeaders } from "@/lib/functionAuth";
 import { toast } from "sonner";
 import {
     Form,
@@ -100,12 +101,24 @@ export function SupportForm({ onSuccess }: SupportFormProps) {
             }
 
             try {
+                const authHeaders = await getFunctionAuthHeaders("support:profile_create_ticket_notification");
+                const anonKey = String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? "").trim();
+                const invokeHeaders: Record<string, string> = {
+                    ...authHeaders,
+                    ...(anonKey ? { apikey: anonKey } : {}),
+                };
+
+                if (!invokeHeaders.Authorization && anonKey) {
+                    invokeHeaders.Authorization = `Bearer ${anonKey}`;
+                }
+
                 const { error: notifyError } = await supabase.functions.invoke("send-support-email", {
                     body: {
                         ticket_id: ticket.id,
                         type: "ticket_created",
-                        captchaToken: captchaToken,
+                        captchaToken,
                     },
+                    headers: invokeHeaders,
                 });
 
                 if (notifyError) {

@@ -42,7 +42,6 @@ DECLARE
     v_discount_total_cents BIGINT := 0;
     v_paid_total_cents BIGINT := 0;
 BEGIN
-    -- Card flow must use payment_intent + 3D finalize path
     IF p_payment_method <> 'bank_transfer' THEN
         RETURN jsonb_build_object(
             'success', false,
@@ -51,7 +50,6 @@ BEGIN
         );
     END IF;
 
-    -- Auth user is required
     v_user_id := auth.uid();
     IF v_user_id IS NULL THEN
         RETURN jsonb_build_object(
@@ -61,7 +59,6 @@ BEGIN
         );
     END IF;
 
-    -- Enforce profile + phone gate
     SELECT profile_complete, phone
     INTO v_profile_complete, v_phone
     FROM public.profiles
@@ -83,7 +80,6 @@ BEGIN
         );
     END IF;
 
-    -- Address ownership check
     SELECT user_id INTO v_address_owner
     FROM public.addresses
     WHERE id = p_shipping_address_id;
@@ -96,7 +92,6 @@ BEGIN
         );
     END IF;
 
-    -- Iterate input items
     FOR v_item IN SELECT * FROM jsonb_array_elements(p_items)
     LOOP
         v_product_id := (v_item->>'product_id')::UUID;
@@ -110,7 +105,6 @@ BEGIN
             );
         END IF;
 
-        -- Get product with lock
         SELECT id, name, price, stock
         INTO v_product_id, v_product_name, v_product_price, v_product_stock
         FROM public.products
@@ -147,7 +141,6 @@ BEGIN
         v_valid_items := v_valid_items || v_item_detail;
     END LOOP;
 
-    -- VAT & shipping settings
     SELECT
         COALESCE(vat_rate, 0.20),
         COALESCE(shipping_cost, 49.90),
@@ -158,7 +151,6 @@ BEGIN
 
     v_total_vat := v_total_subtotal * v_vat_rate;
 
-    -- Promo code evaluation
     IF p_promo_code IS NOT NULL AND length(p_promo_code) > 0 THEN
         BEGIN
             SELECT public.verify_promo_code(p_promo_code) INTO v_promo_result;
@@ -886,4 +878,4 @@ BEGIN
 END;
 $$;
 
-COMMIT;
+COMMIT;;

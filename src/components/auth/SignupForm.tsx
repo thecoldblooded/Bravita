@@ -16,7 +16,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { useAuthOperations } from "@/hooks/useAuth";
 import Loader from "@/components/ui/Loader";
@@ -44,19 +43,7 @@ type IndividualSignupForm = {
   agreeKvkk: boolean;
 };
 
-type CompanySignupForm = {
-  username: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-  companyName: string;
-  agreeTerms: boolean;
-  agreePrivacy: boolean;
-  agreeKvkk: boolean;
-};
-
 type SignupUiState = {
-  userType: "individual" | "company";
   showEmailConfirmation: boolean;
   registeredEmail: string;
   isResending: boolean;
@@ -64,10 +51,6 @@ type SignupUiState = {
 };
 
 type SignupUiAction =
-  | {
-    type: "SET_USER_TYPE";
-    userType: SignupUiState["userType"];
-  }
   | {
     type: "SHOW_EMAIL_CONFIRMATION";
     email: string;
@@ -85,7 +68,6 @@ type SignupUiAction =
   };
 
 const initialSignupUiState: SignupUiState = {
-  userType: "individual",
   showEmailConfirmation: false,
   registeredEmail: "",
   isResending: false,
@@ -94,11 +76,6 @@ const initialSignupUiState: SignupUiState = {
 
 function signupUiReducer(state: SignupUiState, action: SignupUiAction): SignupUiState {
   switch (action.type) {
-    case "SET_USER_TYPE":
-      return {
-        ...state,
-        userType: action.userType,
-      };
     case "SHOW_EMAIL_CONFIRMATION":
       return {
         ...state,
@@ -214,7 +191,7 @@ function CaptchaSection({ siteKey, captchaRef, onTokenChange }: CaptchaSectionPr
   );
 }
 
-type IndividualSignupTabProps = {
+type IndividualSignupContentProps = {
   t: TranslateFn;
   form: UseFormReturn<IndividualSignupForm>;
   isLoading: boolean;
@@ -226,7 +203,7 @@ type IndividualSignupTabProps = {
   onTokenChange: (token: string | null) => void;
 };
 
-function IndividualSignupTab({
+function IndividualSignupContent({
   t,
   form,
   isLoading,
@@ -236,12 +213,12 @@ function IndividualSignupTab({
   hcaptchaSiteKey,
   captchaRef,
   onTokenChange,
-}: IndividualSignupTabProps) {
+}: IndividualSignupContentProps) {
   const hasAcceptedAll =
     form.watch("agreeTerms") && form.watch("agreePrivacy") && form.watch("agreeKvkk");
 
   return (
-    <TabsContent value="individual" className="space-y-4">
+    <div className="space-y-4">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <FormField
@@ -500,243 +477,7 @@ function IndividualSignupTab({
           {t("auth.login")}
         </button>
       </div>
-    </TabsContent>
-  );
-}
-
-type CompanySignupTabProps = {
-  t: TranslateFn;
-  form: UseFormReturn<CompanySignupForm>;
-  isLoading: boolean;
-  onSubmit: (data: CompanySignupForm) => Promise<void>;
-  onSwitchToLogin?: () => void;
-  hcaptchaSiteKey: string;
-  captchaRef: RefObject<HCaptcha | null>;
-  onTokenChange: (token: string | null) => void;
-};
-
-function CompanySignupTab({
-  t,
-  form,
-  isLoading,
-  onSubmit,
-  onSwitchToLogin,
-  hcaptchaSiteKey,
-  captchaRef,
-  onTokenChange,
-}: CompanySignupTabProps) {
-  return (
-    <TabsContent value="company" className="space-y-4">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="username"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t("auth.username")}</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder={t("auth.username")}
-                    autoComplete="username"
-                    {...field}
-                    disabled={isLoading}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="companyName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t("auth.company_name")}</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder={t("auth.company_name")}
-                    autoComplete="organization"
-                    {...field}
-                    disabled={isLoading}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t("auth.email")}</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder={t("auth.email_placeholder")}
-                    type="email"
-                    autoComplete="email"
-                    {...field}
-                    disabled={isLoading}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t("auth.password")}</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder={t("auth.placeholders.password")}
-                    type="password"
-                    autoComplete="new-password"
-                    {...field}
-                    disabled={isLoading}
-                  />
-                </FormControl>
-                <PasswordStrengthIndicator password={field.value} />
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="confirmPassword"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t("auth.confirm_password")}</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder={t("auth.placeholders.confirm_password")}
-                    type="password"
-                    autoComplete="new-password"
-                    {...field}
-                    disabled={isLoading}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <div className="space-y-3 border-t pt-4">
-            <FormField
-              control={form.control}
-              name="agreeTerms"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                  <FormControl>
-                    <Checkbox
-                      name={field.name}
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      disabled={isLoading}
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel className="font-normal cursor-pointer">
-                      {t("auth.agree_terms")}{" "}
-                      <a
-                        href="#legal:terms"
-                        className="text-orange-600 hover:underline"
-                      >
-                        {t("auth.terms_link")}
-                      </a>
-                    </FormLabel>
-                  </div>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="agreePrivacy"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                  <FormControl>
-                    <Checkbox
-                      name={field.name}
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      disabled={isLoading}
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel className="font-normal cursor-pointer">
-                      {t("auth.agree_privacy")}{" "}
-                      <a
-                        href="#legal:privacy"
-                        className="text-orange-600 hover:underline"
-                      >
-                        {t("auth.privacy_link")}
-                      </a>
-                    </FormLabel>
-                  </div>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="agreeKvkk"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                  <FormControl>
-                    <Checkbox
-                      name={field.name}
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      disabled={isLoading}
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel className="font-normal cursor-pointer">
-                      {t("auth.agree_kvkk")}{" "}
-                      <a
-                        href="#legal:kvkk"
-                        className="text-orange-600 hover:underline"
-                      >
-                        {t("auth.kvkk_link")}
-                      </a>
-                    </FormLabel>
-                  </div>
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <CaptchaSection
-            siteKey={hcaptchaSiteKey}
-            captchaRef={captchaRef}
-            onTokenChange={onTokenChange}
-          />
-
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? <Loader size="1.25rem" noMargin /> : t("auth.signup")}
-          </Button>
-        </form>
-      </Form>
-
-      <div className="text-center text-sm">
-        <span className="text-gray-600">{t("auth.already_account")} </span>
-        <button
-          type="button"
-          onClick={onSwitchToLogin}
-          className="text-orange-600 hover:underline font-semibold"
-        >
-          {t("auth.login")}
-        </button>
-      </div>
-    </TabsContent>
+    </div>
   );
 }
 
@@ -776,33 +517,11 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
       path: ["confirmPassword"],
     });
 
-  const companySignupSchema = z
-    .object({
-      username: z.string().min(3, t("auth.validation.username_too_short")),
-      email: z.string().email(t("auth.validation.email_invalid")),
-      password: passwordSchema,
-      confirmPassword: z.string(),
-      companyName: z.string().min(1, t("auth.validation.company_name_required")),
-      agreeTerms: z
-        .boolean()
-        .refine((v) => v === true, t("auth.validation.must_accept_terms")),
-      agreePrivacy: z
-        .boolean()
-        .refine((v) => v === true, t("auth.validation.must_accept_privacy")),
-      agreeKvkk: z
-        .boolean()
-        .refine((v) => v === true, t("auth.validation.must_accept_kvkk")),
-    })
-    .refine((data) => data.password === data.confirmPassword, {
-      message: t("auth.validation.passwords_dont_match"),
-      path: ["confirmPassword"],
-    });
-
   const { signupWithEmail, signupWithGoogle, resendEmailConfirmation, isLoading } =
     useAuthOperations();
 
   const [uiState, dispatch] = useReducer(signupUiReducer, initialSignupUiState);
-  const { userType, showEmailConfirmation, registeredEmail, isResending, captchaToken } = uiState;
+  const { showEmailConfirmation, registeredEmail, isResending, captchaToken } = uiState;
   const captchaRef = useRef<HCaptcha>(null);
 
   // Production Key: "203039b0-ee5c-48ba-aa2c-390a43ecaae0"
@@ -822,25 +541,9 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
     },
   });
 
-  const companyForm = useForm<CompanySignupForm>({
-    resolver: zodResolver(companySignupSchema),
-    defaultValues: {
-      username: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-      companyName: "",
-      agreeTerms: false,
-      agreePrivacy: false,
-      agreeKvkk: false,
-    },
-  });
-
   const handleIndividualSignupSubmit = async (data: IndividualSignupForm) => {
     try {
-      const skipCaptcha = import.meta.env.VITE_SKIP_CAPTCHA === "true";
-
-      if (!captchaToken && !skipCaptcha) {
+      if (!captchaToken) {
         toast.error(t("auth.captcha_required"));
         return;
       }
@@ -849,40 +552,11 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
         email: data.email,
         password: data.password,
         phone: data.phone,
-        userType: "individual",
         fullName: data.fullName,
-        captchaToken: captchaToken!,
+        captchaToken: captchaToken,
       });
 
       localStorage.setItem("profile_in_progress", "true");
-
-      dispatch({ type: "SHOW_EMAIL_CONFIRMATION", email: data.email });
-      toast.success(t("auth.email_confirmation_sent"));
-
-      captchaRef.current?.resetCaptcha();
-      dispatch({ type: "SET_CAPTCHA_TOKEN", token: null });
-    } catch (err) {
-      toast.error(translateError(err, t));
-    }
-  };
-
-  const handleCompanySignupSubmit = async (data: CompanySignupForm) => {
-    try {
-      const skipCaptcha = import.meta.env.VITE_SKIP_CAPTCHA === "true";
-
-      if (!captchaToken && !skipCaptcha) {
-        toast.error(t("auth.captcha_required"));
-        return;
-      }
-
-      await signupWithEmail({
-        email: data.email,
-        password: data.password,
-        phone: "",
-        userType: "company",
-        companyName: data.companyName,
-        captchaToken: captchaToken!,
-      });
 
       dispatch({ type: "SHOW_EMAIL_CONFIRMATION", email: data.email });
       toast.success(t("auth.email_confirmation_sent"));
@@ -913,7 +587,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
       localStorage.setItem("profile_in_progress", "true");
       localStorage.setItem("oauth_provider", "google");
 
-      await signupWithGoogle({ userType: "individual", phone: "" });
+      await signupWithGoogle();
     } catch (err) {
       toast.error(translateError(err, t));
     }
@@ -932,40 +606,16 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
   }
 
   return (
-    <Tabs
-      value={userType}
-      onValueChange={(value) =>
-        dispatch({ type: "SET_USER_TYPE", userType: value as SignupUiState["userType"] })
-      }
-      className="w-full"
-    >
-      <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="individual">{t("auth.individual")}</TabsTrigger>
-        <TabsTrigger value="company">{t("auth.company")}</TabsTrigger>
-      </TabsList>
-
-      <IndividualSignupTab
-        t={t}
-        form={individualForm}
-        isLoading={isLoading}
-        onSubmit={handleIndividualSignupSubmit}
-        onGoogleSignup={handleGoogleSignup}
-        onSwitchToLogin={onSwitchToLogin}
-        hcaptchaSiteKey={HCAPTCHA_SITE_KEY}
-        captchaRef={captchaRef}
-        onTokenChange={(token) => dispatch({ type: "SET_CAPTCHA_TOKEN", token })}
-      />
-
-      <CompanySignupTab
-        t={t}
-        form={companyForm}
-        isLoading={isLoading}
-        onSubmit={handleCompanySignupSubmit}
-        onSwitchToLogin={onSwitchToLogin}
-        hcaptchaSiteKey={HCAPTCHA_SITE_KEY}
-        captchaRef={captchaRef}
-        onTokenChange={(token) => dispatch({ type: "SET_CAPTCHA_TOKEN", token })}
-      />
-    </Tabs>
+    <IndividualSignupContent
+      t={t}
+      form={individualForm}
+      isLoading={isLoading}
+      onSubmit={handleIndividualSignupSubmit}
+      onGoogleSignup={handleGoogleSignup}
+      onSwitchToLogin={onSwitchToLogin}
+      hcaptchaSiteKey={HCAPTCHA_SITE_KEY}
+      captchaRef={captchaRef}
+      onTokenChange={(token) => dispatch({ type: "SET_CAPTCHA_TOKEN", token })}
+    />
   );
 }

@@ -29,6 +29,11 @@ const BAKIYEM_BASE_URL = (Deno.env.get("BAKIYEM_BASE_URL") ?? "https://service.r
 const BAKIYEM_DEALER_CODE = (Deno.env.get("BAKIYEM_DEALER_CODE") ?? "").trim();
 const BAKIYEM_API_USERNAME = (Deno.env.get("BAKIYEM_API_USERNAME") ?? "").trim();
 const BAKIYEM_API_PASSWORD = (Deno.env.get("BAKIYEM_API_PASSWORD") ?? "").trim();
+const MAX_LOGGED_CALLBACK_KEYS = 40;
+const MAX_LOGGED_VALUE_LENGTH = 240;
+const MAX_LOGGED_TOTAL_CHARS = 4000;
+const MAX_CALLBACK_KEYS_HARD_LIMIT = 80;
+const MAX_CALLBACK_TOTAL_CHARS_HARD_LIMIT = 12000;
 
 async function sha256Hex(input: string): Promise<string> {
   const bytes = new TextEncoder().encode(input);
@@ -139,6 +144,50 @@ function containsMerchantConfigHint(value: string): boolean {
   return /(üye\s*işyeri|uye\s*isyeri|merchant|bayi|dealer|isyeri|işyeri|terminal|acquirer)/i.test(value);
 }
 
+function safeSerializeForLog(value: unknown): unknown {
+  if (value === null || value === undefined) return value;
+  if (typeof value === "number" || typeof value === "boolean") return value;
+
+  const truncatedText = (input: string): string => {
+    if (input.length <= MAX_LOGGED_VALUE_LENGTH) return input;
+    return `${input.slice(0, MAX_LOGGED_VALUE_LENGTH)}…(truncated:${input.length})`;
+  };
+
+  if (typeof value === "string") {
+    return truncatedText(value);
+  }
+
+  if (Array.isArray(value)) {
+    return value
+      .slice(0, MAX_LOGGED_CALLBACK_KEYS)
+      .map((item) => safeSerializeForLog(item));
+  }
+
+  if (typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    const entries = Object.entries(record)
+      .slice(0, MAX_LOGGED_CALLBACK_KEYS)
+      .map(([key, entryValue]) => [key, safeSerializeForLog(entryValue)] as const);
+
+    return Object.fromEntries(entries);
+  }
+
+  try {
+    return truncatedText(String(value));
+  } catch {
+    return "[unserializable]";
+  }
+}
+
+function getApproxPayloadCharSize(value: unknown): number {
+  try {
+    const text = JSON.stringify(value);
+    return typeof text === "string" ? text.length : 0;
+  } catch {
+    return Number.MAX_SAFE_INTEGER;
+  }
+}
+
 serve(async (req: Request) => {
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
   const url = new URL(req.url);
@@ -148,6 +197,27 @@ serve(async (req: Request) => {
   const userAgent = req.headers.get("user-agent") || "";
   const isLikelyBrowserCallback = /mozilla|chrome|safari|firefox|edg/i.test(userAgent.toLowerCase());
   const shouldRedirectClient = !isPostCallback || isLikelyBrowserCallback;
+  const callbackCorrelationId = crypto.randomUUID();
+
+  if (req.method !== "POST" && req.method !== "GET") {
+    console.warn("3D Return rejected by method", {
+      callbackCorrelationId,
+      method: req.method,
+      path: url.pathname,
+    });
+
+    if (shouldRedirectClient) {
+      return Response.redirect(`${uiOrigin}/payment-failed?code=method_not_allowed`, 302);
+    }
+
+    return new Response("METHOD_NOT_ALLOWED", {
+      status: 405,
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Allow": "GET, POST",
+      },
+    });
+  }
 
   if (!intentId) {
     if (shouldRedirectClient) return Response.redirect(`${uiOrigin}/payment-failed?code=no_intent`, 302);
@@ -193,6 +263,28 @@ serve(async (req: Request) => {
       cfRay: req.headers.get("cf-ray") || "",
     };
 
+    if (isPostCallback && contentType.length > 0) {
+      const hasSupportedContentType =
+        contentType.includes("application/x-www-form-urlencoded") ||
+        contentType.includes("multipart/form-data") ||
+        contentType.includes("application/json");
+
+      if (!hasSupportedContentType) {
+        console.warn("3D Return unsupported content-type", {
+          callbackCorrelationId,
+          intentId,
+          contentType,
+          method: req.method,
+        });
+
+        if (shouldRedirectClient) {
+          return Response.redirect(`${uiOrigin}/payment-failed?intent=${intentId}&code=unsupported_content_type`, 302);
+        }
+
+        return callbackAckResponse();
+      }
+    }
+
     // 1. Parse Callback Data (Moka sends results via POST form-data usually)
     if (req.method === "POST") {
       if (contentType.includes("application/x-www-form-urlencoded") || contentType.includes("multipart/form-data")) {
@@ -212,18 +304,41 @@ serve(async (req: Request) => {
     }
 
     const callbackKeyList = Object.keys(callbackData || {}).sort();
+    const callbackDataCharSize = getApproxPayloadCharSize(callbackData);
+
+    if (callbackKeyList.length > MAX_CALLBACK_KEYS_HARD_LIMIT || callbackDataCharSize > MAX_CALLBACK_TOTAL_CHARS_HARD_LIMIT) {
+      console.warn("3D Return callback payload rejected by hard limits", {
+        callbackCorrelationId,
+        intentId,
+        callbackKeyCount: callbackKeyList.length,
+        callbackDataCharSize,
+      });
+
+      if (shouldRedirectClient) {
+        return Response.redirect(`${uiOrigin}/payment-failed?intent=${intentId}&code=callback_payload_too_large`, 302);
+      }
+
+      return callbackAckResponse();
+    }
+
+    const callbackDataForLog = safeSerializeForLog(callbackData);
+    const callbackQueryParamsForLog = safeSerializeForLog(callbackQueryParams);
 
     // Always log the incoming callback hit using allowed 'inquiry' operation
     await supabase.from("payment_transactions").insert({
       intent_id: intentId,
       operation: "inquiry",
       request_payload: {
-        type: "callback_received_v2",
+        type: "callback_received_v3",
+        callbackCorrelationId,
         method: req.method,
         contentType,
         callbackSource,
-        callbackKeyList,
-        callbackQueryKeyList,
+        callbackKeyList: callbackKeyList.slice(0, MAX_LOGGED_CALLBACK_KEYS),
+        callbackKeyCount: callbackKeyList.length,
+        callbackQueryKeyList: callbackQueryKeyList.slice(0, MAX_LOGGED_CALLBACK_KEYS),
+        callbackQueryKeyCount: callbackQueryKeyList.length,
+        callbackPayloadApproxChars: callbackDataCharSize,
         callbackTransport: {
           isPostCallback,
           isLikelyBrowserCallback,
@@ -232,8 +347,8 @@ serve(async (req: Request) => {
           headers: requestHeaderSnapshot,
         },
         intentStateSnapshot,
-        callbackData,
-        callbackQueryParams,
+        callbackData: callbackDataForLog,
+        callbackQueryParams: callbackQueryParamsForLog,
       },
       success: true
     });
@@ -556,10 +671,13 @@ serve(async (req: Request) => {
       operation: "inquiry",
       request_payload: {
         type: "status_diagnostics_v4",
+        callbackCorrelationId,
         shortTrxCode,
         gatewayTrxCode,
-        callbackKeyList,
-        callbackQueryKeyList,
+        callbackKeyList: callbackKeyList.slice(0, MAX_LOGGED_CALLBACK_KEYS),
+        callbackKeyCount: callbackKeyList.length,
+        callbackQueryKeyList: callbackQueryKeyList.slice(0, MAX_LOGGED_CALLBACK_KEYS),
+        callbackQueryKeyCount: callbackQueryKeyList.length,
         callbackSource,
         callbackTransport: {
           isPostCallback,
@@ -624,10 +742,13 @@ serve(async (req: Request) => {
       operation: "inquiry",
       request_payload: {
         type: "merchant_config_diagnostics_v1",
+        callbackCorrelationId,
         runtimeConfigSnapshot,
         callbackSource,
-        callbackKeyList,
-        callbackQueryKeyList,
+        callbackKeyList: callbackKeyList.slice(0, MAX_LOGGED_CALLBACK_KEYS),
+        callbackKeyCount: callbackKeyList.length,
+        callbackQueryKeyList: callbackQueryKeyList.slice(0, MAX_LOGGED_CALLBACK_KEYS),
+        callbackQueryKeyCount: callbackQueryKeyList.length,
         callbackTransport: {
           isPostCallback,
           isLikelyBrowserCallback,
@@ -730,6 +851,7 @@ serve(async (req: Request) => {
       operation: "inquiry",
       request_payload: {
         type: "status_eval_compare_v5",
+        callbackCorrelationId,
         resultCode,
         effectiveFailureCode,
         trxStatus,
@@ -836,7 +958,10 @@ serve(async (req: Request) => {
     return callbackAckResponse();
 
   } catch (e: any) {
-    console.error("3D Return Exception:", e);
+    console.error("3D Return Exception:", {
+      message: e?.message || String(e),
+      stack: e?.stack || null,
+    });
     if (shouldRedirectClient) {
       return Response.redirect(`${uiOrigin}/payment-failed?intent=${intentId}&code=exception&msg=${encodeURIComponent(e?.message || String(e))}`, 302);
     }

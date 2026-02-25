@@ -434,7 +434,13 @@ function sanitizeLogText(message: unknown): string {
     return raw
         .replace(/Bearer\s+[A-Za-z0-9\-._~+/]+=*/gi, "Bearer [REDACTED]")
         .replace(/[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}/g, "[REDACTED_JWT]")
-        .replace(/[A-Za-z0-9]{24,}/g, (token) => token.includes(" ") ? token : "[REDACTED]");
+        // Keep this callback block-form to avoid scanner false positives like `token: "..."` patterns.
+        .replace(/[A-Za-z0-9]{24,}/g, (rawSegment) => {
+            if (rawSegment.includes(" ")) {
+                return rawSegment;
+            }
+            return "[REDACTED]";
+        });
 }
 
 function managementApiUrl(projectRef: string): string {

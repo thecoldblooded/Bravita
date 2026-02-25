@@ -317,7 +317,10 @@ export default function AdminSupport() {
                 <div className="max-w-7xl mx-auto space-y-8">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>
-                            <h1 className={`text-2xl font-bold ${textPrimary}`}>Destek Talepleri</h1>
+                            <h1 className={`text-3xl font-black ${textPrimary} flex items-center gap-3`}>
+                                <span className="bg-orange-500 w-2 h-8 rounded-full" />
+                                Destek Talepleri
+                            </h1>
                             <p className={textSecondary}>Müşterilerden gelen tüm mesajları yönetin</p>
                         </div>
                         <Button

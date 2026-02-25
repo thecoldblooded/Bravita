@@ -16,17 +16,13 @@ export interface SignupData {
   email: string;
   password: string;
   phone: string;
-  userType: "individual" | "company";
-  companyName?: string;
   fullName?: string;
   captchaToken?: string;
 }
 
 export interface LoginData {
-  email?: string;
-  password?: string;
-  username?: string;
-  userType: "individual" | "company";
+  email: string;
+  password: string;
   captchaToken?: string;
 }
 
@@ -43,8 +39,7 @@ export function useAuthOperations() {
       const profileData = {
         phone: data.phone,
         full_name: data.fullName || null,
-        user_type: data.userType,
-        company_name: data.userType === "company" ? data.companyName : null,
+        user_type: "individual",
       };
 
       if (isBffAuthEnabled()) {
@@ -110,7 +105,7 @@ export function useAuthOperations() {
     }
   };
 
-  const signupWithGoogle = async (data: Omit<SignupData, "email" | "password">) => {
+  const signupWithGoogle = async () => {
     setIsLoading(true);
     setError(null);
 
@@ -142,7 +137,7 @@ export function useAuthOperations() {
 
     try {
       if (isBffAuthEnabled()) {
-        const bffSession = await loginWithBff(data.email!, data.password!, data.captchaToken);
+        const bffSession = await loginWithBff(data.email, data.password, data.captchaToken);
         if (!bffSession?.access_token) {
           throw new Error("BFF auth did not return a valid session");
         }
@@ -158,8 +153,8 @@ export function useAuthOperations() {
       }
 
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: data.email!,
-        password: data.password!,
+        email: data.email,
+        password: data.password,
         options: data.captchaToken ? { captchaToken: data.captchaToken } : undefined,
       });
 
@@ -170,60 +165,6 @@ export function useAuthOperations() {
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Login failed";
-      setError(message);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const loginWithCompany = async (data: LoginData) => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // Query users table for company login
-      const { data: companyUser, error: queryError } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("user_type", "company")
-        .ilike("full_name", `%${data.username}%`) // Using full_name as username field
-        .single();
-
-      if (queryError || !companyUser) {
-        throw new Error("Geçersiz kullanıcı adı veya şifre");
-      }
-
-      // Sign in with the company's email
-      if (isBffAuthEnabled()) {
-        const bffSession = await loginWithBff(companyUser.email, data.password!, data.captchaToken);
-        if (!bffSession?.access_token) {
-          throw new Error("BFF auth did not return a valid company session");
-        }
-
-        const { data: sessionData, error: sessionError } = await supabase.auth.setSession(
-          toSupabaseSessionInput(bffSession)
-        );
-
-        if (sessionError) throw sessionError;
-
-        await refreshUserProfile();
-        return { user: sessionData.user, session: sessionData.session };
-      }
-
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: companyUser.email,
-        password: data.password!,
-        options: data.captchaToken ? { captchaToken: data.captchaToken } : undefined,
-      });
-
-      if (authError) throw authError;
-
-      await refreshUserProfile();
-      return { user: authData.user, session: authData.session };
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Company login failed";
       setError(message);
       throw err;
     } finally {
@@ -389,7 +330,6 @@ export function useAuthOperations() {
     signupWithEmail,
     signupWithGoogle,
     loginWithEmail,
-    loginWithCompany,
     logout,
     resendEmailConfirmation,
     changePassword,

@@ -1,0 +1,146 @@
+Comparing files SUPABASE\MIGRATIONS\20260221185300_reconcile_remaining_function_drift.sql and SUPABASE\MIGRATIONS\20260225123905_RECONCILE_FUNCTION_SEARCH_PATH_DRIFT.SQL
+***** SUPABASE\MIGRATIONS\20260221185300_reconcile_remaining_function_drift.sql
+  103:   SECURITY DEFINER
+  104:   SET search_path TO 'public'
+  105:  AS $function$
+***** SUPABASE\MIGRATIONS\20260225123905_RECONCILE_FUNCTION_SEARCH_PATH_DRIFT.SQL
+  103:   SECURITY DEFINER
+  104:   SET search_path TO 'public', 'pg_catalog'
+  105:  AS $function$
+*****
+
+***** SUPABASE\MIGRATIONS\20260221185300_reconcile_remaining_function_drift.sql
+  207:   SECURITY DEFINER
+  208:   SET search_path TO ''
+  209:  AS $function$
+***** SUPABASE\MIGRATIONS\20260225123905_RECONCILE_FUNCTION_SEARCH_PATH_DRIFT.SQL
+  207:   SECURITY DEFINER
+  208:   SET search_path TO 'public', 'pg_catalog'
+  209:  AS $function$
+*****
+
+***** SUPABASE\MIGRATIONS\20260221185300_reconcile_remaining_function_drift.sql
+  235:   STABLE SECURITY DEFINER
+  236:   SET search_path TO 'public'
+  237:  AS $function$
+***** SUPABASE\MIGRATIONS\20260225123905_RECONCILE_FUNCTION_SEARCH_PATH_DRIFT.SQL
+  235:   STABLE SECURITY DEFINER
+  236:   SET search_path TO 'public', 'pg_catalog'
+  237:  AS $function$
+*****
+
+***** SUPABASE\MIGRATIONS\20260221185300_reconcile_remaining_function_drift.sql
+  255:   SECURITY DEFINER
+  256:   SET search_path TO 'public'
+  257:  AS $function$
+***** SUPABASE\MIGRATIONS\20260225123905_RECONCILE_FUNCTION_SEARCH_PATH_DRIFT.SQL
+  255:   SECURITY DEFINER
+  256:   SET search_path TO 'public', 'pg_catalog'
+  257:  AS $function$
+*****
+
+Resync Failed.  Files are too different.
+***** SUPABASE\MIGRATIONS\20260221185300_reconcile_remaining_function_drift.sql
+  277:  
+  278:  CREATE OR REPLACE FUNCTION public.validate_checkout(p_product_slug text, p_quantity integer, p_promo_code text DEFAULT NULL::te
+  279:  xt)
+  280:   RETURNS json
+  281:   LANGUAGE plpgsql
+  282:   SECURITY DEFINER
+  283:   SET search_path TO 'public', 'pg_catalog'
+  284:  AS $function$
+  285:  DECLARE
+  286:      v_user_id UUID;
+  287:      v_profile_complete BOOLEAN;
+  288:      v_product RECORD;
+  289:      v_subtotal DECIMAL(10, 2);
+  290:      v_vat_rate DECIMAL(5, 4) := 0.20;
+  291:      v_vat_amount DECIMAL(10, 2);
+  292:      v_total DECIMAL(10, 2);
+  293:      v_order_id UUID;
+  294:  BEGIN
+  295:      -- 1. Kullan-¦c-¦ do-ƒrulama
+  296:      v_user_id := auth.uid();
+  297:  
+  298:      IF v_user_id IS NULL THEN
+  299:          RETURN json_build_object(
+  300:              'success', false,
+  301:              'error', 'UNAUTHORIZED',
+  302:              'message', 'Oturum a+ºman-¦z gerekiyor'
+  303:          );
+  304:      END IF;
+  305:  
+  306:      -- 2. Profil tamamlanm-¦+ƒ m-¦ kontrol et
+  307:      SELECT profile_complete INTO v_profile_complete
+  308:      FROM profiles
+  309:      WHERE id = v_user_id;
+  310:  
+  311:      IF v_profile_complete IS NULL OR v_profile_complete = false THEN
+  312:          RETURN json_build_object(
+  313:              'success', false,
+  314:              'error', 'PROFILE_INCOMPLETE',
+  315:              'message', 'Sipari+ƒ vermek i+ºin profilinizi tamamlaman-¦z gerekiyor'
+  316:          );
+  317:      END IF;
+  318:  
+  319:      -- 3. +£r++n bilgilerini al ve do-ƒrula
+  320:      SELECT * INTO v_product
+  321:      FROM products
+  322:      WHERE slug = p_product_slug AND is_active = true;
+  323:  
+  324:      IF v_product IS NULL THEN
+  325:          RETURN json_build_object(
+  326:              'success', false,
+  327:              'error', 'PRODUCT_NOT_FOUND',
+  328:              'message', '+£r++n bulunamad-¦ veya sat-¦+ƒta de-ƒil'
+  329:          );
+  330:      END IF;
+  331:  
+  332:      -- 4. Miktar kontrol++
+  333:      IF p_quantity < 1 OR p_quantity > 10 THEN
+  334:          RETURN json_build_object(
+  335:              'success', false,
+  336:              'error', 'INVALID_QUANTITY',
+  337:              'message', 'Ge+ºersiz miktar (1-10 aras-¦ olmal-¦)'
+  338:          );
+  339:      END IF;
+  340:  
+  341:      -- 5. Stok kontrol++
+  342:      IF v_product.stock < p_quantity THEN
+  343:          RETURN json_build_object(
+  344:              'success', false,
+  345:              'error', 'INSUFFICIENT_STOCK',
+  346:              'message', 'Yeterli stok yok. Mevcut stok: ' || v_product.stock
+  347:          );
+  348:      END IF;
+  349:  
+  350:      -- 6. Fiyat hesaplama (SUNUCU TARAFINDA!)
+  351:      v_subtotal := v_product.price * p_quantity;
+  352:      v_vat_amount := v_subtotal * v_vat_rate;
+  353:      v_total := v_subtotal + v_vat_amount;
+  354:  
+  355:      -- 7. Sipari+ƒ olu+ƒtur
+  356:      INSERT INTO orders (
+  357:          user_id,
+  358:          product_id,
+  359:          quantity,
+  360:          unit_price,
+  361:          subtotal,
+  362:          vat_amount,
+  363:          total,
+  364:          status,
+  365:          promo_code
+  366:      ) VALUES (
+  367:          v_user_id,
+  368:          v_product.id,
+  369:          p_quantity,
+  370:          v_product.price,
+  371:          v_subtotal,
+  372:          v_vat_amount,
+  373:          v_total,
+  374:          'pending',
+  375:          p_promo_code
+  376:      )
+***** SUPABASE\MIGRATIONS\20260225123905_RECONCILE_FUNCTION_SEARCH_PATH_DRIFT.SQL
+*****
+

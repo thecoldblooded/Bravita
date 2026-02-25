@@ -88,7 +88,7 @@ const LEGAL_DOCUMENTS_TR: Record<LegalDocumentKey, LegalDocument> = {
                 ],
                 items: [
                     "E-posta: support@bravita.com.tr",
-                    "Telefon: 444 51 73",
+                    "Telefon: 0 312 328 25 26",
                 ],
             },
         ],
@@ -113,7 +113,7 @@ const LEGAL_DOCUMENTS_TR: Record<LegalDocumentKey, LegalDocument> = {
                 items: [
                     "Adres: Prof. Dr. Ahmet Taner Kışlalı Mah. Alacaatlı Cad. No:30/5A Çankaya - Ankara",
                     "E-posta: support@bravita.com.tr",
-                    "Telefon: 444 51 73",
+                    "Telefon: 0 312 328 25 26",
                 ],
             },
             {
@@ -418,7 +418,7 @@ const LEGAL_DOCUMENTS_EN: Record<LegalDocumentKey, LegalDocument> = {
                 ],
                 items: [
                     "Email: support@bravita.com.tr",
-                    "Phone: 444 51 73",
+                    "Phone: 0 312 328 25 26",
                 ],
             },
         ],
@@ -443,7 +443,7 @@ const LEGAL_DOCUMENTS_EN: Record<LegalDocumentKey, LegalDocument> = {
                 items: [
                     "Address: Prof. Dr. Ahmet Taner Kışlalı Mah. Alacaatlı Cad. No:30/5A Çankaya - Ankara",
                     "Email: support@bravita.com.tr",
-                    "Phone: 444 51 73",
+                    "Phone: 0 312 328 25 26",
                 ],
             },
             {

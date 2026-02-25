@@ -103,18 +103,13 @@ function Footer() {
     },
   ];
 
-  // Contact info data
-  const contactInfo = [
-    {
-      icon: <Mail size={18} className="text-bravita-orange" />,
-      text: "support@bravita.com.tr",
-      href: "mailto:support@bravita.com.tr",
-    },
-    {
-      icon: <Phone size={18} className="text-bravita-orange" />,
-      text: "444 51 73",
-      href: "tel:4445173",
-    },
+  // VALCO vanity decode: 8→V, 2→A, 5→L, 2→C, 6→O
+  const valcoDigits = [
+    { digit: "8", letter: "V" },
+    { digit: "2", letter: "A" },
+    { digit: "5", letter: "L" },
+    { digit: "2", letter: "C" },
+    { digit: "6", letter: "O" },
   ];
 
   // Social media icons
@@ -126,6 +121,38 @@ function Footer() {
 
   return (
     <footer ref={footerRef} className="bg-[#2e241e] relative z-10 h-fit rounded-[3rem] overflow-hidden m-4 md:m-8 pb-24">
+      {/* Shimmer keyframe for VALCO letters */}
+      <style>{`
+        @keyframes valco-shimmer {
+          0% { background-position: -200% center; }
+          100% { background-position: 200% center; }
+        }
+        .valco-shimmer-text {
+          background: linear-gradient(
+            90deg,
+            #e8803a 0%,
+            #f5c06a 25%,
+            #ffdf9e 50%,
+            #f5c06a 75%,
+            #e8803a 100%
+          );
+          background-size: 200% auto;
+          -webkit-background-clip: text;
+          background-clip: text;
+          -webkit-text-fill-color: transparent;
+          animation: valco-shimmer 4s linear infinite;
+        }
+        .valco-phone-group:hover .valco-digit-pair .valco-letter {
+          transform: translateY(0);
+          opacity: 1;
+        }
+        .valco-phone-group:hover .valco-digit-pair .valco-num {
+          transform: translateY(-2px);
+          opacity: 0.4;
+          font-size: 0.55rem;
+        }
+      `}</style>
+
       <div className="max-w-7xl mx-auto p-8 md:p-14 z-40 relative">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 md:gap-8 lg:gap-16 pb-12">
 
@@ -233,23 +260,49 @@ function Footer() {
                 <span className="mt-1"><MapPin size={18} className="text-bravita-orange" /></span>
                 <span className="text-sm">Prof. Dr. Ahmet Taner Kışlalı Mah. Alacaatlı Cad. No:30/5A Çankaya - Ankara</span>
               </li>
-              {contactInfo.map((item) => (
-                <li key={item.text} className="flex items-center space-x-3 justify-center md:justify-start">
-                  {item.icon}
-                  {item.href ? (
-                    <a
-                      href={item.href}
-                      className="hover:text-bravita-orange transition-colors"
+
+              {/* Email */}
+              <li className="flex items-center space-x-3 justify-center md:justify-start">
+                <Mail size={18} className="text-bravita-orange" />
+                <a href="mailto:support@bravita.com.tr" className="hover:text-bravita-orange transition-colors">
+                  support@bravita.com.tr
+                </a>
+              </li>
+
+              {/* Creative VALCO Phone */}
+              <li className="flex items-center space-x-3 justify-center md:justify-start">
+                <Phone size={18} className="text-bravita-orange" />
+                {/* Creative VALCO decode strip */}
+                <a
+                  href="tel:03123282526"
+                  className="valco-phone-group flex items-center gap-0.5 group cursor-pointer no-underline"
+                  aria-label="0 312 32 VALCO - 0 312 328 25 26"
+                >
+                  {/* Prefix digits */}
+                  <span className="text-sm text-neutral-300 tracking-wider mr-1">
+                    0 312 32
+                  </span>
+                  {/* VALCO letter-digit pairs */}
+                  {valcoDigits.map((pair, i) => (
+                    <span
+                      key={`valco-${pair.letter}-${i}`}
+                      className="valco-digit-pair relative flex flex-col items-center w-5"
                     >
-                      {item.text}
-                    </a>
-                  ) : (
-                    <span className="hover:text-bravita-orange transition-colors">
-                      {item.text}
+                      <span
+                        className="valco-num text-sm text-neutral-300 transition-all duration-300"
+                      >
+                        {pair.digit}
+                      </span>
+                      <span
+                        className="valco-letter text-base font-black valco-shimmer-text leading-none transition-all duration-300"
+                        style={{ animationDelay: `${i * 0.15}s` }}
+                      >
+                        {pair.letter}
+                      </span>
                     </span>
-                  )}
-                </li>
-              ))}
+                  ))}
+                </a>
+              </li>
             </ul>
           </div>
         </div>

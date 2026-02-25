@@ -263,7 +263,7 @@ function ProductsContent() {
     }
 
     return (
-        <>
+        <div className="max-w-7xl mx-auto">
             <ProductsHeader
                 isLoading={isLoading}
                 isSettingsOpen={isSettingsOpen}
@@ -329,7 +329,7 @@ function ProductsContent() {
                 onSave={handleSaveProduct}
                 product={editingProduct}
             />
-        </>
+        </div>
     );
 }
 

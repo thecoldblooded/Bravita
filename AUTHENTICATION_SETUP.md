@@ -1,7 +1,7 @@
 # Authentication System Implementation Guide
 
 ## Overview
-A comprehensive, secure authentication system with multi-factor authentication (2FA SMS), individual and company user support, Google OAuth integration, mandatory profile completion, and maximum security protocols.
+A comprehensive, secure authentication system with multi-factor authentication (2FA SMS), individual-user support, Google OAuth integration, mandatory profile completion, and maximum security protocols.
 
 ## ✅ Implementation Status
 
@@ -26,8 +26,7 @@ All core authentication features have been successfully implemented and the proj
 - Methods:
   - `signupWithEmail()` - Email/password signup with phone verification
   - `signupWithGoogle()` - Google OAuth signup (2FA skipped initially)
-  - `loginWithEmail()` - Individual user login
-  - `loginWithCompany()` - Company user login
+  - `loginWithEmail()` - Email/password login
   - `logout()` - Secure session termination
   - `sendPhoneVerificationCode()` - Send SMS OTP
   - `verifyPhoneCode()` - Verify SMS OTP
@@ -41,25 +40,19 @@ All core authentication features have been successfully implemented and the proj
 
 #### 5. **Login Form Component** ✓
 - File: [`components/auth/LoginForm.tsx`](src/components/auth/LoginForm.tsx)
-- Tabs for Individual/Company login
-- Individual: Email/Password + Google OAuth
-- Company: Username/Password only
+- Single-flow login UI (no user-type tabs)
+- Email/Password + Google OAuth
 - Form validation with Zod
 - Error handling and loading states
 
 #### 6. **Signup Form Component** ✓
 - File: [`components/auth/SignupForm.tsx`](src/components/auth/SignupForm.tsx)
-- Tabs for Individual/Company signup
-- **Individual Signup:**
-  - Email/Password with strength validation
-  - International phone number input
-  - Google OAuth option (2FA skipped)
-  - Mandatory 2FA SMS verification (10-min expiry, 3 resend max)
-  - Mandatory user agreement checkboxes (KVKK, Terms, Privacy)
-- **Company Signup:**
-  - Username, Company Name, Email, Password
-  - Immediate activation (no approval needed)
-  - Mandatory user agreements
+- Single-flow signup UI (no user-type tabs)
+- Email/Password with strength validation
+- International phone number input
+- Google OAuth option (2FA skipped)
+- Mandatory 2FA SMS verification (10-min expiry, 3 resend max)
+- Mandatory user agreement checkboxes (KVKK, Terms, Privacy)
 - Multi-step flow with 2FA verification page
 
 #### 7. **Two-Factor Verification Component** ✓
@@ -188,7 +181,6 @@ CREATE TABLE profiles (
   phone VARCHAR(20),
   user_type VARCHAR(50) NOT NULL DEFAULT 'individual',
   full_name VARCHAR(255),
-  company_name VARCHAR(255),
   profile_complete BOOLEAN DEFAULT FALSE,
   phone_verified BOOLEAN DEFAULT FALSE,
   phone_verified_at TIMESTAMP,
@@ -353,8 +345,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 ### Login Flow
 1. Click "Giriş Yap" → AuthModal opens (Login tab)
 2. **Individual:** Email + Password
-3. **Company:** Username + Password
-4. Session created, avatar icon appears
+3. Session created, avatar icon appears
 
 ### Logout Flow
 1. Click avatar icon → UserMenu dropdown
@@ -395,9 +386,7 @@ VITE_GOOGLE_CLIENT_ID=your-client-id
 
 - [ ] Individual email/password signup with 2FA
 - [ ] Google OAuth signup and profile completion
-- [ ] Company user signup
-- [ ] Login with individual account
-- [ ] Login with company account
+- [ ] Login with email/password account
 - [ ] 2FA SMS code verification
 - [ ] 2FA resend code (max 3 attempts)
 - [ ] 2FA code expiration (10 minutes)

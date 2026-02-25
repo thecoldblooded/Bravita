@@ -81,7 +81,10 @@ function DashboardContent() {
         <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-between mb-8">
                 <div>
-                    <h1 className={`text-2xl font-bold ${textPrimary}`}>Yönetim Paneli</h1>
+                    <h1 className={`text-3xl font-black ${textPrimary} flex items-center gap-3`}>
+                        <span className="bg-orange-500 w-2 h-8 rounded-full" />
+                        Yönetim Paneli
+                    </h1>
                     <p className={textSecondary}>İşletmenizin genel durumunu görüntüleyin.</p>
                 </div>
                 <div className="flex gap-2">
@@ -132,7 +135,7 @@ function DashboardContent() {
                             ? "bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30 hover:text-green-300"
                             : "bg-green-50 text-green-700 border-green-200 hover:bg-green-100 hover:text-green-900"
                         }
-                        onClick={() => window.open('https://mail.bravita.com.tr', '_blank')}
+                        onClick={() => window.open('https://mail.bravita.com.tr/Uvf2pzJY', '_blank')}
                         title="E-posta Kampanyaları (BillionMail)"
                     >
                         <ExternalLink className="w-4 h-4 mr-2" />

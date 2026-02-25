@@ -142,7 +142,10 @@ function OrdersContent() {
             {/* Header */}
             <div className="flex items-center justify-between mb-8">
                 <div>
-                    <h1 className={`text-2xl font-bold ${textPrimary}`}>Siparişler</h1>
+                    <h1 className={`text-3xl font-black ${textPrimary} flex items-center gap-3`}>
+                        <span className="bg-orange-500 w-2 h-8 rounded-full" />
+                        Siparişler
+                    </h1>
                     <p className={textSecondary}>Tüm siparişleri görüntüleyin ve yönetin</p>
                 </div>
                 <Button

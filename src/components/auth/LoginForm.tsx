@@ -15,7 +15,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { useAuthOperations } from "@/hooks/useAuth";
 import Loader from "@/components/ui/Loader";
@@ -30,11 +29,6 @@ type TranslateFn = ReturnType<typeof useTranslation>["t"];
 
 type IndividualLoginForm = {
   email: string;
-  password: string;
-};
-
-type CompanyLoginForm = {
-  username: string;
   password: string;
 };
 
@@ -150,7 +144,7 @@ function IndividualLoginTab({
   onTokenChange,
 }: IndividualLoginTabProps) {
   return (
-    <TabsContent value="individual" className="space-y-4">
+    <div className="space-y-4">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <FormField
@@ -226,88 +220,7 @@ function IndividualLoginTab({
 
       <GoogleLoginButton t={t} isLoading={isLoading} onClick={onGoogleLogin} />
       <SignupSwitch t={t} onSwitchToSignup={onSwitchToSignup} />
-    </TabsContent>
-  );
-}
-
-type CompanyLoginTabProps = {
-  t: TranslateFn;
-  form: UseFormReturn<CompanyLoginForm>;
-  isLoading: boolean;
-  onSubmit: (data: CompanyLoginForm) => Promise<void>;
-  onSwitchToSignup?: () => void;
-  hcaptchaSiteKey: string;
-  captchaRef: RefObject<HCaptcha | null>;
-  onTokenChange: (token: string | null) => void;
-};
-
-function CompanyLoginTab({
-  t,
-  form,
-  isLoading,
-  onSubmit,
-  onSwitchToSignup,
-  hcaptchaSiteKey,
-  captchaRef,
-  onTokenChange,
-}: CompanyLoginTabProps) {
-  return (
-    <TabsContent value="company" className="space-y-4">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="username"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t("auth.username")}</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder={t("auth.username")}
-                    autoComplete="username"
-                    {...field}
-                    disabled={isLoading}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t("auth.password")}</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="••••••••"
-                    type="password"
-                    autoComplete="current-password"
-                    {...field}
-                    disabled={isLoading}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <CaptchaSection
-            siteKey={hcaptchaSiteKey}
-            captchaRef={captchaRef}
-            onTokenChange={onTokenChange}
-          />
-
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? <Loader size="1.25rem" noMargin /> : t("auth.login")}
-          </Button>
-        </form>
-      </Form>
-
-      <SignupSwitch t={t} onSwitchToSignup={onSwitchToSignup} />
-    </TabsContent>
+    </div>
   );
 }
 
@@ -319,15 +232,8 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
     password: z.string().min(1, t("auth.validation.password_required")),
   });
 
-  const companyLoginSchema = z.object({
-    username: z.string().min(1, t("auth.validation.username_required")),
-    password: z.string().min(1, t("auth.validation.password_required")),
-  });
-
-  const { loginWithEmail, loginWithCompany, signupWithGoogle, resetPassword, isLoading } =
+  const { loginWithEmail, signupWithGoogle, resetPassword, isLoading } =
     useAuthOperations();
-
-  const [userType, setUserType] = useState<"individual" | "company">("individual");
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const captchaRef = useRef<HCaptcha>(null);
 
@@ -342,14 +248,6 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
     },
   });
 
-  const companyForm = useForm<CompanyLoginForm>({
-    resolver: zodResolver(companyLoginSchema),
-    defaultValues: {
-      username: "",
-      password: "",
-    },
-  });
-
   const resetCaptchaState = () => {
     captchaRef.current?.resetCaptcha();
     setCaptchaToken(null);
@@ -357,9 +255,7 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
 
   const handleIndividualLogin = async (data: IndividualLoginForm) => {
     try {
-      const skipCaptcha = import.meta.env.VITE_SKIP_CAPTCHA === "true";
-
-      if (!captchaToken && !skipCaptcha) {
+      if (!captchaToken) {
         toast.error(t("auth.captcha_required"));
         return;
       }
@@ -367,32 +263,6 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
       await loginWithEmail({
         email: data.email,
         password: data.password,
-        userType: "individual",
-        captchaToken: captchaToken!,
-      });
-      toast.success(t("auth.login_successful"));
-
-      resetCaptchaState();
-      onSuccess?.();
-    } catch (err) {
-      resetCaptchaState();
-      toast.error(translateError(err, t));
-    }
-  };
-
-  const handleCompanyLogin = async (data: CompanyLoginForm) => {
-    try {
-      const skipCaptcha = import.meta.env.VITE_SKIP_CAPTCHA === "true";
-
-      if (!captchaToken && !skipCaptcha) {
-        toast.error(t("auth.captcha_required"));
-        return;
-      }
-
-      await loginWithCompany({
-        username: data.username,
-        password: data.password,
-        userType: "company",
         captchaToken: captchaToken!,
       });
       toast.success(t("auth.login_successful"));
@@ -409,7 +279,7 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
     try {
       localStorage.setItem("profile_in_progress", "true");
       localStorage.setItem("oauth_provider", "google");
-      await signupWithGoogle({ userType: "individual", phone: "" });
+      await signupWithGoogle();
     } catch (err) {
       toast.error(translateError(err, t));
     }
@@ -424,9 +294,7 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
     }
 
     try {
-      const skipCaptcha = import.meta.env.VITE_SKIP_CAPTCHA === "true";
-
-      if (!captchaToken && !skipCaptcha) {
+      if (!captchaToken) {
         toast.error(t("auth.captcha_required"));
         return;
       }
@@ -442,39 +310,17 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
   };
 
   return (
-    <Tabs
-      value={userType}
-      onValueChange={(value) => setUserType(value as "individual" | "company")}
-      className="w-full"
-    >
-      <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="individual">{t("auth.individual")}</TabsTrigger>
-        <TabsTrigger value="company">{t("auth.company")}</TabsTrigger>
-      </TabsList>
-
-      <IndividualLoginTab
-        t={t}
-        form={individualForm}
-        isLoading={isLoading}
-        onSubmit={handleIndividualLogin}
-        onForgotPassword={handleForgotPassword}
-        onGoogleLogin={handleGoogleLogin}
-        onSwitchToSignup={onSwitchToSignup}
-        hcaptchaSiteKey={HCAPTCHA_SITE_KEY}
-        captchaRef={captchaRef}
-        onTokenChange={setCaptchaToken}
-      />
-
-      <CompanyLoginTab
-        t={t}
-        form={companyForm}
-        isLoading={isLoading}
-        onSubmit={handleCompanyLogin}
-        onSwitchToSignup={onSwitchToSignup}
-        hcaptchaSiteKey={HCAPTCHA_SITE_KEY}
-        captchaRef={captchaRef}
-        onTokenChange={setCaptchaToken}
-      />
-    </Tabs>
+    <IndividualLoginTab
+      t={t}
+      form={individualForm}
+      isLoading={isLoading}
+      onSubmit={handleIndividualLogin}
+      onForgotPassword={handleForgotPassword}
+      onGoogleLogin={handleGoogleLogin}
+      onSwitchToSignup={onSwitchToSignup}
+      hcaptchaSiteKey={HCAPTCHA_SITE_KEY}
+      captchaRef={captchaRef}
+      onTokenChange={setCaptchaToken}
+    />
   );
 }

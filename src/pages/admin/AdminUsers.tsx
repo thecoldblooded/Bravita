@@ -142,7 +142,10 @@ function UsersContent() {
             <div className="max-w-4xl mx-auto">
                 <div className="flex items-center justify-between mb-8">
                     <div>
-                        <h1 className={`text-2xl font-bold ${textPrimary}`}>Kullanıcı Yönetimi</h1>
+                        <h1 className={`text-3xl font-black ${textPrimary} flex items-center gap-3`}>
+                            <span className="bg-orange-500 w-2 h-8 rounded-full" />
+                            Kullanıcı Yönetimi
+                        </h1>
                         <p className={textSecondary}>Admin yetkilerini yönetin.</p>
                     </div>
                     <div className="flex gap-3">

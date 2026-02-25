@@ -46,6 +46,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
+import { sanitizeEmailHtmlForPreview } from "@/lib/emailHtmlSanitizer";
+
 interface EmailTemplate {
     id: string;
     name: string;
@@ -115,13 +117,13 @@ function buildTemplatePreview(template: Pick<EmailTemplate, "subject" | "content
     if (!useSampleData) {
         return {
             subject: template.subject || "",
-            html: template.content_html || "",
+            html: sanitizeEmailHtmlForPreview(template.content_html || ""),
         };
     }
 
     return {
         subject: applyPreviewVariables(template.subject || "", PREVIEW_DUMMY_VARS),
-        html: applyPreviewVariables(template.content_html || "", PREVIEW_DUMMY_VARS),
+        html: sanitizeEmailHtmlForPreview(applyPreviewVariables(template.content_html || "", PREVIEW_DUMMY_VARS)),
     };
 }
 
@@ -483,7 +485,10 @@ export default function AdminEmails() {
                 <div className="max-w-7xl mx-auto">
                     <div className="flex items-center justify-between mb-8">
                         <div>
-                            <h1 className={`text-2xl font-bold ${textPrimary}`}>E-posta Yönetimi</h1>
+                            <h1 className={`text-3xl font-black ${textPrimary} flex items-center gap-3`}>
+                                <span className="bg-orange-500 w-2 h-8 rounded-full" />
+                                E-posta Yönetimi
+                            </h1>
                             <p className={textSecondary}>Sistem e-postalarını, şablonları ve gönderim loglarını yönetin.</p>
                         </div>
                         <Button className="bg-orange-600 hover:bg-orange-700">
@@ -741,6 +746,7 @@ export default function AdminEmails() {
                                                     title="Email Preview"
                                                     className="w-full h-full border-none"
                                                     srcDoc={buildTemplatePreview(editingTemplate, simulateData).html}
+                                                    sandbox="allow-popups"
                                                 />
                                             </div>
                                         </div>

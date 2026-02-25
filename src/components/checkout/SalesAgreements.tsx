@@ -82,8 +82,8 @@ export function SalesAgreements({ user, address, items, totals, paymentMethod }:
     const companyInfo = {
         title: "Valco İlaç Medikal Kozmetik Sanayi ve Ticaret Limited Şirketi",
         address: "Prof. Dr. Ahmet Taner Kışlalı Mah. Alacaatlı Cad. No:30/5A Çankaya - Ankara",
-        phone: "444 51 73",
-        customerService: "444 51 73",
+        phone: "0 (312) 328 25 26",
+        customerService: "0 (312) 328 25 26",
         email: "support@bravita.com.tr",
     };
 

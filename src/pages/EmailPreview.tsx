@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { AlertTriangle, Loader2, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { sanitizeEmailHtmlForPreview } from "@/lib/emailHtmlSanitizer";
 
 type PreviewKind = "order" | "support" | "welcome";
 
@@ -97,6 +98,7 @@ function getClientErrorMessage(status: number, body: string): string {
     const normalizedBody = body.trim();
     if (normalizedBody) return normalizedBody;
 
+    if (status === 401) return "Önizleme için yetkilendirme başarısız oldu.";
     if (status === 403) return "Bu önizleme bağlantısı geçersiz veya süresi dolmuş.";
     if (status === 404) return "Önizleme içeriği bulunamadı.";
     if (status === 400) return "Önizleme bağlantısı hatalı görünüyor.";
@@ -104,10 +106,17 @@ function getClientErrorMessage(status: number, body: string): string {
 }
 
 async function fetchPreviewHtml(requestUrl: string, signal: AbortSignal): Promise<string> {
+    const supabaseAnonKey = String(import.meta.env.VITE_SUPABASE_ANON_KEY || "").trim();
+    if (!supabaseAnonKey) {
+        throw new Error("Önizleme servisi yapılandırması eksik (VITE_SUPABASE_ANON_KEY).");
+    }
+
     const response = await fetch(requestUrl, {
         method: "GET",
         headers: {
             Accept: "text/html, text/plain;q=0.9,*/*;q=0.8",
+            Authorization: `Bearer ${supabaseAnonKey}`,
+            apikey: supabaseAnonKey,
         },
         signal,
     });
@@ -199,7 +208,7 @@ export default function EmailPreview() {
 
             try {
                 const body = await fetchPreviewHtml(request.requestUrl, controller.signal);
-                dispatch({ type: "LOAD_SUCCESS", html: body });
+                dispatch({ type: "LOAD_SUCCESS", html: sanitizeEmailHtmlForPreview(body) });
             } catch (fetchError: unknown) {
                 if (fetchError instanceof Error && fetchError.name === "AbortError") {
                     return;
@@ -278,7 +287,7 @@ export default function EmailPreview() {
                             title="E-posta önizleme"
                             className="h-full w-full border-none"
                             srcDoc={html}
-                            sandbox="allow-popups allow-popups-to-escape-sandbox"
+                            sandbox="allow-popups"
                         />
                     </div>
                 )}

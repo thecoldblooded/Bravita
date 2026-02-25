@@ -51,9 +51,7 @@ export function ChangePasswordModal({ children, open, onOpenChange }: ChangePass
         }
 
         try {
-            const skipCaptcha = import.meta.env.VITE_SKIP_CAPTCHA === "true";
-
-            if (!captchaToken && !skipCaptcha) {
+            if (!captchaToken) {
                 toast.error(t("auth.captcha_required"));
                 return;
             }

@@ -1,5 +1,75 @@
 const REFRESH_COOKIE_NAME = "bravita_refresh_token";
 const REFRESH_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
+const DEFAULT_SITE_URL = "https://bravita.com.tr";
+const DEFAULT_ALLOWED_AUTH_ORIGINS = [
+  "https://bravita.com.tr",
+  "https://www.bravita.com.tr",
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "http://localhost:8080",
+];
+
+function normalizeOrigin(value) {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  try {
+    return new URL(trimmed).origin;
+  } catch {
+    return null;
+  }
+}
+
+function loadAllowedAuthOrigins() {
+  const configured = String(process.env.ALLOWED_AUTH_ORIGINS || "")
+    .split(",")
+    .map((value) => normalizeOrigin(value))
+    .filter((value) => Boolean(value));
+
+  const siteUrl = normalizeOrigin(
+    process.env.SITE_URL || process.env.VITE_SITE_URL || DEFAULT_SITE_URL,
+  );
+
+  const merged = [
+    ...configured,
+    ...(siteUrl ? [siteUrl] : []),
+    ...DEFAULT_ALLOWED_AUTH_ORIGINS,
+  ];
+
+  return Array.from(new Set(merged));
+}
+
+function extractRequestOrigin(req) {
+  const fromOriginHeader = normalizeOrigin(req.headers.origin);
+  if (fromOriginHeader) return fromOriginHeader;
+
+  const refererHeader = typeof req.headers.referer === "string" ? req.headers.referer.trim() : "";
+  if (!refererHeader) return null;
+
+  try {
+    return new URL(refererHeader).origin;
+  } catch {
+    return null;
+  }
+}
+
+function assertValidAuthPostRequest(req, res) {
+  const requestOrigin = extractRequestOrigin(req);
+  const allowedOrigins = loadAllowedAuthOrigins();
+
+  if (!requestOrigin) {
+    sendJson(res, 403, { error: "Forbidden: missing origin" });
+    return false;
+  }
+
+  if (!allowedOrigins.includes(requestOrigin)) {
+    sendJson(res, 403, { error: "Forbidden: invalid origin" });
+    return false;
+  }
+
+  return true;
+}
 
 function getSupabaseConfig() {
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
@@ -164,4 +234,5 @@ export {
   sanitizeSessionResponse,
   sanitizeSignupResponse,
   extractAuthErrorMessage,
+  assertValidAuthPostRequest,
 };

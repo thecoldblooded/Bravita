@@ -515,46 +515,67 @@ serve(async (req: Request) => {
 
             const hCaptchaSecret = Deno.env.get("HCAPTCHA_SECRET_KEY");
             if (!hCaptchaSecret) {
-                logSupportDebug("captcha_secret_missing_soft_fail", {
+                logSupportDebug("captcha_secret_missing_hard_fail", {
                     ticket_id: String(ticket_id),
                     type: normalizedType,
                 });
-            } else {
-                try {
-                    const verifyRes = await fetch("https://hcaptcha.com/siteverify", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                        body: `response=${encodeURIComponent(String(captchaToken))}&secret=${encodeURIComponent(hCaptchaSecret)}`,
-                    });
+                throw new Error("Server configuration error: Missing HCAPTCHA_SECRET_KEY");
+            }
 
-                    const verifyData = await verifyRes.json();
-                    if (!verifyData.success) {
-                        logSupportDebug("captcha_verify_failed", {
-                            ticket_id: String(ticket_id),
-                            type: normalizedType,
-                            verify_errors: verifyData?.["error-codes"] || null,
-                            hostname: verifyData?.hostname || null,
-                        });
-                        throw new Error("Invalid Captcha Token");
-                    }
+            try {
+                const verifyRes = await fetch("https://hcaptcha.com/siteverify", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: `response=${encodeURIComponent(String(captchaToken))}&secret=${encodeURIComponent(hCaptchaSecret)}`,
+                });
 
-                    logSupportDebug("captcha_verify_passed", {
+                if (!verifyRes.ok) {
+                    logSupportDebug("captcha_verify_http_error", {
                         ticket_id: String(ticket_id),
                         type: normalizedType,
+                        status: verifyRes.status,
+                    });
+                    throw new Error("Captcha verification failed");
+                }
+
+                let verifyData: any;
+                try {
+                    verifyData = await verifyRes.json();
+                } catch {
+                    logSupportDebug("captcha_verify_parse_error", {
+                        ticket_id: String(ticket_id),
+                        type: normalizedType,
+                    });
+                    throw new Error("Captcha verification failed");
+                }
+
+                if (!verifyData?.success) {
+                    logSupportDebug("captcha_verify_failed", {
+                        ticket_id: String(ticket_id),
+                        type: normalizedType,
+                        verify_errors: verifyData?.["error-codes"] || null,
                         hostname: verifyData?.hostname || null,
                     });
-                } catch (captchaError: any) {
-                    const captchaMessage = String(captchaError?.message || "");
-                    if (captchaMessage === "Invalid Captcha Token") {
-                        throw captchaError;
-                    }
-
-                    logSupportDebug("captcha_verify_error_soft_fail", {
-                        ticket_id: String(ticket_id),
-                        type: normalizedType,
-                        error: truncateForLog(captchaMessage, 240),
-                    });
+                    throw new Error("Invalid Captcha Token");
                 }
+
+                logSupportDebug("captcha_verify_passed", {
+                    ticket_id: String(ticket_id),
+                    type: normalizedType,
+                    hostname: verifyData?.hostname || null,
+                });
+            } catch (captchaError: any) {
+                const captchaMessage = String(captchaError?.message || "");
+                if (captchaMessage === "Invalid Captcha Token") {
+                    throw captchaError;
+                }
+
+                logSupportDebug("captcha_verify_error_hard_fail", {
+                    ticket_id: String(ticket_id),
+                    type: normalizedType,
+                    error: truncateForLog(captchaMessage, 240),
+                });
+                throw new Error("Captcha verification failed");
             }
         } else if (normalizedType === "ticket_created" && !isAdmin) {
             logSupportDebug("captcha_skipped_authenticated_user", {

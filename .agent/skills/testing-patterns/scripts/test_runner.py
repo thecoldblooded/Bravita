@@ -14,6 +14,8 @@ Supports:
 import subprocess
 import sys
 import json
+import os
+import shutil
 from pathlib import Path
 from datetime import datetime
 
@@ -22,6 +24,30 @@ try:
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 except:
     pass
+
+
+def resolve_executable(cmd: str) -> str:
+    """Resolve executable name for cross-platform subprocess calls."""
+    if os.name != "nt":
+        return cmd
+
+    if Path(cmd).suffix:
+        return cmd
+
+    candidates = [f"{cmd}.cmd", f"{cmd}.exe", f"{cmd}.bat", cmd]
+    for candidate in candidates:
+        if shutil.which(candidate):
+            return candidate
+
+    return cmd
+
+
+def with_resolved_executable(cmd: list) -> list:
+    """Return command list with a Windows-safe executable in slot 0."""
+    if not cmd:
+        return cmd
+
+    return [resolve_executable(cmd[0]), *cmd[1:]]
 
 
 def detect_test_framework(project_path: Path) -> dict:
@@ -45,23 +71,23 @@ def detect_test_framework(project_path: Path) -> dict:
             # Check for test script
             if "test" in scripts:
                 result["framework"] = "npm test"
-                result["cmd"] = ["npm", "test"]
+                result["cmd"] = [resolve_executable("npm"), "test"]
                 
                 # Try to detect specific framework for coverage
                 if "vitest" in deps:
                     result["framework"] = "vitest"
-                    result["coverage_cmd"] = ["npx", "vitest", "run", "--coverage"]
+                    result["coverage_cmd"] = [resolve_executable("npx"), "vitest", "run", "--coverage"]
                 elif "jest" in deps:
                     result["framework"] = "jest"
-                    result["coverage_cmd"] = ["npx", "jest", "--coverage"]
+                    result["coverage_cmd"] = [resolve_executable("npx"), "jest", "--coverage"]
             elif "vitest" in deps:
                 result["framework"] = "vitest"
-                result["cmd"] = ["npx", "vitest", "run"]
-                result["coverage_cmd"] = ["npx", "vitest", "run", "--coverage"]
+                result["cmd"] = [resolve_executable("npx"), "vitest", "run"]
+                result["coverage_cmd"] = [resolve_executable("npx"), "vitest", "run", "--coverage"]
             elif "jest" in deps:
                 result["framework"] = "jest"
-                result["cmd"] = ["npx", "jest"]
-                result["coverage_cmd"] = ["npx", "jest", "--coverage"]
+                result["cmd"] = [resolve_executable("npx"), "jest"]
+                result["coverage_cmd"] = [resolve_executable("npx"), "jest", "--coverage"]
                 
         except:
             pass
@@ -70,8 +96,8 @@ def detect_test_framework(project_path: Path) -> dict:
     if (project_path / "pyproject.toml").exists() or (project_path / "requirements.txt").exists():
         result["type"] = "python"
         result["framework"] = "pytest"
-        result["cmd"] = ["python", "-m", "pytest", "-v"]
-        result["coverage_cmd"] = ["python", "-m", "pytest", "--cov", "--cov-report=term-missing"]
+        result["cmd"] = [resolve_executable("python"), "-m", "pytest", "-v"]
+        result["coverage_cmd"] = [resolve_executable("python"), "-m", "pytest", "--cov", "--cov-report=term-missing"]
     
     return result
 
@@ -88,6 +114,8 @@ def run_tests(cmd: list, cwd: Path) -> dict:
     }
     
     try:
+        cmd = with_resolved_executable(cmd)
+
         proc = subprocess.run(
             cmd,
             cwd=str(cwd),

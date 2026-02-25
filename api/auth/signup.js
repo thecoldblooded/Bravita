@@ -1,4 +1,5 @@
 import {
+  assertValidAuthPostRequest,
   buildRefreshCookie,
   callSupabaseAuth,
   extractAuthErrorMessage,
@@ -7,18 +8,40 @@ import {
   sendJson,
 } from "./_shared.js";
 
+function normalizeOptionalString(value, maxLength) {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim();
+  if (!normalized) return null;
+  return normalized.slice(0, maxLength);
+}
+
+function normalizePhone(value) {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim();
+  if (!normalized || normalized.length > 32) return null;
+  if (!/^[0-9+()\-\s]+$/.test(normalized)) return null;
+  return normalized;
+}
+
 function normalizeSignupProfileData(input) {
-  if (!input || typeof input !== "object") {
-    return {};
+  const payload = {
+    user_type: "individual",
+  };
+
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    return payload;
   }
 
-  const payload = {};
-  for (const [key, value] of Object.entries(input)) {
-    if (value === undefined) {
-      continue;
-    }
-    payload[key] = value;
+  const fullName = normalizeOptionalString(input.full_name, 120);
+  if (fullName) {
+    payload.full_name = fullName;
   }
+
+  const phone = normalizePhone(input.phone);
+  if (phone) {
+    payload.phone = phone;
+  }
+
   return payload;
 }
 
@@ -26,6 +49,10 @@ export default async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return sendJson(res, 405, { error: "Method not allowed" });
+  }
+
+  if (!assertValidAuthPostRequest(req, res)) {
+    return;
   }
 
   try {
