@@ -328,28 +328,19 @@ function LogsContent() {
     };
 
     return (
-        <div className={`min-h-screen p-8 transition-colors duration-300 ${isDark ? "bg-gray-900 text-gray-100" : "bg-gray-50 text-gray-900"}`}>
+        <>
             {/* Header */}
-            <div className="max-w-7xl mx-auto mb-8">
+            <div className="max-w-7xl mx-auto">
+                {/* Header */}
                 <div className="flex items-center justify-between mb-8">
-                    <div className="flex items-center gap-4">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => navigate("/admin")}
-                            className={isDark ? "text-gray-400 hover:text-white hover:bg-gray-800" : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"}
-                        >
-                            <ArrowLeft className="w-5 h-5" />
-                        </Button>
-                        <div>
-                            <h1 className={`text-3xl font-black flex items-center gap-3 ${isDark ? "text-white" : "text-gray-900"}`}>
-                                <span className="bg-orange-500 w-2 h-8 rounded-full" />
-                                Sistem Denetim Logları
-                            </h1>
-                            <p className={`text-sm mt-1 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
-                                Admin panelindeki tüm işlemlerin detaylı kaydı
-                            </p>
-                        </div>
+                    <div>
+                        <h1 className={`text-3xl font-black flex items-center gap-3 ${isDark ? "text-white" : "text-gray-900"}`}>
+                            <span className="bg-orange-500 w-2 h-8 rounded-full" />
+                            Sistem Denetim Logları
+                        </h1>
+                        <p className={`text-sm mt-1 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+                            Admin panelindeki tüm işlemlerin detaylı kaydı
+                        </p>
                     </div>
                     <Button
                         onClick={() => { setIsLoading(true); loadLogs(true); }}
@@ -759,7 +750,7 @@ function LogsContent() {
                     )}
                 </DialogContent>
             </Dialog>
-        </div>
+        </>
     );
 }
 

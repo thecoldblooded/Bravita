@@ -139,7 +139,7 @@ function UsersContent() {
 
     return (
         <>
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-7xl mx-auto">
                 <div className="flex items-center justify-between mb-8">
                     <div>
                         <h1 className={`text-3xl font-black ${textPrimary} flex items-center gap-3`}>
