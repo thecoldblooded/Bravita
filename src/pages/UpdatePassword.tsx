@@ -135,15 +135,32 @@ export default function UpdatePassword() {
                                 <FormField
                                     control={form.control}
                                     name="confirmPassword"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>{t("auth.confirm_password") || "Şifre Tekrar"}</FormLabel>
-                                            <FormControl>
-                                                <Input type="password" placeholder="••••••••" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
+                                    render={({ field }) => {
+                                        const passwordValue = form.watch("password");
+                                        const isMatch = field.value && passwordValue && field.value === passwordValue;
+
+                                        return (
+                                            <FormItem>
+                                                <div className="flex justify-between items-center">
+                                                    <FormLabel>{t("auth.confirm_password") || "Şifre Tekrar"}</FormLabel>
+                                                    {field.value ? (
+                                                        <span className={`text-sm font-medium ${isMatch ? "text-green-600" : "text-red-500"}`}>
+                                                            {isMatch ? "Şifreler eşleşti ✓" : "Şifreler eşleşmedi ✕"}
+                                                        </span>
+                                                    ) : null}
+                                                </div>
+                                                <FormControl>
+                                                    <Input
+                                                        type="password"
+                                                        placeholder="••••••••"
+                                                        className={field.value ? (isMatch ? "border-green-500 focus-visible:ring-green-500" : "border-red-500 focus-visible:ring-red-500") : ""}
+                                                        {...field}
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        );
+                                    }}
                                 />
                                 <Button type="submit" className="w-full bg-orange-500 hover:bg-orange-600 text-white" disabled={isLoading}>
                                     {isLoading ? <Loader size="1.25rem" noMargin /> : (t("auth.update_password_btn") || "Şifreyi Güncelle")}

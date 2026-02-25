@@ -307,21 +307,35 @@ function IndividualSignupContent({
           <FormField
             control={form.control}
             name="confirmPassword"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t("auth.confirm_password")}</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder={t("auth.placeholders.confirm_password")}
-                    type="password"
-                    autoComplete="new-password"
-                    {...field}
-                    disabled={isLoading}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            render={({ field }) => {
+              const passwordValue = form.watch("password");
+              const isMatch = field.value && passwordValue && field.value === passwordValue;
+              const hasMismatch = field.value && passwordValue && field.value !== passwordValue;
+
+              return (
+                <FormItem>
+                  <div className="flex justify-between items-center">
+                    <FormLabel>{t("auth.confirm_password")}</FormLabel>
+                    {field.value ? (
+                      <span className={`text-sm font-medium ${isMatch ? "text-green-600" : "text-red-500"}`}>
+                        {isMatch ? "Şifreler eşleşti ✓" : "Şifreler eşleşmedi ✕"}
+                      </span>
+                    ) : null}
+                  </div>
+                  <FormControl>
+                    <Input
+                      placeholder={t("auth.placeholders.confirm_password")}
+                      type="password"
+                      autoComplete="new-password"
+                      className={field.value ? (isMatch ? "border-green-500 focus-visible:ring-green-500" : "border-red-500 focus-visible:ring-red-500") : ""}
+                      {...field}
+                      disabled={isLoading}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              );
+            }}
           />
 
           <div className="space-y-3 border-t pt-4">
