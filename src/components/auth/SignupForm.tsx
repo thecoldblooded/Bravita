@@ -557,6 +557,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
       });
 
       localStorage.setItem("profile_in_progress", "true");
+      localStorage.setItem("bravita_new_signup", "true");
 
       dispatch({ type: "SHOW_EMAIL_CONFIRMATION", email: data.email });
       toast.success(t("auth.email_confirmation_sent"));
@@ -586,6 +587,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
     try {
       localStorage.setItem("profile_in_progress", "true");
       localStorage.setItem("oauth_provider", "google");
+      localStorage.setItem("bravita_new_signup", "true");
 
       await signupWithGoogle();
     } catch (err) {

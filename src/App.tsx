@@ -147,10 +147,58 @@ const AppContent = () => {
 };
 
 const App = () => {
-  const { isSplashScreenActive, isPasswordRecovery } = useAuth();
+  const { isSplashScreenActive, isPasswordRecovery, session } = useAuth();
+
   const [showWelcome, setShowWelcome] = useState(() => {
-    return typeof window !== "undefined" && window.location.hash.includes("type=signup");
+    if (typeof window === "undefined") return false;
+
+    // Check if intentional flag was set explicitly by SignupForm.tsx
+    const isNewSignupIntent = localStorage.getItem("bravita_new_signup") === 'true';
+
+    // Fallback: Check traditional URL parameters
+    const hashType = window.location.hash.includes("type=signup");
+    const searchType = window.location.search.includes("type=signup");
+
+    // Clear the intentional flag to prevent loop
+    if (isNewSignupIntent) {
+      localStorage.removeItem("bravita_new_signup");
+    }
+
+    return isNewSignupIntent || hashType || searchType;
   });
+
+  useEffect(() => {
+    if (showWelcome) {
+      localStorage.setItem("bravita_has_seen_welcome", "true");
+    }
+  }, [showWelcome]);
+
+  // Backup trigger logic for PKCE auth flows where URL params might be stripped cleanly 
+  // before React renders or across cross-device signups via email links.
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
+    if (session?.user?.created_at && !showWelcome) {
+      const createdAt = new Date(session.user.created_at).getTime();
+      const now = new Date().getTime();
+      const minutesSinceCreation = (now - createdAt) / (1000 * 60);
+
+      const hasSeenWelcome = localStorage.getItem("bravita_has_seen_welcome") === "true";
+
+      // Show if account created within last 5 minutes and hasn't seen the intro yet
+      if (minutesSinceCreation < 5 && !hasSeenWelcome) {
+        localStorage.setItem("bravita_has_seen_welcome", "true");
+        // Defer state update to next tick to avoid React warnings about rendering in effect synchronously
+        timeoutId = setTimeout(() => {
+          setShowWelcome(true);
+        }, 10);
+      }
+    }
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [session?.user?.created_at, showWelcome]);
 
   useEffect(() => {
     const teardownAnalytics = initializeConsentAwareAnalytics();
