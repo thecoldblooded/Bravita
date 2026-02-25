@@ -15,7 +15,10 @@ const DEFAULT_ALLOWED_ORIGINS = [
   "http://localhost:8080"
 ];
 const ALLOWED_ORIGINS = (Deno.env.get("PAYMENT_ALLOWED_ORIGINS") ?? "").split(",").map((value) => value.trim()).filter((value) => value.length > 0);
-const ACTIVE_ALLOWED_ORIGINS = ALLOWED_ORIGINS.length > 0 ? ALLOWED_ORIGINS : DEFAULT_ALLOWED_ORIGINS;
+const ACTIVE_ALLOWED_ORIGINS = Array.from(new Set([
+  ...DEFAULT_ALLOWED_ORIGINS,
+  ...ALLOWED_ORIGINS
+]));
 function isAllowedOrigin(origin) {
   if (!origin) return false;
   if (ACTIVE_ALLOWED_ORIGINS.includes(origin)) return true;

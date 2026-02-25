@@ -19,9 +19,10 @@ const PAYMENT_ALLOWED_ORIGINS = (Deno.env.get("PAYMENT_ALLOWED_ORIGINS") ?? "")
   .map((value) => value.trim())
   .filter((value) => value.length > 0);
 
-const ACTIVE_ALLOWED_ORIGINS = PAYMENT_ALLOWED_ORIGINS.length > 0
-  ? PAYMENT_ALLOWED_ORIGINS
-  : DEFAULT_ALLOWED_ORIGINS;
+const ACTIVE_ALLOWED_ORIGINS = Array.from(new Set([
+  ...DEFAULT_ALLOWED_ORIGINS,
+  ...PAYMENT_ALLOWED_ORIGINS,
+]));
 
 const BAKIYEM_BASE_URL = (Deno.env.get("BAKIYEM_BASE_URL") ?? "https://service.refmokaunited.com").trim();
 const BAKIYEM_DEALER_CODE = (Deno.env.get("BAKIYEM_DEALER_CODE") ?? "").trim();
@@ -193,18 +194,7 @@ serve(async (req: Request) => {
   const uiOriginParam = (uiOriginParamRaw ?? "").trim();
   const uiOriginParamAllowed = isAllowedOrigin(uiOriginParam);
   const uiOrigin = resolveUiOrigin(uiOriginParamRaw);
-  const hasVercelOriginInAllowlist = ACTIVE_ALLOWED_ORIGINS.includes("https://bravita.vercel.app");
   const intentId = url.searchParams.get("MyTrxCode") || url.searchParams.get("intentId");
-
-  console.info("bakiyem-3d-return ui-origin resolution", {
-    intentId,
-    uiOriginParam,
-    uiOriginParamAllowed,
-    resolvedUiOrigin: uiOrigin,
-    hasVercelOriginInAllowlist,
-    activeAllowedOriginsSample: ACTIVE_ALLOWED_ORIGINS.slice(0, 8),
-    activeAllowedOriginsCount: ACTIVE_ALLOWED_ORIGINS.length,
-  });
 
   const isPostCallback = req.method === "POST";
   const userAgent = req.headers.get("user-agent") || "";

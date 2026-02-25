@@ -3,7 +3,7 @@ import loginVideo from "@/assets/optimized/login-compressed.mp4";
 import logoImg from "@/assets/bravita-logo.webp";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -75,6 +75,11 @@ export default function UpdatePassword() {
         },
     });
 
+    const passwordValue = useWatch({
+        control: form.control,
+        name: "password",
+    });
+
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
         try {
             await updateUserPassword(values.password);
@@ -136,8 +141,7 @@ export default function UpdatePassword() {
                                     control={form.control}
                                     name="confirmPassword"
                                     render={({ field }) => {
-                                        const passwordValue = form.watch("password");
-                                        const isMatch = field.value && passwordValue && field.value === passwordValue;
+                                        const isMatch = Boolean(field.value) && Boolean(passwordValue) && field.value === passwordValue;
 
                                         return (
                                             <FormItem>
