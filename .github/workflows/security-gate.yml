@@ -25,13 +25,64 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Preflight network diagnostics for Supabase artifact URLs
+        run: |
+          set -euo pipefail
+          echo "Node: $(node -v)"
+          echo "npm: $(npm -v)"
+          echo "Runner: $(uname -a)"
+
+          URLS=(
+            "https://github.com/supabase/cli/releases/download/v2.76.9/supabase_2.76.9_checksums.txt"
+            "https://github.com/supabase/cli/releases/download/v2.76.9/supabase_linux_amd64.tar.gz"
+          )
+
+          for url in "${URLS[@]}"; do
+            echo "----"
+            echo "Preflight URL: $url"
+            for attempt in 1 2 3; do
+              echo "Attempt #$attempt"
+              if curl -sS -o /dev/null -w "http_code=%{http_code} remote_ip=%{remote_ip} ssl_verify=%{ssl_verify_result} time_total=%{time_total}\n" --connect-timeout 10 --max-time 30 --retry 2 --retry-all-errors "$url"; then
+                break
+              fi
+              sleep $((attempt * 2))
+            done
+          done
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.76.9
+
+      - name: Configure npm fetch retry behavior
+        run: |
+          npm config set fetch-retries 5
+          npm config set fetch-retry-mintimeout 20000
+          npm config set fetch-retry-maxtimeout 120000
+
+      - name: Install dependencies (resilient)
+        run: |
+          set -euo pipefail
+          max_attempts=3
+          attempt=1
+          until [ "$attempt" -gt "$max_attempts" ]; do
+            echo "npm ci attempt ${attempt}/${max_attempts}"
+            if npm ci; then
+              echo "npm ci succeeded on attempt ${attempt}"
+              break
+            fi
+            if [ "$attempt" -eq "$max_attempts" ]; then
+              echo "::error::npm ci failed after ${max_attempts} attempts"
+              exit 1
+            fi
+            sleep $((attempt * 10))
+            attempt=$((attempt + 1))
+          done
 
       - name: Diagnose Supabase CLI and Docker
         run: |
           echo "Supabase CLI version:"
-          npx supabase --version || true
+          supabase --version || true
 
           echo "Docker version:"
           docker version || true
@@ -66,7 +117,7 @@ jobs:
             echo "::warning::Missing SUPABASE_ACCESS_TOKEN secret. Skipping Supabase CLI authentication."
             echo "SKIP_SUPABASE=true" >> $GITHUB_ENV
           else
-            npx supabase login --token "$SUPABASE_ACCESS_TOKEN"
+            supabase login --token "$SUPABASE_ACCESS_TOKEN"
           fi
 
       - name: Link Supabase project
@@ -84,7 +135,7 @@ jobs:
           else
             echo "Expected project ref (masked): ${SUPABASE_PROJECT_REF:0:6}*** (len=${#SUPABASE_PROJECT_REF})"
 
-            if ! npx supabase link --project-ref "$SUPABASE_PROJECT_REF"; then
+            if ! supabase link --project-ref "$SUPABASE_PROJECT_REF"; then
               echo "::warning::Supabase project link failed. Skipping Supabase drift check."
               echo "SKIP_DRIFT=true" >> $GITHUB_ENV
               exit 0
@@ -122,7 +173,7 @@ jobs:
 
 
           DIFF_EXIT=0
-          npx supabase db diff --linked --use-migra --schema public > drift.sql 2> drift.err || DIFF_EXIT=$?
+          supabase db diff --linked --use-migra --schema public > drift.sql 2> drift.err || DIFF_EXIT=$?
 
 
           if [ "$DIFF_EXIT" -ne 0 ]; then
