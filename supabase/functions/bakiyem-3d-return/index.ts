@@ -588,6 +588,25 @@ serve(async (req: Request) => {
       normalizeComparable(item?.MerchantOrderId ?? item?.MerchantRef) === normalizedShortTrxCode
     );
 
+    const detailDiagnosticMatchByCallbackTrxVirtualPosOrderId = normalizedCallbackTrxCode
+      ? detailRecords.find((item: any) => normalizeComparable(item?.VirtualPosOrderId) === normalizedCallbackTrxCode)
+      : null;
+    const listDiagnosticMatchByCallbackTrxVirtualPosOrderId = normalizedCallbackTrxCode
+      ? inquiryPaymentList.find((item: any) => normalizeComparable(item?.VirtualPosOrderId) === normalizedCallbackTrxCode)
+      : null;
+    const detailDiagnosticMatchByCallbackAnyTrxLoose = normalizedCallbackAnyTrxCode
+      ? detailRecords.find((item: any) =>
+        normalizeComparable(item?.TrxCode) === normalizedCallbackAnyTrxCode ||
+        normalizeComparable(item?.VirtualPosOrderId) === normalizedCallbackAnyTrxCode
+      )
+      : null;
+    const listDiagnosticMatchByCallbackAnyTrxLoose = normalizedCallbackAnyTrxCode
+      ? inquiryPaymentList.find((item: any) =>
+        normalizeComparable(item?.TrxCode) === normalizedCallbackAnyTrxCode ||
+        normalizeComparable(item?.VirtualPosOrderId) === normalizedCallbackAnyTrxCode
+      )
+      : null;
+
     const detailRecordIdSnapshot = detailRecords.slice(0, 5).map((item: any) => ({
       TrxCode: pickFirstText(item, ["TrxCode", "trxCode"]),
       VirtualPosOrderId: pickFirstText(item, ["VirtualPosOrderId", "virtualPosOrderId"]),
@@ -615,10 +634,14 @@ serve(async (req: Request) => {
       matchedDetailByOtherTrxCode ||
       matchedDetailByGatewayTrxCode ||
       matchedDetailByCallbackTrxCode ||
+      detailDiagnosticMatchByCallbackTrxVirtualPosOrderId ||
+      detailDiagnosticMatchByCallbackAnyTrxLoose ||
       matchedByCallbackOtherTrxCode ||
       matchedByOtherTrxCode ||
       matchedByGatewayTrxCode ||
       matchedByCallbackTrxCode ||
+      listDiagnosticMatchByCallbackTrxVirtualPosOrderId ||
+      listDiagnosticMatchByCallbackAnyTrxLoose ||
       null;
 
     const selectedProviderRecordSource =
@@ -626,11 +649,15 @@ serve(async (req: Request) => {
         : matchedDetailByOtherTrxCode ? "detail:other_trx_code"
           : matchedDetailByGatewayTrxCode ? "detail:gateway_trx_code"
             : matchedDetailByCallbackTrxCode ? "detail:callback_trx_code"
-              : matchedByCallbackOtherTrxCode ? "list:callback_other_trx_code"
-                : matchedByOtherTrxCode ? "list:other_trx_code"
-                  : matchedByGatewayTrxCode ? "list:gateway_trx_code"
-                    : matchedByCallbackTrxCode ? "list:callback_trx_code"
-                      : "none";
+              : detailDiagnosticMatchByCallbackTrxVirtualPosOrderId ? "detail:callback_trx_virtual_pos_order_id"
+                : detailDiagnosticMatchByCallbackAnyTrxLoose ? "detail:callback_any_trx_loose"
+                  : matchedByCallbackOtherTrxCode ? "list:callback_other_trx_code"
+                    : matchedByOtherTrxCode ? "list:other_trx_code"
+                      : matchedByGatewayTrxCode ? "list:gateway_trx_code"
+                        : matchedByCallbackTrxCode ? "list:callback_trx_code"
+                          : listDiagnosticMatchByCallbackTrxVirtualPosOrderId ? "list:callback_trx_virtual_pos_order_id"
+                            : listDiagnosticMatchByCallbackAnyTrxLoose ? "list:callback_any_trx_loose"
+                              : "none";
 
     const callbackBankResultCodeRaw = asText(callbackNormalized.bankResultCode).trim();
     const consistencyChecks = {
@@ -729,6 +756,10 @@ serve(async (req: Request) => {
           listByVirtualPosOrderId: !!listDiagnosticMatchByVirtualPosOrderId,
           listByCallbackAnyTrx: !!listDiagnosticMatchByCallbackAnyTrx,
           listByMerchantOrderId: !!listDiagnosticMatchByMerchantOrderId,
+          detailByCallbackTrxVirtualPosOrderId: !!detailDiagnosticMatchByCallbackTrxVirtualPosOrderId,
+          listByCallbackTrxVirtualPosOrderId: !!listDiagnosticMatchByCallbackTrxVirtualPosOrderId,
+          detailByCallbackAnyTrxLoose: !!detailDiagnosticMatchByCallbackAnyTrxLoose,
+          listByCallbackAnyTrxLoose: !!listDiagnosticMatchByCallbackAnyTrxLoose,
         },
         selectedProviderRecordSource,
         selectedProviderRecordForDebug,
@@ -738,6 +769,50 @@ serve(async (req: Request) => {
         recentIntentTxCount: recentIntentTxSummary.length,
       },
       success: true
+    });
+
+    await supabase.from("payment_transactions").insert({
+      intent_id: intentId,
+      operation: "inquiry",
+      request_payload: {
+        type: "status_linkage_diagnostics_v6",
+        callbackCorrelationId,
+        callbackSource,
+        callbackIdentifiers: {
+          trxCode: callbackNormalized.trxCode,
+          otherTrxCode: callbackNormalized.otherTrxCode,
+          anyTrxCode: asText(callbackData?.TrxCode ?? callbackData?.trxCode ?? callbackData?.threeDTrxCode ?? callbackData?.ThreeDTrxCode),
+        },
+        normalizedIdentifiers: {
+          normalizedShortTrxCode,
+          normalizedGatewayTrxCode,
+          normalizedCallbackTrxCode,
+          normalizedCallbackOtherTrxCode,
+          normalizedCallbackAnyTrxCode,
+        },
+        callbackTransport: {
+          isPostCallback,
+          isLikelyBrowserCallback,
+          shouldRedirectClient,
+          userAgent,
+          headers: requestHeaderSnapshot,
+        },
+      },
+      response_payload: {
+        selectedProviderRecordSource,
+        matchedRecordByCurrentStrategy: !!selectedProviderRecordForDebug,
+        diagnostics: {
+          detailByCallbackTrxVirtualPosOrderId: !!detailDiagnosticMatchByCallbackTrxVirtualPosOrderId,
+          listByCallbackTrxVirtualPosOrderId: !!listDiagnosticMatchByCallbackTrxVirtualPosOrderId,
+          detailByCallbackAnyTrxStrict: !!detailDiagnosticMatchByCallbackAnyTrx,
+          listByCallbackAnyTrxStrict: !!listDiagnosticMatchByCallbackAnyTrx,
+          detailByCallbackAnyTrxLoose: !!detailDiagnosticMatchByCallbackAnyTrxLoose,
+          listByCallbackAnyTrxLoose: !!listDiagnosticMatchByCallbackAnyTrxLoose,
+        },
+        detailCandidateSnapshot: detailRecordIdSnapshot,
+        listCandidateSnapshot: listRecordIdSnapshot,
+      },
+      success: true,
     });
 
     await supabase.from("payment_transactions").insert({
@@ -798,7 +873,7 @@ serve(async (req: Request) => {
 
     const callbackOutcomeFromHash = hashValidation.matchedOutcome;
     const callbackHasHashOutcome = callbackOutcomeFromHash === "t" || callbackOutcomeFromHash === "f";
-    const callbackMessageIndicatesFailure = /(hata|error|fail|failed|unsuccessful|declined|reject|red)/i.test(
+    const callbackMessageIndicatesFailure = /(hata|error|fail|failed|unsuccessful|declined|reject|red|basarisiz|başarısız)/i.test(
       callbackNormalized.resultMessage,
     );
 
@@ -820,8 +895,39 @@ serve(async (req: Request) => {
       (["1", "2"].includes(inquiryTrxStatus) || ["1", "2"].includes(inquiryPaymentStatus));
 
     const resultCode = callbackResultCode || inquiryResultCode || asText(detailInquiryJson?.ResultCode) || asText(inquiryJson?.ResultCode) || "fail";
-    const trxStatus = callbackNormalized.trxStatus || inquiryTrxStatus || "unknown";
-    const paymentStatus = callbackNormalized.paymentStatus || inquiryPaymentStatus || "";
+
+    const detailPrimaryTrxStatus = asText(detailPrimaryTrx?.TrxStatus);
+    const detailPrimaryPaymentStatus = asText(detailPrimaryTrx?.PaymentStatus);
+    const detailPaymentDetailTrxStatus = asText(detailPaymentDetail?.TrxStatus);
+    const detailPaymentDetailPaymentStatus = asText(detailPaymentDetail?.PaymentStatus);
+
+    const trxStatus =
+      callbackNormalized.trxStatus ||
+      inquiryTrxStatus ||
+      detailPrimaryTrxStatus ||
+      detailPaymentDetailTrxStatus ||
+      "unknown";
+    const paymentStatus =
+      callbackNormalized.paymentStatus ||
+      inquiryPaymentStatus ||
+      detailPrimaryPaymentStatus ||
+      detailPaymentDetailPaymentStatus ||
+      "";
+
+    const diagnosticTrxStatusWithDetailFallback = trxStatus;
+    const diagnosticPaymentStatusWithDetailFallback = paymentStatus;
+    const diagnosticTrxStatusResolutionPath =
+      callbackNormalized.trxStatus ? "callback.trxStatus"
+        : inquiryTrxStatus ? "matchedRecord.TrxStatus"
+          : detailPrimaryTrxStatus ? "detailPrimaryTrx.TrxStatus"
+            : detailPaymentDetailTrxStatus ? "detailPaymentDetail.TrxStatus"
+              : "fallback:unknown";
+    const diagnosticPaymentStatusResolutionPath =
+      callbackNormalized.paymentStatus ? "callback.paymentStatus"
+        : inquiryPaymentStatus ? "matchedRecord.PaymentStatus"
+          : detailPrimaryPaymentStatus ? "detailPrimaryTrx.PaymentStatus"
+            : detailPaymentDetailPaymentStatus ? "detailPaymentDetail.PaymentStatus"
+              : "fallback:empty";
 
     const bankCode =
       callbackNormalized.bankResultCode ||
@@ -848,6 +954,13 @@ serve(async (req: Request) => {
       callbackOutcomeFromHash === "f" &&
       callbackBankResultCode.length > 0 &&
       callbackMessageIndicatesFailure;
+
+    const selectedByExtendedAliasStrategy = [
+      "detail:callback_trx_virtual_pos_order_id",
+      "detail:callback_any_trx_loose",
+      "list:callback_trx_virtual_pos_order_id",
+      "list:callback_any_trx_loose",
+    ].includes(selectedProviderRecordSource);
 
     await supabase.from("payment_transactions").insert({
       intent_id: intentId,
@@ -888,6 +1001,27 @@ serve(async (req: Request) => {
           inquiryResultCode,
           inquiryTrxStatus,
           inquiryPaymentStatus,
+        },
+        statusFallbackDiagnostics: {
+          detailPrimaryTrxStatus,
+          detailPrimaryPaymentStatus,
+          detailPaymentDetailTrxStatus,
+          detailPaymentDetailPaymentStatus,
+          trxStatusWithDetailFallback: diagnosticTrxStatusWithDetailFallback,
+          paymentStatusWithDetailFallback: diagnosticPaymentStatusWithDetailFallback,
+          trxStatusResolutionPath: diagnosticTrxStatusResolutionPath,
+          paymentStatusResolutionPath: diagnosticPaymentStatusResolutionPath,
+        },
+        matchCoverageDiagnostics: {
+          selectedProviderRecordSource,
+          selectedByExtendedAliasStrategy,
+          matchedByCurrentStrategy: !!selectedProviderRecordForDebug,
+          detailByCallbackTrxVirtualPosOrderId: !!detailDiagnosticMatchByCallbackTrxVirtualPosOrderId,
+          listByCallbackTrxVirtualPosOrderId: !!listDiagnosticMatchByCallbackTrxVirtualPosOrderId,
+          detailByCallbackAnyTrxStrict: !!detailDiagnosticMatchByCallbackAnyTrx,
+          listByCallbackAnyTrxStrict: !!listDiagnosticMatchByCallbackAnyTrx,
+          detailByCallbackAnyTrxLoose: !!detailDiagnosticMatchByCallbackAnyTrxLoose,
+          listByCallbackAnyTrxLoose: !!listDiagnosticMatchByCallbackAnyTrxLoose,
         },
         selectedProviderRecordSource,
         detailInquiryResultCode: asText(detailInquiryJson?.ResultCode),
