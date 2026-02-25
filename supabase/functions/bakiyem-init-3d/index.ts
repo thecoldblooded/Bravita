@@ -26,7 +26,12 @@ const DEFAULT_ALLOWED_ORIGINS = [
   "http://localhost:8080"
 ];
 const PAYMENT_ALLOWED_ORIGINS = (Deno.env.get("PAYMENT_ALLOWED_ORIGINS") ?? "").split(",").map((value) => value.trim()).filter((value) => value.length > 0);
-const ACTIVE_ALLOWED_ORIGINS = PAYMENT_ALLOWED_ORIGINS.length > 0 ? PAYMENT_ALLOWED_ORIGINS : DEFAULT_ALLOWED_ORIGINS;
+// Keep defaults active even when PAYMENT_ALLOWED_ORIGINS is set, to prevent accidental
+// production lockout for known first-party domains (e.g. bravita.vercel.app).
+const ACTIVE_ALLOWED_ORIGINS = Array.from(new Set([
+  ...DEFAULT_ALLOWED_ORIGINS,
+  ...PAYMENT_ALLOWED_ORIGINS
+]));
 function isAllowedOrigin(origin) {
   if (!origin) return false;
   if (ACTIVE_ALLOWED_ORIGINS.includes(origin)) return true;
@@ -39,7 +44,8 @@ function isAllowedOrigin(origin) {
 }
 function corsHeaders(req) {
   const origin = req.headers.get("Origin") ?? "";
-  const allowedOrigin = isAllowedOrigin(origin) ? origin : ACTIVE_ALLOWED_ORIGINS[0] ?? APP_BASE_URL;
+  const originAllowed = isAllowedOrigin(origin);
+  const allowedOrigin = originAllowed ? origin : ACTIVE_ALLOWED_ORIGINS[0] ?? APP_BASE_URL;
   return {
     "Access-Control-Allow-Origin": allowedOrigin,
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-user-jwt",
