@@ -82,8 +82,8 @@ function PaymentMethodOption({
             whileTap={{ scale: 0.99 }}
             onClick={() => onSelect(method)}
             className={`w-full p-4 rounded-xl border-2 text-left transition-all ${isSelected
-                    ? "border-orange-500 bg-orange-50"
-                    : "border-gray-100 bg-white hover:border-orange-200"
+                ? "border-orange-500 bg-orange-50"
+                : "border-gray-100 bg-white hover:border-orange-200"
                 }`}
         >
             <div className="flex items-center gap-3">
@@ -193,7 +193,7 @@ function CreditCardPanel({
                         onChange={(e) => onCardChange("name", e.target.value)}
                         placeholder={t("checkout.card.name_placeholder", "AD SOYAD")}
                         autoComplete="cc-name"
-                        className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 uppercase"
+                        className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 uppercase text-sm md:text-base"
                     />
                 </div>
 
@@ -208,7 +208,7 @@ function CreditCardPanel({
                         placeholder="0000 0000 0000 0000"
                         maxLength={19}
                         autoComplete="cc-number"
-                        className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 font-mono text-lg tracking-wider"
+                        className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 font-mono text-[15px] md:text-lg tracking-wider"
                     />
                 </div>
 
@@ -224,7 +224,7 @@ function CreditCardPanel({
                             placeholder={t("checkout.card.expiry_placeholder")}
                             maxLength={7}
                             autoComplete="cc-exp"
-                            className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 font-mono"
+                            className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 font-mono text-sm md:text-base"
                         />
                     </div>
                     <div className="space-y-2">
@@ -239,7 +239,7 @@ function CreditCardPanel({
                             placeholder="•••"
                             maxLength={3}
                             autoComplete="cc-csc"
-                            className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 font-mono"
+                            className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 font-mono text-sm md:text-base"
                         />
                     </div>
                 </div>

@@ -142,14 +142,61 @@ function Footer() {
           -webkit-text-fill-color: transparent;
           animation: valco-shimmer 4s linear infinite;
         }
-        .valco-phone-group:hover .valco-digit-pair .valco-letter {
-          transform: translateY(0);
-          opacity: 1;
+
+        .valco-digit-pair {
+          perspective: 600px;
         }
-        .valco-phone-group:hover .valco-digit-pair .valco-num {
-          transform: translateY(-2px);
-          opacity: 0.4;
-          font-size: 0.55rem;
+        
+        .valco-num, .valco-letter {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          backface-visibility: hidden;
+          transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .valco-letter {
+          transform: rotateX(0deg);
+          transition-delay: var(--stagger-delay);
+        }
+        .valco-num {
+          transform: rotateX(-180deg);
+          transition-delay: var(--stagger-delay);
+        }
+
+        /* Desktop Hover state */
+        @media (hover: hover) and (pointer: fine) {
+          .valco-phone-group:hover .valco-letter {
+            transform: rotateX(180deg);
+          }
+          .valco-phone-group:hover .valco-num {
+            transform: rotateX(0deg);
+          }
+        }
+
+        /* Mobile Auto-cycle state (No hover) */
+        @media (hover: none) {
+          @keyframes autoFlipLetter {
+            0%, 40% { transform: rotateX(0deg); }
+            50%, 90% { transform: rotateX(180deg); }
+            100% { transform: rotateX(360deg); }
+          }
+          @keyframes autoFlipNum {
+            0%, 40% { transform: rotateX(-180deg); }
+            50%, 90% { transform: rotateX(0deg); }
+            100% { transform: rotateX(180deg); }
+          }
+          
+          .valco-letter {
+            animation: autoFlipLetter 6s infinite cubic-bezier(0.34, 1.56, 0.64, 1);
+            animation-delay: var(--stagger-delay);
+          }
+          .valco-num {
+            animation: autoFlipNum 6s infinite cubic-bezier(0.34, 1.56, 0.64, 1);
+            animation-delay: var(--stagger-delay);
+          }
         }
       `}</style>
 
@@ -286,18 +333,19 @@ function Footer() {
                   {valcoDigits.map((pair, i) => (
                     <span
                       key={`valco-${pair.letter}-${i}`}
-                      className="valco-digit-pair relative flex flex-col items-center w-5"
+                      className="valco-digit-pair relative flex w-[1.125rem] h-6"
+                      style={{ "--stagger-delay": `${i * 0.08}s` } as React.CSSProperties}
                     >
-                      <span
-                        className="valco-num text-sm text-neutral-300 transition-all duration-300"
-                      >
+                      <span className="valco-num text-[15px] font-bold text-orange-200">
                         {pair.digit}
                       </span>
-                      <span
-                        className="valco-letter text-base font-black valco-shimmer-text leading-none transition-all duration-300"
-                        style={{ animationDelay: `${i * 0.15}s` }}
-                      >
-                        {pair.letter}
+                      <span className="valco-letter">
+                        <span
+                          className="text-base font-black valco-shimmer-text leading-none"
+                          style={{ animationDelay: `${i * 0.15}s` }}
+                        >
+                          {pair.letter}
+                        </span>
                       </span>
                     </span>
                   ))}
