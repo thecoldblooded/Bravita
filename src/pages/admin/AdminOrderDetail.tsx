@@ -106,34 +106,34 @@ function AdminOrderDetailContent() {
                         cardPaymentReversalSucceeded = true;
                         toast.success("Kart odemesi void edildi.");
                     } else if (voidResult.pending) {
-                        toast.warning(voidResult.message || "Void istegi manuel incelemeye alindi.");
+                        const pendingMessage = `${voidResult.message || "Void istegi manuel incelemeye alindi."} Sipariş iptal edilmedi, mevcut durumda bırakıldı.`;
+                        toast.error(pendingMessage);
+                        return;
                     } else {
                         const refundFallbackResult = await refundCardPayment(orderId);
-                        if (!refundFallbackResult.success && !refundFallbackResult.pending) {
-                            toast.error(refundFallbackResult.message || "Kart iade islemi basarisiz");
+                        if (!refundFallbackResult.success) {
+                            const pendingOrFailedMessage = refundFallbackResult.pending
+                                ? `${refundFallbackResult.message || "Refund istegi manuel incelemeye alindi."} Sipariş iptal edilmedi, mevcut durumda bırakıldı.`
+                                : `${refundFallbackResult.message || "Kart iade islemi basarisiz"} Sipariş iptal edilmedi, mevcut durumda bırakıldı.`;
+                            toast.error(pendingOrFailedMessage);
                             return;
                         }
 
-                        cardPaymentReversalSucceeded = refundFallbackResult.success;
-                        if (refundFallbackResult.success) {
-                            toast.success("Kart odemesi iade edildi.");
-                        } else if (refundFallbackResult.pending) {
-                            toast.warning(refundFallbackResult.message || "Refund istegi manuel incelemeye alindi.");
-                        }
+                        cardPaymentReversalSucceeded = true;
+                        toast.success("Kart odemesi iade edildi.");
                     }
                 } else {
                     const refundResult = await refundCardPayment(orderId);
-                    if (!refundResult.success && !refundResult.pending) {
-                        toast.error(refundResult.message || "Kart iade islemi basarisiz");
+                    if (!refundResult.success) {
+                        const pendingOrFailedMessage = refundResult.pending
+                            ? `${refundResult.message || "Refund istegi manuel incelemeye alindi."} Sipariş iptal edilmedi, mevcut durumda bırakıldı.`
+                            : `${refundResult.message || "Kart iade islemi basarisiz"} Sipariş iptal edilmedi, mevcut durumda bırakıldı.`;
+                        toast.error(pendingOrFailedMessage);
                         return;
                     }
 
-                    cardPaymentReversalSucceeded = refundResult.success;
-                    if (refundResult.success) {
-                        toast.success("Kart odemesi iade edildi.");
-                    } else if (refundResult.pending) {
-                        toast.warning(refundResult.message || "Refund istegi manuel incelemeye alindi.");
-                    }
+                    cardPaymentReversalSucceeded = true;
+                    toast.success("Kart odemesi iade edildi.");
                 }
             }
 

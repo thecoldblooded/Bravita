@@ -20,33 +20,37 @@ const AdminSupport = lazy(() => import("@/pages/admin/AdminSupport"));
 const AdminEmails = lazy(() => import("@/pages/admin/AdminEmails"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
+import { LazyMotion, domAnimation } from "framer-motion";
+
 const queryClient = new QueryClient();
 
 export default function AdminApp() {
     return (
-        <QueryClientProvider client={queryClient}>
-            <TooltipProvider>
-                <AdminThemeProvider>
-                    <Toaster />
-                    <Sonner />
-                    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-                        <Suspense fallback={null}>
-                            <Routes>
-                                <Route path="/admin" element={<ProtectedAdminRoute><AdminDashboard /></ProtectedAdminRoute>} />
-                                <Route path="/admin/orders" element={<ProtectedAdminRoute><AdminOrders /></ProtectedAdminRoute>} />
-                                <Route path="/admin/orders/:orderId" element={<ProtectedAdminRoute><AdminOrderDetail /></ProtectedAdminRoute>} />
-                                <Route path="/admin/products" element={<ProtectedAdminRoute><AdminProducts /></ProtectedAdminRoute>} />
-                                <Route path="/admin/promotions" element={<ProtectedAdminRoute><AdminPromoCodes /></ProtectedAdminRoute>} />
-                                <Route path="/admin/support" element={<ProtectedAdminRoute><AdminSupport /></ProtectedAdminRoute>} />
-                                <Route path="/admin/emails" element={<ProtectedAdminRoute requireSuperAdmin={true}><AdminEmails /></ProtectedAdminRoute>} />
-                                <Route path="/admin/admins" element={<ProtectedAdminRoute requireSuperAdmin={true}><AdminUsers /></ProtectedAdminRoute>} />
-                                <Route path="/admin/logs" element={<ProtectedAdminRoute requireSuperAdmin={true}><AdminAuditLogs /></ProtectedAdminRoute>} />
-                                <Route path="*" element={<NotFound />} />
-                            </Routes>
-                        </Suspense>
-                    </BrowserRouter>
-                </AdminThemeProvider>
-            </TooltipProvider>
-        </QueryClientProvider>
+        <LazyMotion features={domAnimation}>
+            <QueryClientProvider client={queryClient}>
+                <TooltipProvider>
+                    <AdminThemeProvider>
+                        <Toaster />
+                        <Sonner />
+                        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                            <Suspense fallback={null}>
+                                <Routes>
+                                    <Route path="/admin" element={<ProtectedAdminRoute><AdminDashboard /></ProtectedAdminRoute>} />
+                                    <Route path="/admin/orders" element={<ProtectedAdminRoute><AdminOrders /></ProtectedAdminRoute>} />
+                                    <Route path="/admin/orders/:orderId" element={<ProtectedAdminRoute><AdminOrderDetail /></ProtectedAdminRoute>} />
+                                    <Route path="/admin/products" element={<ProtectedAdminRoute><AdminProducts /></ProtectedAdminRoute>} />
+                                    <Route path="/admin/promotions" element={<ProtectedAdminRoute><AdminPromoCodes /></ProtectedAdminRoute>} />
+                                    <Route path="/admin/support" element={<ProtectedAdminRoute><AdminSupport /></ProtectedAdminRoute>} />
+                                    <Route path="/admin/emails" element={<ProtectedAdminRoute requireSuperAdmin={true}><AdminEmails /></ProtectedAdminRoute>} />
+                                    <Route path="/admin/admins" element={<ProtectedAdminRoute requireSuperAdmin={true}><AdminUsers /></ProtectedAdminRoute>} />
+                                    <Route path="/admin/logs" element={<ProtectedAdminRoute requireSuperAdmin={true}><AdminAuditLogs /></ProtectedAdminRoute>} />
+                                    <Route path="*" element={<NotFound />} />
+                                </Routes>
+                            </Suspense>
+                        </BrowserRouter>
+                    </AdminThemeProvider>
+                </TooltipProvider>
+            </QueryClientProvider>
+        </LazyMotion>
     );
 }

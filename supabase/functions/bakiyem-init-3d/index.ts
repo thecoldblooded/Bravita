@@ -193,6 +193,37 @@ function parseThreeDPayload(data) {
     raw: data
   };
 }
+function extractThreeDTrxCode(data) {
+  if (data && typeof data === "object") {
+    const objectDirect = asText(data?.threeDTrxCode ?? data?.ThreeDTrxCode ?? data?.TrxCode ?? data?.trxCode);
+    if (objectDirect) return objectDirect;
+
+    const objectUrl = asText(data?.Url ?? data?.url ?? data?.RedirectUrl ?? data?.redirectUrl);
+    if (objectUrl) {
+      const objectUrlMatch = objectUrl.match(/[?&]threeDTrxCode=([^&]+)/i);
+      if (objectUrlMatch?.[1]) {
+        try {
+          return asText(decodeURIComponent(objectUrlMatch[1]));
+        } catch {
+          return asText(objectUrlMatch[1]);
+        }
+      }
+    }
+  }
+
+  if (typeof data === "string") {
+    const directMatch = data.match(/[?&]threeDTrxCode=([^&]+)/i);
+    if (directMatch?.[1]) {
+      try {
+        return asText(decodeURIComponent(directMatch[1]));
+      } catch {
+        return asText(directMatch[1]);
+      }
+    }
+  }
+
+  return "";
+}
 function base64ToBytes(base64Value) {
   const normalized = base64Value.replace(/^base64:/i, "").replace(/\s/g, "").replace(/-/g, "+").replace(/_/g, "/");
   const padded = normalized + "=".repeat((4 - normalized.length % 4) % 4);
@@ -577,11 +608,8 @@ serve(async (req) => {
     }
     const threeDPayload = parseThreeDPayload(gatewayResponseJson.Data);
     const codeForHash = extractCodeForHash(gatewayResponseJson?.Data);
-    let finalGatewayTrxCode = "";
-    if (typeof gatewayResponseJson.Data === "string" && gatewayResponseJson.Data.includes("threeDTrxCode=")) {
-      const match = gatewayResponseJson.Data.match(/threeDTrxCode=([^&]+)/);
-      if (match) finalGatewayTrxCode = match[1];
-    }
+
+    const finalGatewayTrxCode = extractThreeDTrxCode(gatewayResponseJson?.Data);
     await supabase.from("payment_intents").update({
       status: "awaiting_3d",
       gateway_status: gatewayResultCode,
