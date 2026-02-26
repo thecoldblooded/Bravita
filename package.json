@@ -9,6 +9,7 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
+    "bff:auth": "node scripts/bff-auth-server.mjs",
     "supabase:migration:list": "node scripts/check-linked-migrations.mjs",
     "security:gate": "npm audit --audit-level=high && npm run lint && npm run build && npm run supabase:migration:list"
   },

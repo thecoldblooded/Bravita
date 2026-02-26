@@ -33,7 +33,7 @@ import { cn } from "@/lib/utils";
 
 const HCaptchaComponent = lazy(() => import("@hcaptcha/react-hcaptcha"));
 
-const HCAPTCHA_SITE_KEY = "203039b0-ee5c-48ba-aa2c-390a43ecaae0";
+const HCAPTCHA_SITE_KEY = String(import.meta.env.VITE_HCAPTCHA_SITE_KEY ?? "").trim();
 
 const supportFormSchema = z.object({
     name: z.string().min(2, { message: "Lütfen adınızı giriniz" }),
@@ -280,14 +280,20 @@ export function SupportForm({ onSuccess }: SupportFormProps) {
 
                 <div className="flex flex-col items-center space-y-3 pt-1">
                     <div className="scale-[0.6] origin-center -my-4 min-h-11.5">
-                        <Suspense fallback={<div className="h-19.5 w-75 bg-gray-50 animate-pulse rounded-lg border border-gray-100 flex items-center justify-center text-[10px] text-gray-400">Captcha Yükleniyor...</div>}>
-                            <HCaptchaComponent
-                                sitekey={HCAPTCHA_SITE_KEY}
-                                onVerify={(token) => setCaptchaToken(token)}
-                                onExpire={() => setCaptchaToken(null)}
-                                ref={captchaRef}
-                            />
-                        </Suspense>
+                        {HCAPTCHA_SITE_KEY ? (
+                            <Suspense fallback={<div className="h-19.5 w-75 bg-gray-50 animate-pulse rounded-lg border border-gray-100 flex items-center justify-center text-[10px] text-gray-400">Captcha Yükleniyor...</div>}>
+                                <HCaptchaComponent
+                                    sitekey={HCAPTCHA_SITE_KEY}
+                                    onVerify={(token) => setCaptchaToken(token)}
+                                    onExpire={() => setCaptchaToken(null)}
+                                    ref={captchaRef}
+                                />
+                            </Suspense>
+                        ) : (
+                            <div className="w-full rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                                hCaptcha yapılandırması eksik (VITE_HCAPTCHA_SITE_KEY).
+                            </div>
+                        )}
                     </div>
 
                     <Button

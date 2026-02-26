@@ -287,7 +287,8 @@ export default function EmailPreview() {
                             title="E-posta önizleme"
                             className="h-full w-full border-none"
                             srcDoc={html}
-                            sandbox="allow-popups"
+                            sandbox=""
+                            referrerPolicy="no-referrer"
                         />
                     </div>
                 )}

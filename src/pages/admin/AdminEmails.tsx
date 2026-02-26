@@ -746,7 +746,8 @@ export default function AdminEmails() {
                                                     title="Email Preview"
                                                     className="w-full h-full border-none"
                                                     srcDoc={buildTemplatePreview(editingTemplate, simulateData).html}
-                                                    sandbox="allow-popups"
+                                                    sandbox=""
+                                                    referrerPolicy="no-referrer"
                                                 />
                                             </div>
                                         </div>

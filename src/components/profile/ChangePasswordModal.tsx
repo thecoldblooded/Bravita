@@ -33,7 +33,7 @@ export function ChangePasswordModal({ children, open, onOpenChange }: ChangePass
     const [showNew, setShowNew] = useState(false);
     const [captchaToken, setCaptchaToken] = useState<string | null>(null);
     const captchaRef = useRef<HCaptcha>(null);
-    const HCAPTCHA_SITE_KEY = "203039b0-ee5c-48ba-aa2c-390a43ecaae0";
+    const HCAPTCHA_SITE_KEY = String(import.meta.env.VITE_HCAPTCHA_SITE_KEY ?? "").trim();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -148,13 +148,19 @@ export function ChangePasswordModal({ children, open, onOpenChange }: ChangePass
                     </div>
 
                     <div className="flex justify-center py-4">
-                        <HCaptcha
-                            sitekey={HCAPTCHA_SITE_KEY}
-                            onVerify={(token) => setCaptchaToken(token)}
-                            onError={(err) => console.error("hCaptcha Error:", err)}
-                            onExpire={() => setCaptchaToken(null)}
-                            ref={captchaRef}
-                        />
+                        {HCAPTCHA_SITE_KEY ? (
+                            <HCaptcha
+                                sitekey={HCAPTCHA_SITE_KEY}
+                                onVerify={(token) => setCaptchaToken(token)}
+                                onError={(err) => console.error("hCaptcha Error:", err)}
+                                onExpire={() => setCaptchaToken(null)}
+                                ref={captchaRef}
+                            />
+                        ) : (
+                            <div className="w-full rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                                hCaptcha yapılandırması eksik (VITE_HCAPTCHA_SITE_KEY).
+                            </div>
+                        )}
                     </div>
 
                     <div className="pt-4 flex gap-3">

@@ -170,6 +170,14 @@ type CaptchaSectionProps = {
 };
 
 function CaptchaSection({ siteKey, captchaRef, onTokenChange }: CaptchaSectionProps) {
+  if (!siteKey) {
+    return (
+      <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+        hCaptcha yapılandırması eksik (VITE_HCAPTCHA_SITE_KEY).
+      </div>
+    );
+  }
+
   return (
     <div className="flex justify-center py-4">
       <Suspense
@@ -538,8 +546,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
   const { showEmailConfirmation, registeredEmail, isResending, captchaToken } = uiState;
   const captchaRef = useRef<HCaptcha>(null);
 
-  // Production Key: "203039b0-ee5c-48ba-aa2c-390a43ecaae0"
-  const HCAPTCHA_SITE_KEY = "203039b0-ee5c-48ba-aa2c-390a43ecaae0";
+  const HCAPTCHA_SITE_KEY = String(import.meta.env.VITE_HCAPTCHA_SITE_KEY ?? "").trim();
 
   const individualForm = useForm<IndividualSignupForm>({
     resolver: zodResolver(individualSignupSchema),

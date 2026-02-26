@@ -29,7 +29,7 @@ import { getFunctionAuthHeaders } from "@/lib/functionAuth";
 import Loader from "@/components/ui/Loader";
 import { Mail, User, MessageSquare, Tag } from "lucide-react";
 
-const HCAPTCHA_SITE_KEY = "203039b0-ee5c-48ba-aa2c-390a43ecaae0";
+const HCAPTCHA_SITE_KEY = String(import.meta.env.VITE_HCAPTCHA_SITE_KEY ?? "").trim();
 
 export default function SupportForm() {
     const { t } = useTranslation();
@@ -261,15 +261,21 @@ export default function SupportForm() {
                             />
 
                             <div className="flex flex-col items-center space-y-6 pt-4">
-                                <Suspense fallback={<div className="h-19.5 w-75 bg-gray-50 animate-pulse rounded-lg border border-gray-100 flex items-center justify-center text-[10px] text-gray-400">hCaptcha Yükleniyor...</div>}>
-                                    <HCaptchaComponent
-                                        sitekey={HCAPTCHA_SITE_KEY}
-                                        onVerify={(token) => setCaptchaToken(token)}
-                                        onError={(err) => console.error("hCaptcha Error:", err)}
-                                        onExpire={() => setCaptchaToken(null)}
-                                        ref={captchaRef}
-                                    />
-                                </Suspense>
+                                {HCAPTCHA_SITE_KEY ? (
+                                    <Suspense fallback={<div className="h-19.5 w-75 bg-gray-50 animate-pulse rounded-lg border border-gray-100 flex items-center justify-center text-[10px] text-gray-400">hCaptcha Yükleniyor...</div>}>
+                                        <HCaptchaComponent
+                                            sitekey={HCAPTCHA_SITE_KEY}
+                                            onVerify={(token) => setCaptchaToken(token)}
+                                            onError={(err) => console.error("hCaptcha Error:", err)}
+                                            onExpire={() => setCaptchaToken(null)}
+                                            ref={captchaRef}
+                                        />
+                                    </Suspense>
+                                ) : (
+                                    <div className="w-full rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                                        hCaptcha yapılandırması eksik (VITE_HCAPTCHA_SITE_KEY).
+                                    </div>
+                                )}
 
                                 <Button
                                     type="submit"

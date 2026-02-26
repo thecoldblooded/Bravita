@@ -135,7 +135,7 @@ function DashboardContent() {
                             ? "bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30 hover:text-green-300"
                             : "bg-green-50 text-green-700 border-green-200 hover:bg-green-100 hover:text-green-900"
                         }
-                        onClick={() => window.open('https://mail.bravita.com.tr/Uvf2pzJY', '_blank')}
+                        onClick={() => window.open("https://mail.bravita.com.tr/Uvf2pzJY", "_blank", "noopener,noreferrer")}
                         title="E-posta Kampanyaları (BillionMail)"
                     >
                         <ExternalLink className="w-4 h-4 mr-2" />

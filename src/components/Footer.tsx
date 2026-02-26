@@ -333,7 +333,7 @@ function Footer() {
                   {valcoDigits.map((pair, i) => (
                     <span
                       key={`valco-${pair.letter}-${i}`}
-                      className="valco-digit-pair relative flex w-[1.125rem] h-6"
+                      className="valco-digit-pair relative flex w-4.5 h-6"
                       style={{ "--stagger-delay": `${i * 0.08}s` } as React.CSSProperties}
                     >
                       <span className="valco-num text-[15px] font-bold text-orange-200">
