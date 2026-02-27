@@ -1,6 +1,7 @@
 import http from "node:http";
 import { URL } from "node:url";
 
+import captchaDiagnosticHandler from "../api/auth/captcha-diagnostic.js";
 import loginHandler from "../api/auth/login.js";
 import logoutHandler from "../api/auth/logout.js";
 import recoverHandler from "../api/auth/recover.js";
@@ -13,6 +14,7 @@ import setSessionHandler from "../api/auth/set-session.js";
 const MAX_BODY_BYTES = Number(process.env.BFF_MAX_BODY_BYTES || 1024 * 1024);
 
 const routeHandlers = new Map([
+    ["/api/auth/captcha-diagnostic", captchaDiagnosticHandler],
     ["/api/auth/login", loginHandler],
     ["/api/auth/logout", logoutHandler],
     ["/api/auth/recover", recoverHandler],

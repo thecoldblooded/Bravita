@@ -84,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(() => getInitialUser(initialSession));
   const [isLoading, setIsLoading] = useState(true);
   const [hasResolvedInitialAuth, setHasResolvedInitialAuth] = useState(false);
+  const [isBffBootstrapComplete, setIsBffBootstrapComplete] = useState(() => !bffAuthEnabled);
   const [isSplashScreenActive, setIsSplashScreenActive] = useState(() => {
     // Only active on first load of the session
     return !sessionStorage.getItem("bravita_splash_shown");
@@ -578,21 +579,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             return;
           }
 
-          const { error } = await supabase.auth.setSession(toSupabaseSessionInput(bffSession));
+          const { data, error } = await supabase.auth.setSession(toSupabaseSessionInput(bffSession));
 
-          if (error) {
-            // Ignore bootstrap apply errors in silent mode.
+          if (!error && mounted) {
+            setSession(data.session);
+            const bootstrapStub = getInitialUser(data.session);
+            if (bootstrapStub) {
+              setUserDebug(bootstrapStub);
+            }
           }
         } catch {
           // Ignore bootstrap restoration errors in silent mode.
+        } finally {
+          if (mounted) {
+            setIsBffBootstrapComplete(true);
+          }
         }
       })();
+    } else {
+      setIsBffBootstrapComplete(true);
     }
 
     const safetyTimer = setTimeout(() => {
       if (mounted && isSplashScreenActiveRef.current) {
         // Session loading took too long, close splash screen anyway
         setHasResolvedInitialAuth(true);
+        setIsBffBootstrapComplete(true);
         setIsLoading(false);
         setIsSplashScreenActive(false);
       }
@@ -666,7 +678,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     session,
     user,
     isLoading,
-    hasResolvedInitialAuth,
+    hasResolvedInitialAuth: hasResolvedInitialAuth && isBffBootstrapComplete,
     isSplashScreenActive,
     isAuthenticated: !!session?.user,
     isAdmin: user?.is_admin ?? false,

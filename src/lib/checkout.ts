@@ -583,8 +583,6 @@ export async function createOrder(params: CreateOrderParams): Promise<CreateOrde
  * Get order by ID with full details
  */
 export async function getOrderById(orderId: string) {
-
-
     const { data, error } = await supabase
         .from("orders")
         .select(`
@@ -592,7 +590,7 @@ export async function getOrderById(orderId: string) {
             shipping_address:addresses(*)
         `)
         .eq("id", orderId)
-        .single();
+        .maybeSingle();
 
     if (error) {
         console.error("Get order error:", error);

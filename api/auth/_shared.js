@@ -53,6 +53,70 @@ function extractRequestOrigin(req) {
   }
 }
 
+function authDebugEnabled() {
+  return String(process.env.AUTH_DEBUG_LOGS ?? "false").toLowerCase() === "true";
+}
+
+function normalizeHeaderValue(value) {
+  if (Array.isArray(value)) {
+    return value.join(",");
+  }
+  return typeof value === "string" ? value : "";
+}
+
+function summarizeCookieHeader(req) {
+  const cookieHeader = normalizeHeaderValue(req.headers.cookie);
+  if (!cookieHeader) {
+    return {
+      cookiePresent: false,
+      cookieCount: 0,
+      hasRefreshCookie: false,
+    };
+  }
+
+  const cookieParts = cookieHeader
+    .split(";")
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0);
+
+  return {
+    cookiePresent: true,
+    cookieCount: cookieParts.length,
+    hasRefreshCookie: cookieParts.some((part) => part.startsWith(`${REFRESH_COOKIE_NAME}=`)),
+  };
+}
+
+function logAuthDiagnostic(event, req, extra = {}) {
+  if (!authDebugEnabled()) {
+    return;
+  }
+
+  const cookieSummary = summarizeCookieHeader(req);
+  const forwardedFor = normalizeHeaderValue(req.headers["x-forwarded-for"]);
+
+  const payload = {
+    tag: "auth-debug",
+    event,
+    timestamp: new Date().toISOString(),
+    method: req.method ?? null,
+    url: req.url ?? null,
+    host: normalizeHeaderValue(req.headers.host) || null,
+    origin: extractRequestOrigin(req),
+    referer: normalizeHeaderValue(req.headers.referer) || null,
+    forwardedHost: normalizeHeaderValue(req.headers["x-forwarded-host"]) || null,
+    forwardedProto: normalizeHeaderValue(req.headers["x-forwarded-proto"]) || null,
+    forwardedForPresent: forwardedFor.length > 0,
+    ...cookieSummary,
+    ...extra,
+  };
+
+  try {
+    console.log(JSON.stringify(payload));
+  } catch {
+    console.log(`[auth-debug] ${event}`);
+  }
+}
+
 function assertValidAuthPostRequest(req, res) {
   const requestOrigin = extractRequestOrigin(req);
   const allowedOrigins = loadAllowedAuthOrigins();
@@ -234,4 +298,5 @@ export {
   sanitizeSignupResponse,
   extractAuthErrorMessage,
   assertValidAuthPostRequest,
+  logAuthDiagnostic,
 };

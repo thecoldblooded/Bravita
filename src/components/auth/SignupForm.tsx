@@ -1,4 +1,4 @@
-import { useReducer, useRef, lazy, Suspense, type RefObject } from "react";
+import { useEffect, useReducer, useRef, lazy, Suspense, type RefObject } from "react";
 import type HCaptcha from "@hcaptcha/react-hcaptcha";
 const HCaptchaComponent = lazy(() => import("@hcaptcha/react-hcaptcha"));
 import { useTranslation } from "react-i18next";
@@ -31,6 +31,97 @@ interface SignupFormProps {
 }
 
 type TranslateFn = ReturnType<typeof useTranslation>["t"];
+
+const isCaptchaDebugEnabled = (): boolean => {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  return params.get("captchaDebug") === "1" || window.localStorage.getItem("bravita_captcha_debug") === "1";
+};
+
+type CaptchaTelemetryPayload = Record<string, unknown>;
+
+function sanitizeCaptchaTelemetryValue(value: unknown): string | number | boolean | null {
+  if (value == null) {
+    return null;
+  }
+
+  if (typeof value === "string") {
+    return value.slice(0, 280);
+  }
+
+  if (typeof value === "number" || typeof value === "boolean") {
+    return value;
+  }
+
+  if (value instanceof Error) {
+    return value.message.slice(0, 280);
+  }
+
+  try {
+    return JSON.stringify(value).slice(0, 280);
+  } catch {
+    return String(value).slice(0, 280);
+  }
+}
+
+function emitCaptchaTelemetry(event: string, payload: CaptchaTelemetryPayload = {}) {
+  if (!isCaptchaDebugEnabled() || typeof window === "undefined") {
+    return;
+  }
+
+  const normalizedPayload: CaptchaTelemetryPayload = {};
+  for (const [key, value] of Object.entries(payload)) {
+    normalizedPayload[key] = sanitizeCaptchaTelemetryValue(value);
+  }
+
+  const body = JSON.stringify({
+    event,
+    ts: new Date().toISOString(),
+    payload: {
+      ...normalizedPayload,
+      host: window.location.hostname,
+      path: window.location.pathname,
+      readyState: document.readyState,
+      online: navigator.onLine,
+    },
+  });
+
+  try {
+    if (typeof navigator.sendBeacon === "function") {
+      const blob = new Blob([body], { type: "application/json" });
+      navigator.sendBeacon("/api/auth/captcha-diagnostic", blob);
+      return;
+    }
+  } catch {
+    // ignore sendBeacon failures and fallback to fetch
+  }
+
+  void fetch("/api/auth/captcha-diagnostic", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body,
+    credentials: "same-origin",
+    keepalive: true,
+  }).catch(() => undefined);
+}
+
+function logCaptchaDebug(event: string, payload: CaptchaTelemetryPayload = {}) {
+  if (!isCaptchaDebugEnabled()) {
+    return;
+  }
+
+  emitCaptchaTelemetry(event, payload);
+
+  console.info("[hCaptchaDiag]", event, {
+    ts: new Date().toISOString(),
+    ...payload,
+  });
+}
 
 type IndividualSignupForm = {
   email: string;
@@ -170,6 +261,40 @@ type CaptchaSectionProps = {
 };
 
 function CaptchaSection({ siteKey, captchaRef, onTokenChange }: CaptchaSectionProps) {
+  useEffect(() => {
+    if (!siteKey || typeof window === "undefined") {
+      return;
+    }
+
+    logCaptchaDebug("mount", {
+      host: window.location.hostname,
+      path: window.location.pathname,
+      siteKeyPrefix: `${siteKey.slice(0, 6)}***`,
+      scriptCount: document.querySelectorAll("script[src*='js.hcaptcha.com'],script[src*='hcaptcha.com']").length,
+      iframeCount: document.querySelectorAll("iframe[src*='hcaptcha.com']").length,
+      online: navigator.onLine,
+    });
+
+    const timeoutId = window.setTimeout(() => {
+      const hcaptchaOnWindow = typeof (window as Window & { hcaptcha?: unknown }).hcaptcha !== "undefined";
+      const iframeCount = document.querySelectorAll("iframe[src*='hcaptcha.com']").length;
+      const scriptCount = document.querySelectorAll("script[src*='js.hcaptcha.com'],script[src*='hcaptcha.com']").length;
+      const iframeFound = iframeCount > 0;
+
+      logCaptchaDebug("bootstrap_check", {
+        hcaptchaOnWindow,
+        iframeFound,
+        iframeCount,
+        scriptCount,
+        online: navigator.onLine,
+      });
+    }, 8000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [siteKey]);
+
   if (!siteKey) {
     return (
       <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
@@ -189,9 +314,39 @@ function CaptchaSection({ siteKey, captchaRef, onTokenChange }: CaptchaSectionPr
       >
         <HCaptchaComponent
           sitekey={siteKey}
-          onVerify={(token) => onTokenChange(token)}
-          onError={(err) => console.error("hCaptcha Error:", err)}
+          onLoad={() => logCaptchaDebug("onLoad")}
+          onReady={() => logCaptchaDebug("onReady")}
+          onOpen={() => logCaptchaDebug("onOpen")}
+          onClose={() => logCaptchaDebug("onClose")}
+          onVerify={(token, ekey) => {
+            logCaptchaDebug("onVerify", {
+              tokenLength: token.length,
+              ekeyPresent: Boolean(ekey),
+            });
+            onTokenChange(token);
+          }}
+          onError={(err) => {
+            const errMessage = err instanceof Error
+              ? err.message
+              : typeof err === "string"
+                ? err
+                : (() => {
+                  try {
+                    return JSON.stringify(err);
+                  } catch {
+                    return String(err);
+                  }
+                })();
+
+            logCaptchaDebug("onError", {
+              err: errMessage,
+              online: navigator.onLine,
+              userAgent: navigator.userAgent,
+            });
+            console.error("hCaptcha Error:", err);
+          }}
           onExpire={() => onTokenChange(null)}
+          sentry={false}
           ref={captchaRef}
         />
       </Suspense>

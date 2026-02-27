@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { Helmet } from "react-helmet-async";
 
 interface OrderDetails {
@@ -60,6 +61,7 @@ export default function OrderConfirmation() {
     const [bankInfo, setBankInfo] = useState<BankInfo | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [copiedItem, setCopiedItem] = useState<string | null>(null);
+    const { hasResolvedInitialAuth, isLoading: isAuthLoading, session, refreshSession } = useAuth();
 
     const resolvedOrderId = (() => {
         const fromPath = (orderId || "").trim();
@@ -69,6 +71,8 @@ export default function OrderConfirmation() {
     })();
 
     useEffect(() => {
+        let isActive = true;
+
         async function fetchData() {
             if (!resolvedOrderId) {
                 setOrder(null);
@@ -76,17 +80,55 @@ export default function OrderConfirmation() {
                 setIsLoading(false);
                 return;
             }
+
+            if (!hasResolvedInitialAuth || isAuthLoading) {
+                setIsLoading(true);
+                return;
+            }
+
             setIsLoading(true);
-            const [orderData, bankData] = await Promise.all([
-                getOrderById(resolvedOrderId),
-                getBankDetails()
-            ]);
+
+            const bankPromise = getBankDetails();
+            let orderData: Order | null = null;
+
+            for (let attempt = 0; attempt < 3; attempt++) {
+                const shouldRefreshSession = attempt > 0 || (attempt === 0 && !session?.user?.id);
+
+                if (shouldRefreshSession) {
+                    try {
+                        await refreshSession();
+                    } catch {
+                        // keep best-effort behavior
+                    }
+
+                    await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
+                    if (!isActive) return;
+                }
+
+                const currentOrder = await getOrderById(resolvedOrderId);
+                if (currentOrder) {
+                    orderData = currentOrder as Order;
+                    break;
+                }
+            }
+
+            const bankData = await bankPromise;
+
+            if (!isActive) {
+                return;
+            }
+
             setOrder(orderData as Order);
             setBankInfo(bankData);
             setIsLoading(false);
         }
+
         fetchData();
-    }, [resolvedOrderId]);
+
+        return () => {
+            isActive = false;
+        };
+    }, [resolvedOrderId, hasResolvedInitialAuth, isAuthLoading, session?.user?.id, refreshSession]);
 
     useEffect(() => {
         if (!order) return;
