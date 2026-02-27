@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode, useCallback,
 import { Session } from "@supabase/supabase-js";
 import { supabase, UserProfile } from "@/lib/supabase";
 import { billionMail } from "@/lib/billionmail";
-import { getBffRefreshDelayMs, isBffAuthEnabled, refreshBffSession, restoreBffSession, toSupabaseSessionInput } from "@/lib/bffAuth";
+import { getBffRefreshDelayMs, isBffAuthEnabled, refreshBffSession, restoreBffSession, toSupabaseSessionInput, setBffSessionFromClient } from "@/lib/bffAuth";
 
 declare global {
   interface Window {
@@ -78,29 +78,8 @@ const getInitialUser = (session: Session | null) => {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const bffAuthEnabled = isBffAuthEnabled();
 
-  // Try to get initial session from localStorage immediately (synchronous)
-  const getInitialSession = () => {
-    if (bffAuthEnabled) {
-      return null;
-    }
-
-    try {
-      const storageKey = "bravita-session-token";
-      const storedSession = sessionStorage.getItem(storageKey) ?? localStorage.getItem(storageKey);
-      if (!storedSession) {
-        return null;
-      }
-
-      const parsed = JSON.parse(storedSession);
-      const candidateSession = parsed?.currentSession ?? parsed?.session ?? parsed;
-      return (candidateSession as Session | null) ?? null;
-    } catch (e) {
-      console.error("Initial session error:", e);
-    }
-    return null;
-  };
-
-  const initialSession = getInitialSession();
+  // Session persistence is intentionally disabled to reduce browser storage token exposure.
+  const initialSession: Session | null = null;
   const [session, setSession] = useState<Session | null>(initialSession);
   const [user, setUser] = useState<UserProfile | null>(() => getInitialUser(initialSession));
   const [isLoading, setIsLoading] = useState(true);
@@ -458,6 +437,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Normal case - session was in event
         setIsSplashScreenActive(false);
+      }
+
+      if (bffAuthEnabled && newSession?.refresh_token && !newSession.refresh_token.includes('bff-cookie-managed-refresh-token')) {
+        // The client received a real session token containing a refresh_token from the URL fragment.
+        // Bridge it to the BFF so the server can set the secure HTTP-Only cookie.
+        setBffSessionFromClient(newSession.access_token, newSession.refresh_token).catch(() => { });
       }
 
       setSession(newSession);

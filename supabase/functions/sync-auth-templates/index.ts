@@ -7,8 +7,12 @@ import { normalizeTokenKey } from "../_shared/email-renderer.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const SUPABASE_MANAGEMENT_ACCESS_TOKEN = Deno.env.get("SUPABASE_MANAGEMENT_ACCESS_TOKEN") || Deno.env.get("SUPABASE_ACCESS_TOKEN");
-const SUPABASE_PROJECT_REF = Deno.env.get("SUPABASE_PROJECT_REF") || deriveProjectRef(SUPABASE_URL);
+const SUPABASE_MANAGEMENT_ACCESS_TOKEN = Deno.env.get("MANAGEMENT_ACCESS_TOKEN")
+    || Deno.env.get("SUPABASE_MANAGEMENT_ACCESS_TOKEN")
+    || Deno.env.get("SUPABASE_ACCESS_TOKEN");
+const SUPABASE_PROJECT_REF = Deno.env.get("PROJECT_REF")
+    || Deno.env.get("SUPABASE_PROJECT_REF")
+    || deriveProjectRef(SUPABASE_URL);
 
 const ALLOWED_ORIGINS = [
     "https://bravita.com.tr",
@@ -648,7 +652,9 @@ serve(async (req: Request) => {
     let idempotencyRowId: string | null = null;
 
     try {
-        if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !SUPABASE_MANAGEMENT_ACCESS_TOKEN || !SUPABASE_PROJECT_REF) {
+        const resolvedProjectRef = SUPABASE_PROJECT_REF || deriveProjectRef(SUPABASE_URL);
+
+        if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !SUPABASE_MANAGEMENT_ACCESS_TOKEN || !resolvedProjectRef) {
             throw httpError(500, "SERVER_CONFIG_MISSING", "Missing required server configuration");
         }
 
@@ -824,7 +830,7 @@ serve(async (req: Request) => {
         }
 
         const managementResult = await patchSupabaseAuthConfig({
-            projectRef: SUPABASE_PROJECT_REF,
+            projectRef: resolvedProjectRef,
             accessToken: SUPABASE_MANAGEMENT_ACCESS_TOKEN,
             payload: patchPayload,
         });

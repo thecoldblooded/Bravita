@@ -102,16 +102,6 @@ export default function ThreeDSRedirect() {
             payload = { redirectUrl: statePayload.redirectUrl };
         }
 
-        if (!payload && intentId) {
-            const raw = sessionStorage.getItem(`threed:${intentId}`);
-            if (raw) {
-                try {
-                    payload = JSON.parse(raw) as ThreeDPayload;
-                } catch {
-                    payload = null;
-                }
-            }
-        }
 
         const getResult = (): string | null => {
             if (!payload) return "3D yönlendirme verisi bulunamadı.";
@@ -120,7 +110,6 @@ export default function ThreeDSRedirect() {
                 if (!isAllowedGatewayUrl(payload.redirectUrl)) {
                     return "3D yönlendirme adresi güvenlik kontrolünden geçemedi.";
                 }
-                if (intentId) sessionStorage.removeItem(`threed:${intentId}`);
                 window.location.replace(payload.redirectUrl);
                 return null;
             }
@@ -129,7 +118,6 @@ export default function ThreeDSRedirect() {
                 if (!isAllowedGatewayUrl(payload.formAction)) {
                     return "3D form adresi güvenlik kontrolünden geçemedi.";
                 }
-                if (intentId) sessionStorage.removeItem(`threed:${intentId}`);
                 submitForm(payload.formAction, payload.formFields || {});
                 return null;
             }
@@ -143,7 +131,6 @@ export default function ThreeDSRedirect() {
                 if (!isAllowedGatewayUrl(parsed.action)) {
                     return "3D HTML form action güvenlik kontrolünden geçemedi.";
                 }
-                if (intentId) sessionStorage.removeItem(`threed:${intentId}`);
                 submitForm(parsed.action, parsed.fields);
                 return null;
             }

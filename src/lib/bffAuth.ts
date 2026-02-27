@@ -1,4 +1,4 @@
-const BFF_AUTH_ENABLED = import.meta.env.VITE_USE_BFF_AUTH === "true";
+const BFF_AUTH_ENABLED = String(import.meta.env.VITE_USE_BFF_AUTH ?? "true").toLowerCase() === "true";
 
 export interface BffSessionPayload {
   access_token: string;
@@ -138,6 +138,14 @@ export async function refreshBffSession() {
   return authRequest<BffSessionPayload>("/api/auth/refresh", {
     method: "POST",
     body: "{}",
+    ignoreUnauthorized: true,
+  });
+}
+
+export async function setBffSessionFromClient(access_token: string, refresh_token: string) {
+  return authRequest<{ success: boolean }>("/api/auth/set-session", {
+    method: "POST",
+    body: JSON.stringify({ access_token, refresh_token }),
     ignoreUnauthorized: true,
   });
 }

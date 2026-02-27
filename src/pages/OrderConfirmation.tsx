@@ -90,12 +90,8 @@ export default function OrderConfirmation() {
 
     useEffect(() => {
         if (!order) return;
-        const pendingCardCheckout = sessionStorage.getItem("bravita_pending_card_checkout");
-        if (pendingCardCheckout === "1") {
-            if (order.payment_method === "credit_card") {
-                clearCart();
-            }
-            sessionStorage.removeItem("bravita_pending_card_checkout");
+        if (order.payment_method === "credit_card") {
+            clearCart();
         }
     }, [order, clearCart]);
 

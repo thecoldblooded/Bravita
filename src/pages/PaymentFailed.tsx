@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AlertTriangle, ArrowLeft, RefreshCw } from "lucide-react";
 import { isValidPhoneNumber } from "react-phone-number-input";
@@ -114,7 +114,7 @@ export default function PaymentFailed() {
     const hasValidPhone = !!user?.phone && isValidPhoneNumber(user.phone);
     const isPurchaseBlocked = !!user && (!user.profile_complete || !hasValidPhone);
 
-    const { code, intent, bankCode, trxStatus, gatewayMessage } = useMemo(() => {
+    const { code, intent, bankCode, trxStatus } = useMemo(() => {
         const params = new URLSearchParams(location.search);
         const codeParam = (params.get("code") || "failed").trim().toLowerCase();
         const rawBankCode = (params.get("bankCode") || "").trim();
@@ -124,7 +124,6 @@ export default function PaymentFailed() {
             intent: (params.get("intent") || params.get("intentId") || "").trim(),
             bankCode: normalizeBankCode(rawBankCode),
             trxStatus: (params.get("trxStatus") || "").trim(),
-            gatewayMessage: (params.get("msg") || "").trim(),
         };
     }, [location.search]);
 
@@ -146,18 +145,6 @@ export default function PaymentFailed() {
 
         return getFallbackMessage(code);
     }, [bankCode, code]);
-
-    const showGatewayMessage = useMemo(() => {
-        if (!gatewayMessage) return false;
-        return gatewayMessage !== failureMessage.primary && gatewayMessage !== failureMessage.guidance;
-    }, [gatewayMessage, failureMessage]);
-
-    useEffect(() => {
-        sessionStorage.removeItem("bravita_pending_card_checkout");
-        if (intent) {
-            sessionStorage.removeItem(`threed:${intent}`);
-        }
-    }, [intent]);
 
     const handleRetry = () => {
         if (isPurchaseBlocked) {
@@ -189,11 +176,10 @@ export default function PaymentFailed() {
                     ) : null}
                 </div>
 
-                {bankCode || trxStatus || showGatewayMessage ? (
+                {bankCode || trxStatus ? (
                     <div className="mt-3 space-y-1 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600">
                         {bankCode ? <p><span className="font-medium text-gray-700">Banka Hata Kodu:</span> {bankCode}</p> : null}
                         {trxStatus ? <p><span className="font-medium text-gray-700">İşlem Durumu:</span> {trxStatus}</p> : null}
-                        {showGatewayMessage ? <p><span className="font-medium text-gray-700">Banka Mesajı:</span> {gatewayMessage}</p> : null}
                     </div>
                 ) : null}
 

@@ -2,8 +2,7 @@ import { createClient, Session } from "@supabase/supabase-js";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const useBffAuth = import.meta.env.VITE_USE_BFF_AUTH === "true";
-const AUTH_STORAGE_KEY = "bravita-session-token";
+const useBffAuth = String(import.meta.env.VITE_USE_BFF_AUTH ?? "true").toLowerCase() === "true";
 
 const authMemoryStore = new Map<string, string>();
 
@@ -17,37 +16,7 @@ const inMemoryAuthStorage = {
   },
 };
 
-function resolveAuthStorage() {
-  if (typeof window === "undefined") {
-    return inMemoryAuthStorage;
-  }
-
-  if (useBffAuth) {
-    return inMemoryAuthStorage;
-  }
-
-  try {
-    const probeKey = "__bravita_auth_storage_probe__";
-    window.sessionStorage.setItem(probeKey, "1");
-    window.sessionStorage.removeItem(probeKey);
-
-    const wrappedSessionStorage = {
-      getItem: (key: string): string | null => window.sessionStorage.getItem(key),
-      setItem: (key: string, value: string): void => {
-        window.sessionStorage.setItem(key, value);
-      },
-      removeItem: (key: string): void => {
-        window.sessionStorage.removeItem(key);
-      },
-    };
-
-    return wrappedSessionStorage;
-  } catch {
-    return inMemoryAuthStorage;
-  }
-}
-
-const authStorage = resolveAuthStorage();
+const authStorage = inMemoryAuthStorage;
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error(
@@ -57,12 +26,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    persistSession: !useBffAuth,
+    persistSession: false,
     autoRefreshToken: !useBffAuth,
     detectSessionInUrl: true,
     flowType: "pkce",
     storage: authStorage,
-    storageKey: AUTH_STORAGE_KEY,
   },
 });
 

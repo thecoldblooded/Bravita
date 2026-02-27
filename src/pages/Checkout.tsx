@@ -240,8 +240,6 @@ export default function Checkout() {
                 const threeDPayload = cardInitResult.threeD || (cardInitResult.redirectUrl ? { redirectUrl: cardInitResult.redirectUrl } : undefined);
 
                 if (cardInitResult.success && cardInitResult.intentId && threeDPayload) {
-                    sessionStorage.setItem(`threed:${cardInitResult.intentId}`, JSON.stringify(threeDPayload));
-                    sessionStorage.setItem("bravita_pending_card_checkout", "1");
                     setCheckoutData((prev) => ({
                         ...prev,
                         cardDetails: {
@@ -251,7 +249,12 @@ export default function Checkout() {
                             name: "",
                         },
                     }));
-                    navigate(`/3d-redirect?intent=${encodeURIComponent(cardInitResult.intentId)}`);
+                    navigate(`/3d-redirect?intent=${encodeURIComponent(cardInitResult.intentId)}`, {
+                        state: {
+                            intentId: cardInitResult.intentId,
+                            threeD: threeDPayload,
+                        },
+                    });
                     return;
                 }
 
@@ -293,7 +296,6 @@ export default function Checkout() {
                     if (nextAttempts >= 2) {
                         const qs = new URLSearchParams();
                         qs.set("code", resolvedFailureCode || "failed");
-                        if (cardInitResult.message) qs.set("msg", cardInitResult.message);
                         navigate(`/payment-failed?${qs.toString()}`);
                     }
                     return;
