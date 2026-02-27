@@ -10,9 +10,8 @@ const DEFAULT_SITE_URL = "https://bravita.com.tr";
 
 const DEFAULT_ALLOWED_RECOVERY_ORIGINS = [
   "https://bravita.com.tr",
+  "https://bravita.vercel.app",
   "https://www.bravita.com.tr",
-  "http://localhost:5173",
-  "http://localhost:3000",
   "http://localhost:8080",
 ];
 
