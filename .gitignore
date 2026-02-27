@@ -47,6 +47,7 @@ supabase/.temp/
 *.txt
 *.json
 !package.json
+!package-lock.json
 !tsconfig.app.json
 !tsconfig.json
 !tsconfig.node.json
@@ -56,3 +57,23 @@ supabase/.temp/
 .tmp/
 .tmp-lighthouse-desktop.json
 git-push-and-fix.md
+
+# Auto-generated project artifacts and collected security logs/reports
+/artifacts/
+/_reports/
+organize_reports.py
+*.md
+!README.md
+!CODEBASE.md
+!ARCHITECTURE.md
+!SECURITY_AUDIT_REPORT.md
+!SECURITY_IMPLEMENTATION_COMPLETE.md
+!IMPLEMENTATION_COMPLETE.md
+!AUTHENTICATION_SETUP.md
+!BUILD_VERIFICATION.md
+!DEPLOYMENT_GUIDE.md
+!PERFORMANCE_OPTIMIZATION.md
+!QUICK_START.md
+!RLS_FIX_INSTRUCTIONS.md
+!USER_GUIDE.md
+!.agent/**/*.md

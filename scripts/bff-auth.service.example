@@ -1,0 +1,24 @@
+[Unit]
+Description=Bravita BFF Auth API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/bravita
+EnvironmentFile=/etc/bravita/bff-auth.env
+ExecStart=/usr/bin/node /var/www/bravita/scripts/bff-auth-server.mjs
+Restart=always
+RestartSec=3
+KillSignal=SIGTERM
+TimeoutStopSec=15
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/var/www/bravita
+
+[Install]
+WantedBy=multi-user.target
