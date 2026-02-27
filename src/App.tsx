@@ -44,7 +44,7 @@ const EmailPreview = lazy(() => import("./pages/EmailPreview"));
  * 
  * TEMPORARY: Remove this when the site is ready for production
  */
-const MAINTENANCE_MODE = false;
+const MAINTENANCE_MODE = true;
 
 const PERIODIC_IMAGE_URL = periodicAlpacaGif;
 
