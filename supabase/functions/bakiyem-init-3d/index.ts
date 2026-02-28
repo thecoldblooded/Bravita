@@ -352,8 +352,18 @@ serve(async (req) => {
     }
     const cartHash = await sha256Hex(JSON.stringify(normalizedItems));
     const idempotencyKey = await sha256Hex(`${userId}:${cartHash}:${Date.now()}`);
+    const promoInputCode = asText(body.promoCode);
+    const quotePromoCode = asText(
+      quoteData?.promo_code ??
+      quoteData?.promoCode ??
+      quoteData?.pricing?.promo_code ??
+      quoteData?.pricing?.promoCode
+    );
+    const effectivePromoCode = quotePromoCode || promoInputCode;
+
     const pricingSnapshot = {
       ...quoteData,
+      promo_code: effectivePromoCode || null,
       shipping_address_id: body.shippingAddressId,
       calculated_at: new Date().toISOString()
     };

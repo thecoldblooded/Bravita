@@ -34,6 +34,20 @@ type AuthDebugGlobal = typeof globalThis & {
 
 const getAuthDebugGlobal = (): AuthDebugGlobal => globalThis as AuthDebugGlobal;
 
+const normalizeSessionPhone = (value: unknown): string | null => {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed || !trimmed.startsWith("+")) {
+    return null;
+  }
+
+  const normalized = `+${trimmed.replace(/\D/g, "")}`;
+  return /^\+[0-9]{10,15}$/.test(normalized) ? normalized : null;
+};
+
 const authContextInstanceId = `authctx_${Math.random().toString(36).slice(2, 10)}`;
 
 if (typeof window !== "undefined") {
@@ -53,7 +67,9 @@ const getInitialUser = (session: Session | null) => {
   // Trust only signed app_metadata for privilege hints.
   const isAdminFromMetadata = !!session.user.app_metadata?.is_admin;
   const isSuperAdminFromMetadata = !!session.user.app_metadata?.is_superadmin;
-  const stubPhone = session.user.user_metadata?.phone || session.user.phone || null;
+  const metadataPhone = normalizeSessionPhone(session.user.user_metadata?.phone);
+  const authUserPhone = normalizeSessionPhone(session.user.phone);
+  const stubPhone = metadataPhone || authUserPhone || null;
 
   // Create a minimal stub user - will be replaced by actual profile from DB
   return {
@@ -497,11 +513,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             if (errorCode === "PGRST116" || errorMessage.includes("PGRST116")) {
               const metadata = newSession.user.user_metadata || {};
+
+              const metadataPhone = normalizeSessionPhone(metadata.phone);
+              const authUserPhone = normalizeSessionPhone(newSession.user.phone);
+
               const newProfile: UserProfile = {
                 id: newSession.user.id,
                 email: newSession.user.email || "",
                 full_name: metadata.full_name || metadata.name || null,
-                phone: metadata.phone || newSession.user.phone || null,
+                phone: metadataPhone || authUserPhone || null,
                 user_type: metadata.user_type || "individual",
                 company_name: metadata.company_name || null,
                 profile_complete: false,

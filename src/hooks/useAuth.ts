@@ -32,6 +32,14 @@ export function useAuthOperations() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const logPwResetDiag = (step: string, details: Record<string, unknown> = {}) => {
+    try {
+      console.info("[PW-RESET-DIAG]", step, details);
+    } catch {
+      // Ignore logging failures.
+    }
+  };
+
   const signupWithEmail = async (data: SignupData) => {
     setIsLoading(true);
     setError(null);
@@ -308,13 +316,29 @@ export function useAuthOperations() {
       ? window.location.hash.slice(1)
       : window.location.hash;
 
+    const searchParams = new URLSearchParams(window.location.search);
+
     if (!rawHash) {
+      logPwResetDiag("recovery_hash_missing", {
+        hasCodeInQuery: searchParams.has("code"),
+        queryType: searchParams.get("type"),
+        hasTokenHashInQuery: searchParams.has("token_hash"),
+      });
       return null;
     }
 
     const params = new URLSearchParams(rawHash);
     const accessToken = params.get("access_token");
     const refreshToken = params.get("refresh_token");
+
+    logPwResetDiag("recovery_hash_parsed", {
+      hashKeys: Array.from(params.keys()),
+      hasAccessToken: Boolean(accessToken),
+      hasRefreshToken: Boolean(refreshToken),
+      hasCodeInQuery: searchParams.has("code"),
+      queryType: searchParams.get("type"),
+      hasTokenHashInQuery: searchParams.has("token_hash"),
+    });
 
     if (!accessToken || !refreshToken) {
       return null;
@@ -327,16 +351,30 @@ export function useAuthOperations() {
   };
 
   const ensureRecoverySession = async () => {
+    logPwResetDiag("ensure_recovery_session_start");
+
     const { data: currentSessionData } = await supabase.auth.getSession();
 
     if (currentSessionData.session) {
+      logPwResetDiag("ensure_recovery_session_existing", {
+        userId: currentSessionData.session.user?.id ?? null,
+        expiresAt: currentSessionData.session.expires_at ?? null,
+      });
       return currentSessionData.session;
     }
 
+    logPwResetDiag("ensure_recovery_session_no_existing_session");
+
     const hashTokens = getRecoveryTokensFromHash();
     if (!hashTokens) {
+      logPwResetDiag("ensure_recovery_session_no_hash_tokens");
       return null;
     }
+
+    logPwResetDiag("ensure_recovery_session_set_session_attempt", {
+      accessTokenLength: hashTokens.accessToken.length,
+      refreshTokenLength: hashTokens.refreshToken.length,
+    });
 
     const { data: hydratedSessionData, error: hydrationError } = await supabase.auth.setSession({
       access_token: hashTokens.accessToken,
@@ -344,11 +382,31 @@ export function useAuthOperations() {
     });
 
     if (hydrationError) {
+      logPwResetDiag("ensure_recovery_session_set_session_failed", {
+        errorName: hydrationError.name,
+        errorMessage: hydrationError.message,
+        errorStatus: (hydrationError as { status?: number }).status ?? null,
+      });
       throw hydrationError;
     }
 
+    logPwResetDiag("ensure_recovery_session_set_session_success", {
+      hasHydratedSession: Boolean(hydratedSessionData.session),
+      userId: hydratedSessionData.session?.user?.id ?? null,
+      expiresAt: hydratedSessionData.session?.expires_at ?? null,
+    });
+
     if (isBffAuthEnabled()) {
-      await setBffSessionFromClient(hashTokens.accessToken, hashTokens.refreshToken).catch(() => undefined);
+      await setBffSessionFromClient(hashTokens.accessToken, hashTokens.refreshToken)
+        .then(() => {
+          logPwResetDiag("ensure_recovery_session_bff_bridge_success");
+        })
+        .catch((bridgeError: unknown) => {
+          logPwResetDiag("ensure_recovery_session_bff_bridge_failed", {
+            errorName: bridgeError instanceof Error ? bridgeError.name : "UnknownError",
+            errorMessage: bridgeError instanceof Error ? bridgeError.message : String(bridgeError),
+          });
+        });
     }
 
     return hydratedSessionData.session;
@@ -359,16 +417,38 @@ export function useAuthOperations() {
     setError(null);
 
     try {
-      await ensureRecoverySession();
+      logPwResetDiag("update_password_submit_start", {
+        passwordLength: newPassword.length,
+      });
+
+      const ensuredSession = await ensureRecoverySession();
+
+      logPwResetDiag("update_password_after_ensure", {
+        hasSession: Boolean(ensuredSession),
+        userId: ensuredSession?.user?.id ?? null,
+      });
 
       const { error } = await supabase.auth.updateUser({
         password: newPassword,
       });
 
-      if (error) throw error;
+      if (error) {
+        logPwResetDiag("update_password_update_user_failed", {
+          errorName: error.name,
+          errorMessage: error.message,
+          errorStatus: (error as { status?: number }).status ?? null,
+        });
+        throw error;
+      }
+
+      logPwResetDiag("update_password_update_user_success");
       return { success: true };
     } catch (err) {
       const message = err instanceof Error ? err.message : "Şifre güncellenemedi";
+      logPwResetDiag("update_password_exception", {
+        errorName: err instanceof Error ? err.name : "UnknownError",
+        errorMessage: message,
+      });
       setError(message);
       throw err;
     } finally {

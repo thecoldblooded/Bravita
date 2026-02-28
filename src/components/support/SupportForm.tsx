@@ -60,13 +60,6 @@ export function SupportForm({ onSuccess }: SupportFormProps) {
     const form = useForm<SupportFormValues>({
         resolver: zodResolver(supportFormSchema),
         defaultValues: {
-            name: "",
-            email: "",
-            category: "general",
-            subject: "",
-            message: "",
-        },
-        values: {
             name: authUser?.full_name || "",
             email: authUser?.email || "",
             category: "general",
@@ -74,6 +67,11 @@ export function SupportForm({ onSuccess }: SupportFormProps) {
             message: "",
         },
     });
+
+    useEffect(() => {
+        form.setValue("name", authUser?.full_name || "", { shouldDirty: false });
+        form.setValue("email", authUser?.email || "", { shouldDirty: false });
+    }, [authUser?.full_name, authUser?.email, form]);
 
     const onSubmit = async (values: SupportFormValues) => {
         if (!captchaToken) {
@@ -142,7 +140,13 @@ export function SupportForm({ onSuccess }: SupportFormProps) {
             });
 
             setTimeout(() => {
-                form.reset();
+                form.reset({
+                    name: authUser?.full_name || "",
+                    email: authUser?.email || "",
+                    category: "general",
+                    subject: "",
+                    message: "",
+                });
                 setCaptchaToken(null);
                 captchaRef.current?.resetCaptcha();
                 onSuccess();

@@ -71,6 +71,61 @@ async function sha256Hex(input: string): Promise<string> {
   return hashArray.map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
+function asText(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function extractProviderRecordList(payload: unknown): Array<Record<string, unknown>> {
+  if (Array.isArray(payload)) {
+    return payload
+      .filter((item) => !!asRecord(item))
+      .map((item) => item as Record<string, unknown>);
+  }
+
+  const root = asRecord(payload);
+  if (!root) return [];
+
+  const listCandidates = [
+    root.PaymentList,
+    root.DealerPaymentList,
+    root.TrxList,
+    root.PaymentTrxDetailList,
+    root.DealerPaymentTrxDetailList,
+    root.DealerPaymentTrxDetails,
+    root.Items,
+    root.List,
+    root.Payments,
+  ];
+
+  for (const candidate of listCandidates) {
+    if (Array.isArray(candidate)) {
+      return candidate
+        .filter((item) => !!asRecord(item))
+        .map((item) => item as Record<string, unknown>);
+    }
+  }
+
+  const hasRecordShape = Boolean(
+    asText(root.TrxCode) ||
+    asText(root.OtherTrxCode) ||
+    asText(root.VirtualPosOrderId) ||
+    asText(root.PaymentId) ||
+    asText(root.DealerPaymentId),
+  );
+
+  return hasRecordShape ? [root] : [];
+}
+
+function normalizeComparable(value: unknown): string {
+  return asText(value).toLowerCase();
+}
+
 function extractUserJwt(req: Request): string | null {
   const xUserJwt = req.headers.get("x-user-jwt");
   if (xUserJwt && xUserJwt.trim().length > 0) {
@@ -132,11 +187,95 @@ serve(async (req: Request) => {
       return response(req, 404, { success: false, message: "Payment intent bulunamadi" });
     }
 
-    if (!intent.gateway_trx_code) {
-      return response(req, 400, { success: false, message: "Gateway trx code bulunamadi" });
+    const checkKey = await sha256Hex(`${BAKIYEM_DEALER_CODE}MK${BAKIYEM_API_USERNAME}PD${BAKIYEM_API_PASSWORD}`);
+    const shortTrxCode = intent.id.replace(/-/g, "").substring(0, 20);
+    const normalizedShortTrxCode = normalizeComparable(shortTrxCode);
+
+    let gatewayTrxCode = asText(intent.gateway_trx_code);
+    let detailFallbackDiagnostics: JsonRecord | null = null;
+
+    if (!gatewayTrxCode) {
+      const detailRequestPayload: JsonRecord = {
+        OtherTrxCode: shortTrxCode,
+      };
+
+      const detailRaw = await fetch(`${BAKIYEM_BASE_URL}/PaymentDealer/GetDealerPaymentTrxDetailList`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          PaymentDealerAuthentication: {
+            DealerCode: BAKIYEM_DEALER_CODE,
+            Username: BAKIYEM_API_USERNAME,
+            Password: BAKIYEM_API_PASSWORD,
+            CheckKey: checkKey,
+          },
+          PaymentDealerRequest: detailRequestPayload,
+        }),
+      });
+
+      const detailJson = await detailRaw.json().catch(() => ({}));
+      const detailResultCode = asText((detailJson as Record<string, unknown>)?.ResultCode);
+      const detailResultMessage = asText((detailJson as Record<string, unknown>)?.ResultMessage);
+      const detailRecords = extractProviderRecordList((detailJson as Record<string, unknown>)?.Data);
+
+      const matchedByOtherTrxCode = detailRecords.find((item: Record<string, unknown>) =>
+        normalizeComparable(item?.OtherTrxCode ?? item?.MerchantOrderId ?? item?.MerchantRef) === normalizedShortTrxCode
+      );
+      const selectedRecord = matchedByOtherTrxCode ?? detailRecords[0] ?? null;
+
+      const recoveredVirtualPosOrderId = asText(selectedRecord?.VirtualPosOrderId);
+      const recoveredTrxCode = asText(selectedRecord?.TrxCode);
+      gatewayTrxCode = recoveredVirtualPosOrderId || recoveredTrxCode;
+
+      detailFallbackDiagnostics = {
+        shortTrxCode,
+        detailHttpStatus: detailRaw.status,
+        detailResultCode,
+        detailResultMessage: detailResultMessage.substring(0, 180),
+        recordCount: detailRecords.length,
+        matchedByOtherTrxCode: Boolean(matchedByOtherTrxCode),
+        selectedVirtualPosOrderId: recoveredVirtualPosOrderId,
+        selectedTrxCode: recoveredTrxCode,
+        recoveredGatewayTrxCode: gatewayTrxCode,
+        detailRecordsSnapshot: detailRecords.slice(0, 5).map((item: Record<string, unknown>) => ({
+          TrxCode: asText(item?.TrxCode),
+          VirtualPosOrderId: asText(item?.VirtualPosOrderId),
+          OtherTrxCode: asText(item?.OtherTrxCode ?? item?.MerchantOrderId ?? item?.MerchantRef),
+        })),
+      };
+
+      const detailLoggedPayload = detailJson && typeof detailJson === "object"
+        ? { ...(detailJson as Record<string, unknown>), _diag: detailFallbackDiagnostics }
+        : { raw: detailJson, _diag: detailFallbackDiagnostics };
+
+      await supabase.from("payment_transactions").insert({
+        intent_id: intent.id,
+        order_id: order.id,
+        operation: "inquiry",
+        request_payload: {
+          shortTrxCode,
+          type: "GetDealerPaymentTrxDetailList",
+          source: "bakiyem-void",
+        },
+        response_payload: detailLoggedPayload,
+        success: detailRaw.ok && detailResultCode === "Success" && Boolean(gatewayTrxCode),
+        error_code: detailResultCode || null,
+        error_message: detailResultMessage || null,
+      });
+
+      if (gatewayTrxCode) {
+        await supabase
+          .from("payment_intents")
+          .update({ gateway_trx_code: gatewayTrxCode })
+          .eq("id", intent.id);
+      }
     }
 
-    const checkKey = await sha256Hex(`${BAKIYEM_DEALER_CODE}MK${BAKIYEM_API_USERNAME}PD${BAKIYEM_API_PASSWORD}`);
+    if (!gatewayTrxCode) {
+      return response(req, 400, { success: false, message: "Gateway trx code / VirtualPosOrderId bulunamadi" });
+    }
+
+    const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "127.0.0.1";
     const voidRequest = {
       PaymentDealerAuthentication: {
         DealerCode: BAKIYEM_DEALER_CODE,
@@ -145,9 +284,9 @@ serve(async (req: Request) => {
         CheckKey: checkKey,
       },
       PaymentDealerRequest: {
-        VirtualPosOrderId: intent.gateway_trx_code,
+        VirtualPosOrderId: gatewayTrxCode,
         VoidRefundReason: 2,
-        ClientIP: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "127.0.0.1",
+        ClientIP: clientIp,
       },
     };
 
@@ -169,6 +308,10 @@ serve(async (req: Request) => {
       request_payload: {
         PaymentDealerAuthentication: { DealerCode: "masked", Username: "masked", Password: "masked", CheckKey: "masked" },
         PaymentDealerRequest: voidRequest.PaymentDealerRequest,
+        _diag: {
+          detailFallbackUsed: Boolean(detailFallbackDiagnostics),
+          detailFallbackDiagnostics,
+        },
       },
       response_payload: voidJson,
       success: isSuccess,

@@ -77,3 +77,4 @@ organize_reports.py
 !RLS_FIX_INSTRUCTIONS.md
 !USER_GUIDE.md
 !.agent/**/*.md
+deploy.tar.gz

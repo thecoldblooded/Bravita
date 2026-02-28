@@ -20,6 +20,16 @@ export default function FloatingSupport({ className }: FloatingSupportProps) {
     const { t } = useTranslation();
     const [open, setOpen] = useState(false);
 
+    const isHCaptchaElement = (target: EventTarget | null) => {
+        if (!(target instanceof Element)) return false;
+
+        return Boolean(
+            target.closest(
+                ".h-captcha, [id*='hcaptcha'], [class*='hcaptcha'], iframe[src*='hcaptcha.com'], iframe[title*='hCaptcha'], iframe[title*='hcaptcha']"
+            )
+        );
+    };
+
     // Track open state for global UI coordination (e.g. hiding marquee on mobile)
     useEffect(() => {
         if (typeof document !== 'undefined') {
@@ -59,6 +69,21 @@ export default function FloatingSupport({ className }: FloatingSupportProps) {
                 sideOffset={15}
                 collisionPadding={{ top: 20, bottom: 120, left: 16, right: 16 }}
                 className="w-[calc(100vw-2rem)] sm:w-96 p-0 overflow-hidden rounded-3xl border-none shadow-2xl bg-[#FFFBF7] z-10001 animate-in slide-in-from-bottom-2 duration-300 flex flex-col max-h-[72dvh] sm:max-h-[85vh]"
+                onPointerDownOutside={(event) => {
+                    if (isHCaptchaElement(event.target)) {
+                        event.preventDefault();
+                    }
+                }}
+                onFocusOutside={(event) => {
+                    if (isHCaptchaElement(event.target)) {
+                        event.preventDefault();
+                    }
+                }}
+                onInteractOutside={(event) => {
+                    if (isHCaptchaElement(event.target)) {
+                        event.preventDefault();
+                    }
+                }}
             >
                 <div className="bg-orange-500 p-5 text-white relative">
                     <div className="space-y-1">

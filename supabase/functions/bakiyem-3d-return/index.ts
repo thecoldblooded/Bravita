@@ -1060,7 +1060,7 @@ serve(async (req: Request) => {
           intent_id: intentId,
           operation: "finalize",
           success: false,
-          error_message: finalizeError.message
+          error_message: finalizeError.message,
         });
         if (shouldRedirectClient) {
           return Response.redirect(`${uiOrigin}/payment-failed?intent=${intentId}&code=finalize_err`, 302);
