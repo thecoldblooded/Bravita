@@ -113,6 +113,8 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
+          echo "CI context: ref=$GITHUB_REF sha=$GITHUB_SHA run_id=$GITHUB_RUN_ID attempt=$GITHUB_RUN_ATTEMPT"
+          echo "SUPABASE_ACCESS_TOKEN present: $([ -n \"$SUPABASE_ACCESS_TOKEN\" ] && echo yes || echo no)"
           if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
             echo "::warning::Missing SUPABASE_ACCESS_TOKEN secret. Skipping Supabase CLI authentication."
             echo "SKIP_SUPABASE=true" >> $GITHUB_ENV
@@ -126,6 +128,8 @@ jobs:
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: |
+          echo "SUPABASE_PROJECT_REF present: $([ -n \"$SUPABASE_PROJECT_REF\" ] && echo yes || echo no)"
+          echo "SUPABASE_DB_PASSWORD present: $([ -n \"$SUPABASE_DB_PASSWORD\" ] && echo yes || echo no)"
           if [ -z "$SUPABASE_PROJECT_REF" ]; then
             echo "::warning::Missing SUPABASE_PROJECT_REF secret. Skipping Supabase drift check."
             echo "SKIP_DRIFT=true" >> $GITHUB_ENV
@@ -136,7 +140,9 @@ jobs:
             echo "Expected project ref (masked): ${SUPABASE_PROJECT_REF:0:6}*** (len=${#SUPABASE_PROJECT_REF})"
 
             if ! supabase link --project-ref "$SUPABASE_PROJECT_REF"; then
-              echo "::warning::Supabase project link failed. Skipping Supabase drift check."
+              echo "::warning::Supabase project link failed. Collecting diagnostics and skipping drift check."
+              supabase --version || true
+              ls -la supabase/.temp || true
               echo "SKIP_DRIFT=true" >> $GITHUB_ENV
               exit 0
             fi
@@ -156,6 +162,21 @@ jobs:
             fi
           fi
 
+      - name: Supabase gate debug summary
+        if: ${{ always() }}
+        run: |
+          echo "Gate flags: SKIP_SUPABASE=$SKIP_SUPABASE SKIP_DRIFT=$SKIP_DRIFT"
+          if [ -d "supabase/.temp" ]; then
+            echo "supabase/.temp exists: yes"
+            ls -la supabase/.temp || true
+          else
+            echo "supabase/.temp exists: no"
+          fi
+          if [ -f "supabase/.temp/project-ref" ]; then
+            REF="$(tr -d '\r\n[:space:]' < supabase/.temp/project-ref)"
+            echo "Current linked ref (masked): ${REF:0:6}*** (len=${#REF})"
+          fi
+
       - name: Check linked migrations
         if: ${{ env.SKIP_SUPABASE != 'true' && env.SKIP_DRIFT != 'true' }}
         env:
@@ -171,15 +192,27 @@ jobs:
             exit 0
           fi
 
+          echo "Supabase CLI version (pre-diff):"
+          supabase --version || true
 
           DIFF_EXIT=0
           supabase db diff --linked --use-migra --schema public > drift.sql 2> drift.err || DIFF_EXIT=$?
 
+          SQL_BYTES=$(wc -c < drift.sql 2>/dev/null || echo 0)
+          ERR_BYTES=$(wc -c < drift.err 2>/dev/null || echo 0)
+          echo "drift.sql size(bytes): $SQL_BYTES"
+          echo "drift.err size(bytes): $ERR_BYTES"
+
+          echo "--- drift.err (last 80 lines) ---"
+          tail -n 80 drift.err || true
+
+          if [ -s drift.sql ]; then
+            echo "--- drift.sql (first 120 lines) ---"
+            sed -n '1,120p' drift.sql || true
+          fi
 
           if [ "$DIFF_EXIT" -ne 0 ]; then
             echo "::error::supabase db diff failed with exit code $DIFF_EXIT"
-            echo "--- drift.err ---"
-            cat drift.err || true
             exit "$DIFF_EXIT"
           fi
 
@@ -188,7 +221,6 @@ jobs:
             # (migra sometimes outputs comments)
             if grep -q "CREATE\|ALTER\|DROP\|INSERT\|UPDATE\|DELETE" drift.sql; then
               echo "❌ Database drift detected in public schema. Please create a migration for manual changes."
-              cat drift.sql
               exit 1
             fi
           fi

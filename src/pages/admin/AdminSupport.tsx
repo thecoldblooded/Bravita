@@ -19,6 +19,7 @@ import {
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminGuard } from "@/components/admin/AdminGuard";
 import { supabase } from "@/lib/supabase";
+import { getFunctionAuthHeaders } from "@/lib/functionAuth";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -153,6 +154,7 @@ export default function AdminSupport() {
         if (!selectedTicket || !replyMessage.trim()) return;
 
         setIsReplying(true);
+        let isEmailNotificationFailed = false;
         try {
             // Veri tutarlılığı için en güncel mesajı çek (Admin açıkken kullanıcı yanıt yazmış olabilir)
             const { data: latestTicket, error: fetchError } = await supabase
@@ -199,11 +201,23 @@ export default function AdminSupport() {
 
             // Invoke edge function for reply email
             try {
+                const authHeaders = await getFunctionAuthHeaders("admin:support_ticket_replied_notification");
+                const anonKey = String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? "").trim();
+                const invokeHeaders: Record<string, string> = {
+                    ...authHeaders,
+                    ...(anonKey ? { apikey: anonKey } : {}),
+                };
+
+                if (!invokeHeaders.Authorization && anonKey) {
+                    invokeHeaders.Authorization = `Bearer ${anonKey}`;
+                }
+
                 await supabase.functions.invoke("send-support-email", {
                     body: {
                         ticket_id: selectedTicket.id,
                         type: "ticket_replied",
                     },
+                    headers: invokeHeaders,
                 });
             } catch {
                 // Bildirim e-postası başarısız olsa da yanıt akışını bozma
@@ -270,11 +284,23 @@ export default function AdminSupport() {
 
             // Send closure email
             try {
+                const authHeaders = await getFunctionAuthHeaders("admin:support_ticket_closed_notification");
+                const anonKey = String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? "").trim();
+                const invokeHeaders: Record<string, string> = {
+                    ...authHeaders,
+                    ...(anonKey ? { apikey: anonKey } : {}),
+                };
+
+                if (!invokeHeaders.Authorization && anonKey) {
+                    invokeHeaders.Authorization = `Bearer ${anonKey}`;
+                }
+
                 await supabase.functions.invoke("send-support-email", {
                     body: {
                         ticket_id: id,
                         type: "ticket_closed",
                     },
+                    headers: invokeHeaders,
                 });
             } catch {
                 // Bildirim e-postası başarısız olsa da kapatma akışını bozma
