@@ -81,16 +81,35 @@ export default async function handler(req, res) {
       body: signupPayload,
     });
 
+    const hasUser = Boolean(data?.user);
+    const hasAccessToken = typeof data?.access_token === "string" && data.access_token.length > 0;
+    const hasRefreshToken = typeof data?.refresh_token === "string" && data.refresh_token.length > 0;
+    const hasUpstreamErrorMessage = typeof data?.error === "string"
+      || typeof data?.msg === "string"
+      || typeof data?.error_description === "string";
+
     if (!response.ok) {
       const message = extractAuthErrorMessage(data, "Signup failed");
       return sendJson(res, response.status || 400, { error: message });
     }
 
-    if (data?.refresh_token && data?.access_token) {
-      res.setHeader("Set-Cookie", buildRefreshCookie(data.refresh_token, req));
+    const shouldSynthesizePendingUser = !hasUser
+      && !hasAccessToken
+      && !hasRefreshToken
+      && !hasUpstreamErrorMessage;
+
+    const normalizedSignupPayload = shouldSynthesizePendingUser
+      ? {
+        ...(data && typeof data === "object" ? data : {}),
+        user: { email, pending_confirmation: true },
+      }
+      : data;
+
+    if (normalizedSignupPayload?.refresh_token && normalizedSignupPayload?.access_token) {
+      res.setHeader("Set-Cookie", buildRefreshCookie(normalizedSignupPayload.refresh_token, req));
     }
 
-    return sendJson(res, 200, sanitizeSignupResponse(data));
+    return sendJson(res, 200, sanitizeSignupResponse(normalizedSignupPayload));
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected signup error";
     return sendJson(res, 500, { error: message });

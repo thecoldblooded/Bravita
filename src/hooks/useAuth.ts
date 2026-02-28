@@ -7,6 +7,7 @@ import {
   logoutBffSession,
   requestPasswordRecoveryWithBff,
   resendSignupConfirmationWithBff,
+  setBffSessionFromClient,
   signupWithBff,
   toSupabaseSessionInput,
 } from "@/lib/bffAuth";
@@ -50,12 +51,8 @@ export function useAuthOperations() {
           profileData,
         });
 
-        if (!signupData?.user) {
-          throw new Error("No user returned from signup");
-        }
-
         let bridgedSession = null;
-        if (signupData.session?.access_token) {
+        if (signupData?.session?.access_token) {
           const { data: sessionData, error: sessionError } = await supabase.auth.setSession(
             toSupabaseSessionInput(signupData.session)
           );
@@ -65,7 +62,7 @@ export function useAuthOperations() {
           await refreshUserProfile();
         }
 
-        return { user: signupData.user, session: bridgedSession };
+        return { user: signupData?.user ?? null, session: bridgedSession };
       }
 
       const options = {
@@ -89,12 +86,10 @@ export function useAuthOperations() {
         }
         throw authError;
       }
-      if (!authData.user) throw new Error("No user returned from signup");
-
       // BillionMail sync disabled at signup
       // Will be triggered after email confirmation in AuthContext
 
-      return { user: authData.user, session: authData.session };
+      return { user: authData?.user ?? null, session: authData?.session ?? null };
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Signup failed";
@@ -304,11 +299,68 @@ export function useAuthOperations() {
     }
   };
 
+  const getRecoveryTokensFromHash = () => {
+    if (typeof window === "undefined") {
+      return null;
+    }
+
+    const rawHash = window.location.hash.startsWith("#")
+      ? window.location.hash.slice(1)
+      : window.location.hash;
+
+    if (!rawHash) {
+      return null;
+    }
+
+    const params = new URLSearchParams(rawHash);
+    const accessToken = params.get("access_token");
+    const refreshToken = params.get("refresh_token");
+
+    if (!accessToken || !refreshToken) {
+      return null;
+    }
+
+    return {
+      accessToken,
+      refreshToken,
+    };
+  };
+
+  const ensureRecoverySession = async () => {
+    const { data: currentSessionData } = await supabase.auth.getSession();
+
+    if (currentSessionData.session) {
+      return currentSessionData.session;
+    }
+
+    const hashTokens = getRecoveryTokensFromHash();
+    if (!hashTokens) {
+      return null;
+    }
+
+    const { data: hydratedSessionData, error: hydrationError } = await supabase.auth.setSession({
+      access_token: hashTokens.accessToken,
+      refresh_token: hashTokens.refreshToken,
+    });
+
+    if (hydrationError) {
+      throw hydrationError;
+    }
+
+    if (isBffAuthEnabled()) {
+      await setBffSessionFromClient(hashTokens.accessToken, hashTokens.refreshToken).catch(() => undefined);
+    }
+
+    return hydratedSessionData.session;
+  };
+
   const updateUserPassword = async (newPassword: string) => {
     setIsLoading(true);
     setError(null);
 
     try {
+      await ensureRecoverySession();
+
       const { error } = await supabase.auth.updateUser({
         password: newPassword,
       });

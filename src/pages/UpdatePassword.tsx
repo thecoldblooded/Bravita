@@ -1,4 +1,4 @@
-import { useEffect, useRef, type FormEvent } from "react";
+import { useEffect, type FormEvent } from "react";
 import loginVideo from "@/assets/optimized/login-compressed.mp4";
 import logoImg from "@/assets/bravita-logo.webp";
 import { useTranslation } from "react-i18next";
@@ -29,7 +29,6 @@ export default function UpdatePassword() {
     const navigate = useNavigate();
     const { updateUserPassword, logout, isLoading } = useAuthOperations();
     const { session } = useAuth();
-
     // Redirect if no session after timeout (failed recovery link or manual navigation)
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -40,19 +39,9 @@ export default function UpdatePassword() {
                 navigate("/");
             }
         }, 3000);
+
         return () => clearTimeout(timer);
     }, [session, navigate, t]);
-
-    const successRef = useRef(false);
-
-    // Logout if user leaves the page without successfully updating password
-    useEffect(() => {
-        return () => {
-            if (!successRef.current) {
-                logout();
-            }
-        };
-    }, [logout]);
 
     const formSchema = z.object({
         password: z.string()
@@ -83,10 +72,14 @@ export default function UpdatePassword() {
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
         try {
             await updateUserPassword(values.password);
-            successRef.current = true;
             toast.success(t("auth.password_updated") || "Şifreniz başarıyla güncellendi");
 
-            await logout();
+            // Password update succeeded; logout failure should not mask success.
+            try {
+                await logout();
+            } catch {
+                // Ignore logout failures (e.g. already missing session after recovery flow).
+            }
 
             // Delay to show toast
             setTimeout(() => {

@@ -27,8 +27,25 @@
         }
 
         var combinedText = args
-            .filter(function (arg) {
-                return typeof arg === "string";
+            .map(function (arg) {
+                if (typeof arg === "string") {
+                    return arg;
+                }
+
+                if (!arg || typeof arg !== "object") {
+                    return "";
+                }
+
+                return [
+                    typeof arg.message === "string" ? arg.message : "",
+                    typeof arg.msg === "string" ? arg.msg : "",
+                    typeof arg.error === "string" ? arg.error : "",
+                    typeof arg.type === "string" ? arg.type : "",
+                    typeof arg.event === "string" ? arg.event : "",
+                    typeof arg.source === "string" ? arg.source : "",
+                    typeof arg.channel === "string" ? arg.channel : "",
+                    typeof arg.topic === "string" ? arg.topic : ""
+                ].join(" ");
             })
             .join(" ");
 
@@ -41,6 +58,26 @@
         }
 
         if (/walletguard/i.test(combinedText)) {
+            return true;
+        }
+
+        if (/unchecked runtime\.lasterror/i.test(combinedText)) {
+            return true;
+        }
+
+        if (/receiving end does not exist/i.test(combinedText)) {
+            return true;
+        }
+
+        if (/message (?:channel|port) closed before a response was received/i.test(combinedText)) {
+            return true;
+        }
+
+        if (/chrome-extension:\/\//i.test(combinedText)) {
+            return true;
+        }
+
+        if (/(notification|push)/i.test(combinedText) && /(channel|topic|subscription|service[-\s]?worker|walletguard)/i.test(combinedText)) {
             return true;
         }
 
