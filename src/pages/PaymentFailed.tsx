@@ -58,6 +58,7 @@ function normalizeBankCode(value: string): string {
 
 const CODE_FIRST_MESSAGE_KEYS = new Set([
     "3d_auth_failed",
+    "installment_auth_declined",
     "failed",
     "fail",
     "callback_declined",
@@ -90,6 +91,11 @@ function getFallbackMessage(code: string): FailureMessage {
             return {
                 primary: "3D yönlendirme verisi geçersiz.",
                 guidance: "Ödemeyi yeniden başlatıp tekrar deneyin.",
+            };
+        case "installment_auth_declined":
+            return {
+                primary: "Taksitli ödeme bankanız tarafından onaylanmadı.",
+                guidance: "Tek çekim ile tekrar deneyin veya bankanızla görüşün.",
             };
         case "callback_declined":
         case "3d_auth_failed":

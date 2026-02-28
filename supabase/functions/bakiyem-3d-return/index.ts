@@ -230,7 +230,7 @@ serve(async (req: Request) => {
   try {
     const { data: intentRow } = await supabase
       .from("payment_intents")
-      .select("gateway_trx_code, threed_session_ref, status, gateway_status, created_at, updated_at")
+      .select("gateway_trx_code, threed_session_ref, status, gateway_status, created_at, updated_at, installment_number")
       .eq("id", intentId)
       .maybeSingle();
     const gatewayTrxCode = asText(intentRow?.gateway_trx_code);
@@ -944,8 +944,16 @@ serve(async (req: Request) => {
       inquiryIndicatesSuccess
     );
 
+    const callbackBankCodeNormalized = callbackBankResultCodeRaw.replace(/\D/g, "").padStart(2, "0");
+    const intentInstallmentNumber = Number(intentRow?.installment_number ?? 1);
+    const isInstallmentPayment = Number.isFinite(intentInstallmentNumber) && intentInstallmentNumber > 1;
+    const likelyInstallmentConstraint =
+      callbackOutcomeFromHash === "f" &&
+      isInstallmentPayment &&
+      ["01", "1", "001"].includes(callbackBankCodeNormalized);
+
     const effectiveFailureCode = callbackOutcomeFromHash === "f"
-      ? "3d_auth_failed"
+      ? (likelyInstallmentConstraint ? "installment_auth_declined" : "3d_auth_failed")
       : callbackMessageIndicatesFailure && isSuccessResultCode(resultCode)
         ? "callback_declined"
         : resultCode || "fail";
