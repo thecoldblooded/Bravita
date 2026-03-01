@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "bff:auth": "node scripts/bff-auth-server.mjs",
+    "checklist": "py -3.10 .agent/scripts/checklist.py .",
     "socket:ci": "node scripts/run-socket-ci.mjs",
     "supabase:migration:list": "node scripts/check-linked-migrations.mjs",
     "supabase:drift:check": "node scripts/check-linked-drift.mjs",

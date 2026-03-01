@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { getLegalLocale, getLegalDocuments } from "@/content/legalDocuments";
 import { useTranslation } from "react-i18next";
@@ -19,8 +18,8 @@ const TermsOfService = () => {
             <Helmet>
                 <title>{doc.title} | Bravita</title>
             </Helmet>
-            <Header />
-            <main className="max-w-4xl mx-auto px-6 py-32 md:py-40">
+            <main className="max-w-4xl mx-auto px-6 py-12 md:py-20">
+                <a href="/" className="inline-block mb-10 text-orange-600 hover:underline font-medium">← Ana Sayfaya Dön</a>
                 <h1 className="text-3xl md:text-5xl font-black text-orange-900 mb-6">{doc.title}</h1>
                 <p className="text-lg text-neutral-600 mb-12">{doc.description}</p>
 

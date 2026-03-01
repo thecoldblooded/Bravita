@@ -35,6 +35,7 @@ function Footer() {
   const { t, i18n } = useTranslation();
   const [isInView, setIsInView] = useState(false);
   const [activeLegalKey, setActiveLegalKey] = useState<LegalDocumentKey | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
   const footerRef = useRef<HTMLElement>(null);
   const legalLocale = getLegalLocale(i18n.language);
   const legalDocuments = useMemo(() => getLegalDocuments(legalLocale), [legalLocale]);
@@ -69,6 +70,7 @@ function Footer() {
       const hashKey = hash.replace("#legal:", "");
       if (isLegalDocumentKey(hashKey)) {
         setActiveLegalKey(hashKey);
+        setIsOpen(true);
       }
     };
 
@@ -257,6 +259,7 @@ function Footer() {
                           onClick={(e: React.MouseEvent) => {
                             e.preventDefault();
                             setActiveLegalKey(legalKey);
+                            setIsOpen(true);
                             if (window.location.hash !== `#legal:${legalKey}`) {
                               window.history.replaceState(null, "", `#legal:${legalKey}`);
                             }
@@ -428,10 +431,14 @@ function Footer() {
       </div>
 
       <Dialog
-        open={activeLegalKey !== null}
+        open={isOpen}
         onOpenChange={(open) => {
+          setIsOpen(open);
           if (!open) {
-            setActiveLegalKey(null);
+            // setTimeout to let dialog close animation finish
+            setTimeout(() => {
+              setActiveLegalKey(null);
+            }, 300);
             if (window.location.hash.startsWith("#legal:")) {
               window.history.replaceState(
                 null,
