@@ -227,6 +227,8 @@ jobs:
         timeout-minutes: 12
         env:
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
 
@@ -236,6 +238,17 @@ jobs:
 
           log() {
             echo "[$(ts)] $*"
+          }
+
+          save_artifact() {
+            local src="$1"
+            local dst="$2"
+            if [ -f "$src" ]; then
+              cp "$src" "$dst"
+              echo "saved artifact: $dst"
+            else
+              echo "artifact source missing: $src"
+            fi
           }
 
           # F-03: Detect drift between local schema and remote DB
@@ -252,6 +265,18 @@ jobs:
 
           log "Supabase CLI version (pre-diff)"
           supabase --version || true
+
+          LINKED_REF_FILE="supabase/.temp/project-ref"
+          if [ -f "$LINKED_REF_FILE" ]; then
+            LINKED_REF="$(tr -d '\r\n[:space:]' < "$LINKED_REF_FILE")"
+            log "Linked ref during drift step (masked): ${LINKED_REF:0:6}*** (len=${#LINKED_REF})"
+            if [ -n "${SUPABASE_PROJECT_REF:-}" ] && [ "$LINKED_REF" != "$SUPABASE_PROJECT_REF" ]; then
+              echo "::error::Linked ref mismatch before diff. expected(masked)=${SUPABASE_PROJECT_REF:0:6}*** got(masked)=${LINKED_REF:0:6}***"
+              exit 1
+            fi
+          else
+            echo "::warning::No linked ref file at $LINKED_REF_FILE"
+          fi
 
           DRIFT_TIMEOUT_SECONDS=420
           log "Running 'supabase db diff' with timeout ${DRIFT_TIMEOUT_SECONDS}s"
@@ -281,6 +306,27 @@ jobs:
             sed -n '1,120p' drift.sql || true
           fi
 
+          # Evidence capture (always)
+          mkdir -p _reports/sql
+          save_artifact drift.sql _reports/sql/drift_ci_latest.sql
+          save_artifact drift.err _reports/sql/drift_ci_latest.err
+
+          DUMP_EXIT=0
+          DUMP_START_EPOCH=$(date +%s)
+          timeout --signal=SIGINT --kill-after=30s 420s \
+            supabase db dump --linked --schema public --file _reports/sql/remote_public_ci_dump.sql > _reports/sql/remote_public_ci_dump.out 2> _reports/sql/remote_public_ci_dump.err || DUMP_EXIT=$?
+          DUMP_END_EPOCH=$(date +%s)
+          DUMP_ELAPSED_SECONDS=$((DUMP_END_EPOCH - DUMP_START_EPOCH))
+          log "supabase db dump elapsed_seconds=${DUMP_ELAPSED_SECONDS} exit_code=${DUMP_EXIT}"
+
+          if [ -f _reports/sql/remote_public_ci_dump.sql ]; then
+            DUMP_BYTES=$(wc -c < _reports/sql/remote_public_ci_dump.sql 2>/dev/null || echo 0)
+            log "remote_public_ci_dump.sql size(bytes): ${DUMP_BYTES}"
+          fi
+
+          echo "--- remote_public_ci_dump.err (last 120 lines) ---"
+          tail -n 120 _reports/sql/remote_public_ci_dump.err || true
+
           if [ "$DIFF_EXIT" -eq 124 ] || [ "$DIFF_EXIT" -eq 137 ]; then
             echo "::error::supabase db diff timed out after ${DRIFT_TIMEOUT_SECONDS}s"
             exit 1
@@ -301,4 +347,20 @@ jobs:
           fi
 
           log "No database drift detected in public schema"
+
+      - name: Upload Supabase drift evidence artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: supabase-drift-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          if-no-files-found: warn
+          retention-days: 7
+          path: |
+            drift.sql
+            drift.err
+            _reports/sql/drift_ci_latest.sql
+            _reports/sql/drift_ci_latest.err
+            _reports/sql/remote_public_ci_dump.sql
+            _reports/sql/remote_public_ci_dump.out
+            _reports/sql/remote_public_ci_dump.err
 
