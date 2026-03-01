@@ -122,7 +122,10 @@ class UXAuditor:
 
         # --- 1. PSYCHOLOGY LAWS ---
         # Hick's Law
-        nav_items = len(re.findall(r'<NavLink|<Link|<a\s+href|nav-item', content, re.IGNORECASE))
+        react_nav_links = len(re.findall(r'<NavLink\b|<Link\b', content))
+        anchor_nav_links = len(re.findall(r'<a\s+href\b', content, re.IGNORECASE))
+        nav_class_items = len(re.findall(r'nav-item', content, re.IGNORECASE))
+        nav_items = react_nav_links + anchor_nav_links + nav_class_items
         if nav_items > 7:
             self.issues.append(f"[Hick's Law] {filename}: {nav_items} nav items (Max 7)")
         
@@ -142,9 +145,11 @@ class UXAuditor:
         # Serial Position Effect - Important items at beginning/end
         if nav_items > 3:
             # Check if last nav item is important (contact, login, etc.)
-            nav_content = re.findall(r'<NavLink|<Link|<a\s+href[^>]*>([^<]+)</a>', content, re.IGNORECASE)
+            anchor_labels = re.findall(r'<a\s+href[^>]*>\s*([^<]+?)\s*</a>', content, re.IGNORECASE)
+            component_labels = re.findall(r'<(?:NavLink|Link)\b[^>]*>\s*([^<{]+?)\s*</(?:NavLink|Link)>', content)
+            nav_content = [label.strip() for label in (anchor_labels + component_labels) if label.strip()]
             if nav_content and len(nav_content) > 2:
-                last_item = nav_content[-1].lower() if nav_content else ''
+                last_item = nav_content[-1].lower()
                 if not any(x in last_item for x in ['contact', 'login', 'sign', 'get started', 'cta', 'button']):
                     self.warnings.append(f"[Serial Position] {filename}: Last nav item may not be important. Place key actions at start/end.")
 
@@ -684,7 +689,7 @@ class UXAuditor:
     def audit_directory(self, directory: str) -> None:
         extensions = {'.tsx', '.jsx', '.html', '.vue', '.svelte', '.css'}
         for root, dirs, files in os.walk(directory):
-            dirs[:] = [d for d in dirs if d not in {'node_modules', '.git', 'dist', 'build', '.next', 'artifacts'}]
+            dirs[:] = [d for d in dirs if d not in {'node_modules', '.git', 'dist', 'build', '.next', 'artifacts', '_reports'}]
             for file in files:
                 if Path(file).suffix in extensions:
                     self.audit_file(os.path.join(root, file))
