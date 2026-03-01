@@ -1,10 +1,13 @@
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { classifyLinkedDrift } from "./classify-linked-drift.mjs";
 
 const ROOT = process.cwd();
 const DRIFT_SQL_PATH = path.resolve(ROOT, "drift.sql");
 const DRIFT_ERR_PATH = path.resolve(ROOT, "drift.err");
+const REMOTE_DUMP_SQL_PATH = path.resolve(ROOT, "_reports", "sql", "remote_public_ci_dump.sql");
+const DRIFT_CLASSIFICATION_REPORT_PATH = path.resolve(ROOT, "_reports", "sql", "drift_classification_report.txt");
 
 function parsePositiveInt(value, fallback) {
     const parsed = Number.parseInt(String(value ?? ""), 10);
@@ -192,6 +195,53 @@ function hasExecutableDriftSql(sqlText) {
     return /\b(CREATE|ALTER|DROP|INSERT|UPDATE|DELETE)\b/i.test(cleaned);
 }
 
+function classifyDriftAgainstRemoteDump(driftSql) {
+    if (!fs.existsSync(REMOTE_DUMP_SQL_PATH)) {
+        return {
+            status: "missing_remote_dump",
+            classification: null,
+            error: `Remote dump file not found: ${REMOTE_DUMP_SQL_PATH}`
+        };
+    }
+
+    try {
+        const remoteDumpSql = fs.readFileSync(REMOTE_DUMP_SQL_PATH, "utf8");
+        const classification = classifyLinkedDrift({
+            driftSql,
+            remoteDumpSql
+        });
+
+        const report = [
+            "# Linked Drift Classification Report",
+            "",
+            `classification=${classification.classification}`,
+            `actionable=${classification.actionable}`,
+            `has_non_function_executable_sql=${classification.hasNonFunctionExecutableSql}`,
+            `drift_function_count=${classification.driftFunctionCount}`,
+            `remote_function_count=${classification.remoteFunctionCount}`,
+            `drift_functions=${classification.driftFunctionNames.join(",")}`,
+            `unmatched_functions=${classification.unmatchedFunctionNames.join(",")}`,
+            "",
+            `summary=${classification.summary}`,
+        ].join("\n");
+
+        fs.mkdirSync(path.dirname(DRIFT_CLASSIFICATION_REPORT_PATH), { recursive: true });
+        fs.writeFileSync(DRIFT_CLASSIFICATION_REPORT_PATH, `${report}\n`, "utf8");
+
+        return {
+            status: "ok",
+            classification,
+            error: null
+        };
+    } catch (error) {
+        return {
+            status: "classification_error",
+            classification: null,
+            error: error instanceof Error ? error.message : String(error)
+        };
+    }
+}
+
 async function main() {
     loadDbPasswordFromEnvFile();
     ensureDbPassword();
@@ -216,8 +266,24 @@ async function main() {
     }
 
     if (hasExecutableDriftSql(stdout)) {
-        console.error("❌ Database drift detected in public schema. Please create a migration for manual changes.");
-        process.exit(1);
+        const classificationResult = classifyDriftAgainstRemoteDump(stdout);
+
+        if (classificationResult.status !== "ok") {
+            console.error(`❌ Database drift detected in public schema. ${classificationResult.error}`);
+            process.exit(1);
+        }
+
+        const classification = classificationResult.classification;
+        console.log(
+            `Drift classification: ${classification.classification} (actionable=${classification.actionable})`
+        );
+
+        if (classification.actionable) {
+            console.error("❌ Database drift detected in public schema. Please create a migration for manual changes.");
+            process.exit(1);
+        }
+
+        console.warn("⚠️ Drift SQL yalnızca kanonik olarak remote ile eşleşen fonksiyon replay içeriyor; check başarılı sayıldı.");
     }
 
     console.log("✅ No database drift detected in public schema.");

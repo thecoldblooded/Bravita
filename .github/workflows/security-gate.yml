@@ -338,9 +338,15 @@ jobs:
           fi
 
           if [ -s drift.sql ]; then
-            # If the file is not empty, check if it contains actual SQL changes
-            # (migra sometimes outputs comments)
-            if grep -q "CREATE\|ALTER\|DROP\|INSERT\|UPDATE\|DELETE" drift.sql; then
+            log "drift.sql is non-empty; running classifier against remote public dump"
+
+            CLASSIFY_EXIT=0
+            node scripts/classify-linked-drift.mjs \
+              drift.sql \
+              _reports/sql/remote_public_ci_dump.sql \
+              _reports/sql/drift_classification_report.txt || CLASSIFY_EXIT=$?
+
+            if [ "$CLASSIFY_EXIT" -ne 0 ]; then
               echo "❌ Database drift detected in public schema. Please create a migration for manual changes."
               exit 1
             fi
@@ -363,4 +369,5 @@ jobs:
             _reports/sql/remote_public_ci_dump.sql
             _reports/sql/remote_public_ci_dump.out
             _reports/sql/remote_public_ci_dump.err
+            _reports/sql/drift_classification_report.txt
 
