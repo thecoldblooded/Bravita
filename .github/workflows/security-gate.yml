@@ -14,7 +14,6 @@ jobs:
     env:
       SKIP_SUPABASE: 'false'
       SKIP_DRIFT: 'false'
-      SOCKET_CLI_API_TOKEN: ${{ secrets.SOCKET_CLI_API_TOKEN }}
 
     steps:
       - name: Checkout
@@ -95,8 +94,37 @@ jobs:
           fi
 
       - name: Diagnose Socket token availability
+        env:
+          SOCKET_CLI_API_TOKEN: ${{ secrets['SOCKET_CLI_API_TOKEN'] }}
         run: |
           echo "GitHub event: $GITHUB_EVENT_NAME"
+          echo "Repository: $GITHUB_REPOSITORY"
+          echo "Ref: $GITHUB_REF"
+          echo "Head ref: ${GITHUB_HEAD_REF:-<none>}"
+          echo "Base ref: ${GITHUB_BASE_REF:-<none>}"
+          echo "Event payload path exists: $([ -f "$GITHUB_EVENT_PATH" ] && echo yes || echo no)"
+
+          python - <<'PY'
+          import json
+          import os
+
+          event_path = os.getenv("GITHUB_EVENT_PATH")
+          pr_number = None
+          pr_from_fork = None
+
+          if event_path and os.path.exists(event_path):
+              with open(event_path, "r", encoding="utf-8") as handle:
+                  payload = json.load(handle)
+
+              pull_request = payload.get("pull_request") or {}
+              pr_number = pull_request.get("number") or payload.get("number")
+              head_repo = (pull_request.get("head") or {}).get("repo") or {}
+              pr_from_fork = head_repo.get("fork")
+
+          print(f"PR number: {pr_number}")
+          print(f"PR from fork: {pr_from_fork}")
+          PY
+
           if [ -n "${SOCKET_CLI_API_TOKEN:-}" ]; then
             echo "SOCKET_CLI_API_TOKEN present: yes"
             echo "SOCKET_CLI_API_TOKEN length: ${#SOCKET_CLI_API_TOKEN}"
@@ -106,6 +134,8 @@ jobs:
           fi
 
       - name: Socket.dev CI scan
+        env:
+          SOCKET_CLI_API_TOKEN: ${{ secrets['SOCKET_CLI_API_TOKEN'] }}
         run: npm run socket:ci
 
       - name: Audit dependencies
@@ -194,36 +224,66 @@ jobs:
 
       - name: Check linked migrations
         if: ${{ env.SKIP_SUPABASE != 'true' && env.SKIP_DRIFT != 'true' }}
+        timeout-minutes: 12
         env:
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: |
+          set -euo pipefail
+
+          ts() {
+            date -u +"%Y-%m-%dT%H:%M:%SZ"
+          }
+
+          log() {
+            echo "[$(ts)] $*"
+          }
+
           # F-03: Detect drift between local schema and remote DB
           # Scope to public schema to avoid false positives from managed schemas (auth/storage/realtime internals).
+          log "Check linked migrations step started"
+
           if docker info >/dev/null 2>&1; then
-            echo "✅ Docker daemon reachable before drift check."
+            log "Docker daemon reachable before drift check"
           else
             echo "::warning::Docker daemon unreachable. Skipping Supabase drift check in CI."
             docker version || true
             exit 0
           fi
 
-          echo "Supabase CLI version (pre-diff):"
+          log "Supabase CLI version (pre-diff)"
           supabase --version || true
 
+          DRIFT_TIMEOUT_SECONDS=420
+          log "Running 'supabase db diff' with timeout ${DRIFT_TIMEOUT_SECONDS}s"
+
           DIFF_EXIT=0
-          supabase db diff --linked --use-migra --schema public > drift.sql 2> drift.err || DIFF_EXIT=$?
+          DIFF_START_EPOCH=$(date +%s)
+
+          timeout --signal=SIGINT --kill-after=30s "${DRIFT_TIMEOUT_SECONDS}s" \
+            supabase db diff --linked --use-migra --schema public > drift.sql 2> drift.err || DIFF_EXIT=$?
+
+          DIFF_END_EPOCH=$(date +%s)
+          DIFF_ELAPSED_SECONDS=$((DIFF_END_EPOCH - DIFF_START_EPOCH))
+
+          log "supabase db diff finished"
+          log "supabase db diff elapsed_seconds=${DIFF_ELAPSED_SECONDS} exit_code=${DIFF_EXIT}"
 
           SQL_BYTES=$(wc -c < drift.sql 2>/dev/null || echo 0)
           ERR_BYTES=$(wc -c < drift.err 2>/dev/null || echo 0)
-          echo "drift.sql size(bytes): $SQL_BYTES"
-          echo "drift.err size(bytes): $ERR_BYTES"
+          log "drift.sql size(bytes): ${SQL_BYTES}"
+          log "drift.err size(bytes): ${ERR_BYTES}"
 
-          echo "--- drift.err (last 80 lines) ---"
-          tail -n 80 drift.err || true
+          echo "--- drift.err (last 120 lines) ---"
+          tail -n 120 drift.err || true
 
           if [ -s drift.sql ]; then
             echo "--- drift.sql (first 120 lines) ---"
             sed -n '1,120p' drift.sql || true
+          fi
+
+          if [ "$DIFF_EXIT" -eq 124 ] || [ "$DIFF_EXIT" -eq 137 ]; then
+            echo "::error::supabase db diff timed out after ${DRIFT_TIMEOUT_SECONDS}s"
+            exit 1
           fi
 
           if [ "$DIFF_EXIT" -ne 0 ]; then
@@ -239,5 +299,6 @@ jobs:
               exit 1
             fi
           fi
-          echo "✅ No database drift detected in public schema."
+
+          log "No database drift detected in public schema"
 

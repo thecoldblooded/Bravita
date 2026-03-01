@@ -6,6 +6,23 @@ const ROOT = process.cwd();
 const DRIFT_SQL_PATH = path.resolve(ROOT, "drift.sql");
 const DRIFT_ERR_PATH = path.resolve(ROOT, "drift.err");
 
+function parsePositiveInt(value, fallback) {
+    const parsed = Number.parseInt(String(value ?? ""), 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+const DRIFT_TIMEOUT_MS = parsePositiveInt(process.env.SUPABASE_DRIFT_TIMEOUT_MS, 7 * 60 * 1000);
+const DRIFT_HEARTBEAT_MS = 30 * 1000;
+const DRIFT_KILL_GRACE_MS = 30 * 1000;
+
+function nowIso() {
+    return new Date().toISOString();
+}
+
+function logWithTimestamp(message) {
+    console.log(`[${nowIso()}] ${message}`);
+}
+
 function loadDbPasswordFromEnvFile() {
     try {
         const envPath = path.resolve(ROOT, ".env");
@@ -71,6 +88,38 @@ function runSupabaseDiff() {
 
         const stdoutChunks = [];
         const stderrChunks = [];
+        const startedAt = Date.now();
+        let timedOut = false;
+
+        const heartbeatTimer = setInterval(() => {
+            const elapsedSeconds = Math.floor((Date.now() - startedAt) / 1000);
+            logWithTimestamp(`supabase db diff still running (elapsed=${elapsedSeconds}s)`);
+        }, DRIFT_HEARTBEAT_MS);
+        heartbeatTimer.unref();
+
+        const timeoutTimer = setTimeout(() => {
+            timedOut = true;
+            const timeoutSeconds = Math.floor(DRIFT_TIMEOUT_MS / 1000);
+            console.error(`supabase db diff timed out after ${timeoutSeconds}s; sending SIGTERM...`);
+
+            try {
+                child.kill("SIGTERM");
+            } catch {
+                // no-op
+            }
+
+            setTimeout(() => {
+                if (child.exitCode === null && child.signalCode === null) {
+                    console.error("supabase db diff did not terminate after SIGTERM; sending SIGKILL...");
+                    try {
+                        child.kill("SIGKILL");
+                    } catch {
+                        // no-op
+                    }
+                }
+            }, DRIFT_KILL_GRACE_MS).unref();
+        }, DRIFT_TIMEOUT_MS);
+        timeoutTimer.unref();
 
         child.stdout.on("data", (chunk) => {
             stdoutChunks.push(Buffer.from(chunk));
@@ -81,12 +130,18 @@ function runSupabaseDiff() {
         });
 
         child.on("error", (error) => {
+            clearInterval(heartbeatTimer);
+            clearTimeout(timeoutTimer);
             reject(error);
         });
 
         child.on("close", (code) => {
+            clearInterval(heartbeatTimer);
+            clearTimeout(timeoutTimer);
+
             const stdout = Buffer.concat(stdoutChunks).toString("utf8");
             const stderr = Buffer.concat(stderrChunks).toString("utf8");
+            const elapsedMs = Date.now() - startedAt;
 
             fs.writeFileSync(DRIFT_SQL_PATH, stdout, "utf8");
             fs.writeFileSync(DRIFT_ERR_PATH, stderr, "utf8");
@@ -94,7 +149,9 @@ function runSupabaseDiff() {
             resolve({
                 exitCode: typeof code === "number" ? code : 1,
                 stdout,
-                stderr
+                stderr,
+                timedOut,
+                elapsedMs
             });
         });
     });
@@ -139,8 +196,19 @@ async function main() {
     loadDbPasswordFromEnvFile();
     ensureDbPassword();
 
-    const { exitCode, stdout, stderr } = await runSupabaseDiff();
+    const timeoutSeconds = Math.floor(DRIFT_TIMEOUT_MS / 1000);
+    logWithTimestamp(`Starting linked drift check with timeout=${timeoutSeconds}s`);
+
+    const { exitCode, stdout, stderr, timedOut, elapsedMs } = await runSupabaseDiff();
+    const elapsedSeconds = Math.floor(elapsedMs / 1000);
+    logWithTimestamp(`supabase db diff completed (elapsed=${elapsedSeconds}s, exitCode=${exitCode}, timedOut=${timedOut})`);
+
     printDiagnostics(stdout, stderr);
+
+    if (timedOut) {
+        console.error(`supabase db diff timed out after ${timeoutSeconds}s`);
+        process.exit(124);
+    }
 
     if (exitCode !== 0) {
         console.error(`supabase db diff failed with exit code ${exitCode}`);
