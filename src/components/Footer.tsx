@@ -245,11 +245,15 @@ function Footer() {
                   const isPlaceholderLink = link.href === "#";
 
                   if (isLegalModalLink) {
-                    const typedLink = link as any;
+                    const legalHref =
+                      "seoHref" in link && typeof link.seoHref === "string"
+                        ? link.seoHref
+                        : link.href;
+
                     return (
                       <li key={link.label} className="relative">
                         <a
-                          href={typedLink.seoHref || link.href}
+                          href={legalHref}
                           onClick={(e: React.MouseEvent) => {
                             e.preventDefault();
                             setActiveLegalKey(legalKey);

@@ -325,7 +325,7 @@ function CaptchaSection({ siteKey, captchaRef, onTokenChange }: CaptchaSectionPr
             });
             onTokenChange(token);
           }}
-          onError={(err: any) => {
+          onError={(err: unknown) => {
             const errMessage = err instanceof Error
               ? err.message
               : typeof err === "string"
