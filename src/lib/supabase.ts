@@ -16,7 +16,39 @@ const inMemoryAuthStorage = {
   },
 };
 
-const authStorage = inMemoryAuthStorage;
+const getSessionStorage = (): Storage | null => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const probeKey = "__bravita_auth_storage_probe__";
+    window.sessionStorage.setItem(probeKey, "1");
+    window.sessionStorage.removeItem(probeKey);
+    return window.sessionStorage;
+  } catch {
+    return null;
+  }
+};
+
+const sessionAuthStorage = (() => {
+  const storage = getSessionStorage();
+  if (!storage) {
+    return null;
+  }
+
+  return {
+    getItem: (key: string): string | null => storage.getItem(key),
+    setItem: (key: string, value: string): void => {
+      storage.setItem(key, value);
+    },
+    removeItem: (key: string): void => {
+      storage.removeItem(key);
+    },
+  };
+})();
+
+const authStorage = sessionAuthStorage ?? inMemoryAuthStorage;
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error(

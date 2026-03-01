@@ -113,14 +113,23 @@ export function useAuthOperations() {
     setError(null);
 
     try {
+      if (isBffAuthEnabled()) {
+        const oauthStartUrl = "/api/auth/oauth/google/start";
+        window.location.assign(oauthStartUrl);
+        return { url: oauthStartUrl };
+      }
+
+      const redirectTo = `${window.location.origin}`;
       const { data: authData, error: authError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}`,
+          redirectTo,
         },
       });
 
-      if (authError) throw authError;
+      if (authError) {
+        throw authError;
+      }
 
       // Profile will be created after OAuth callback
       return authData;

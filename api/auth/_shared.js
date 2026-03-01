@@ -1,11 +1,17 @@
+import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+
 const REFRESH_COOKIE_NAME = "bravita_refresh_token";
 const REFRESH_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
+const OAUTH_STATE_COOKIE_NAME = "bravita_oauth_state";
+const OAUTH_CODE_VERIFIER_COOKIE_NAME = "bravita_oauth_code_verifier";
+const OAUTH_COOKIE_MAX_AGE_SECONDS = 60 * 10;
 const DEFAULT_SITE_URL = "https://bravita.com.tr";
 const DEFAULT_ALLOWED_AUTH_ORIGINS = [
   "https://bravita.com.tr",
   "https://bravita.vercel.app",
   "https://www.bravita.com.tr",
   "http://localhost:8080",
+  "http://127.0.0.1:8080",
 ];
 
 function normalizeOrigin(value) {
@@ -122,11 +128,23 @@ function assertValidAuthPostRequest(req, res) {
   const allowedOrigins = loadAllowedAuthOrigins();
 
   if (!requestOrigin) {
+    console.warn("[AUTH] auth_post_forbidden_missing_origin", {
+      path: req.url ?? null,
+      method: req.method ?? null,
+      hasOriginHeader: Boolean(req.headers.origin),
+      hasRefererHeader: Boolean(req.headers.referer),
+    });
     sendJson(res, 403, { error: "Forbidden: missing origin" });
     return false;
   }
 
   if (!allowedOrigins.includes(requestOrigin)) {
+    console.warn("[AUTH] auth_post_forbidden_invalid_origin", {
+      path: req.url ?? null,
+      method: req.method ?? null,
+      requestOrigin,
+      allowedOrigins,
+    });
     sendJson(res, 403, { error: "Forbidden: invalid origin" });
     return false;
   }
@@ -203,6 +221,161 @@ function buildClearRefreshCookie(req) {
   return `${REFRESH_COOKIE_NAME}=; HttpOnly; Path=/api/auth; SameSite=Lax; Max-Age=0${securePart}`;
 }
 
+function buildScopedCookie(name, value, req, path, maxAgeSeconds) {
+  const securePart = isSecureRequest(req) ? "; Secure" : "";
+  return `${name}=${encodeURIComponent(value)}; HttpOnly; Path=${path}; SameSite=Lax; Max-Age=${maxAgeSeconds}${securePart}`;
+}
+
+function buildScopedClearCookie(name, req, path) {
+  const securePart = isSecureRequest(req) ? "; Secure" : "";
+  return `${name}=; HttpOnly; Path=${path}; SameSite=Lax; Max-Age=0${securePart}`;
+}
+
+function buildOAuthStateCookie(state, req) {
+  return buildScopedCookie(OAUTH_STATE_COOKIE_NAME, state, req, "/api/auth/oauth", OAUTH_COOKIE_MAX_AGE_SECONDS);
+}
+
+function buildOAuthCodeVerifierCookie(codeVerifier, req) {
+  return buildScopedCookie(OAUTH_CODE_VERIFIER_COOKIE_NAME, codeVerifier, req, "/api/auth/oauth", OAUTH_COOKIE_MAX_AGE_SECONDS);
+}
+
+function buildClearOAuthStateCookie(req) {
+  return buildScopedClearCookie(OAUTH_STATE_COOKIE_NAME, req, "/api/auth/oauth");
+}
+
+function buildClearOAuthCodeVerifierCookie(req) {
+  return buildScopedClearCookie(OAUTH_CODE_VERIFIER_COOKIE_NAME, req, "/api/auth/oauth");
+}
+
+function readOAuthStateFromRequest(req) {
+  const cookies = parseCookies(req);
+  const state = cookies[OAUTH_STATE_COOKIE_NAME];
+  return typeof state === "string" && state.length > 0 ? state : null;
+}
+
+function readOAuthCodeVerifierFromRequest(req) {
+  const cookies = parseCookies(req);
+  const codeVerifier = cookies[OAUTH_CODE_VERIFIER_COOKIE_NAME];
+  return typeof codeVerifier === "string" && codeVerifier.length > 0 ? codeVerifier : null;
+}
+
+function toBase64Url(bufferValue) {
+  return bufferValue
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
+}
+
+function generateOAuthPkcePair() {
+  const verifier = toBase64Url(randomBytes(32));
+  const challenge = toBase64Url(createHash("sha256").update(verifier).digest());
+  const state = toBase64Url(randomBytes(24));
+
+  return { verifier, challenge, state };
+}
+
+function safeEqualStrings(left, right) {
+  if (typeof left !== "string" || typeof right !== "string") {
+    return false;
+  }
+
+  const leftBuffer = Buffer.from(left);
+  const rightBuffer = Buffer.from(right);
+
+  if (leftBuffer.length !== rightBuffer.length) {
+    return false;
+  }
+
+  return timingSafeEqual(leftBuffer, rightBuffer);
+}
+
+function firstForwardedHeaderValue(value) {
+  const normalized = normalizeHeaderValue(value);
+  if (!normalized) {
+    return "";
+  }
+
+  return normalized.split(",")[0].trim();
+}
+
+function resolveSiteOrigin(req) {
+  const allowedOrigins = loadAllowedAuthOrigins();
+  const candidates = [];
+
+  const requestOrigin = extractRequestOrigin(req);
+  if (requestOrigin) {
+    candidates.push(requestOrigin);
+  }
+
+  const forwardedHost = firstForwardedHeaderValue(req.headers["x-forwarded-host"]);
+  if (forwardedHost) {
+    const forwardedProto = firstForwardedHeaderValue(req.headers["x-forwarded-proto"]);
+    const protocol = forwardedProto.includes("https") ? "https" : "http";
+    const forwardedOrigin = normalizeOrigin(`${protocol}://${forwardedHost}`);
+    if (forwardedOrigin) {
+      candidates.push(forwardedOrigin);
+    }
+  }
+
+  const host = firstForwardedHeaderValue(req.headers.host);
+  if (host) {
+    const protocol = isSecureRequest(req) ? "https" : "http";
+    const hostOrigin = normalizeOrigin(`${protocol}://${host}`);
+    if (hostOrigin) {
+      candidates.push(hostOrigin);
+    }
+  }
+
+  const configuredSiteOrigin = normalizeOrigin(
+    process.env.AUTH_SITE_URL
+    || process.env.SITE_URL
+    || process.env.VITE_SITE_URL
+    || DEFAULT_SITE_URL,
+  );
+  if (configuredSiteOrigin) {
+    candidates.push(configuredSiteOrigin);
+  }
+
+  for (const candidate of candidates) {
+    if (candidate && allowedOrigins.includes(candidate)) {
+      return candidate;
+    }
+  }
+
+  return configuredSiteOrigin || normalizeOrigin(DEFAULT_SITE_URL) || "https://bravita.com.tr";
+}
+
+function buildSiteUrl(req, pathname = "/", query = {}) {
+  const target = new URL(resolveSiteOrigin(req));
+  target.pathname = pathname.startsWith("/") ? pathname : `/${pathname}`;
+  target.search = "";
+
+  if (query && typeof query === "object") {
+    Object.entries(query).forEach(([key, value]) => {
+      if (typeof value === "string" && value.trim().length > 0) {
+        target.searchParams.set(key, value);
+      }
+    });
+  }
+
+  return target.toString();
+}
+
+function buildGoogleOAuthAuthorizeUrl(req, state, codeChallenge) {
+  const { url } = getSupabaseConfig();
+  const authorizeUrl = new URL("/auth/v1/authorize", url);
+  const callbackUrl = new URL(buildSiteUrl(req, "/api/auth/oauth/callback"));
+
+  callbackUrl.searchParams.set("oauth_state", state);
+
+  authorizeUrl.searchParams.set("provider", "google");
+  authorizeUrl.searchParams.set("redirect_to", callbackUrl.toString());
+  authorizeUrl.searchParams.set("code_challenge", codeChallenge);
+  authorizeUrl.searchParams.set("code_challenge_method", "S256");
+  return authorizeUrl.toString();
+}
+
 async function exchangePasswordForSession(email, password, captchaToken) {
   const payload = { email, password };
   if (captchaToken) {
@@ -219,6 +392,16 @@ async function refreshSessionFromToken(refreshToken) {
   return callSupabaseAuth("/auth/v1/token?grant_type=refresh_token", {
     method: "POST",
     body: { refresh_token: refreshToken },
+  });
+}
+
+async function exchangePkceCodeForSession(authCode, codeVerifier) {
+  return callSupabaseAuth("/auth/v1/token?grant_type=pkce", {
+    method: "POST",
+    body: {
+      auth_code: authCode,
+      code_verifier: codeVerifier,
+    },
   });
 }
 
@@ -249,6 +432,13 @@ async function callSupabaseAuth(path, options = {}) {
 
 function sendJson(res, statusCode, payload) {
   res.status(statusCode).setHeader("Cache-Control", "no-store").json(payload);
+}
+
+function sendRedirect(res, location, statusCode = 302) {
+  res.statusCode = statusCode;
+  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("Location", location);
+  res.end();
 }
 
 function sanitizeSessionResponse(sessionPayload) {
@@ -285,18 +475,33 @@ function extractAuthErrorMessage(payload, fallbackMessage) {
 
 export {
   REFRESH_COOKIE_NAME,
+  OAUTH_STATE_COOKIE_NAME,
+  OAUTH_CODE_VERIFIER_COOKIE_NAME,
   parseRequestBody,
   parseCookies,
   readRefreshTokenFromRequest,
+  readOAuthStateFromRequest,
+  readOAuthCodeVerifierFromRequest,
   buildRefreshCookie,
   buildClearRefreshCookie,
+  buildOAuthStateCookie,
+  buildOAuthCodeVerifierCookie,
+  buildClearOAuthStateCookie,
+  buildClearOAuthCodeVerifierCookie,
+  generateOAuthPkcePair,
+  safeEqualStrings,
+  buildSiteUrl,
+  buildGoogleOAuthAuthorizeUrl,
   exchangePasswordForSession,
   refreshSessionFromToken,
+  exchangePkceCodeForSession,
   callSupabaseAuth,
   sendJson,
+  sendRedirect,
   sanitizeSessionResponse,
   sanitizeSignupResponse,
   extractAuthErrorMessage,
   assertValidAuthPostRequest,
   logAuthDiagnostic,
+  resolveSiteOrigin,
 };

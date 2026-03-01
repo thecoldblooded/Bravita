@@ -94,8 +94,8 @@ function Footer() {
     {
       title: t('footer.legal_support'),
       links: [
-        { label: t('footer.legal_terms'), href: "#legal:terms" },
-        { label: t('footer.legal_privacy'), href: "#legal:privacy" },
+        { label: t('footer.legal_terms'), href: "#legal:terms", seoHref: "/kullanim-kosullari" },
+        { label: t('footer.legal_privacy'), href: "#legal:privacy", seoHref: "/gizlilik-politikasi" },
         { label: t('footer.legal_cookies'), href: "#legal:cookies" },
         { label: t('footer.legal_notice'), href: "#legal:legalNotice" },
         { label: t('footer.kvkk'), href: "#legal:kvkk" },
@@ -245,20 +245,22 @@ function Footer() {
                   const isPlaceholderLink = link.href === "#";
 
                   if (isLegalModalLink) {
+                    const typedLink = link as any;
                     return (
                       <li key={link.label} className="relative">
-                        <button
-                          type="button"
-                          onClick={() => {
+                        <a
+                          href={typedLink.seoHref || link.href}
+                          onClick={(e: React.MouseEvent) => {
+                            e.preventDefault();
                             setActiveLegalKey(legalKey);
                             if (window.location.hash !== `#legal:${legalKey}`) {
                               window.history.replaceState(null, "", `#legal:${legalKey}`);
                             }
                           }}
-                          className="text-neutral-400 hover:text-bravita-orange transition-colors"
+                          className="text-neutral-400 hover:text-bravita-orange transition-colors cursor-pointer"
                         >
                           {link.label}
-                        </button>
+                        </a>
                       </li>
                     );
                   }

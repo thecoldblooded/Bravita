@@ -22,6 +22,8 @@ const Checkout = lazy(() => import("./pages/Checkout"));
 const OrderConfirmation = lazy(() => import("./pages/OrderConfirmation"));
 const ThreeDSRedirect = lazy(() => import("./pages/ThreeDSRedirect"));
 const PaymentFailed = lazy(() => import("./pages/PaymentFailed"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const PeriodicGif = lazy(() => import("@/components/PeriodicGif"));
 const PromotionMarquee = lazy(() => import("@/components/PromotionMarquee"));
 const CookieConsent = lazy(() => import("@/components/CookieConsent"));
@@ -106,6 +108,8 @@ const AppContent = () => {
           <Route path="/order-confirmation" element={<OrderConfirmation />} />
           <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
           <Route path="/email-preview" element={<EmailPreview />} />
+          <Route path="/gizlilik-politikasi" element={<PrivacyPolicy />} />
+          <Route path="/kullanim-kosullari" element={<TermsOfService />} />
 
           {/* Admin routes */}
           <Route path="/admin" element={<ProtectedAdminRoute><AdminDashboard /></ProtectedAdminRoute>} />

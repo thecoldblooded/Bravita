@@ -16,12 +16,19 @@ export default defineConfig(({ mode }) => {
     throw new Error("Security misconfiguration: VITE_SKIP_CAPTCHA must not be true in production.");
   }
 
+  const bffAuthTarget = String(env.VITE_BFF_AUTH_TARGET || "http://127.0.0.1:3901").trim();
+
   return {
     // Treat .lottie files as static assets
     assetsInclude: ["**/*.lottie"],
     server: {
       host: "0.0.0.0",
       port: 8080,
+      proxy: {
+        "/api/auth": {
+          target: bffAuthTarget,
+        },
+      },
     },
     plugins: [
       ViteImageOptimizer({

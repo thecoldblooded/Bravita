@@ -325,7 +325,7 @@ function CaptchaSection({ siteKey, captchaRef, onTokenChange }: CaptchaSectionPr
             });
             onTokenChange(token);
           }}
-          onError={(err) => {
+          onError={(err: any) => {
             const errMessage = err instanceof Error
               ? err.message
               : typeof err === "string"
@@ -519,7 +519,11 @@ function IndividualSignupContent({
                     <FormLabel className="font-normal cursor-pointer">
                       {t("auth.agree_terms")}{" "}
                       <a
-                        href="#legal:terms"
+                        href="/kullanim-kosullari"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          window.location.hash = "#legal:terms";
+                        }}
                         className="text-orange-600 hover:underline"
                       >
                         {t("auth.terms_link")}
@@ -547,7 +551,11 @@ function IndividualSignupContent({
                     <FormLabel className="font-normal cursor-pointer">
                       {t("auth.agree_privacy")}{" "}
                       <a
-                        href="#legal:privacy"
+                        href="/gizlilik-politikasi"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          window.location.hash = "#legal:privacy";
+                        }}
                         className="text-orange-600 hover:underline"
                       >
                         {t("auth.privacy_link")}

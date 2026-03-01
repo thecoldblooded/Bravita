@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
 import http from "node:http";
 import { URL } from "node:url";
 
@@ -10,6 +12,66 @@ import resendHandler from "../api/auth/resend.js";
 import sessionHandler from "../api/auth/session.js";
 import signupHandler from "../api/auth/signup.js";
 import setSessionHandler from "../api/auth/set-session.js";
+import oauthGoogleStartHandler from "../api/auth/oauth/google/start.js";
+import oauthCallbackHandler from "../api/auth/oauth/callback.js";
+
+function loadEnvFileOnce(filePath) {
+    if (!existsSync(filePath)) {
+        return false;
+    }
+
+    const content = readFileSync(filePath, "utf8");
+    const lines = content.split(/\r?\n/u);
+
+    for (const rawLine of lines) {
+        const trimmed = rawLine.trim();
+        if (!trimmed || trimmed.startsWith("#")) {
+            continue;
+        }
+
+        const envLine = trimmed.startsWith("export ") ? trimmed.slice(7).trim() : trimmed;
+        const separatorIndex = envLine.indexOf("=");
+        if (separatorIndex <= 0) {
+            continue;
+        }
+
+        const key = envLine.slice(0, separatorIndex).trim();
+        if (!key || process.env[key] !== undefined) {
+            continue;
+        }
+
+        let value = envLine.slice(separatorIndex + 1).trim();
+        if (
+            (value.startsWith('"') && value.endsWith('"'))
+            || (value.startsWith("'") && value.endsWith("'"))
+        ) {
+            value = value.slice(1, -1);
+        }
+
+        process.env[key] = value;
+    }
+
+    return true;
+}
+
+const localEnvCandidates = [
+    path.resolve(process.cwd(), ".env.local"),
+    path.resolve(process.cwd(), ".env"),
+];
+
+for (const envPath of localEnvCandidates) {
+    if (loadEnvFileOnce(envPath)) {
+        break;
+    }
+}
+
+if (!process.env.SUPABASE_URL && process.env.VITE_SUPABASE_URL) {
+    process.env.SUPABASE_URL = process.env.VITE_SUPABASE_URL;
+}
+
+if (!process.env.SUPABASE_ANON_KEY && process.env.VITE_SUPABASE_ANON_KEY) {
+    process.env.SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY;
+}
 
 const MAX_BODY_BYTES = Number(process.env.BFF_MAX_BODY_BYTES || 1024 * 1024);
 
@@ -23,6 +85,8 @@ const routeHandlers = new Map([
     ["/api/auth/session", sessionHandler],
     ["/api/auth/signup", signupHandler],
     ["/api/auth/set-session", setSessionHandler],
+    ["/api/auth/oauth/google/start", oauthGoogleStartHandler],
+    ["/api/auth/oauth/callback", oauthCallbackHandler],
 ]);
 
 function attachExpressLikeHelpers(res) {
@@ -86,9 +150,28 @@ async function readBody(req) {
     });
 }
 
+function toExpressLikeQuery(searchParams) {
+    const query = Object.create(null);
+
+    for (const [key, value] of searchParams.entries()) {
+        if (!Object.prototype.hasOwnProperty.call(query, key)) {
+            query[key] = value;
+            continue;
+        }
+
+        const existing = query[key];
+        query[key] = Array.isArray(existing) ? [...existing, value] : [existing, value];
+    }
+
+    return query;
+}
+
 const server = http.createServer(async (req, res) => {
     const response = attachExpressLikeHelpers(res);
     const requestUrl = new URL(req.url || "/", `http://${req.headers.host || "127.0.0.1"}`);
+
+    req.path = requestUrl.pathname;
+    req.query = toExpressLikeQuery(requestUrl.searchParams);
 
     if (requestUrl.pathname === "/healthz") {
         return response.status(200).json({ ok: true, service: "bff-auth" });

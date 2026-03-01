@@ -298,6 +298,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
+      const hashParams = new URLSearchParams(
+        window.location.hash.startsWith("#") ? window.location.hash.slice(1) : "",
+      );
+      const queryParams = new URLSearchParams(window.location.search);
+
       // Avoid processing the same session state repeatedly if events fire back-to-back
       const sessionId = newSession?.user?.id || 'none';
       if (lastProcessedRef.current === sessionId && (event === 'INITIAL_SESSION' || event === 'SIGNED_IN')) {
@@ -359,6 +364,70 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Close splash screen on INITIAL_SESSION - session state is loaded
       if (event === "INITIAL_SESSION") {
+        if (!newSession && queryParams.has("code")) {
+          const oauthCode = queryParams.get("code");
+
+          if (!bffAuthEnabled && oauthCode) {
+            try {
+              const { data: exchangeData } = await supabase.auth.exchangeCodeForSession(oauthCode);
+
+              let exchangedSession = exchangeData?.session ?? null;
+              if (!exchangedSession) {
+                const { data: { session: sessionAfterExchange } } = await supabase.auth.getSession();
+                exchangedSession = sessionAfterExchange;
+              }
+
+              if (exchangedSession?.user && mounted) {
+                setSession(exchangedSession);
+
+                const exchangedStub = getInitialUser(exchangedSession);
+                if (exchangedStub) {
+                  setUserDebug(exchangedStub);
+                }
+              }
+            } catch {
+              // Ignore query-code exchange errors; fallback logic below will continue.
+            }
+          }
+
+          const cleanedQuery = new URLSearchParams(window.location.search);
+          cleanedQuery.delete("code");
+          cleanedQuery.delete("state");
+          cleanedQuery.delete("error");
+          cleanedQuery.delete("error_description");
+          cleanedQuery.delete("error_code");
+
+          const cleanedSearch = cleanedQuery.toString();
+          const cleanedUrl = `${window.location.pathname}${cleanedSearch ? `?${cleanedSearch}` : ""}${window.location.hash}`;
+          window.history.replaceState({}, document.title, cleanedUrl);
+
+          if (mounted) {
+            setIsSplashScreenActive(false);
+            setIsLoading(false);
+          }
+
+          return;
+        }
+
+        if (!newSession && (queryParams.has("error") || queryParams.has("error_description") || queryParams.has("error_code"))) {
+          const cleanedQuery = new URLSearchParams(window.location.search);
+          cleanedQuery.delete("error");
+          cleanedQuery.delete("error_description");
+          cleanedQuery.delete("error_code");
+          cleanedQuery.delete("state");
+
+          const cleanedSearch = cleanedQuery.toString();
+          const cleanedUrl = `${window.location.pathname}${cleanedSearch ? `?${cleanedSearch}` : ""}${window.location.hash}`;
+          window.history.replaceState({}, document.title, cleanedUrl);
+
+          if (mounted) {
+            setIsSplashScreenActive(false);
+            setIsLoading(false);
+          }
+
+          return;
+        }
+
         // If session is null but URL has fragment (OAuth callback), retrieve session again
         if (!newSession && window.location.hash) {
           supabase.auth.getSession().then(async ({ data: { session: urlSession } }) => {
