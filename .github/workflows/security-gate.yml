@@ -14,6 +14,7 @@ jobs:
     env:
       SKIP_SUPABASE: 'false'
       SKIP_DRIFT: 'false'
+      SOCKET_CLI_API_TOKEN: ${{ secrets.SOCKET_CLI_API_TOKEN }}
 
     steps:
       - name: Checkout
@@ -92,6 +93,20 @@ jobs:
           else
             echo "::warning::Docker daemon is not reachable. Drift check may fail when creating shadow database."
           fi
+
+      - name: Diagnose Socket token availability
+        run: |
+          echo "GitHub event: $GITHUB_EVENT_NAME"
+          if [ -n "${SOCKET_CLI_API_TOKEN:-}" ]; then
+            echo "SOCKET_CLI_API_TOKEN present: yes"
+            echo "SOCKET_CLI_API_TOKEN length: ${#SOCKET_CLI_API_TOKEN}"
+          else
+            echo "::warning::SOCKET_CLI_API_TOKEN present: no"
+            echo "::warning::Likely causes: secret scope/name mismatch OR fork PR secret restriction."
+          fi
+
+      - name: Socket.dev CI scan
+        run: npm run socket:ci
 
       - name: Audit dependencies
         run: npm audit --audit-level=high

@@ -78,3 +78,7 @@ organize_reports.py
 !USER_GUIDE.md
 !.agent/**/*.md
 deploy.tar.gz
+dist-deploy.zip
+deploy-dist-posix.tar.gz
+drift.err
+drift.sql

@@ -10,8 +10,10 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "bff:auth": "node scripts/bff-auth-server.mjs",
+    "socket:ci": "node scripts/run-socket-ci.mjs",
     "supabase:migration:list": "node scripts/check-linked-migrations.mjs",
-    "security:gate": "npm audit --audit-level=high && npm run lint && npm run build && npm run supabase:migration:list"
+    "supabase:drift:check": "node scripts/check-linked-drift.mjs",
+    "security:gate": "npm run socket:ci && npm audit --audit-level=high && npm run lint && npm run build && npm run supabase:migration:list && npm run supabase:drift:check"
   },
   "dependencies": {
     "@hcaptcha/react-hcaptcha": "^2.0.2",
