@@ -97,7 +97,7 @@ function Footer() {
     {
       title: t('footer.legal_support'),
       links: [
-        { label: t('footer.legal_terms'), href: "/kullanim-kosullari" },
+        { label: t('footer.legal_terms'), href: "#legal:terms", seoHref: "/kullanim-kosullari" },
         { label: t('footer.legal_privacy'), href: "/gizlilik-politikasi" },
         { label: t('footer.legal_cookies'), href: "#legal:cookies" },
         { label: t('footer.legal_notice'), href: "#legal:legalNotice" },
