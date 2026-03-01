@@ -322,7 +322,7 @@
             "must_accept_privacy": "You must accept privacy policy",
             "must_accept_kvkk": "You must accept KVKK notice"
         },
-        "password_reset_sent": "Password reset link sent to your email",
+        "password_reset_sent": "If this email is registered, a password reset link will be sent",
         "email_required_for_reset": "Please enter your email address to reset password",
         "forgot_password_info": "Enter your email address and click this link to reset password",
         "update_password": "Update Password",

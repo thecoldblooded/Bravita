@@ -201,29 +201,45 @@ export default function AdminSupport() {
 
             // Invoke edge function for reply email
             try {
-                const authHeaders = await getFunctionAuthHeaders("admin:support_ticket_replied_notification");
+                const authHeaders = await getFunctionAuthHeaders(
+                    "admin:support_ticket_replied_notification",
+                    { forceRefresh: true },
+                );
+                const authToken =
+                    String(authHeaders.Authorization ?? "").replace(/^Bearer\s+/i, "").trim() ||
+                    String(authHeaders["x-user-jwt"] ?? "").replace(/^Bearer\s+/i, "").trim();
+
+                if (!authToken) {
+                    throw new Error("AUTH_SESSION_REQUIRED");
+                }
+
                 const anonKey = String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? "").trim();
                 const invokeHeaders: Record<string, string> = {
-                    ...authHeaders,
+                    Authorization: `Bearer ${authToken}`,
+                    "x-user-jwt": authToken,
                     ...(anonKey ? { apikey: anonKey } : {}),
                 };
 
-                if (!invokeHeaders.Authorization && anonKey) {
-                    invokeHeaders.Authorization = `Bearer ${anonKey}`;
-                }
-
-                await supabase.functions.invoke("send-support-email", {
+                const { error: notifyError } = await supabase.functions.invoke("send-support-email", {
                     body: {
                         ticket_id: selectedTicket.id,
                         type: "ticket_replied",
                     },
                     headers: invokeHeaders,
                 });
+
+                if (notifyError) {
+                    throw notifyError;
+                }
             } catch {
-                // Bildirim e-postası başarısız olsa da yanıt akışını bozma
+                isEmailNotificationFailed = true;
             }
 
-            toast.success("Yanıt başarıyla gönderildi");
+            if (isEmailNotificationFailed) {
+                toast.warning("Yanıt kaydedildi ancak bildirim e-postası gönderilemedi.");
+            } else {
+                toast.success("Yanıt başarıyla gönderildi");
+            }
             setSelectedTicket(null);
             setReplyMessage("");
             fetchTickets();
@@ -236,6 +252,7 @@ export default function AdminSupport() {
 
     const handleCloseTicket = async (id: string, reason: string) => {
         setIsClosing(true);
+        let isEmailNotificationFailed = false;
         try {
             // Veri tutarlılığı için en güncel mesajı çek
             const { data: latestTicket, error: fetchError } = await supabase
@@ -284,29 +301,45 @@ export default function AdminSupport() {
 
             // Send closure email
             try {
-                const authHeaders = await getFunctionAuthHeaders("admin:support_ticket_closed_notification");
+                const authHeaders = await getFunctionAuthHeaders(
+                    "admin:support_ticket_closed_notification",
+                    { forceRefresh: true },
+                );
+                const authToken =
+                    String(authHeaders.Authorization ?? "").replace(/^Bearer\s+/i, "").trim() ||
+                    String(authHeaders["x-user-jwt"] ?? "").replace(/^Bearer\s+/i, "").trim();
+
+                if (!authToken) {
+                    throw new Error("AUTH_SESSION_REQUIRED");
+                }
+
                 const anonKey = String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? "").trim();
                 const invokeHeaders: Record<string, string> = {
-                    ...authHeaders,
+                    Authorization: `Bearer ${authToken}`,
+                    "x-user-jwt": authToken,
                     ...(anonKey ? { apikey: anonKey } : {}),
                 };
 
-                if (!invokeHeaders.Authorization && anonKey) {
-                    invokeHeaders.Authorization = `Bearer ${anonKey}`;
-                }
-
-                await supabase.functions.invoke("send-support-email", {
+                const { error: notifyError } = await supabase.functions.invoke("send-support-email", {
                     body: {
                         ticket_id: id,
                         type: "ticket_closed",
                     },
                     headers: invokeHeaders,
                 });
+
+                if (notifyError) {
+                    throw notifyError;
+                }
             } catch {
-                // Bildirim e-postası başarısız olsa da kapatma akışını bozma
+                isEmailNotificationFailed = true;
             }
 
-            toast.success("Talep kapatıldı ve üyeye bilgi verildi");
+            if (isEmailNotificationFailed) {
+                toast.warning("Talep kapatıldı ancak bilgilendirme e-postası gönderilemedi.");
+            } else {
+                toast.success("Talep kapatıldı ve üyeye bilgi verildi");
+            }
             fetchTickets();
             setCloseReason("");
         } catch (error) {

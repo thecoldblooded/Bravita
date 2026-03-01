@@ -2,6 +2,7 @@ import {
   assertValidAuthPostRequest,
   callSupabaseAuth,
   extractAuthErrorMessage,
+  logAuthDiagnostic,
   parseRequestBody,
   sendJson,
 } from "./_shared.js";
@@ -60,14 +61,46 @@ function sanitizeRecoverRedirect(redirectTo) {
   }
 }
 
-function buildRecoverPath(redirectTo) {
+function buildRecoverRequestTarget(redirectTo) {
   const safeRedirect = sanitizeRecoverRedirect(redirectTo);
   if (!safeRedirect) {
-    return "/auth/v1/recover";
+    return {
+      path: "/auth/v1/recover",
+      safeRedirect: null,
+    };
   }
 
   const query = new URLSearchParams({ redirect_to: safeRedirect }).toString();
-  return `/auth/v1/recover?${query}`;
+  return {
+    path: `/auth/v1/recover?${query}`,
+    safeRedirect,
+  };
+}
+
+function summarizeEmailForAudit(email) {
+  if (typeof email !== "string" || email.length === 0) {
+    return {
+      emailDomain: null,
+      emailLocalPartLength: 0,
+    };
+  }
+
+  const atIndex = email.indexOf("@");
+  if (atIndex <= 0 || atIndex === email.length - 1) {
+    return {
+      emailDomain: null,
+      emailLocalPartLength: email.length,
+    };
+  }
+
+  return {
+    emailDomain: email.slice(atIndex + 1).toLowerCase(),
+    emailLocalPartLength: atIndex,
+  };
+}
+
+function hasNonEmptyString(value) {
+  return typeof value === "string" && value.trim().length > 0;
 }
 
 export default async function handler(req, res) {
@@ -90,24 +123,48 @@ export default async function handler(req, res) {
       return sendJson(res, 400, { error: "Email is required" });
     }
 
+    const recoverTarget = buildRecoverRequestTarget(redirectTo);
+    const emailAudit = summarizeEmailForAudit(email);
+
+    logAuthDiagnostic("recover_request_received", req, {
+      ...emailAudit,
+      hasCaptchaToken: hasNonEmptyString(captchaToken),
+      redirectProvided: hasNonEmptyString(redirectTo),
+      redirectAccepted: Boolean(recoverTarget.safeRedirect),
+    });
+
     const payload = { email };
     if (captchaToken) {
       payload.gotrue_meta_security = { captcha_token: captchaToken };
     }
 
-    const { response, data } = await callSupabaseAuth(buildRecoverPath(redirectTo), {
+    const { response, data } = await callSupabaseAuth(recoverTarget.path, {
       method: "POST",
       body: payload,
     });
 
     if (!response.ok) {
       const message = extractAuthErrorMessage(data, "Password recovery request failed");
+      logAuthDiagnostic("recover_request_upstream_failed", req, {
+        ...emailAudit,
+        upstreamStatus: response.status || 400,
+        redirectAccepted: Boolean(recoverTarget.safeRedirect),
+      });
       return sendJson(res, response.status || 400, { error: message });
     }
+
+    logAuthDiagnostic("recover_request_upstream_succeeded", req, {
+      ...emailAudit,
+      upstreamStatus: response.status || 200,
+      redirectAccepted: Boolean(recoverTarget.safeRedirect),
+    });
 
     return sendJson(res, 200, { success: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected password recovery error";
+    logAuthDiagnostic("recover_request_handler_failed", req, {
+      errorMessage: message,
+    });
     return sendJson(res, 500, { error: message });
   }
 }

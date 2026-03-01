@@ -322,7 +322,7 @@
             "must_accept_privacy": "Gizlilik politikasını kabul etmelisiniz",
             "must_accept_kvkk": "KVKK metnini kabul etmelisiniz"
         },
-        "password_reset_sent": "Şifre sıfırlama bağlantısı e-posta adresinize gönderildi",
+        "password_reset_sent": "Bu e-posta adresi kayıtlıysa şifre sıfırlama bağlantısı gönderilecektir",
         "email_required_for_reset": "Şifre sıfırlamak için lütfen e-posta adresinizi girin",
         "forgot_password_info": "Şifrenizi sıfırlamak için e-posta adresinizi girip bu bağlantıya tıklayın",
         "update_password": "Şifreni Güncelle",
