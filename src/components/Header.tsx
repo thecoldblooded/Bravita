@@ -409,8 +409,7 @@ HeaderActionButtons.displayName = "HeaderActionButtons";
 interface HeaderPrimaryBarProps {
   pathname: string;
   isScrolled: boolean;
-  isProfilePage: boolean;
-  isCheckoutPage: boolean;
+  hideNavigation: boolean;
   navItems: HeaderNavItem[];
   activeName: string;
   currentFlagSrc: string;
@@ -431,8 +430,7 @@ interface HeaderPrimaryBarProps {
 const HeaderPrimaryBar = memo(({
   pathname,
   isScrolled,
-  isProfilePage,
-  isCheckoutPage,
+  hideNavigation,
   navItems,
   activeName,
   currentFlagSrc,
@@ -462,7 +460,7 @@ const HeaderPrimaryBar = memo(({
         </div>
 
         <div className="hidden lg:flex absolute left-1/2 -translate-x-1/2">
-          {!isProfilePage && !isCheckoutPage && <NavBar items={navItems} activeTab={activeName} layoutId="desktop-nav" />}
+          {!hideNavigation && <NavBar items={navItems} activeTab={activeName} layoutId="desktop-nav" />}
         </div>
 
         <div className="flex items-center gap-2 md:gap-4 shrink-0">
@@ -494,14 +492,13 @@ const HeaderPrimaryBar = memo(({
 HeaderPrimaryBar.displayName = "HeaderPrimaryBar";
 
 interface HeaderMobileNavProps {
-  isProfilePage: boolean;
-  isCheckoutPage: boolean;
+  hideNavigation: boolean;
   navItems: HeaderNavItem[];
   activeName: string;
 }
 
-function HeaderMobileNav({ isProfilePage, isCheckoutPage, navItems, activeName }: HeaderMobileNavProps) {
-  if (isProfilePage || isCheckoutPage) {
+function HeaderMobileNav({ hideNavigation, navItems, activeName }: HeaderMobileNavProps) {
+  if (hideNavigation) {
     return null;
   }
 
@@ -612,8 +609,14 @@ const Header = () => {
   const { isScrolled, showBackToTop, activeTab } = useHeaderScrollState(navItems);
 
   const pathname = location.pathname;
-  const isProfilePage = pathname === "/profile";
-  const isCheckoutPage = pathname === "/checkout";
+  const normalizedPathname = pathname.length > 1 && pathname.endsWith("/")
+    ? pathname.slice(0, -1)
+    : pathname;
+  const isProfilePage = normalizedPathname === "/profile";
+  const isCheckoutPage = normalizedPathname === "/checkout";
+  const isLegalRoute = normalizedPathname === "/gizlilik-politikasi" || normalizedPathname === "/kullanim-kosullari";
+  const isLegalHash = normalizedPathname === "/" && location.hash.startsWith("#legal:");
+  const hideNavigation = isProfilePage || isCheckoutPage || isLegalRoute || isLegalHash;
   const isUserReady = isAuthenticated && !!user;
   const isStubUser = (user as { isStub?: boolean } | null)?.isStub === true;
   const isProfileCompletionBlocked = isAuthenticated && !!user && !isStubUser && !user.profile_complete;
@@ -659,8 +662,7 @@ const Header = () => {
       <HeaderPrimaryBar
         pathname={pathname}
         isScrolled={isScrolled}
-        isProfilePage={isProfilePage}
-        isCheckoutPage={isCheckoutPage}
+        hideNavigation={hideNavigation}
         navItems={navItems}
         activeName={activeName}
         currentFlagSrc={currentFlagSrc}
@@ -680,7 +682,7 @@ const Header = () => {
 
       <IncompleteProfileBanner />
 
-      <HeaderMobileNav isProfilePage={isProfilePage} isCheckoutPage={isCheckoutPage} navItems={navItems} activeName={activeName} />
+      <HeaderMobileNav hideNavigation={hideNavigation} navItems={navItems} activeName={activeName} />
 
       <HeaderFloatingActions
         isProfilePage={isProfilePage}

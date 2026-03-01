@@ -20,6 +20,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { FreeVisitorCounter } from "@rundevelrun/free-visitor-counter";
 import { getLegalDocuments, getLegalLocale, type LegalDocumentKey } from "@/content/legalDocuments";
+import { Link } from "react-router-dom";
 
 // Lazy load heavy logos
 const bravitaLogo = new URL("@/assets/bravita-logo.webp", import.meta.url).href;
@@ -96,8 +97,8 @@ function Footer() {
     {
       title: t('footer.legal_support'),
       links: [
-        { label: t('footer.legal_terms'), href: "#legal:terms", seoHref: "/kullanim-kosullari" },
-        { label: t('footer.legal_privacy'), href: "#legal:privacy", seoHref: "/gizlilik-politikasi" },
+        { label: t('footer.legal_terms'), href: "/kullanim-kosullari" },
+        { label: t('footer.legal_privacy'), href: "/gizlilik-politikasi" },
         { label: t('footer.legal_cookies'), href: "#legal:cookies" },
         { label: t('footer.legal_notice'), href: "#legal:legalNotice" },
         { label: t('footer.kvkk'), href: "#legal:kvkk" },
@@ -287,6 +288,19 @@ function Footer() {
                         >
                           {link.label}
                         </button>
+                      </li>
+                    );
+                  }
+
+                  if (link.href.startsWith("/")) {
+                    return (
+                      <li key={link.label} className="relative">
+                        <Link
+                          to={link.href}
+                          className="text-neutral-400 hover:text-bravita-orange transition-colors"
+                        >
+                          {link.label}
+                        </Link>
                       </li>
                     );
                   }
