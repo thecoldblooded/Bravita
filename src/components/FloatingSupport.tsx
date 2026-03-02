@@ -51,7 +51,7 @@ export default function FloatingSupport({ className }: FloatingSupportProps) {
                     whileHover={{ scale: 1.05, y: -2 }}
                     whileTap={{ scale: 0.95 }}
                     className={cn(
-                        "relative overflow-hidden bg-gradient-to-r from-orange-500 via-orange-500 to-orange-600 text-white h-12 md:h-14 px-4 md:px-5 rounded-full shadow-[0_14px_30px_rgba(234,88,12,0.35)] hover:shadow-[0_18px_36px_rgba(234,88,12,0.45)] transition-all duration-300 flex items-center gap-2.5 pointer-events-auto group border border-white/35",
+                        "relative overflow-hidden bg-linear-to-r from-orange-500 via-orange-500 to-orange-600 text-white h-12 md:h-14 px-4 md:px-5 rounded-full shadow-[0_14px_30px_rgba(234,88,12,0.35)] hover:shadow-[0_18px_36px_rgba(234,88,12,0.45)] transition-all duration-300 flex items-center gap-2.5 pointer-events-auto group border border-white/35",
                         className
                     )}
                 >

@@ -554,13 +554,13 @@ function HeaderFloatingActions({
             <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-end gap-1">
               <Link
                 to="/kullanim-kosullari"
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-[0.72rem] px-2 py-1 text-[8.5px] min-[360px]:text-[9px] lg:text-[10.5px] font-semibold tracking-[0.01em] leading-none text-orange-50/90 bg-white/[0.06] hover:bg-orange-500/24 hover:text-white transition-all duration-200"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-[0.72rem] px-2 py-1 text-[8.5px] min-[360px]:text-[9px] lg:text-[10.5px] font-semibold tracking-[0.01em] leading-none text-orange-50/90 bg-white/6 hover:bg-orange-500/24 hover:text-white transition-all duration-200"
               >
                 {termsLabel}
               </Link>
               <Link
                 to="/gizlilik-politikasi"
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-[0.72rem] px-2 py-1 text-[8.5px] min-[360px]:text-[9px] lg:text-[10.5px] font-semibold tracking-[0.01em] leading-none text-orange-50/90 bg-white/[0.06] hover:bg-orange-500/24 hover:text-white transition-all duration-200"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-[0.72rem] px-2 py-1 text-[8.5px] min-[360px]:text-[9px] lg:text-[10.5px] font-semibold tracking-[0.01em] leading-none text-orange-50/90 bg-white/6 hover:bg-orange-500/24 hover:text-white transition-all duration-200"
               >
                 {privacyLabel}
               </Link>
@@ -587,7 +587,7 @@ function HeaderFloatingActions({
               whileTap={{ scale: 0.94 }}
               onClick={onBackToTop}
               aria-label="Sayfanın üstüne çık"
-              className="pointer-events-auto bg-gradient-to-br from-orange-500 to-orange-600 text-white p-[0.38rem] md:p-[0.55rem] rounded-full border border-white/30 shadow-[0_7px_14px_rgba(234,88,12,0.30)] hover:from-orange-600 hover:to-orange-700 transition-all duration-300 group"
+              className="pointer-events-auto bg-linear-to-br from-orange-500 to-orange-600 text-white p-[0.38rem] md:p-[0.55rem] rounded-full border border-white/30 shadow-[0_7px_14px_rgba(234,88,12,0.30)] hover:from-orange-600 hover:to-orange-700 transition-all duration-300 group"
             >
               <ChevronUp className="w-3 h-3 md:w-4 md:h-4 group-hover:-translate-y-0.5 transition-transform" />
             </m.button>
