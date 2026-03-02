@@ -5,6 +5,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const APP_WEBHOOK_SECRET = (Deno.env.get("APP_WEBHOOK_SECRET") ?? "").trim();
 const DEFAULT_APP_BASE_URL = "https://bravita.com.tr";
 
 const DEFAULT_ALLOWED_ORIGINS = [
@@ -1080,11 +1081,104 @@ serve(async (req: Request) => {
         });
       }
 
-      if (shouldRedirectClient) {
-        const resolvedOrderId = orderData?.order_id || orderData?.orderId || "";
-        if (!resolvedOrderId) {
+      const resolvedOrderId = orderData?.order_id || orderData?.orderId || "";
+      if (!resolvedOrderId) {
+        if (shouldRedirectClient) {
           return Response.redirect(`${uiOrigin}/payment-failed?intent=${intentId}&code=missing_order_id`, 302);
         }
+        return new Response("MISSING_ORDER_ID", {
+          status: 500,
+          headers: { "Content-Type": "text/plain; charset=utf-8" },
+        });
+      }
+
+      const { data: existingSuccessfulEmailTx } = await supabase
+        .from("payment_transactions")
+        .select("created_at")
+        .eq("intent_id", intentId)
+        .eq("order_id", resolvedOrderId)
+        .eq("operation", "order_confirmation_email")
+        .eq("success", true)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (existingSuccessfulEmailTx) {
+        await supabase.from("payment_transactions").insert({
+          intent_id: intentId,
+          order_id: resolvedOrderId,
+          operation: "order_confirmation_email",
+          success: true,
+          request_payload: {
+            order_id: resolvedOrderId,
+            type: "order_confirmation",
+            skipped: true,
+            reason: "already_succeeded",
+          },
+          response_payload: {
+            existing_success_created_at: existingSuccessfulEmailTx.created_at,
+          },
+        });
+      } else if (!APP_WEBHOOK_SECRET) {
+        await supabase.from("payment_transactions").insert({
+          intent_id: intentId,
+          order_id: resolvedOrderId,
+          operation: "order_confirmation_email",
+          success: false,
+          error_message: "APP_WEBHOOK_SECRET is missing",
+        });
+      } else {
+        let emailInvokePayload: any = null;
+        let emailInvokeStatus: number | null = null;
+        let emailInvokeOk = false;
+
+        try {
+          const emailResponse = await fetch(`${SUPABASE_URL}/functions/v1/send-order-email`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-bravita-secret": APP_WEBHOOK_SECRET,
+              Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            },
+            body: JSON.stringify({
+              order_id: resolvedOrderId,
+              type: "order_confirmation",
+            }),
+          });
+
+          emailInvokeStatus = emailResponse.status;
+          emailInvokeOk = emailResponse.ok;
+          emailInvokePayload = await emailResponse.json().catch(() => null);
+        } catch (emailError: any) {
+          emailInvokePayload = {
+            error: emailError?.message || String(emailError),
+          };
+        }
+
+        const emailInvokePayloadRecord = asRecord(emailInvokePayload);
+        const emailInvokeSkipped = emailInvokePayloadRecord?.skipped === true;
+        const emailOperationSuccess = emailInvokeOk || emailInvokeSkipped || emailInvokeStatus === 429;
+
+        await supabase.from("payment_transactions").insert({
+          intent_id: intentId,
+          order_id: resolvedOrderId,
+          operation: "order_confirmation_email",
+          success: emailOperationSuccess,
+          error_message: emailOperationSuccess
+            ? null
+            : (`send-order-email failed (status=${emailInvokeStatus ?? "exception"})`),
+          request_payload: {
+            order_id: resolvedOrderId,
+            type: "order_confirmation",
+          },
+          response_payload: {
+            status: emailInvokeStatus,
+            body: safeSerializeForLog(emailInvokePayload),
+          },
+        });
+      }
+
+      if (shouldRedirectClient) {
         return Response.redirect(`${uiOrigin}/order-confirmation/${encodeURIComponent(resolvedOrderId)}`, 302);
       }
       return callbackAckResponse();

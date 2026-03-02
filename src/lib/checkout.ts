@@ -554,12 +554,35 @@ export async function createOrder(params: CreateOrderParams): Promise<CreateOrde
             };
         }
 
-        // Send email (fire and forget)
-        supabase.functions.invoke('send-order-email', {
-            body: { order_id: data.order_id }
-        }).catch(() => {
-            // intentionally ignore non-blocking notification failure
-        });
+        // Send confirmation email (fire and forget) with authenticated function headers
+        try {
+            let emailHeaders = await getFunctionAuthHeaders("checkout:createOrder:send-order-email");
+            let { authToken, userJwtToken } = parseFunctionAuthHeaders(emailHeaders);
+
+            if (authToken && userJwtToken) {
+                let emailInvokeResult = await supabase.functions.invoke("send-order-email", {
+                    body: { order_id: data.order_id },
+                    headers: emailHeaders,
+                });
+
+                if (emailInvokeResult.error) {
+                    const extracted = await extractEdgeFunctionErrorMessage(emailInvokeResult.error);
+                    if (isInvalidJwtAuthError(extracted)) {
+                        emailHeaders = await getFunctionAuthHeaders("checkout:createOrder:send-order-email:retry", { forceRefresh: true });
+                        ({ authToken, userJwtToken } = parseFunctionAuthHeaders(emailHeaders));
+
+                        if (authToken && userJwtToken) {
+                            emailInvokeResult = await supabase.functions.invoke("send-order-email", {
+                                body: { order_id: data.order_id },
+                                headers: emailHeaders,
+                            });
+                        }
+                    }
+                }
+            }
+        } catch {
+            // Email hatası sipariş başarısını etkilemesin.
+        }
 
         return {
             success: true,

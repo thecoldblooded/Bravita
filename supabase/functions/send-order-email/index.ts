@@ -17,6 +17,7 @@ const ALLOWED_ORIGINS = [
 
 const BRAVITA_SITE_URL = "https://www.bravita.com.tr";
 const CONFIGURED_APP_BASE_URL = (Deno.env.get("APP_BASE_URL") ?? "").trim();
+const APP_WEBHOOK_SECRET = (Deno.env.get("APP_WEBHOOK_SECRET") ?? "").trim();
 
 function normalizeAbsoluteBaseUrl(value: string): string | null {
     const normalized = (value || "").trim();
@@ -112,7 +113,7 @@ function getCorsHeaders(req: Request) {
 
     return {
         "Access-Control-Allow-Origin": allowedOrigin,
-        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-custom-header",
+        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-custom-header, x-bravita-secret",
         "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
         "Access-Control-Expose-Headers": "Content-Length, X-JSON",
         "Vary": "Origin",
@@ -178,6 +179,16 @@ async function hmacSha256Hex(data: string, secret: string): Promise<string> {
 
     const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(data));
     return bytesToHex(new Uint8Array(signature));
+}
+
+function isMatchingInternalSecret(providedSecret: string): boolean {
+    if (!APP_WEBHOOK_SECRET || !providedSecret) {
+        return false;
+    }
+
+    const expectedBytes = new TextEncoder().encode(APP_WEBHOOK_SECRET);
+    const providedBytes = new TextEncoder().encode(providedSecret);
+    return timingSafeEqual(expectedBytes, providedBytes);
 }
 
 type SignatureValidationResult = "valid" | "expired" | "invalid";
@@ -339,17 +350,25 @@ serve(async (req: Request) => {
         }
 
         // --- SEND EMAIL (POST) ---
-        // 1. JWT Verification & Authorization
+        // 1. Authentication (JWT user context OR internal webhook secret)
         const authHeader = req.headers.get("Authorization");
-        if (!authHeader) {
-            throw new Error("Missing Authorization header");
-        }
+        const internalSecret = (req.headers.get("x-bravita-secret") ?? "").trim();
+        const isInternalRequest = isMatchingInternalSecret(internalSecret);
 
-        const auth_token = authHeader.replace("Bearer ", "");
-        const { data: { user: requestingUser }, error: authError } = await supabase.auth.getUser(auth_token);
+        let requestingUser: any = null;
+        if (!isInternalRequest) {
+            if (!authHeader) {
+                throw new Error("Missing Authorization header");
+            }
 
-        if (authError || !requestingUser) {
-            throw new Error("Unauthorized: Invalid token");
+            const auth_token = authHeader.replace("Bearer ", "");
+            const { data: { user }, error: authError } = await supabase.auth.getUser(auth_token);
+
+            if (authError || !user) {
+                throw new Error("Unauthorized: Invalid token");
+            }
+
+            requestingUser = user;
         }
 
         // Parse Request Body
@@ -378,18 +397,6 @@ serve(async (req: Request) => {
         }
 
         // 3. SECURE AUTHORIZATION CHECK
-        const { data: requesterProfile } = await supabase
-            .from("profiles")
-            .select("is_admin, is_superadmin")
-            .eq("id", requestingUser.id)
-            .maybeSingle();
-
-        const isAdmin =
-            requestingUser.app_metadata?.is_admin === true ||
-            requestingUser.app_metadata?.is_superadmin === true ||
-            requesterProfile?.is_admin === true ||
-            requesterProfile?.is_superadmin === true;
-        const isOwner = requestingUser.id === order.user_id;
         const adminOnlyEmailTypes = new Set<OrderEmailType>([
             "shipped",
             "delivered",
@@ -398,12 +405,31 @@ serve(async (req: Request) => {
             "preparing",
         ]);
 
-        if (adminOnlyEmailTypes.has(type) && !isAdmin) {
-            throw new Error("Forbidden: Admin permission is required for this email type.");
-        }
+        if (isInternalRequest) {
+            if (type !== "order_confirmation") {
+                throw new Error("Forbidden: Internal trigger only supports order_confirmation.");
+            }
+        } else {
+            const { data: requesterProfile } = await supabase
+                .from("profiles")
+                .select("is_admin, is_superadmin")
+                .eq("id", requestingUser.id)
+                .maybeSingle();
 
-        if (type === "order_confirmation" && !isOwner && !isAdmin) {
-            throw new Error("Forbidden: You do not have permission to access this order.");
+            const isAdmin =
+                requestingUser.app_metadata?.is_admin === true ||
+                requestingUser.app_metadata?.is_superadmin === true ||
+                requesterProfile?.is_admin === true ||
+                requesterProfile?.is_superadmin === true;
+            const isOwner = requestingUser.id === order.user_id;
+
+            if (adminOnlyEmailTypes.has(type) && !isAdmin) {
+                throw new Error("Forbidden: Admin permission is required for this email type.");
+            }
+
+            if (type === "order_confirmation" && !isOwner && !isAdmin) {
+                throw new Error("Forbidden: You do not have permission to access this order.");
+            }
         }
 
         // 3.5 RATE LIMIT CHECK
