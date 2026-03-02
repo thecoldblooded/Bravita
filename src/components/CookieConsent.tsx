@@ -124,9 +124,6 @@ const CookieConsent = () => {
                                     <p className="text-sm md:text-[15px] leading-relaxed text-zinc-300">
                                         {t('cookie_consent.description')}
                                     </p>
-                                    <a href="/#legal:cookies" className="inline-block font-semibold text-orange-200 underline underline-offset-4 hover:text-orange-100 transition-colors">
-                                        {t('footer.legal_cookies')}
-                                    </a>
                                 </div>
 
                                 <div className="xl:col-span-5 flex flex-col gap-3 xl:items-end">

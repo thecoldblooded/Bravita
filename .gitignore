@@ -82,4 +82,3 @@ dist-deploy.zip
 deploy-dist-posix.tar.gz
 drift.err
 drift.sql
-{console.error(e)

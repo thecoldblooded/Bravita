@@ -519,6 +519,8 @@ interface HeaderFloatingActionsProps {
   isCheckoutPage: boolean;
   isCookieConsentPending: boolean;
   showBackToTop: boolean;
+  termsLabel: string;
+  privacyLabel: string;
   onBackToTop: () => void;
 }
 
@@ -527,37 +529,72 @@ function HeaderFloatingActions({
   isCheckoutPage,
   isCookieConsentPending,
   showBackToTop,
+  termsLabel,
+  privacyLabel,
   onBackToTop,
 }: HeaderFloatingActionsProps) {
   return (
-    <div
-      className={cn(
-        "fixed z-9999 flex flex-col gap-4 items-end pointer-events-none md:bottom-20 md:right-10",
-        isCookieConsentPending ? "bottom-60 right-4" : "bottom-36 right-6",
-      )}
-    >
+    <>
       {!isProfilePage && !isCheckoutPage && (
-        <div className="pointer-events-auto">
-          <Suspense fallback={null}>
-            <FloatingSupport />
-          </Suspense>
+        <div
+          className={cn(
+            "fixed z-9999 flex flex-col gap-1.5 items-end pointer-events-none right-3 sm:right-4 md:right-7",
+            isCookieConsentPending
+              ? "bottom-[calc(env(safe-area-inset-bottom,0px)+13rem)] lg:bottom-[calc(env(safe-area-inset-bottom,0px)+10.5rem)]"
+              : "bottom-[calc(env(safe-area-inset-bottom,0px)+9rem)] lg:bottom-[calc(env(safe-area-inset-bottom,0px)+4.75rem)]",
+          )}
+        >
+          <div className="pointer-events-auto">
+            <Suspense fallback={null}>
+              <FloatingSupport />
+            </Suspense>
+          </div>
+
+          <div className="pointer-events-auto max-w-[min(11.75rem,calc(100vw-1rem))] lg:max-w-none rounded-[0.95rem] border border-white/12 bg-zinc-900/60 p-1 backdrop-blur-lg shadow-[0_10px_22px_rgba(0,0,0,0.24)]">
+            <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-end gap-1">
+              <Link
+                to="/kullanim-kosullari"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-[0.72rem] px-2 py-1 text-[8.5px] min-[360px]:text-[9px] lg:text-[10.5px] font-semibold tracking-[0.01em] leading-none text-orange-50/90 bg-white/[0.06] hover:bg-orange-500/24 hover:text-white transition-all duration-200"
+              >
+                {termsLabel}
+              </Link>
+              <Link
+                to="/gizlilik-politikasi"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-[0.72rem] px-2 py-1 text-[8.5px] min-[360px]:text-[9px] lg:text-[10.5px] font-semibold tracking-[0.01em] leading-none text-orange-50/90 bg-white/[0.06] hover:bg-orange-500/24 hover:text-white transition-all duration-200"
+              >
+                {privacyLabel}
+              </Link>
+            </div>
+          </div>
         </div>
       )}
 
-      <AnimatePresence>
-        {showBackToTop && (
-          <m.button
-            initial={{ opacity: 0, scale: 0.5, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.5, y: 20 }}
-            onClick={onBackToTop}
-            className="pointer-events-auto bg-orange-600 text-white p-4 rounded-full shadow-2xl hover:bg-orange-700 transition-colors group"
-          >
-            <ChevronUp className="w-6 h-6 group-hover:-translate-y-1 transition-transform" />
-          </m.button>
+      <div
+        className={cn(
+          "fixed z-9999 flex items-end pointer-events-none right-3 sm:right-4 md:right-7",
+          isCookieConsentPending
+            ? "bottom-[calc(env(safe-area-inset-bottom,0px)+7.25rem)] md:bottom-[calc(env(safe-area-inset-bottom,0px)+5.25rem)]"
+            : "bottom-[calc(env(safe-area-inset-bottom,0px)+0.9rem)] md:bottom-[calc(env(safe-area-inset-bottom,0px)+1.1rem)]",
         )}
-      </AnimatePresence>
-    </div>
+      >
+        <AnimatePresence>
+          {showBackToTop && (
+            <m.button
+              initial={{ opacity: 0, scale: 0.5, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.5, y: 20 }}
+              whileHover={{ scale: 1.05, y: -1 }}
+              whileTap={{ scale: 0.94 }}
+              onClick={onBackToTop}
+              aria-label="Sayfanın üstüne çık"
+              className="pointer-events-auto bg-gradient-to-br from-orange-500 to-orange-600 text-white p-[0.38rem] md:p-[0.55rem] rounded-full border border-white/30 shadow-[0_7px_14px_rgba(234,88,12,0.30)] hover:from-orange-600 hover:to-orange-700 transition-all duration-300 group"
+            >
+              <ChevronUp className="w-3 h-3 md:w-4 md:h-4 group-hover:-translate-y-0.5 transition-transform" />
+            </m.button>
+          )}
+        </AnimatePresence>
+      </div>
+    </>
   );
 }
 
@@ -689,6 +726,8 @@ const Header = () => {
         isCheckoutPage={isCheckoutPage}
         isCookieConsentPending={isCookieConsentPending}
         showBackToTop={showBackToTop}
+        termsLabel={t("footer.legal_terms")}
+        privacyLabel={t("footer.legal_privacy")}
         onBackToTop={handleScrollTop}
       />
 

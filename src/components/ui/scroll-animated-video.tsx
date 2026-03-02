@@ -242,10 +242,10 @@ const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
             if (cancelled) return;
 
             if (smoothScroll) {
-                const try1 = await import("@studio-freight/lenis").catch(() => null);
-                Lenis = try1?.default || (try1 as any)?.Lenis; // Changed from LenisCtor
+                const try1 = await import("lenis").catch(() => null);
+                Lenis = try1?.default || (try1 as any)?.Lenis || try1;
                 if (Lenis) {
-                    lenis = new (Lenis as any)({ // Changed from LenisCtor
+                    lenis = new (Lenis as any)({
                         duration: 0.8,
                         smoothWheel: true,
                         gestureOrientation: "vertical",

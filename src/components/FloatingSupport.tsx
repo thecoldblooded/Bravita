@@ -51,16 +51,20 @@ export default function FloatingSupport({ className }: FloatingSupportProps) {
                     whileHover={{ scale: 1.05, y: -2 }}
                     whileTap={{ scale: 0.95 }}
                     className={cn(
-                        "bg-orange-600 text-white h-14 md:h-16 px-4 md:px-6 rounded-full shadow-2xl hover:bg-orange-700 transition-all flex items-center gap-3 pointer-events-auto group border-2 border-white/20",
+                        "relative overflow-hidden bg-gradient-to-r from-orange-500 via-orange-500 to-orange-600 text-white h-12 md:h-14 px-4 md:px-5 rounded-full shadow-[0_14px_30px_rgba(234,88,12,0.35)] hover:shadow-[0_18px_36px_rgba(234,88,12,0.45)] transition-all duration-300 flex items-center gap-2.5 pointer-events-auto group border border-white/35",
                         className
                     )}
                 >
-                    <div className="relative">
-                        <LifeBuoy className="w-6 h-6 md:w-7 md:h-7 animate-pulse-subtle group-hover:rotate-45 transition-transform duration-500" />
-                        <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 border-2 border-orange-600 rounded-full animate-ping" />
-                        <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 border-2 border-orange-600 rounded-full" />
+                    <span
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.24)_0%,rgba(255,255,255,0.07)_35%,rgba(255,255,255,0)_65%)]"
+                    />
+                    <div className="relative z-10">
+                        <LifeBuoy className="w-5 h-5 md:w-6 md:h-6 animate-pulse-subtle group-hover:rotate-45 transition-transform duration-500" />
+                        <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 border-2 border-orange-500 rounded-full animate-ping" />
+                        <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 border-2 border-orange-500 rounded-full" />
                     </div>
-                    <span className="hidden md:inline font-black text-sm tracking-tight uppercase">{t("landing.support_title") || "Bize Ulaşın"}</span>
+                    <span className="hidden md:inline relative z-10 font-extrabold text-xs tracking-[0.08em] uppercase">{t("landing.support_title") || "Bize Ulaşın"}</span>
                 </m.button>
             </PopoverTrigger>
             <PopoverContent
