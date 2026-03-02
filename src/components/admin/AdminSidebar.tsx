@@ -99,7 +99,7 @@ export function AdminSidebar() {
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
-        window.location.href = "https://bravita.com";
+        window.location.href = "https://bravita.com.tr";
     };
 
     const displayedUnreadCount = location.pathname.startsWith('/admin/orders') ? 0 : unreadCount;
