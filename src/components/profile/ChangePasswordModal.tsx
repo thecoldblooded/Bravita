@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useRef, useState } from "react";
 import {
     Dialog,
     DialogContent,
@@ -34,6 +34,10 @@ export function ChangePasswordModal({ children, open, onOpenChange }: ChangePass
     const [captchaToken, setCaptchaToken] = useState<string | null>(null);
     const captchaRef = useRef<HCaptcha>(null);
     const HCAPTCHA_SITE_KEY = String(import.meta.env.VITE_HCAPTCHA_SITE_KEY ?? "").trim();
+
+    const hasConfirmInput = confirmPassword.length > 0;
+    const isMatch = hasConfirmInput && newPassword === confirmPassword;
+    const hasMismatch = hasConfirmInput && newPassword !== confirmPassword;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -136,7 +140,14 @@ export function ChangePasswordModal({ children, open, onOpenChange }: ChangePass
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="confirm-password">{t("profile.settings.security.confirm_password")}</Label>
+                        <div className="flex items-center justify-between">
+                            <Label htmlFor="confirm-password">{t("profile.settings.security.confirm_password")}</Label>
+                            {hasConfirmInput ? (
+                                <span className={`text-sm font-medium ${isMatch ? "text-green-600" : "text-red-500"}`}>
+                                    {isMatch ? "Şifreler eşleşti ✓" : "Şifreler eşleşmedi ✕"}
+                                </span>
+                            ) : null}
+                        </div>
                         <Input
                             id="confirm-password"
                             type="password"
@@ -144,6 +155,7 @@ export function ChangePasswordModal({ children, open, onOpenChange }: ChangePass
                             onChange={(e) => setConfirmPassword(e.target.value)}
                             placeholder="••••••••"
                             required
+                            className={hasConfirmInput ? (isMatch ? "border-green-500 focus-visible:ring-green-500" : "border-red-500 focus-visible:ring-red-500") : ""}
                         />
                     </div>
 

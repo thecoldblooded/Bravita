@@ -36,6 +36,8 @@ const TOKEN_REGEX = /\{\{\s*\.?\s*([A-Za-z0-9_]+)\s*\}\}/g;
 const TOKEN_PLACEHOLDER_MAP: Record<string, string> = {
     CONFIRMATION_URL: "{{ .ConfirmationURL }}",
     SITE_URL: "{{ .SiteURL }}",
+    // Admin editor'deki browser link placeholder'ını Supabase Auth için SiteURL'e eşle.
+    BROWSER_LINK: "{{ .SiteURL }}",
     EMAIL: "{{ .Email }}",
 };
 

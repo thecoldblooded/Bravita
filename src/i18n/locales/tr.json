@@ -407,6 +407,7 @@
         "order_failed": "Sipariş oluşturulamadı"
     },
     "common": {
+        "loading": "Yükleniyor...",
         "back": "Geri",
         "next": "İleri",
         "save": "Kaydet",

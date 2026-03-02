@@ -407,6 +407,7 @@
         "order_failed": "Order could not be created"
     },
     "common": {
+        "loading": "Loading...",
         "back": "Back",
         "next": "Next",
         "save": "Save",

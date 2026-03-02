@@ -82,6 +82,7 @@ import { Helmet } from "react-helmet-async";
 
 const SUPPORT_TICKET_SLUG = "support_ticket";
 const AUTH_SYNC_CRITICAL_SLUGS = new Set(["confirm_signup", "reset_password", "password_changed"]);
+const SUPABASE_ANON_KEY = String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? "").trim();
 
 const PREVIEW_DUMMY_VARS: Record<string, string> = {
     "ORDER_ID": "TEST-12345",
@@ -293,7 +294,19 @@ export default function AdminEmails() {
 
             if (requiresAuthSync) {
                 try {
-                    const authHeaders = await getFunctionAuthHeaders();
+                    const authHeaders = await getFunctionAuthHeaders("admin_emails_sync_auth_templates");
+                    const userJwt = String(authHeaders["x-user-jwt"] ?? authHeaders.Authorization ?? "")
+                        .replace(/^Bearer\s+/i, "")
+                        .trim();
+
+                    if (!userJwt) {
+                        throw new Error("Auth template sync için kullanıcı oturumu bulunamadı. Lütfen tekrar giriş yapın.");
+                    }
+
+                    if (!SUPABASE_ANON_KEY) {
+                        throw new Error("Auth template sync için anon anahtarı yapılandırılmamış.");
+                    }
+
                     const idempotencyKey = `sync-auth-${editingTemplate.id}-${Date.now()}-${crypto.randomUUID()}`;
 
                     const { data: syncData, error: syncError } = await supabase.functions.invoke("sync-auth-templates", {
@@ -302,7 +315,9 @@ export default function AdminEmails() {
                             dry_run: false,
                         },
                         headers: {
-                            ...authHeaders,
+                            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+                            apikey: SUPABASE_ANON_KEY,
+                            "x-user-jwt": userJwt,
                             "x-idempotency-key": idempotencyKey,
                         },
                     });
