@@ -8,6 +8,7 @@ const DRIFT_SQL_PATH = path.resolve(ROOT, "drift.sql");
 const DRIFT_ERR_PATH = path.resolve(ROOT, "drift.err");
 const REMOTE_DUMP_SQL_PATH = path.resolve(ROOT, "_reports", "sql", "remote_public_ci_dump.sql");
 const DRIFT_CLASSIFICATION_REPORT_PATH = path.resolve(ROOT, "_reports", "sql", "drift_classification_report.txt");
+const DRIFT_STDERR_DROP_REPORT_PATH = path.resolve(ROOT, "_reports", "sql", "drift_stderr_drop_report.txt");
 
 function parsePositiveInt(value, fallback) {
     const parsed = Number.parseInt(String(value ?? ""), 10);
@@ -179,6 +180,34 @@ function printDiagnostics(stdout, stderr) {
     }
 }
 
+function analyzeStderrDropWarnings(stderrText) {
+    const lines = stderrText.split(/\r?\n/);
+    const dropStatements = lines
+        .map((line) => line.trim())
+        .filter((line) => /^drop\s+/i.test(line));
+
+    return {
+        hasDropSummary: /Found drop statements in schema diff/i.test(stderrText),
+        dropStatements,
+    };
+}
+
+function persistStderrDropDiagnostics(diagnostics) {
+    const report = [
+        "# Linked Drift STDERR DROP Diagnostics",
+        "",
+        `generated_at=${nowIso()}`,
+        `has_drop_summary=${diagnostics.hasDropSummary}`,
+        `drop_statement_count=${diagnostics.dropStatements.length}`,
+        "",
+        "drop_statements:",
+        ...(diagnostics.dropStatements.length > 0 ? diagnostics.dropStatements : ["<none>"]),
+    ].join("\n");
+
+    fs.mkdirSync(path.dirname(DRIFT_STDERR_DROP_REPORT_PATH), { recursive: true });
+    fs.writeFileSync(DRIFT_STDERR_DROP_REPORT_PATH, `${report}\n`, "utf8");
+}
+
 function hasExecutableDriftSql(sqlText) {
     const cleaned = sqlText
         .split(/\r?\n/)
@@ -255,6 +284,35 @@ async function main() {
 
     printDiagnostics(stdout, stderr);
 
+    const stderrDropDiagnostics = analyzeStderrDropWarnings(stderr);
+    persistStderrDropDiagnostics(stderrDropDiagnostics);
+
+    const hasStderrDropWarnings =
+        stderrDropDiagnostics.hasDropSummary || stderrDropDiagnostics.dropStatements.length > 0;
+
+    if (hasStderrDropWarnings) {
+        console.warn(
+            `⚠️ drift.err DROP uyarısı tespit edildi (summary=${stderrDropDiagnostics.hasDropSummary}, count=${stderrDropDiagnostics.dropStatements.length}).`
+        );
+        console.warn(`Detailed report: ${DRIFT_STDERR_DROP_REPORT_PATH}`);
+
+        if (stderrDropDiagnostics.dropStatements.length > 0) {
+            console.warn("--- drift.err DROP statements (diagnostic, first 20) ---");
+            for (const line of stderrDropDiagnostics.dropStatements.slice(0, 20)) {
+                console.warn(line);
+            }
+
+            if (stderrDropDiagnostics.dropStatements.length > 20) {
+                console.warn(
+                    `... ${stderrDropDiagnostics.dropStatements.length - 20} ek DROP satırı rapora yazıldı.`
+                );
+            }
+        }
+    } else {
+        console.log("drift.err DROP diagnostics: herhangi bir DROP uyarısı bulunmadı.");
+        console.log(`Detailed report: ${DRIFT_STDERR_DROP_REPORT_PATH}`);
+    }
+
     if (timedOut) {
         console.error(`supabase db diff timed out after ${timeoutSeconds}s`);
         process.exit(124);
@@ -263,6 +321,11 @@ async function main() {
     if (exitCode !== 0) {
         console.error(`supabase db diff failed with exit code ${exitCode}`);
         process.exit(exitCode);
+    }
+
+    if (hasStderrDropWarnings) {
+        console.error("❌ Database drift detected in public schema (stderr DROP uyarısı). Please create a migration for manual changes.");
+        process.exit(1);
     }
 
     if (hasExecutableDriftSql(stdout)) {
