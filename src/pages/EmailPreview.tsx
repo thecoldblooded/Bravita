@@ -231,7 +231,10 @@ export default function EmailPreview() {
         <div className="min-h-screen bg-linear-to-b from-orange-50/50 to-white px-4 py-6">
             <Helmet>
                 <title>E-posta Önizleme | Bravita</title>
+                <meta name="description" content="Bravita e-posta içerik önizleme ekranı." />
                 <meta name="robots" content="noindex, nofollow" />
+                <meta property="og:title" content="E-posta Önizleme | Bravita" />
+                <meta property="og:description" content="Bravita e-posta içerik önizleme ekranı." />
             </Helmet>
 
             <div className="mx-auto w-full max-w-6xl">

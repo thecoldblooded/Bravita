@@ -17,6 +17,9 @@ const PrivacyPolicy = () => {
         <div className="min-h-screen bg-[#FFFBF7]">
             <Helmet>
                 <title>{doc.title} | Bravita</title>
+                <meta name="description" content={doc.description} />
+                <meta property="og:title" content={`${doc.title} | Bravita`} />
+                <meta property="og:description" content={doc.description} />
             </Helmet>
             <main className="max-w-4xl mx-auto px-6 py-12 md:py-20">
                 <a href="/" className="inline-block mb-10 text-orange-600 hover:underline font-medium">← Ana Sayfaya Dön</a>

@@ -62,8 +62,8 @@ def is_page_file(file_path: Path) -> bool:
         return True
     
     # Filename indicators for pages
-    page_names = ['page', 'index', 'home', 'about', 'contact', 'blog', 
-                  'post', 'article', 'product', 'landing', 'layout']
+    page_names = ['page', 'index', 'home', 'about', 'contact', 'blog',
+                  'post', 'article', 'product', 'landing']
     
     if any(p in stem for p in page_names):
         return True
@@ -102,21 +102,25 @@ def check_page(file_path: Path) -> dict:
     except Exception as e:
         return {"file": str(file_path.name), "issues": [f"Error: {e}"]}
     
-    # Detect if this is a layout/template file (has Head component)
-    is_layout = 'Head>' in content or '<head' in content.lower()
-    
+    lower_content = content.lower()
+
+    # Detect if this is a layout/template file (real <head> tag or React <Head>/<Helmet> wrapper)
+    has_html_head_tag = re.search(r'<\s*head(?=[\s>])', lower_content) is not None
+    has_react_head_component = re.search(r'<\s*Head(?=[\s>])', content) is not None or "<Helmet" in content
+    is_layout = has_html_head_tag or has_react_head_component
+
     # 1. Title tag
-    has_title = '<title' in content.lower() or 'title=' in content or 'Head>' in content
+    has_title = '<title' in lower_content or 'title=' in content or has_react_head_component
     if not has_title and is_layout:
         issues.append("Missing <title> tag")
-    
+
     # 2. Meta description
-    has_description = 'name="description"' in content.lower() or 'name=\'description\'' in content.lower()
+    has_description = 'name="description"' in lower_content or 'name=\'description\'' in lower_content
     if not has_description and is_layout:
         issues.append("Missing meta description")
-    
+
     # 3. Open Graph tags
-    has_og = 'og:' in content or 'property="og:' in content.lower()
+    has_og = 'og:' in content or 'property="og:' in lower_content
     if not has_og and is_layout:
         issues.append("Missing Open Graph tags")
     

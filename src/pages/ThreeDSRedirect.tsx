@@ -173,7 +173,10 @@ export default function ThreeDSRedirect() {
         <div className="min-h-screen bg-linear-to-b from-orange-50/50 to-white flex items-center justify-center px-4">
             <Helmet>
                 <title>3D Secure Redirect</title>
+                <meta name="description" content="Bravita 3D Secure ödeme yönlendirme ekranı." />
                 <meta name="robots" content="noindex" />
+                <meta property="og:title" content="3D Secure Redirect" />
+                <meta property="og:description" content="Bravita 3D Secure ödeme yönlendirme ekranı." />
             </Helmet>
             <div className="w-full max-w-md rounded-2xl border border-orange-100 bg-white p-6 text-center shadow-lg">
                 <div className={`mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full ${errorMessage ? "bg-red-50 text-red-600" : "bg-orange-50 text-orange-600"}`}>
