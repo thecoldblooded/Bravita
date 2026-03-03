@@ -14,7 +14,12 @@ const menuItems = [
     { path: "/admin/support", label: "Destek Talepleri", icon: LifeBuoy },
 ];
 
-export function AdminSidebar() {
+interface AdminSidebarProps {
+    isMobileMenuOpen?: boolean;
+    setIsMobileMenuOpen?: (isOpen: boolean) => void;
+}
+
+export function AdminSidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: AdminSidebarProps) {
     const location = useLocation();
     const navigate = useNavigate();
     const { user, isSuperAdmin } = useAuth();
@@ -106,12 +111,13 @@ export function AdminSidebar() {
 
     return (
         <aside className={cn(
-            "fixed md:sticky top-0 z-40 h-dvh flex flex-col border-r transition-all duration-300",
+            "fixed md:sticky top-0 z-50 h-dvh flex flex-col border-r transition-transform duration-300 md:translate-x-0 w-64",
             isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200",
-            collapsed ? "w-20" : "w-65"
+            collapsed ? "md:w-20" : "md:w-64",
+            isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         )}>
             {/* Logo */}
-            <div className={`p-6 border-b ${isDark ? "border-slate-800" : "border-gray-100"}`}>
+            <div className={`p-6 border-b hidden md:block ${isDark ? "border-slate-800" : "border-gray-100"}`}>
                 <div className="flex items-center justify-between">
                     <Link to="/admin" className="block">
                         {collapsed ? (

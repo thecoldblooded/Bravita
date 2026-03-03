@@ -254,32 +254,34 @@ function OrdersContent() {
                 className={`rounded-2xl border shadow-sm overflow-hidden ${cardClass}`}
             >
                 {isLoading ? (
-                    <div className={`divide-y ${dividerClass}`}>
-                        {[...Array(8)].map(() => (
-                            <div key={crypto.randomUUID()} className="grid grid-cols-12 gap-4 px-6 py-5">
-                                <div className="col-span-3 flex items-center gap-3">
-                                    <Skeleton className="h-10 w-10 rounded-lg" />
-                                    <div>
-                                        <Skeleton className="h-4 w-24 mb-1" />
-                                        <Skeleton className="h-3 w-16" />
+                    <div className="overflow-x-auto w-full custom-scrollbar">
+                        <div className={`divide-y min-w-225 ${dividerClass}`}>
+                            {[...Array(8)].map(() => (
+                                <div key={crypto.randomUUID()} className="grid grid-cols-12 gap-4 px-6 py-5">
+                                    <div className="col-span-3 flex items-center gap-3">
+                                        <Skeleton className="h-10 w-10 rounded-lg" />
+                                        <div>
+                                            <Skeleton className="h-4 w-24 mb-1" />
+                                            <Skeleton className="h-3 w-16" />
+                                        </div>
+                                    </div>
+                                    <div className="col-span-3">
+                                        <Skeleton className="h-4 w-32 mb-1" />
+                                        <Skeleton className="h-3 w-24" />
+                                    </div>
+                                    <div className="col-span-2">
+                                        <Skeleton className="h-6 w-20 rounded-full" />
+                                    </div>
+                                    <div className="col-span-2">
+                                        <Skeleton className="h-4 w-16" />
+                                    </div>
+                                    <div className="col-span-2 flex items-center justify-between">
+                                        <Skeleton className="h-4 w-20" />
+                                        <Skeleton className="h-5 w-5" />
                                     </div>
                                 </div>
-                                <div className="col-span-3">
-                                    <Skeleton className="h-4 w-32 mb-1" />
-                                    <Skeleton className="h-3 w-24" />
-                                </div>
-                                <div className="col-span-2">
-                                    <Skeleton className="h-6 w-20 rounded-full" />
-                                </div>
-                                <div className="col-span-2">
-                                    <Skeleton className="h-4 w-16" />
-                                </div>
-                                <div className="col-span-2 flex items-center justify-between">
-                                    <Skeleton className="h-4 w-20" />
-                                    <Skeleton className="h-5 w-5" />
-                                </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
                 ) : orders.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20">
@@ -287,124 +289,126 @@ function OrdersContent() {
                         <p className={textSecondary}>Sipariş bulunamadı</p>
                     </div>
                 ) : (
-                    <>
-                        {/* Table Header */}
-                        <div className={`grid grid-cols-12 gap-4 px-6 py-4 border-b text-sm font-medium ${tableHeaderClass} ${textSecondary}`}>
-                            <div className="col-span-3">Sipariş</div>
-                            <div className="col-span-3">Müşteri</div>
-                            <div className="col-span-2">Durum</div>
-                            <div
-                                role="button"
-                                tabIndex={0}
-                                className={`col-span-2 flex items-center gap-1 cursor-pointer ${isDark ? "hover:text-white" : "hover:text-gray-900"}`}
-                                onClick={() => {
-                                    if (sortBy === "total") setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-                                    else { setSortBy("total"); setSortOrder("desc"); }
-                                }}
-                                onKeyDown={(e) => {
-                                    if (e.key === "Enter" || e.key === " ") {
-                                        e.preventDefault();
+                    <div className="overflow-x-auto w-full custom-scrollbar">
+                        <div className="min-w-225">
+                            {/* Table Header */}
+                            <div className={`grid grid-cols-12 gap-4 px-6 py-4 border-b text-sm font-medium ${tableHeaderClass} ${textSecondary}`}>
+                                <div className="col-span-3">Sipariş</div>
+                                <div className="col-span-3">Müşteri</div>
+                                <div className="col-span-2">Durum</div>
+                                <div
+                                    role="button"
+                                    tabIndex={0}
+                                    className={`col-span-2 flex items-center gap-1 cursor-pointer ${isDark ? "hover:text-white" : "hover:text-gray-900"}`}
+                                    onClick={() => {
                                         if (sortBy === "total") setSortOrder(sortOrder === "asc" ? "desc" : "asc");
                                         else { setSortBy("total"); setSortOrder("desc"); }
-                                    }
-                                }}
-                            >
-                                Tutar {sortBy === "total" && (sortOrder === "asc" ? "↑" : "↓")}
-                                <ArrowUpDown className="w-3 h-3" />
-                            </div>
-                            <div
-                                role="button"
-                                tabIndex={0}
-                                className={`col-span-2 flex items-center gap-1 cursor-pointer ${isDark ? "hover:text-white" : "hover:text-gray-900"}`}
-                                onClick={() => {
-                                    if (sortBy === "created_at") setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-                                    else { setSortBy("created_at"); setSortOrder("desc"); }
-                                }}
-                                onKeyDown={(e) => {
-                                    if (e.key === "Enter" || e.key === " ") {
-                                        e.preventDefault();
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter" || e.key === " ") {
+                                            e.preventDefault();
+                                            if (sortBy === "total") setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                                            else { setSortBy("total"); setSortOrder("desc"); }
+                                        }
+                                    }}
+                                >
+                                    Tutar {sortBy === "total" && (sortOrder === "asc" ? "↑" : "↓")}
+                                    <ArrowUpDown className="w-3 h-3" />
+                                </div>
+                                <div
+                                    role="button"
+                                    tabIndex={0}
+                                    className={`col-span-2 flex items-center gap-1 cursor-pointer ${isDark ? "hover:text-white" : "hover:text-gray-900"}`}
+                                    onClick={() => {
                                         if (sortBy === "created_at") setSortOrder(sortOrder === "asc" ? "desc" : "asc");
                                         else { setSortBy("created_at"); setSortOrder("desc"); }
-                                    }
-                                }}
-                            >
-                                Tarih {sortBy === "created_at" && (sortOrder === "asc" ? "↑" : "↓")}
-                                <ArrowUpDown className="w-3 h-3" />
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter" || e.key === " ") {
+                                            e.preventDefault();
+                                            if (sortBy === "created_at") setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                                            else { setSortBy("created_at"); setSortOrder("desc"); }
+                                        }
+                                    }}
+                                >
+                                    Tarih {sortBy === "created_at" && (sortOrder === "asc" ? "↑" : "↓")}
+                                    <ArrowUpDown className="w-3 h-3" />
+                                </div>
+                            </div>
+
+                            {/* Table Body */}
+                            <div className={`divide-y ${dividerClass}`}>
+                                {orders.map((order) => {
+                                    const statusConfig = STATUS_CONFIG[order.status as OrderStatus] || STATUS_CONFIG.pending;
+                                    const isHighlighted = highlightedId === order.id;
+
+                                    return (
+                                        <Link
+                                            key={order.id}
+                                            to={`/admin/orders/${order.id}`}
+                                            className={`grid grid-cols-12 gap-4 px-6 py-4 transition-all items-center group relative ${rowHoverClass} ${isHighlighted
+                                                ? isDark
+                                                    ? "bg-orange-500/5 z-10"
+                                                    : "bg-orange-50/50 z-10 shadow-sm"
+                                                : ""
+                                                }`}
+                                        >
+                                            {isHighlighted && (
+                                                <m.div
+                                                    className="absolute inset-0 pointer-events-none z-20 rounded-lg border-2 border-orange-500"
+                                                    initial={{ boxShadow: "0 0 0 0px rgba(249, 115, 22, 0.4)", borderColor: "rgba(249, 115, 22, 0.8)" }}
+                                                    animate={{
+                                                        boxShadow: [
+                                                            "0 0 0 0px rgba(249, 115, 22, 0.4)",
+                                                            "0 0 0 10px rgba(249, 115, 22, 0)"
+                                                        ],
+                                                        borderColor: [
+                                                            "rgba(249, 115, 22, 0.8)",
+                                                            "rgba(249, 115, 22, 0.2)"
+                                                        ],
+                                                    }}
+                                                    transition={{
+                                                        duration: 1.5,
+                                                        repeat: Infinity,
+                                                        ease: "easeOut",
+                                                        repeatDelay: 0.1
+                                                    }}
+                                                />
+                                            )}
+                                            <div className="col-span-3 flex items-center gap-3">
+                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isDark ? "bg-orange-500/20" : "bg-orange-100"}`}>
+                                                    <Package className={`w-5 h-5 ${isDark ? "text-orange-400" : "text-orange-600"}`} />
+                                                </div>
+                                                <span className={`font-mono font-medium ${textPrimary}`}>
+                                                    #{order.id.slice(0, 8).toUpperCase()}
+                                                </span>
+                                            </div>
+                                            <div className="col-span-3">
+                                                <p className={`font-medium ${textPrimary}`}>
+                                                    {order.profiles?.full_name || "Anonim"}
+                                                </p>
+                                                <p className={`text-sm ${textSecondary}`}>{order.profiles?.email}</p>
+                                            </div>
+                                            <div className="col-span-2">
+                                                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${statusConfig.bgColor} ${statusConfig.color}`}>
+                                                    {statusConfig.label}
+                                                </span>
+                                            </div>
+                                            <div className={`col-span-2 font-medium ${textPrimary}`}>
+                                                ₺{order.order_details?.total?.toLocaleString("tr-TR") || 0}
+                                            </div>
+                                            <div className="col-span-2 flex items-center justify-between">
+                                                <span className={`text-[10px] leading-tight ${textSecondary}`}>
+                                                    {formatDateTime(order.created_at)}
+                                                </span>
+                                                <ChevronRight className={`w-5 h-5 transition-colors ${isDark ? "text-gray-600 group-hover:text-orange-400" : "text-gray-300 group-hover:text-orange-500"}`} />
+                                            </div>
+                                        </Link>
+                                    );
+                                })}
                             </div>
                         </div>
-
-                        {/* Table Body */}
-                        <div className={`divide-y ${dividerClass}`}>
-                            {orders.map((order) => {
-                                const statusConfig = STATUS_CONFIG[order.status as OrderStatus] || STATUS_CONFIG.pending;
-                                const isHighlighted = highlightedId === order.id;
-
-                                return (
-                                    <Link
-                                        key={order.id}
-                                        to={`/admin/orders/${order.id}`}
-                                        className={`grid grid-cols-12 gap-4 px-6 py-4 transition-all items-center group relative ${rowHoverClass} ${isHighlighted
-                                            ? isDark
-                                                ? "bg-orange-500/5 z-10"
-                                                : "bg-orange-50/50 z-10 shadow-sm"
-                                            : ""
-                                            }`}
-                                    >
-                                        {isHighlighted && (
-                                            <m.div
-                                                className="absolute inset-0 pointer-events-none z-20 rounded-lg border-2 border-orange-500"
-                                                initial={{ boxShadow: "0 0 0 0px rgba(249, 115, 22, 0.4)", borderColor: "rgba(249, 115, 22, 0.8)" }}
-                                                animate={{
-                                                    boxShadow: [
-                                                        "0 0 0 0px rgba(249, 115, 22, 0.4)",
-                                                        "0 0 0 10px rgba(249, 115, 22, 0)"
-                                                    ],
-                                                    borderColor: [
-                                                        "rgba(249, 115, 22, 0.8)",
-                                                        "rgba(249, 115, 22, 0.2)"
-                                                    ],
-                                                }}
-                                                transition={{
-                                                    duration: 1.5,
-                                                    repeat: Infinity,
-                                                    ease: "easeOut",
-                                                    repeatDelay: 0.1
-                                                }}
-                                            />
-                                        )}
-                                        <div className="col-span-3 flex items-center gap-3">
-                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isDark ? "bg-orange-500/20" : "bg-orange-100"}`}>
-                                                <Package className={`w-5 h-5 ${isDark ? "text-orange-400" : "text-orange-600"}`} />
-                                            </div>
-                                            <span className={`font-mono font-medium ${textPrimary}`}>
-                                                #{order.id.slice(0, 8).toUpperCase()}
-                                            </span>
-                                        </div>
-                                        <div className="col-span-3">
-                                            <p className={`font-medium ${textPrimary}`}>
-                                                {order.profiles?.full_name || "Anonim"}
-                                            </p>
-                                            <p className={`text-sm ${textSecondary}`}>{order.profiles?.email}</p>
-                                        </div>
-                                        <div className="col-span-2">
-                                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${statusConfig.bgColor} ${statusConfig.color}`}>
-                                                {statusConfig.label}
-                                            </span>
-                                        </div>
-                                        <div className={`col-span-2 font-medium ${textPrimary}`}>
-                                            ₺{order.order_details?.total?.toLocaleString("tr-TR") || 0}
-                                        </div>
-                                        <div className="col-span-2 flex items-center justify-between">
-                                            <span className={`text-[10px] leading-tight ${textSecondary}`}>
-                                                {formatDateTime(order.created_at)}
-                                            </span>
-                                            <ChevronRight className={`w-5 h-5 transition-colors ${isDark ? "text-gray-600 group-hover:text-orange-400" : "text-gray-300 group-hover:text-orange-500"}`} />
-                                        </div>
-                                    </Link>
-                                );
-                            })}
-                        </div>
-                    </>
+                    </div>
                 )}
             </m.div>
 
