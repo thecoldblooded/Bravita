@@ -98,109 +98,54 @@ function AdminOrderDetailContent() {
                 order.payment_status === "paid";
 
             if (shouldReverseCardPayment) {
-                const shouldAttemptVoidFirst = order.status === "pending";
-
-                const now = new Date();
-                const orderCreatedAtDate = new Date(order.created_at);
-                const istanbulFormatter = new Intl.DateTimeFormat("tr-TR", {
+                const istanbulFormatter = new Intl.DateTimeFormat("en-GB", {
                     timeZone: "Europe/Istanbul",
                     year: "numeric",
                     month: "2-digit",
                     day: "2-digit",
                     hour: "2-digit",
                     minute: "2-digit",
-                    second: "2-digit",
                     hourCycle: "h23",
                 });
 
-                const orderIstanbul = istanbulFormatter.format(orderCreatedAtDate);
-                const nowIstanbul = istanbulFormatter.format(now);
-                const orderIstanbulDay = orderIstanbul.split(" ")[0] ?? "";
-                const nowIstanbulDay = nowIstanbul.split(" ")[0] ?? "";
-                const nowIstanbulTime = nowIstanbul.split(" ")[1] ?? "";
-                const nowHour = Number(nowIstanbulTime.split(":")[0] ?? "0");
-                const nowMinute = Number(nowIstanbulTime.split(":")[1] ?? "0");
-                const nowMinuteOfDay = (Number.isFinite(nowHour) ? nowHour : 0) * 60 + (Number.isFinite(nowMinute) ? nowMinute : 0);
-                const shouldAttemptVoidBySameDayCutoff = orderIstanbulDay === nowIstanbulDay && nowMinuteOfDay <= (22 * 60);
+                const getIstanbulDateMeta = (date: Date) => {
+                    const parts = istanbulFormatter.formatToParts(date);
+                    const byType = Object.fromEntries(
+                        parts
+                            .filter((part) => part.type !== "literal")
+                            .map((part) => [part.type, part.value]),
+                    ) as Record<string, string>;
 
-                console.info("[cancel-decision-debug] card_payment_reversal_decision", {
-                    orderId,
-                    orderStatus: order.status,
-                    paymentMethod: order.payment_method,
-                    paymentStatus: order.payment_status,
-                    orderCreatedAtIso: order.created_at,
-                    orderIstanbul,
-                    nowIso: now.toISOString(),
-                    nowIstanbul,
-                    shouldAttemptVoidFirstCurrentLogic: shouldAttemptVoidFirst,
-                    shouldAttemptVoidBySameDayCutoff,
-                    sameDayCutoffRuleCutoff: "22:00 Europe/Istanbul",
-                });
+                    const hour = Number(byType.hour ?? "0");
+                    const minute = Number(byType.minute ?? "0");
 
-                if (shouldAttemptVoidFirst) {
-                    console.info("[cancel-decision-debug] attempting_void_first", {
-                        orderId,
-                        reason: "order_status_pending",
-                    });
+                    return {
+                        dateKey: `${byType.year ?? ""}-${byType.month ?? ""}-${byType.day ?? ""}`,
+                        minuteOfDay: (Number.isFinite(hour) ? hour : 0) * 60 + (Number.isFinite(minute) ? minute : 0),
+                    };
+                };
 
+                const nowMeta = getIstanbulDateMeta(new Date());
+                const paymentDate = new Date(order.created_at);
+                const canUseVoidByCutoff = !Number.isNaN(paymentDate.getTime()) && (() => {
+                    const paymentMeta = getIstanbulDateMeta(paymentDate);
+                    return paymentMeta.dateKey === nowMeta.dateKey && nowMeta.minuteOfDay <= (22 * 60);
+                })();
+
+                if (canUseVoidByCutoff) {
                     const voidResult = await voidCardPayment(orderId);
-                    console.info("[cancel-decision-debug] void_result", {
-                        orderId,
-                        success: voidResult.success,
-                        pending: voidResult.pending,
-                        message: voidResult.message,
-                        error: voidResult.error,
-                    });
-
-                    if (voidResult.success) {
-                        cardPaymentReversalSucceeded = true;
-                        toast.success("Kart odemesi void edildi.");
-                    } else if (voidResult.pending) {
-                        const pendingMessage = `${voidResult.message || "Void istegi manuel incelemeye alindi."} Sipariş iptal edilmedi, mevcut durumda bırakıldı.`;
-                        toast.error(pendingMessage);
+                    if (!voidResult.success) {
+                        const pendingOrFailedMessage = voidResult.pending
+                            ? `${voidResult.message || "Void istegi manuel incelemeye alindi."} Sipariş iptal edilmedi, mevcut durumda bırakıldı.`
+                            : `${voidResult.message || "Kart odeme iptal islemi basarisiz"} Sipariş iptal edilmedi, mevcut durumda bırakıldı.`;
+                        toast.error(pendingOrFailedMessage);
                         return;
-                    } else {
-                        console.info("[cancel-decision-debug] falling_back_to_refund_after_void_failure", {
-                            orderId,
-                            voidMessage: voidResult.message,
-                            voidError: voidResult.error,
-                        });
-
-                        const refundFallbackResult = await refundCardPayment(orderId);
-                        console.info("[cancel-decision-debug] refund_fallback_result", {
-                            orderId,
-                            success: refundFallbackResult.success,
-                            pending: refundFallbackResult.pending,
-                            message: refundFallbackResult.message,
-                            error: refundFallbackResult.error,
-                        });
-
-                        if (!refundFallbackResult.success) {
-                            const pendingOrFailedMessage = refundFallbackResult.pending
-                                ? `${refundFallbackResult.message || "Refund istegi manuel incelemeye alindi."} Sipariş iptal edilmedi, mevcut durumda bırakıldı.`
-                                : `${refundFallbackResult.message || "Kart iade islemi basarisiz"} Sipariş iptal edilmedi, mevcut durumda bırakıldı.`;
-                            toast.error(pendingOrFailedMessage);
-                            return;
-                        }
-
-                        cardPaymentReversalSucceeded = true;
-                        toast.success("Kart odemesi iade edildi.");
                     }
+
+                    cardPaymentReversalSucceeded = true;
+                    toast.success("Kart odemesi iptal edildi (void).");
                 } else {
-                    console.info("[cancel-decision-debug] attempting_refund_directly", {
-                        orderId,
-                        reason: "order_status_not_pending",
-                    });
-
                     const refundResult = await refundCardPayment(orderId);
-                    console.info("[cancel-decision-debug] refund_result", {
-                        orderId,
-                        success: refundResult.success,
-                        pending: refundResult.pending,
-                        message: refundResult.message,
-                        error: refundResult.error,
-                    });
-
                     if (!refundResult.success) {
                         const pendingOrFailedMessage = refundResult.pending
                             ? `${refundResult.message || "Refund istegi manuel incelemeye alindi."} Sipariş iptal edilmedi, mevcut durumda bırakıldı.`
