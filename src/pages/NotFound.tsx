@@ -59,7 +59,7 @@ const NotFound = () => {
           transition={{ delay: 0.6 }}
           href="/"
           aria-label="Ana Sayfaya Dön"
-          className="inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold rounded-2xl shadow-lg shadow-orange-200 transition-all active:scale-95 group"
+          className="inline-flex items-center justify-center px-8 py-4 bg-linear-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold rounded-2xl shadow-lg shadow-orange-200 transition-all active:scale-95 group"
         >
           Ana Sayfaya Dön
           <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
