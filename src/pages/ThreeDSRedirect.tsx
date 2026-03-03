@@ -85,8 +85,9 @@ export default function ThreeDSRedirect() {
     const { user } = useAuth();
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const statePayload = useMemo(() => (location.state as RedirectState | null) ?? null, [location.state]);
+    const isStubUser = user?.isStub === true;
     const hasValidPhone = !!user?.phone && isValidPhoneNumber(user.phone);
-    const isPurchaseBlocked = !!user && (!user.profile_complete || !hasValidPhone);
+    const isPurchaseBlocked = !!user && !isStubUser && (!user.profile_complete || !hasValidPhone);
 
     const intentId = useMemo(() => {
         const params = new URLSearchParams(location.search);

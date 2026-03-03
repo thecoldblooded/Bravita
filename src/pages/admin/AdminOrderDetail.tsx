@@ -100,8 +100,58 @@ function AdminOrderDetailContent() {
             if (shouldReverseCardPayment) {
                 const shouldAttemptVoidFirst = order.status === "pending";
 
+                const now = new Date();
+                const orderCreatedAtDate = new Date(order.created_at);
+                const istanbulFormatter = new Intl.DateTimeFormat("tr-TR", {
+                    timeZone: "Europe/Istanbul",
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                    hourCycle: "h23",
+                });
+
+                const orderIstanbul = istanbulFormatter.format(orderCreatedAtDate);
+                const nowIstanbul = istanbulFormatter.format(now);
+                const orderIstanbulDay = orderIstanbul.split(" ")[0] ?? "";
+                const nowIstanbulDay = nowIstanbul.split(" ")[0] ?? "";
+                const nowIstanbulTime = nowIstanbul.split(" ")[1] ?? "";
+                const nowHour = Number(nowIstanbulTime.split(":")[0] ?? "0");
+                const nowMinute = Number(nowIstanbulTime.split(":")[1] ?? "0");
+                const nowMinuteOfDay = (Number.isFinite(nowHour) ? nowHour : 0) * 60 + (Number.isFinite(nowMinute) ? nowMinute : 0);
+                const shouldAttemptVoidBySameDayCutoff = orderIstanbulDay === nowIstanbulDay && nowMinuteOfDay <= (22 * 60);
+
+                console.info("[cancel-decision-debug] card_payment_reversal_decision", {
+                    orderId,
+                    orderStatus: order.status,
+                    paymentMethod: order.payment_method,
+                    paymentStatus: order.payment_status,
+                    orderCreatedAtIso: order.created_at,
+                    orderIstanbul,
+                    nowIso: now.toISOString(),
+                    nowIstanbul,
+                    shouldAttemptVoidFirstCurrentLogic: shouldAttemptVoidFirst,
+                    shouldAttemptVoidBySameDayCutoff,
+                    sameDayCutoffRuleCutoff: "22:00 Europe/Istanbul",
+                });
+
                 if (shouldAttemptVoidFirst) {
+                    console.info("[cancel-decision-debug] attempting_void_first", {
+                        orderId,
+                        reason: "order_status_pending",
+                    });
+
                     const voidResult = await voidCardPayment(orderId);
+                    console.info("[cancel-decision-debug] void_result", {
+                        orderId,
+                        success: voidResult.success,
+                        pending: voidResult.pending,
+                        message: voidResult.message,
+                        error: voidResult.error,
+                    });
+
                     if (voidResult.success) {
                         cardPaymentReversalSucceeded = true;
                         toast.success("Kart odemesi void edildi.");
@@ -110,7 +160,21 @@ function AdminOrderDetailContent() {
                         toast.error(pendingMessage);
                         return;
                     } else {
+                        console.info("[cancel-decision-debug] falling_back_to_refund_after_void_failure", {
+                            orderId,
+                            voidMessage: voidResult.message,
+                            voidError: voidResult.error,
+                        });
+
                         const refundFallbackResult = await refundCardPayment(orderId);
+                        console.info("[cancel-decision-debug] refund_fallback_result", {
+                            orderId,
+                            success: refundFallbackResult.success,
+                            pending: refundFallbackResult.pending,
+                            message: refundFallbackResult.message,
+                            error: refundFallbackResult.error,
+                        });
+
                         if (!refundFallbackResult.success) {
                             const pendingOrFailedMessage = refundFallbackResult.pending
                                 ? `${refundFallbackResult.message || "Refund istegi manuel incelemeye alindi."} Sipariş iptal edilmedi, mevcut durumda bırakıldı.`
@@ -123,7 +187,20 @@ function AdminOrderDetailContent() {
                         toast.success("Kart odemesi iade edildi.");
                     }
                 } else {
+                    console.info("[cancel-decision-debug] attempting_refund_directly", {
+                        orderId,
+                        reason: "order_status_not_pending",
+                    });
+
                     const refundResult = await refundCardPayment(orderId);
+                    console.info("[cancel-decision-debug] refund_result", {
+                        orderId,
+                        success: refundResult.success,
+                        pending: refundResult.pending,
+                        message: refundResult.message,
+                        error: refundResult.error,
+                    });
+
                     if (!refundResult.success) {
                         const pendingOrFailedMessage = refundResult.pending
                             ? `${refundResult.message || "Refund istegi manuel incelemeye alindi."} Sipariş iptal edilmedi, mevcut durumda bırakıldı.`

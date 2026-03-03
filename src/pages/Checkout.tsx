@@ -69,13 +69,16 @@ export default function Checkout() {
 
     // Redirect if not authenticated or cart is empty (but not if order was just placed)
     const [orderPlaced, setOrderPlaced] = useState(false);
+    const isStubUser = user?.isStub === true;
     const hasValidPhone = !!user?.phone && isValidPhoneNumber(user.phone);
-    const isPurchaseBlocked = !!user && (!user.profile_complete || !hasValidPhone);
-    const purchaseBlockCode = !user?.profile_complete
-        ? "PROFILE_INCOMPLETE"
-        : !hasValidPhone
-            ? "PHONE_REQUIRED"
-            : null;
+    const isPurchaseBlocked = !!user && !isStubUser && (!user.profile_complete || !hasValidPhone);
+    const purchaseBlockCode = isStubUser
+        ? null
+        : !user?.profile_complete
+            ? "PROFILE_INCOMPLETE"
+            : !hasValidPhone
+                ? "PHONE_REQUIRED"
+                : null;
 
     useEffect(() => {
         if (orderPlaced) return; // Don't redirect if order was just placed
@@ -120,6 +123,21 @@ export default function Checkout() {
         const params = new URLSearchParams(location.search);
         const failedCode = (params.get("code") || "").trim().toLowerCase();
         if (!failedCode) return;
+
+        if (failedCode === "installment_auth_declined") {
+            setCheckoutData((prev) => (
+                prev.installmentNumber === 1
+                    ? prev
+                    : { ...prev, installmentNumber: 1 }
+            ));
+            toast.error(
+                t(
+                    "checkout.validation.installment_declined_single_shot",
+                    "Taksitli ödeme bankanız tarafından onaylanmadı. Tek çekim seçildi, bu şekilde tekrar deneyin.",
+                ),
+            );
+            return;
+        }
 
         if (["failed", "fail", "3d_auth_failed", "callback_declined", "invalid_3d_payload"].includes(failedCode)) {
             toast.error(t("checkout.validation.threed_auth_failed", "3D doğrulama başarısız oldu veya yarıda kaldı. Lütfen bankadaki doğrulama adımını tamamlayarak tekrar deneyin."));

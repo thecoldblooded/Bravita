@@ -945,13 +945,20 @@ serve(async (req: Request) => {
       inquiryIndicatesSuccess
     );
 
-    const callbackBankCodeNormalized = callbackBankResultCodeRaw.replace(/\D/g, "").padStart(2, "0");
+    const callbackBankCodeDigits = callbackBankResultCodeRaw.replace(/\D/g, "");
+    const callbackBankCodeNormalized = callbackBankCodeDigits ? callbackBankCodeDigits.padStart(3, "0") : "";
+    const callbackBankResultCodeUpper = callbackBankResultCodeRaw.toUpperCase();
+    const installmentConstraintBankCodes = new Set(["001", "1005"]);
+
     const intentInstallmentNumber = Number(intentRow?.installment_number ?? 1);
     const isInstallmentPayment = Number.isFinite(intentInstallmentNumber) && intentInstallmentNumber > 1;
     const likelyInstallmentConstraint =
       callbackOutcomeFromHash === "f" &&
       isInstallmentPayment &&
-      ["01", "1", "001"].includes(callbackBankCodeNormalized);
+      (
+        (callbackBankCodeNormalized.length > 0 && installmentConstraintBankCodes.has(callbackBankCodeNormalized)) ||
+        callbackBankResultCodeUpper.includes("VPS-1005")
+      );
 
     const effectiveFailureCode = callbackOutcomeFromHash === "f"
       ? (likelyInstallmentConstraint ? "installment_auth_declined" : "3d_auth_failed")

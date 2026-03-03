@@ -27,7 +27,8 @@ export default async function handler(req, res) {
     const body = parseRequestBody(req);
     const email = typeof body.email === "string" ? body.email.trim() : "";
     const password = typeof body.password === "string" ? body.password : "";
-    const captchaToken = typeof body.captchaToken === "string" ? body.captchaToken : undefined;
+    const rawCaptchaToken = typeof body.captchaToken === "string" ? body.captchaToken.trim() : "";
+    const captchaToken = rawCaptchaToken.length > 0 ? rawCaptchaToken : undefined;
 
     logAuthDiagnostic("login_attempt", req, {
       emailPresent: email.length > 0,
@@ -37,6 +38,13 @@ export default async function handler(req, res) {
 
     if (!email || !password) {
       return sendJson(res, 400, { error: "Email and password are required" });
+    }
+
+    if (!captchaToken) {
+      logAuthDiagnostic("login_missing_captcha", req, {
+        status: 400,
+      });
+      return sendJson(res, 400, { error: "Captcha token is required" });
     }
 
     const { response, data } = await exchangePasswordForSession(email, password, captchaToken);

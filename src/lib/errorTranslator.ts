@@ -27,6 +27,11 @@ const ERROR_MAP: Record<string, string> = {
     "Signup failed": "errors.signup_failed",
     "Google signup failed": "errors.google_signup_failed",
 
+    // Captcha errors
+    "Captcha token is required": "auth.captcha_required",
+    "captcha verification process failed": "auth.captcha_required",
+    "captcha protection": "auth.captcha_required",
+
     // Database errors
     "duplicate key value violates unique constraint": "errors.duplicate_entry",
     "violates foreign key constraint": "errors.invalid_reference",

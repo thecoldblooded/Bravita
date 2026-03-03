@@ -117,8 +117,9 @@ export default function PaymentFailed() {
     const location = useLocation();
     const navigate = useNavigate();
     const { user } = useAuth();
+    const isStubUser = user?.isStub === true;
     const hasValidPhone = !!user?.phone && isValidPhoneNumber(user.phone);
-    const isPurchaseBlocked = !!user && (!user.profile_complete || !hasValidPhone);
+    const isPurchaseBlocked = !!user && !isStubUser && (!user.profile_complete || !hasValidPhone);
 
     const { code, intent, bankCode, trxStatus } = useMemo(() => {
         const params = new URLSearchParams(location.search);
