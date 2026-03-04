@@ -140,15 +140,15 @@ function UsersContent() {
     return (
         <>
             <div className="max-w-7xl mx-auto">
-                <div className="flex items-center justify-between mb-8">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                     <div>
-                        <h1 className={`text-3xl font-black ${textPrimary} flex items-center gap-3`}>
+                        <h1 className={`text-2xl md:text-3xl font-black ${textPrimary} flex items-center gap-3`}>
                             <span className="bg-orange-500 w-2 h-8 rounded-full" />
                             Kullanıcı Yönetimi
                         </h1>
                         <p className={textSecondary}>Admin yetkilerini yönetin.</p>
                     </div>
-                    <div className="flex gap-3">
+                    <div className="flex gap-3 shrink-0">
                         <Button variant="outline" size="icon" onClick={loadUsers} className={isDark ? "bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600" : ""}>
                             <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
                         </Button>
@@ -173,7 +173,7 @@ function UsersContent() {
                     ) : (
                         <ul className={isDark ? "divide-y divide-gray-700" : "divide-y divide-gray-100"}>
                             {filteredUsers.map((user) => (
-                                <li key={user.id} className={`flex items-center justify-between px-6 py-4 transition-colors ${rowHoverClass}`}>
+                                <li key={user.id} className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-4 transition-colors ${rowHoverClass}`}>
                                     <div className="flex items-center gap-4">
                                         <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${isDark ? "bg-orange-500/20 text-orange-400" : "bg-orange-100 text-orange-600"}`}>
                                             {user.full_name?.charAt(0) || user.email?.charAt(0) || "?"}

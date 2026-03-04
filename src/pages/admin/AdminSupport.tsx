@@ -376,7 +376,7 @@ export default function AdminSupport() {
                 <div className="max-w-7xl mx-auto space-y-8">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>
-                            <h1 className={`text-3xl font-black ${textPrimary} flex items-center gap-3`}>
+                            <h1 className={`text-2xl md:text-3xl font-black ${textPrimary} flex items-center gap-3`}>
                                 <span className="bg-orange-500 w-2 h-8 rounded-full" />
                                 Destek Talepleri
                             </h1>
@@ -459,7 +459,7 @@ export default function AdminSupport() {
 
                     {/* Table */}
                     <div className={`rounded-2xl border overflow-hidden ${cardClass}`}>
-                        <div className={`grid grid-cols-12 gap-4 px-6 py-4 border-b text-xs font-bold uppercase tracking-wider ${isDark ? "bg-slate-800/50 text-slate-400 border-slate-700" : "bg-muted/50 text-muted-foreground"}`}>
+                        <div className={`hidden md:grid grid-cols-12 gap-4 px-6 py-4 border-b text-xs font-bold uppercase tracking-wider ${isDark ? "bg-slate-800/50 text-slate-400 border-slate-700" : "bg-muted/50 text-muted-foreground"}`}>
                             <div className="col-span-3">Müşteri</div>
                             <div className="col-span-4">Konu / Mesaj</div>
                             <div className="col-span-2">Kategori</div>
@@ -488,22 +488,35 @@ export default function AdminSupport() {
                                                 setSelectedTicket(ticket);
                                             }
                                         }}
-                                        className={`grid grid-cols-12 gap-4 px-6 py-5 transition-colors cursor-pointer items-center ${rowHover}`}
+                                        className={`md:grid md:grid-cols-12 gap-4 px-4 md:px-6 py-4 md:py-5 transition-colors cursor-pointer md:items-center ${rowHover}`}
                                     >
-                                        <div className="col-span-3">
-                                            <p className={`font-bold ${textPrimary}`}>{ticket.name}</p>
-                                            <p className="text-xs text-gray-500">{ticket.email}</p>
+                                        <div className="md:col-span-3 flex items-center justify-between md:block">
+                                            <div>
+                                                <p className={`font-bold ${textPrimary}`}>{ticket.name}</p>
+                                                <p className="text-xs text-gray-500">{ticket.email}</p>
+                                            </div>
+                                            <div className="md:hidden flex items-center gap-2">
+                                                {getStatusIcon(ticket.status)}
+                                                <span className={cn(
+                                                    "text-xs capitalize",
+                                                    ticket.status === "open" ? "text-orange-500" :
+                                                        ticket.status === "answered" ? "text-green-500" : "text-gray-400"
+                                                )}>
+                                                    {ticket.status === "open" ? "Bekliyor" :
+                                                        ticket.status === "answered" ? "Yanıtlandı" : "Kapatıldı"}
+                                                </span>
+                                            </div>
                                         </div>
-                                        <div className="col-span-4">
+                                        <div className="md:col-span-4 mt-2 md:mt-0">
                                             <p className={`font-medium line-clamp-1 ${textPrimary}`}>{ticket.subject}</p>
                                             <p className="text-xs text-gray-500 line-clamp-1">{ticket.message}</p>
                                         </div>
-                                        <div className="col-span-2">
+                                        <div className="hidden md:block md:col-span-2">
                                             <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-muted text-muted-foreground">
                                                 {CATEGORY_LABELS[ticket.category] || ticket.category}
                                             </span>
                                         </div>
-                                        <div className="col-span-2 flex items-center gap-2">
+                                        <div className="hidden md:flex md:col-span-2 items-center gap-2">
                                             {getStatusIcon(ticket.status)}
                                             <span className={cn(
                                                 "text-xs capitalize",
@@ -514,7 +527,7 @@ export default function AdminSupport() {
                                                     ticket.status === "answered" ? "Yanıtlandı" : "Kapatıldı"}
                                             </span>
                                         </div>
-                                        <div className="col-span-1 flex justify-end">
+                                        <div className="hidden md:flex md:col-span-1 justify-end">
                                             <ChevronRight className="w-5 h-5 text-gray-300" />
                                         </div>
                                     </div>

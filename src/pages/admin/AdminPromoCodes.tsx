@@ -91,15 +91,15 @@ function PromoCodesContent() {
     return (
         <>
             <div className="max-w-7xl mx-auto">
-                <div className="flex items-center justify-between mb-8">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                     <div>
-                        <h1 className={`text-3xl font-black ${textPrimary} flex items-center gap-3`}>
+                        <h1 className={`text-2xl md:text-3xl font-black ${textPrimary} flex items-center gap-3`}>
                             <span className="bg-orange-500 w-2 h-8 rounded-full" />
                             Promosyon Kodları
                         </h1>
                         <p className={textSecondary}>İndirim kuponlarını ve kampanyaları yönetin.</p>
                     </div>
-                    <Button onClick={() => { setEditingPromo(null); setIsModalOpen(true); }} className="bg-orange-500 hover:bg-orange-600 text-white">
+                    <Button onClick={() => { setEditingPromo(null); setIsModalOpen(true); }} className="bg-orange-500 hover:bg-orange-600 text-white shrink-0">
                         <Plus className="w-4 h-4 mr-2" />Yeni Kod Ekle
                     </Button>
                 </div>
@@ -109,32 +109,34 @@ function PromoCodesContent() {
                     <Input id="promo-search-input" aria-label="Kod Ara" placeholder="Kod Ara..." value={search} onChange={(e) => setSearch(e.target.value)} className={`pl-10 ${inputClass}`} />
                 </div>
                 <div className={`rounded-2xl border overflow-hidden shadow-sm ${cardClass}`}>
-                    <table className="w-full">
-                        <thead className={`border-b ${tableHeaderClass}`}>
-                            <tr className={`text-left text-xs font-semibold uppercase tracking-wider ${textSecondary}`}>
-                                <th className="px-6 py-4">Kod</th><th className="px-6 py-4">İndirim</th><th className="px-6 py-4">Limitler</th><th className="px-6 py-4">Kullanım</th><th className="px-6 py-4">Durum</th><th className="px-6 py-4 text-right">İşlemler</th>
-                            </tr>
-                        </thead>
-                        <tbody className={isDark ? "divide-y divide-gray-700" : "divide-y divide-gray-100"}>
-                            {filteredPromoCodes.map((promo) => (
-                                <tr key={promo.id} className={`transition-colors ${rowHoverClass}`}>
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isDark ? "bg-orange-500/20 text-orange-400" : "bg-orange-50 text-orange-600"}`}>
-                                                {promo.discount_type === 'percentage' ? <Percent className="w-5 h-5" /> : <Coins className="w-5 h-5" />}
-                                            </div>
-                                            <div><p className={`font-bold font-mono ${textPrimary}`}>{promo.code}</p><p className={`text-xs ${textSecondary}`}>{promo.discount_type === 'percentage' ? 'Yüzde' : 'Sabit'}</p></div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4"><span className={`font-bold text-lg ${textPrimary}`}>{promo.discount_type === 'percentage' ? `%${promo.discount_value}` : `₺${promo.discount_value}`}</span>{promo.max_discount_amount && <div className={`text-xs ${textSecondary}`}>Max: ₺{promo.max_discount_amount}</div>}</td>
-                                    <td className={`px-6 py-4 text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}><div>Min: {promo.min_order_amount ? `₺${promo.min_order_amount}` : '-'}</div><div className={`text-xs ${textSecondary}`}>{promo.start_date ? formatDate(promo.start_date) : '-'} - {promo.end_date ? formatDate(promo.end_date) : '∞'}</div></td>
-                                    <td className="px-6 py-4"><span className={`text-sm font-medium ${textPrimary}`}>{promo.usage_count} / {promo.usage_limit || '∞'}</span>{promo.usage_limit && <div className={`w-24 h-1.5 rounded-full overflow-hidden mt-1 ${isDark ? "bg-gray-600" : "bg-gray-100"}`}><div className="h-full bg-orange-500 rounded-full" style={{ width: `${Math.min(100, (promo.usage_count / promo.usage_limit) * 100)}%` }} /></div>}</td>
-                                    <td className="px-6 py-4"><button onClick={() => toggleStatus(promo)} className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${promo.is_active ? isDark ? "bg-blue-500/20 text-blue-400" : "bg-blue-50 text-blue-700" : isDark ? "bg-gray-600 text-gray-400" : "bg-gray-100 text-gray-600"}`}>{promo.is_active ? <><CheckCircle className="w-3 h-3" />Aktif</> : <><AlertCircle className="w-3 h-3" />Pasif</>}</button></td>
-                                    <td className="px-6 py-4"><div className="flex justify-end gap-2"><Button variant="ghost" size="icon" className={`w-8 h-8 ${isDark ? "text-gray-400 hover:text-orange-400" : "text-gray-400 hover:text-orange-600"}`} onClick={() => { setViewingLogsPromo(promo); setIsLogsModalOpen(true); }}><History className="w-4 h-4" /></Button><Button variant="ghost" size="icon" className={`w-8 h-8 ${isDark ? "text-gray-400 hover:text-blue-400" : "text-gray-400 hover:text-blue-600"}`} onClick={() => { setEditingPromo(promo); setIsModalOpen(true); }}><Edit2 className="w-4 h-4" /></Button><Button variant="ghost" size="icon" className={`w-8 h-8 ${isDark ? "text-gray-400 hover:text-red-400" : "text-gray-400 hover:text-red-600"}`} onClick={() => handleDeletePromo(promo)}><Trash2 className="w-4 h-4" /></Button></div></td>
+                    <div className="overflow-x-auto w-full custom-scrollbar">
+                        <table className="w-full min-w-150">
+                            <thead className={`border-b ${tableHeaderClass}`}>
+                                <tr className={`text-left text-xs font-semibold uppercase tracking-wider ${textSecondary}`}>
+                                    <th className="px-6 py-4">Kod</th><th className="px-6 py-4">İndirim</th><th className="px-6 py-4">Limitler</th><th className="px-6 py-4">Kullanım</th><th className="px-6 py-4">Durum</th><th className="px-6 py-4 text-right">İşlemler</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody className={isDark ? "divide-y divide-gray-700" : "divide-y divide-gray-100"}>
+                                {filteredPromoCodes.map((promo) => (
+                                    <tr key={promo.id} className={`transition-colors ${rowHoverClass}`}>
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isDark ? "bg-orange-500/20 text-orange-400" : "bg-orange-50 text-orange-600"}`}>
+                                                    {promo.discount_type === 'percentage' ? <Percent className="w-5 h-5" /> : <Coins className="w-5 h-5" />}
+                                                </div>
+                                                <div><p className={`font-bold font-mono ${textPrimary}`}>{promo.code}</p><p className={`text-xs ${textSecondary}`}>{promo.discount_type === 'percentage' ? 'Yüzde' : 'Sabit'}</p></div>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4"><span className={`font-bold text-lg ${textPrimary}`}>{promo.discount_type === 'percentage' ? `%${promo.discount_value}` : `₺${promo.discount_value}`}</span>{promo.max_discount_amount && <div className={`text-xs ${textSecondary}`}>Max: ₺{promo.max_discount_amount}</div>}</td>
+                                        <td className={`px-6 py-4 text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}><div>Min: {promo.min_order_amount ? `₺${promo.min_order_amount}` : '-'}</div><div className={`text-xs ${textSecondary}`}>{promo.start_date ? formatDate(promo.start_date) : '-'} - {promo.end_date ? formatDate(promo.end_date) : '∞'}</div></td>
+                                        <td className="px-6 py-4"><span className={`text-sm font-medium ${textPrimary}`}>{promo.usage_count} / {promo.usage_limit || '∞'}</span>{promo.usage_limit && <div className={`w-24 h-1.5 rounded-full overflow-hidden mt-1 ${isDark ? "bg-gray-600" : "bg-gray-100"}`}><div className="h-full bg-orange-500 rounded-full" style={{ width: `${Math.min(100, (promo.usage_count / promo.usage_limit) * 100)}%` }} /></div>}</td>
+                                        <td className="px-6 py-4"><button onClick={() => toggleStatus(promo)} className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${promo.is_active ? isDark ? "bg-blue-500/20 text-blue-400" : "bg-blue-50 text-blue-700" : isDark ? "bg-gray-600 text-gray-400" : "bg-gray-100 text-gray-600"}`}>{promo.is_active ? <><CheckCircle className="w-3 h-3" />Aktif</> : <><AlertCircle className="w-3 h-3" />Pasif</>}</button></td>
+                                        <td className="px-6 py-4"><div className="flex justify-end gap-2"><Button variant="ghost" size="icon" className={`w-8 h-8 ${isDark ? "text-gray-400 hover:text-orange-400" : "text-gray-400 hover:text-orange-600"}`} onClick={() => { setViewingLogsPromo(promo); setIsLogsModalOpen(true); }}><History className="w-4 h-4" /></Button><Button variant="ghost" size="icon" className={`w-8 h-8 ${isDark ? "text-gray-400 hover:text-blue-400" : "text-gray-400 hover:text-blue-600"}`} onClick={() => { setEditingPromo(promo); setIsModalOpen(true); }}><Edit2 className="w-4 h-4" /></Button><Button variant="ghost" size="icon" className={`w-8 h-8 ${isDark ? "text-gray-400 hover:text-red-400" : "text-gray-400 hover:text-red-600"}`} onClick={() => handleDeletePromo(promo)}><Trash2 className="w-4 h-4" /></Button></div></td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
             <PromoCodeModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSavePromo} promoCode={editingPromo} />

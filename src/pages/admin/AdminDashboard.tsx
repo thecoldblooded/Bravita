@@ -79,15 +79,52 @@ function DashboardContent() {
 
     return (
         <div className="max-w-7xl mx-auto">
-            <div className="flex items-center justify-between mb-8">
-                <div>
-                    <h1 className={`text-3xl font-black ${textPrimary} flex items-center gap-3`}>
-                        <span className="bg-orange-500 w-2 h-8 rounded-full" />
-                        Yönetim Paneli
-                    </h1>
-                    <p className={textSecondary}>İşletmenizin genel durumunu görüntüleyin.</p>
+            <div className="flex flex-col gap-4 mb-8">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className={`text-2xl md:text-3xl font-black ${textPrimary} flex items-center gap-3`}>
+                            <span className="bg-orange-500 w-2 h-8 rounded-full" />
+                            Yönetim Paneli
+                        </h1>
+                        <p className={`text-sm ${textSecondary}`}>İşletmenizin genel durumunu görüntüleyin.</p>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => loadStats(true)}
+                            title="Verileri Yenile"
+                            className={isDark ? "bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600" : ""}
+                        >
+                            <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className={`md:hidden ${isDark
+                                ? "bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30 hover:text-green-300"
+                                : "bg-green-50 text-green-700 border-green-200 hover:bg-green-100 hover:text-green-900"
+                                }`}
+                            onClick={() => window.open("https://mail.bravita.com.tr/Uvf2pzJY", "_blank", "noopener,noreferrer")}
+                            title="E-posta Kampanyaları (BillionMail)"
+                        >
+                            <ExternalLink className="w-4 h-4" />
+                        </Button>
+                        <Button
+                            variant="outline"
+                            className={`hidden md:inline-flex ${isDark
+                                ? "bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30 hover:text-green-300"
+                                : "bg-green-50 text-green-700 border-green-200 hover:bg-green-100 hover:text-green-900"
+                                }`}
+                            onClick={() => window.open("https://mail.bravita.com.tr/Uvf2pzJY", "_blank", "noopener,noreferrer")}
+                            title="E-posta Kampanyaları (BillionMail)"
+                        >
+                            <ExternalLink className="w-4 h-4 mr-2" />
+                            E-posta Kampanyaları
+                        </Button>
+                    </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                     <Button
                         variant={dateRange === "7" ? "default" : "outline"}
                         onClick={() => setDateRange("7")}
@@ -120,32 +157,11 @@ function DashboardContent() {
                     >
                         Son 2 Yıl
                     </Button>
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => loadStats(true)}
-                        title="Verileri Yenile"
-                        className={isDark ? "bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600" : ""}
-                    >
-                        <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
-                    </Button>
-                    <Button
-                        variant="outline"
-                        className={isDark
-                            ? "bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30 hover:text-green-300"
-                            : "bg-green-50 text-green-700 border-green-200 hover:bg-green-100 hover:text-green-900"
-                        }
-                        onClick={() => window.open("https://mail.bravita.com.tr/Uvf2pzJY", "_blank", "noopener,noreferrer")}
-                        title="E-posta Kampanyaları (BillionMail)"
-                    >
-                        <ExternalLink className="w-4 h-4 mr-2" />
-                        E-posta Kampanyaları
-                    </Button>
                 </div>
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
                 <div className={cardClass}>
                     <div className="flex items-center justify-between mb-4">
                         <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isDark ? "bg-green-500/20 text-green-400" : "bg-green-50 text-green-600"}`}>

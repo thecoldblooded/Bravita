@@ -23,15 +23,15 @@ export function ProductsHeader({
     const textSecondary = isDark ? "text-slate-400" : "text-gray-500";
 
     return (
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
             <div>
-                <h1 className={`text-3xl font-black ${textPrimary} flex items-center gap-3`}>
+                <h1 className={`text-2xl md:text-3xl font-black ${textPrimary} flex items-center gap-3`}>
                     <span className="bg-orange-500 w-2 h-8 rounded-full" />
                     Ürün Yönetimi
                 </h1>
                 <p className={`${textSecondary} mt-1`}>Mağazadaki tüm ürünleri yönetin ve stok takibi yapın.</p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
                 <Button
                     variant="outline"
                     onClick={onRefresh}

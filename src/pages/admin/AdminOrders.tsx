@@ -140,9 +140,9 @@ function OrdersContent() {
     return (
         <div className="max-w-7xl mx-auto">
             {/* Header */}
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                 <div>
-                    <h1 className={`text-3xl font-black ${textPrimary} flex items-center gap-3`}>
+                    <h1 className={`text-2xl md:text-3xl font-black ${textPrimary} flex items-center gap-3`}>
                         <span className="bg-orange-500 w-2 h-8 rounded-full" />
                         Siparişler
                     </h1>
@@ -153,7 +153,7 @@ function OrdersContent() {
                     size="icon"
                     onClick={loadOrders}
                     title="Listeyi Yenile"
-                    className={isDark ? "bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600" : ""}
+                    className={`shrink-0 ${isDark ? "bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600" : ""}`}
                 >
                     <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
                 </Button>
@@ -193,7 +193,7 @@ function OrdersContent() {
                 </div>
 
                 <div className={`flex flex-wrap items-center gap-4 pt-4 border-t ${isDark ? "border-gray-700" : "border-gray-50"}`}>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                         <span className={`text-sm ${textSecondary}`}>Tarih:</span>
                         <Input
                             ref={startDateRef}
@@ -208,8 +208,8 @@ function OrdersContent() {
                         />
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        <span className={`text-sm ml-2 ${textSecondary}`}>Tutar:</span>
+                    <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                        <span className={`text-sm sm:ml-2 ${textSecondary}`}>Tutar:</span>
                         <Input
                             ref={minAmountRef}
                             type="number"
@@ -226,7 +226,7 @@ function OrdersContent() {
                         />
                     </div>
 
-                    <div className="flex items-center gap-2 ml-auto">
+                    <div className="flex flex-wrap items-center justify-end gap-2 ml-auto w-full sm:w-auto mt-2 sm:mt-0">
                         <Button
                             variant="ghost"
                             size="sm"

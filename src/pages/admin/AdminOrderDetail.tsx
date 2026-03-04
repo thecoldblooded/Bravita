@@ -136,26 +136,26 @@ function AdminOrderDetailContent() {
                     const voidResult = await voidCardPayment(orderId);
                     if (!voidResult.success) {
                         const pendingOrFailedMessage = voidResult.pending
-                            ? `${voidResult.message || "Void istegi manuel incelemeye alindi."} Sipariş iptal edilmedi, mevcut durumda bırakıldı.`
-                            : `${voidResult.message || "Kart odeme iptal islemi basarisiz"} Sipariş iptal edilmedi, mevcut durumda bırakıldı.`;
+                            ? `${voidResult.message || "Void isteği manuel incelemeye alındı."} Sipariş iptal edilmedi, mevcut durumda bırakıldı.`
+                            : `${voidResult.message || "Kart ödeme iptal işlemi başarısız"} Sipariş iptal edilmedi, mevcut durumda bırakıldı.`;
                         toast.error(pendingOrFailedMessage);
                         return;
                     }
 
                     cardPaymentReversalSucceeded = true;
-                    toast.success("Kart odemesi iptal edildi (void).");
+                    toast.success("Kart ödemesi iptal edildi (void).");
                 } else {
                     const refundResult = await refundCardPayment(orderId);
                     if (!refundResult.success) {
                         const pendingOrFailedMessage = refundResult.pending
-                            ? `${refundResult.message || "Refund istegi manuel incelemeye alindi."} Sipariş iptal edilmedi, mevcut durumda bırakıldı.`
-                            : `${refundResult.message || "Kart iade islemi basarisiz"} Sipariş iptal edilmedi, mevcut durumda bırakıldı.`;
+                            ? `${refundResult.message || "Refund isteği manuel incelemeye alındı."} Sipariş iptal edilmedi, mevcut durumda bırakıldı.`
+                            : `${refundResult.message || "Kart iade işlemi başarısız"} Sipariş iptal edilmedi, mevcut durumda bırakıldı.`;
                         toast.error(pendingOrFailedMessage);
                         return;
                     }
 
                     cardPaymentReversalSucceeded = true;
-                    toast.success("Kart odemesi iade edildi.");
+                    toast.success("Kart ödemesi iade edildi.");
                 }
             }
 
@@ -336,26 +336,26 @@ function AdminOrderDetailContent() {
                     <ArrowLeft className="w-4 h-4" />
                     Siparişlere Dön
                 </Link>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                        <h1 className={`text-2xl font-bold ${textPrimary}`}>
+                        <h1 className={`text-xl md:text-2xl font-bold ${textPrimary}`}>
                             Sipariş #{order.id.slice(0, 8).toUpperCase()}
                         </h1>
                         <p className={textSecondary}>
                             {formatDateTime(order.created_at)}
                         </p>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-4">
                         <Button
                             variant="outline"
                             size="icon"
                             onClick={loadOrder}
                             title="Bilgileri Yenile"
-                            className={isDark ? "bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600" : ""}
+                            className={`shrink-0 ${isDark ? "bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600" : ""}`}
                         >
                             <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
                         </Button>
-                        <div className={`px-4 py-2 rounded-full text-sm font-medium ${STATUS_CONFIG[order.status as OrderStatus]?.bgColor || "bg-gray-100"} ${STATUS_CONFIG[order.status as OrderStatus]?.color || "text-gray-600"}`}>
+                        <div className={`px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium shrink-0 ${STATUS_CONFIG[order.status as OrderStatus]?.bgColor || "bg-gray-100"} ${STATUS_CONFIG[order.status as OrderStatus]?.color || "text-gray-600"}`}>
                             {STATUS_CONFIG[order.status as OrderStatus]?.label || order.status}
                         </div>
                         {order.status !== "cancelled" && order.status !== "delivered" && (
@@ -363,8 +363,9 @@ function AdminOrderDetailContent() {
                                 variant="destructive"
                                 size="sm"
                                 onClick={() => setShowCancelDialog(true)}
+                                className="shrink-0"
                             >
-                                Siparişi İptal Et
+                                İptal Et
                             </Button>
                         )}
                     </div>
@@ -428,12 +429,12 @@ function AdminOrderDetailContent() {
                     </div>
                     <div>
                         <p className={`font-bold ${textPrimary}`}>
-                            {order.payment_status === "refunded" ? "Kredi Karti Odemesi Iade Edildi" : "Kredi Karti ile Odendi"}
+                            {order.payment_status === "refunded" ? "Kredi Kartı Ödemesi İade Edildi" : "Kredi Kartı ile Ödendi"}
                         </p>
                         <p className={`text-sm ${textSecondary}`}>
                             {order.payment_status === "refunded"
-                                ? "Odeme iade sureci tamamlandi."
-                                : "Islem otomatik olarak onaylandi."}
+                                ? "Ödeme iade süreci tamamlandı."
+                                : "İşlem otomatik olarak onaylandı."}
                         </p>
                     </div>
                 </m.div>
@@ -494,69 +495,71 @@ function AdminOrderDetailContent() {
                 className={cardClass + " mb-6"}
             >
                 <h2 className={`text-lg font-bold ${textPrimary} mb-6`}>Sipariş Durumu</h2>
-                <div className="flex items-center justify-between relative mt-4 px-6">
-                    {/* Progress Line Container */}
-                    <div className="absolute top-6 left-12 right-12 h-1 pointer-events-none">
-                        {/* Background Line */}
-                        <div className={`absolute inset-0 ${isDark ? "bg-gray-700" : "bg-gray-200"} rounded-full`} />
-                        {/* Active Line */}
-                        <m.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${(currentStatusIndex / (statusSteps.length - 1)) * 100}%` }}
-                            className="absolute inset-y-0 left-0 bg-orange-500 rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(249,115,22,0.5)]"
-                        />
+                <div className="overflow-x-auto pb-4 custom-scrollbar -mx-6 px-6 relative">
+                    <div className="flex items-center justify-between min-w-150 relative mt-4 px-6">
+                        {/* Progress Line Container */}
+                        <div className="absolute top-6 left-12 right-12 h-1 pointer-events-none">
+                            {/* Background Line */}
+                            <div className={`absolute inset-0 ${isDark ? "bg-gray-700" : "bg-gray-200"} rounded-full`} />
+                            {/* Active Line */}
+                            <m.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${(currentStatusIndex / (statusSteps.length - 1)) * 100}%` }}
+                                className="absolute inset-y-0 left-0 bg-orange-500 rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(249,115,22,0.5)]"
+                            />
+                        </div>
+
+                        {statusSteps.map((status, index) => {
+                            const StatusIcon = getStatusIcon(status);
+                            const isPast = index <= currentStatusIndex;
+                            const isCurrent = index === currentStatusIndex;
+
+                            return (
+                                <button
+                                    key={status}
+                                    onClick={() => handleStatusChange(status)}
+                                    disabled={
+                                        isUpdatingStatus ||
+                                        order.status === "cancelled" ||
+                                        index <= currentStatusIndex ||
+                                        (order.payment_status !== "paid" && status !== "pending" && status !== "cancelled")
+                                    }
+                                    className={`flex flex-col items-center gap-2 relative z-10 ${isCurrent
+                                        ? "cursor-default"
+                                        : (isUpdatingStatus || order.status === "cancelled" || index < currentStatusIndex || (order.payment_status !== "paid" && status !== "pending" && status !== "cancelled"))
+                                            ? "opacity-60 cursor-not-allowed"
+                                            : "cursor-pointer hover:scale-105 transition-transform"
+                                        }`}
+                                >
+                                    <m.div
+                                        animate={isCurrent ? { scale: 1.1 } : { scale: 1 }}
+                                        className={`w-12 h-12 rounded-full flex items-center justify-center relative transition-colors duration-300 ${isPast ? "bg-orange-500 text-white shadow-[0_0_15px_rgba(249,115,22,0.3)]" : isDark ? "bg-gray-700 text-gray-400" : "bg-gray-100 text-gray-400"
+                                            } ${isCurrent ? "ring-4 ring-orange-100 dark:ring-orange-500/30" : ""}`}>
+                                        {isCurrent && (
+                                            <m.div
+                                                className="absolute inset-0 rounded-full bg-orange-500"
+                                                initial={{ scale: 1, opacity: 0.5 }}
+                                                animate={{
+                                                    scale: [1, 1.8],
+                                                    opacity: [0.5, 0]
+                                                }}
+                                                transition={{
+                                                    duration: 2,
+                                                    repeat: Infinity,
+                                                    ease: "easeOut",
+                                                    repeatDelay: 0.2
+                                                }}
+                                            />
+                                        )}
+                                        <StatusIcon className="w-5 h-5 relative z-10" />
+                                    </m.div>
+                                    <span className={`text-[11px] font-semibold uppercase tracking-wider transition-colors ${isPast ? (isDark ? "text-orange-400" : "text-orange-600") : textMuted}`}>
+                                        {STATUS_CONFIG[status]?.label}
+                                    </span>
+                                </button>
+                            );
+                        })}
                     </div>
-
-                    {statusSteps.map((status, index) => {
-                        const StatusIcon = getStatusIcon(status);
-                        const isPast = index <= currentStatusIndex;
-                        const isCurrent = index === currentStatusIndex;
-
-                        return (
-                            <button
-                                key={status}
-                                onClick={() => handleStatusChange(status)}
-                                disabled={
-                                    isUpdatingStatus ||
-                                    order.status === "cancelled" ||
-                                    index <= currentStatusIndex ||
-                                    (order.payment_status !== "paid" && status !== "pending" && status !== "cancelled")
-                                }
-                                className={`flex flex-col items-center gap-2 relative z-10 ${isCurrent
-                                    ? "cursor-default"
-                                    : (isUpdatingStatus || order.status === "cancelled" || index < currentStatusIndex || (order.payment_status !== "paid" && status !== "pending" && status !== "cancelled"))
-                                        ? "opacity-60 cursor-not-allowed"
-                                        : "cursor-pointer hover:scale-105 transition-transform"
-                                    }`}
-                            >
-                                <m.div
-                                    animate={isCurrent ? { scale: 1.1 } : { scale: 1 }}
-                                    className={`w-12 h-12 rounded-full flex items-center justify-center relative transition-colors duration-300 ${isPast ? "bg-orange-500 text-white shadow-[0_0_15px_rgba(249,115,22,0.3)]" : isDark ? "bg-gray-700 text-gray-400" : "bg-gray-100 text-gray-400"
-                                        } ${isCurrent ? "ring-4 ring-orange-100 dark:ring-orange-500/30" : ""}`}>
-                                    {isCurrent && (
-                                        <m.div
-                                            className="absolute inset-0 rounded-full bg-orange-500"
-                                            initial={{ scale: 1, opacity: 0.5 }}
-                                            animate={{
-                                                scale: [1, 1.8],
-                                                opacity: [0.5, 0]
-                                            }}
-                                            transition={{
-                                                duration: 2,
-                                                repeat: Infinity,
-                                                ease: "easeOut",
-                                                repeatDelay: 0.2
-                                            }}
-                                        />
-                                    )}
-                                    <StatusIcon className="w-5 h-5 relative z-10" />
-                                </m.div>
-                                <span className={`text-[11px] font-semibold uppercase tracking-wider transition-colors ${isPast ? (isDark ? "text-orange-400" : "text-orange-600") : textMuted}`}>
-                                    {STATUS_CONFIG[status]?.label}
-                                </span>
-                            </button>
-                        );
-                    })}
                 </div>
             </m.div>
 
@@ -676,40 +679,42 @@ function AdminOrderDetailContent() {
                             Kargo Takip
                         </h2>
                         {editingTracking ? (
-                            <div className="flex gap-2">
+                            <div className="flex flex-col sm:flex-row gap-2">
                                 <Input
                                     value={trackingInput}
                                     onChange={(e) => setTrackingInput(e.target.value)}
                                     placeholder="Kargo takip numarası girin..."
                                     disabled={isUpdatingTracking}
-                                    className={inputClass}
+                                    className={`flex-1 ${inputClass}`}
                                 />
                                 <Input
                                     value={shippingCompanyInput}
                                     onChange={(e) => setShippingCompanyInput(e.target.value)}
                                     placeholder="Kargo firması"
-                                    className={`w-40 ${inputClass}`}
+                                    className={`sm:w-40 ${inputClass}`}
                                     disabled={isUpdatingTracking}
                                 />
-                                <Button
-                                    onClick={handleTrackingSave}
-                                    disabled={isUpdatingTracking}
-                                    className="bg-orange-500 hover:bg-orange-600"
-                                >
-                                    <Save className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    onClick={() => {
-                                        setEditingTracking(false);
-                                        setTrackingInput(order.tracking_number || "");
-                                        setShippingCompanyInput(order.shipping_company || "Yurtiçi Kargo");
-                                    }}
-                                    disabled={isUpdatingTracking}
-                                    className={isDark ? "bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600" : ""}
-                                >
-                                    <X className="w-4 h-4" />
-                                </Button>
+                                <div className="flex gap-2">
+                                    <Button
+                                        onClick={handleTrackingSave}
+                                        disabled={isUpdatingTracking}
+                                        className="bg-orange-500 hover:bg-orange-600"
+                                    >
+                                        <Save className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => {
+                                            setEditingTracking(false);
+                                            setTrackingInput(order.tracking_number || "");
+                                            setShippingCompanyInput(order.shipping_company || "Yurtiçi Kargo");
+                                        }}
+                                        disabled={isUpdatingTracking}
+                                        className={isDark ? "bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600" : ""}
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </Button>
+                                </div>
                             </div>
                         ) : (
                             <div className="flex items-center justify-between">

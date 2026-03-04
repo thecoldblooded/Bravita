@@ -490,7 +490,7 @@ export async function voidCardPayment(orderId: string): Promise<CardVoidResult> 
     return {
         success,
         pending,
-        message: data?.message || (success ? "Void basarili" : (pending ? "Void manuel incelemeye alindi" : "Void basarisiz")),
+        message: data?.message || (success ? "Void başarılı" : (pending ? "Void manuel incelemeye alındı" : "Void başarısız")),
         error: data?.error,
     };
 }
@@ -603,7 +603,7 @@ export async function refundCardPayment(orderId: string, amountCents?: number): 
     return {
         success,
         pending,
-        message: data?.message || (success ? "Refund basarili" : (pending ? "Refund manuel incelemeye alindi" : "Refund basarisiz")),
+        message: data?.message || (success ? "Refund başarılı" : (pending ? "Refund manuel incelemeye alındı" : "Refund başarısız")),
         error: data?.error,
     };
 }

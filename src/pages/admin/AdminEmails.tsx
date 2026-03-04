@@ -498,35 +498,37 @@ export default function AdminEmails() {
                     <meta property="og:description" content="Admin Emails" />
                 </Helmet>
                 <div className="max-w-7xl mx-auto">
-                    <div className="flex items-center justify-between mb-8">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                         <div>
-                            <h1 className={`text-3xl font-black ${textPrimary} flex items-center gap-3`}>
+                            <h1 className={`text-2xl md:text-3xl font-black ${textPrimary} flex items-center gap-3`}>
                                 <span className="bg-orange-500 w-2 h-8 rounded-full" />
                                 E-posta Yönetimi
                             </h1>
                             <p className={textSecondary}>Sistem e-postalarını, şablonları ve gönderim loglarını yönetin.</p>
                         </div>
-                        <Button className="bg-orange-600 hover:bg-orange-700">
+                        <Button className="bg-orange-600 hover:bg-orange-700 shrink-0">
                             <Plus className="w-4 h-4 mr-2" />
                             Yeni Şablon
                         </Button>
                     </div>
 
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                        <TabsList className={`p-1 rounded-xl ${isDark ? "bg-slate-800 border-slate-700" : "bg-white border-gray-200"}`}>
-                            <TabsTrigger value="templates" className="flex items-center gap-2">
-                                <Mail className="w-4 h-4" />
-                                Şablonlar
-                            </TabsTrigger>
-                            <TabsTrigger value="configs" className="flex items-center gap-2">
-                                <Settings className="w-4 h-4" />
-                                Yapılandırma
-                            </TabsTrigger>
-                            <TabsTrigger value="logs" className="flex items-center gap-2">
-                                <History className="w-4 h-4" />
-                                Gönderim Logları
-                            </TabsTrigger>
-                        </TabsList>
+                        <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+                            <TabsList className={`p-1 rounded-xl ${isDark ? "bg-slate-800 border-slate-700" : "bg-white border-gray-200"}`}>
+                                <TabsTrigger value="templates" className="flex items-center gap-2">
+                                    <Mail className="w-4 h-4" />
+                                    Şablonlar
+                                </TabsTrigger>
+                                <TabsTrigger value="configs" className="flex items-center gap-2">
+                                    <Settings className="w-4 h-4" />
+                                    Yapılandırma
+                                </TabsTrigger>
+                                <TabsTrigger value="logs" className="flex items-center gap-2">
+                                    <History className="w-4 h-4" />
+                                    Gönderim Logları
+                                </TabsTrigger>
+                            </TabsList>
+                        </div>
 
                         <TabsContent value="templates" className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -574,87 +576,91 @@ export default function AdminEmails() {
 
                         <TabsContent value="configs">
                             <div className={`${cardClass} overflow-hidden p-0`}>
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow className={tableRowClass}>
-                                            <TableHead className={tableHeaderClass}>Şablon Slug</TableHead>
-                                            <TableHead className={tableHeaderClass}>Gönderici Adı</TableHead>
-                                            <TableHead className={tableHeaderClass}>Gönderici E-posta</TableHead>
-                                            <TableHead className={tableHeaderClass}>Yanıt Adresi (Reply-To)</TableHead>
-                                            <TableHead className={`text-right ${tableHeaderClass}`}>İşlemler</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {configs.map((config) => (
-                                            <TableRow key={config.id} className={tableRowClass}>
-                                                <TableCell className={`font-mono text-xs ${isDark ? "text-slate-300" : "text-gray-600"}`}>
-                                                    <span>{config.template_slug}</span>
-                                                    {config.is_virtual && (
-                                                        <span className={`ml-2 text-[10px] ${isDark ? "text-amber-300" : "text-amber-700"}`}>(eksik, oluşturulacak)</span>
-                                                    )}
-                                                </TableCell>
-                                                <TableCell className={textPrimary}>{config.sender_name}</TableCell>
-                                                <TableCell className={textPrimary}>{config.sender_email}</TableCell>
-                                                <TableCell className={textPrimary}>{config.reply_to || "-"}</TableCell>
-                                                <TableCell className="text-right">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className={isDark ? "text-slate-400 hover:text-white hover:bg-slate-700" : ""}
-                                                        title={config.is_virtual ? "Yapılandırmayı Oluştur" : "Düzenle"}
-                                                        onClick={() => {
-                                                            setEditingConfig(config);
-                                                            setIsConfigEditorOpen(true);
-                                                        }}
-                                                    >
-                                                        <Edit className="w-4 h-4" />
-                                                    </Button>
-                                                </TableCell>
+                                <div className="overflow-x-auto w-full custom-scrollbar">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow className={tableRowClass}>
+                                                <TableHead className={tableHeaderClass}>Şablon Slug</TableHead>
+                                                <TableHead className={tableHeaderClass}>Gönderici Adı</TableHead>
+                                                <TableHead className={tableHeaderClass}>Gönderici E-posta</TableHead>
+                                                <TableHead className={tableHeaderClass}>Yanıt Adresi (Reply-To)</TableHead>
+                                                <TableHead className={`text-right ${tableHeaderClass}`}>İşlemler</TableHead>
                                             </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {configs.map((config) => (
+                                                <TableRow key={config.id} className={tableRowClass}>
+                                                    <TableCell className={`font-mono text-xs ${isDark ? "text-slate-300" : "text-gray-600"}`}>
+                                                        <span>{config.template_slug}</span>
+                                                        {config.is_virtual && (
+                                                            <span className={`ml-2 text-[10px] ${isDark ? "text-amber-300" : "text-amber-700"}`}>(eksik, oluşturulacak)</span>
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell className={textPrimary}>{config.sender_name}</TableCell>
+                                                    <TableCell className={textPrimary}>{config.sender_email}</TableCell>
+                                                    <TableCell className={textPrimary}>{config.reply_to || "-"}</TableCell>
+                                                    <TableCell className="text-right">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className={isDark ? "text-slate-400 hover:text-white hover:bg-slate-700" : ""}
+                                                            title={config.is_virtual ? "Yapılandırmayı Oluştur" : "Düzenle"}
+                                                            onClick={() => {
+                                                                setEditingConfig(config);
+                                                                setIsConfigEditorOpen(true);
+                                                            }}
+                                                        >
+                                                            <Edit className="w-4 h-4" />
+                                                        </Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </div>
                             </div>
                         </TabsContent>
 
                         <TabsContent value="logs">
                             <div className={`${cardClass} overflow-hidden p-0`}>
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow className={tableRowClass}>
-                                            <TableHead className={tableHeaderClass}>Tarih</TableHead>
-                                            <TableHead className={tableHeaderClass}>Alıcı</TableHead>
-                                            <TableHead className={tableHeaderClass}>Şablon</TableHead>
-                                            <TableHead className={tableHeaderClass}>Durum</TableHead>
-                                            <TableHead className={`text-right ${tableHeaderClass}`}>Detay</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {logs.map((log) => (
-                                            <TableRow key={log.id} className={tableRowClass}>
-                                                <TableCell className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}>{new Date(log.sent_at).toLocaleString("tr-TR")}</TableCell>
-                                                <TableCell className={textPrimary}>{log.recipient_email}</TableCell>
-                                                <TableCell className={`font-mono text-[10px] ${isDark ? "text-slate-300" : "text-gray-600"}`}>{log.template_slug}</TableCell>
-                                                <TableCell>
-                                                    {log.status === "sent" ? (
-                                                        <Badge className="bg-green-500/10 text-green-500 border-green-500/20">
-                                                            <CheckCircle2 className="w-3 h-3 mr-1" /> Başarılı
-                                                        </Badge>
-                                                    ) : (
-                                                        <Badge variant="destructive" className="bg-red-500/10 text-red-500 border-red-500/20">
-                                                            <XCircle className="w-3 h-3 mr-1" /> Hata
-                                                        </Badge>
-                                                    )}
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    <Button variant="ghost" size="icon" className={isDark ? "text-slate-400 hover:text-white hover:bg-slate-700" : ""}>
-                                                        <Eye className="w-4 h-4" />
-                                                    </Button>
-                                                </TableCell>
+                                <div className="overflow-x-auto w-full custom-scrollbar">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow className={tableRowClass}>
+                                                <TableHead className={tableHeaderClass}>Tarih</TableHead>
+                                                <TableHead className={tableHeaderClass}>Alıcı</TableHead>
+                                                <TableHead className={tableHeaderClass}>Şablon</TableHead>
+                                                <TableHead className={tableHeaderClass}>Durum</TableHead>
+                                                <TableHead className={`text-right ${tableHeaderClass}`}>Detay</TableHead>
                                             </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {logs.map((log) => (
+                                                <TableRow key={log.id} className={tableRowClass}>
+                                                    <TableCell className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}>{new Date(log.sent_at).toLocaleString("tr-TR")}</TableCell>
+                                                    <TableCell className={textPrimary}>{log.recipient_email}</TableCell>
+                                                    <TableCell className={`font-mono text-[10px] ${isDark ? "text-slate-300" : "text-gray-600"}`}>{log.template_slug}</TableCell>
+                                                    <TableCell>
+                                                        {log.status === "sent" ? (
+                                                            <Badge className="bg-green-500/10 text-green-500 border-green-500/20">
+                                                                <CheckCircle2 className="w-3 h-3 mr-1" /> Başarılı
+                                                            </Badge>
+                                                        ) : (
+                                                            <Badge variant="destructive" className="bg-red-500/10 text-red-500 border-red-500/20">
+                                                                <XCircle className="w-3 h-3 mr-1" /> Hata
+                                                            </Badge>
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell className="text-right">
+                                                        <Button variant="ghost" size="icon" className={isDark ? "text-slate-400 hover:text-white hover:bg-slate-700" : ""}>
+                                                            <Eye className="w-4 h-4" />
+                                                        </Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </div>
                             </div>
                         </TabsContent>
                     </Tabs>

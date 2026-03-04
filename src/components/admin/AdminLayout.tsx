@@ -79,7 +79,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             </header>
 
             <AdminSidebar isMobileMenuOpen={isMobileMenuOpen} setIsMobileMenuOpen={setIsMobileMenuOpen} />
-            <main className="flex-1 p-4 md:p-8 overflow-auto w-full custom-scrollbar">
+            <main className="flex-1 p-4 md:p-8 overflow-auto w-full min-w-0 custom-scrollbar">
                 {children}
             </main>
             <CommandPalette />
@@ -87,7 +87,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             {/* Mobile Overlay */}
             {isMobileMenuOpen && (
                 <div
-                    className="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm"
+                    className="fixed inset-0 bg-black/50 z-45 md:hidden backdrop-blur-sm"
                     onClick={() => setIsMobileMenuOpen(false)}
                 />
             )}

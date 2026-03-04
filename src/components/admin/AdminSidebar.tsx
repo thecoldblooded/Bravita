@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Package, Users, LogOut, ChevronRight, Tags, Ticket, Home, Sun, Moon, Shield, LifeBuoy, Mail, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { LayoutDashboard, Package, Users, LogOut, ChevronRight, Tags, Ticket, Home, Sun, Moon, Shield, LifeBuoy, Mail, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminTheme } from "@/contexts/AdminThemeContext";
 import { supabase } from "@/lib/supabase";
@@ -26,10 +26,11 @@ export function AdminSidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: AdminSid
     const { theme, toggleTheme } = useAdminTheme();
     const [unreadCount, setUnreadCount] = useState(0);
     const [unreadSupportCount, setUnreadSupportCount] = useState(0);
-    const [collapsed, setCollapsed] = useState(() => {
+    const [collapsedState, setCollapsedState] = useState(() => {
         const saved = localStorage.getItem("bravita_admin_sidebar_collapsed");
         return saved === "true";
     });
+    const collapsed = collapsedState && !isMobileMenuOpen;
 
 
     const displayMenuItems = [...menuItems];
@@ -42,8 +43,8 @@ export function AdminSidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: AdminSid
     const isDark = theme === "dark";
 
     const toggleCollapsed = () => {
-        const next = !collapsed;
-        setCollapsed(next);
+        const next = !collapsedState;
+        setCollapsedState(next);
         localStorage.setItem("bravita_admin_sidebar_collapsed", String(next));
     };
 
@@ -117,7 +118,7 @@ export function AdminSidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: AdminSid
             isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         )}>
             {/* Logo */}
-            <div className={`p-6 border-b hidden md:block ${isDark ? "border-slate-800" : "border-gray-100"}`}>
+            <div className={`p-6 border-b md:block flex justify-between items-center ${isDark ? "border-slate-800" : "border-gray-100"} ${isMobileMenuOpen ? "block" : "hidden"}`}>
                 <div className="flex items-center justify-between">
                     <Link to="/admin" className="block">
                         {collapsed ? (
@@ -131,16 +132,30 @@ export function AdminSidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: AdminSid
                         )}
                     </Link>
                     {!collapsed && (
-                        <button
-                            onClick={toggleTheme}
-                            className={`p-2 rounded-lg transition-all ${isDark
-                                ? "bg-slate-800 text-yellow-400 hover:bg-slate-700"
-                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                                }`}
-                            title={isDark ? "Açık Mod" : "Koyu Mod"}
-                        >
-                            {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                        </button>
+                        <div className="flex items-center gap-1">
+                            <button
+                                onClick={toggleTheme}
+                                className={`p-2 rounded-lg transition-all ${isDark
+                                    ? "bg-slate-800 text-yellow-400 hover:bg-slate-700"
+                                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                    }`}
+                                title={isDark ? "Açık Mod" : "Koyu Mod"}
+                            >
+                                {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                            </button>
+                            {isMobileMenuOpen && (
+                                <button
+                                    onClick={() => setIsMobileMenuOpen?.(false)}
+                                    className={`md:hidden p-2 rounded-lg transition-all ${isDark
+                                        ? "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                        }`}
+                                    title="Kapat"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            )}
+                        </div>
                     )}
                 </div>
             </div>

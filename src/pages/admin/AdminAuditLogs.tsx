@@ -327,28 +327,33 @@ function LogsContent() {
         });
     };
 
+    const textPrimary = isDark ? "text-white" : "text-gray-900";
+    const textSecondary = isDark ? "text-gray-400" : "text-gray-500";
+    const cardClass = isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200";
+
+
     return (
         <>
             {/* Header */}
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
-                <div className="flex items-center justify-between mb-8">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                     <div>
-                        <h1 className={`text-3xl font-black flex items-center gap-3 ${isDark ? "text-white" : "text-gray-900"}`}>
+                        <h1 className={`text-2xl md:text-3xl font-black ${textPrimary} flex items-center gap-3`}>
                             <span className="bg-orange-500 w-2 h-8 rounded-full" />
-                            Sistem Denetim Logları
+                            Denetim Logları
                         </h1>
-                        <p className={`text-sm mt-1 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
-                            Admin panelindeki tüm işlemlerin detaylı kaydı
-                        </p>
+                        <p className={textSecondary}>Sistem değişikliklerini takip edin.</p>
                     </div>
-                    <Button
-                        onClick={() => { setIsLoading(true); loadLogs(true); }}
-                        className={isDark ? "bg-gray-800 hover:bg-gray-700 text-white border border-gray-700" : "bg-white border border-gray-200 hover:bg-gray-50 text-gray-700"}
-                    >
-                        <RefreshCcw className={`w-4 h-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
-                        Yenile
-                    </Button>
+                    <div className="flex gap-2 shrink-0">
+                        <Button
+                            onClick={() => { setIsLoading(true); loadLogs(true); }}
+                            className={isDark ? "bg-gray-800 hover:bg-gray-700 text-white border border-gray-700" : "bg-white border border-gray-200 hover:bg-gray-50 text-gray-700"}
+                        >
+                            <RefreshCcw className={`w-4 h-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
+                            Yenile
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Filters */}
@@ -388,7 +393,7 @@ function LogsContent() {
                                 transition={{ duration: 0.2 }}
                                 className="overflow-hidden"
                             >
-                                <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4 pt-4 border-t ${isDark ? "border-gray-700" : "border-gray-100"}`}>
+                                <div className={`grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mt-4 pt-4 border-t ${isDark ? "border-gray-700" : "border-gray-100"}`}>
                                     {/* Action Type */}
                                     <div>
                                         <label htmlFor="actionFilter" className={`text-xs font-medium mb-1.5 block ${isDark ? "text-gray-400" : "text-gray-500"}`}>İşlem Tipi</label>
@@ -492,10 +497,10 @@ function LogsContent() {
                     </div>
                 ) : (
                     <div className={`rounded-xl border overflow-hidden ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200 shadow-sm"}`}>
-                        <div className="overflow-x-auto">
-                            <Table>
-                                <TableHeader className={isDark ? "bg-gray-900/50" : "bg-gray-50/80"}>
-                                    <TableRow className={isDark ? "border-gray-700 hover:bg-transparent" : "border-gray-200 hover:bg-transparent"}>
+                        <div className="overflow-x-auto w-full custom-scrollbar">
+                            <table className="w-full min-w-200">
+                                <thead className={isDark ? "bg-gray-900/50" : "bg-gray-50/80"}>
+                                    <tr className={isDark ? "border-gray-700 hover:bg-transparent" : "border-gray-200 hover:bg-transparent"}>
                                         <TableHead className="w-50">Admin</TableHead>
                                         <TableHead className="cursor-pointer select-none hover:text-orange-500 transition-colors" onClick={() => toggleSort("action")}>
                                             <span className="inline-flex items-center gap-1">
@@ -516,9 +521,9 @@ function LogsContent() {
                                             </span>
                                         </TableHead>
                                         <TableHead className="w-20"></TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
+                                    </tr>
+                                </thead>
+                                <tbody>
                                     {filteredLogs.length === 0 ? (
                                         <TableRow>
                                             <TableCell colSpan={5} className="h-40 text-center">
@@ -598,8 +603,8 @@ function LogsContent() {
                                             );
                                         })
                                     )}
-                                </TableBody>
-                            </Table>
+                                </tbody>
+                            </table>
                         </div>
                         {hasMore && (
                             <div className={`p-4 border-t text-center ${isDark ? "border-gray-700" : "border-gray-200"}`}>
