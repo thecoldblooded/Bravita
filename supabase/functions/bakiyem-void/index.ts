@@ -126,6 +126,50 @@ function normalizeComparable(value: unknown): string {
   return asText(value).toLowerCase();
 }
 
+function pickFirstText(record: Record<string, unknown> | null | undefined, keys: string[]): string {
+  if (!record) return "";
+  for (const key of keys) {
+    const value = asText(record[key]);
+    if (value) return value;
+  }
+  return "";
+}
+
+function extractThreeDTrxCode(data: unknown): string {
+  const asRecordValue = asRecord(data);
+
+  if (asRecordValue) {
+    const direct =
+      pickFirstText(asRecordValue, ["threeDTrxCode", "ThreeDTrxCode", "TrxCode", "trxCode", "VirtualPosOrderId", "virtualPosOrderId"]);
+    if (direct) return direct;
+
+    const objectUrl = pickFirstText(asRecordValue, ["Url", "url", "RedirectUrl", "redirectUrl"]);
+    if (objectUrl) {
+      const objectUrlMatch = objectUrl.match(/[?&]threeDTrxCode=([^&]+)/i);
+      if (objectUrlMatch?.[1]) {
+        try {
+          return asText(decodeURIComponent(objectUrlMatch[1]));
+        } catch {
+          return asText(objectUrlMatch[1]);
+        }
+      }
+    }
+  }
+
+  if (typeof data === "string") {
+    const directMatch = data.match(/[?&]threeDTrxCode=([^&]+)/i);
+    if (directMatch?.[1]) {
+      try {
+        return asText(decodeURIComponent(directMatch[1]));
+      } catch {
+        return asText(directMatch[1]);
+      }
+    }
+  }
+
+  return "";
+}
+
 function extractUserJwt(req: Request): string | null {
   const xUserJwt = req.headers.get("x-user-jwt");
   if (xUserJwt && xUserJwt.trim().length > 0) {
@@ -190,85 +234,136 @@ serve(async (req: Request) => {
     const checkKey = await sha256Hex(`${BAKIYEM_DEALER_CODE}MK${BAKIYEM_API_USERNAME}PD${BAKIYEM_API_PASSWORD}`);
     const shortTrxCode = intent.id.replace(/-/g, "").substring(0, 20);
     const normalizedShortTrxCode = normalizeComparable(shortTrxCode);
+    const gatewayTrxCodeFromIntent = asText(intent.gateway_trx_code);
+    const normalizedGatewayTrxCodeFromIntent = normalizeComparable(gatewayTrxCodeFromIntent);
 
-    let gatewayTrxCode = asText(intent.gateway_trx_code);
-    let detailFallbackDiagnostics: JsonRecord | null = null;
+    let recoveredVirtualPosOrderId = "";
+    let recoveredTrxCode = "";
+    let txRecoveryOperation = "";
+    let gatewayTrxCode = gatewayTrxCodeFromIntent;
+
+    const detailRequestPayload: JsonRecord = {
+      OtherTrxCode: shortTrxCode,
+    };
+
+    if (gatewayTrxCodeFromIntent) {
+      detailRequestPayload.TrxCode = gatewayTrxCodeFromIntent;
+      detailRequestPayload.VirtualPosOrderId = gatewayTrxCodeFromIntent;
+    }
+
+    const detailRaw = await fetch(`${BAKIYEM_BASE_URL}/PaymentDealer/GetDealerPaymentTrxDetailList`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        PaymentDealerAuthentication: {
+          DealerCode: BAKIYEM_DEALER_CODE,
+          Username: BAKIYEM_API_USERNAME,
+          Password: BAKIYEM_API_PASSWORD,
+          CheckKey: checkKey,
+        },
+        PaymentDealerRequest: detailRequestPayload,
+      }),
+    });
+
+    const detailJson = await detailRaw.json().catch(() => ({}));
+    const detailResultCode = asText((detailJson as Record<string, unknown>)?.ResultCode);
+    const detailResultMessage = asText((detailJson as Record<string, unknown>)?.ResultMessage);
+    const detailRecords = extractProviderRecordList((detailJson as Record<string, unknown>)?.Data);
+
+    const matchedByOtherTrxCode = detailRecords.find((item: Record<string, unknown>) =>
+      normalizeComparable(item?.OtherTrxCode ?? item?.MerchantOrderId ?? item?.MerchantRef) === normalizedShortTrxCode
+    );
+
+    const matchedByGatewayVirtualPosOrderId = normalizedGatewayTrxCodeFromIntent
+      ? detailRecords.find((item: Record<string, unknown>) => normalizeComparable(item?.VirtualPosOrderId) === normalizedGatewayTrxCodeFromIntent)
+      : null;
+
+    const matchedByGatewayTrxCode = normalizedGatewayTrxCodeFromIntent
+      ? detailRecords.find((item: Record<string, unknown>) => normalizeComparable(item?.TrxCode) === normalizedGatewayTrxCodeFromIntent)
+      : null;
+
+    const selectedRecord = matchedByOtherTrxCode ?? matchedByGatewayVirtualPosOrderId ?? matchedByGatewayTrxCode ?? detailRecords[0] ?? null;
+
+    recoveredVirtualPosOrderId = pickFirstText(selectedRecord, ["VirtualPosOrderId", "virtualPosOrderId"]);
+    recoveredTrxCode = pickFirstText(selectedRecord, ["TrxCode", "trxCode"]);
+
+    gatewayTrxCode = recoveredVirtualPosOrderId || recoveredTrxCode || gatewayTrxCodeFromIntent;
 
     if (!gatewayTrxCode) {
-      const detailRequestPayload: JsonRecord = {
-        OtherTrxCode: shortTrxCode,
-      };
+      const { data: recoveryCandidates } = await supabase
+        .from("payment_transactions")
+        .select("operation, response_payload, request_payload, created_at")
+        .eq("intent_id", intent.id)
+        .in("operation", ["init_3d", "diag_trx_code_extraction", "recover_gateway_trx_code", "inquiry"])
+        .order("created_at", { ascending: false })
+        .limit(20);
 
-      const detailRaw = await fetch(`${BAKIYEM_BASE_URL}/PaymentDealer/GetDealerPaymentTrxDetailList`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          PaymentDealerAuthentication: {
-            DealerCode: BAKIYEM_DEALER_CODE,
-            Username: BAKIYEM_API_USERNAME,
-            Password: BAKIYEM_API_PASSWORD,
-            CheckKey: checkKey,
-          },
-          PaymentDealerRequest: detailRequestPayload,
-        }),
-      });
+      for (const tx of recoveryCandidates ?? []) {
+        const responsePayload = asRecord(tx?.response_payload) ?? {};
+        const requestPayload = asRecord(tx?.request_payload) ?? {};
 
-      const detailJson = await detailRaw.json().catch(() => ({}));
-      const detailResultCode = asText((detailJson as Record<string, unknown>)?.ResultCode);
-      const detailResultMessage = asText((detailJson as Record<string, unknown>)?.ResultMessage);
-      const detailRecords = extractProviderRecordList((detailJson as Record<string, unknown>)?.Data);
+        const recovered =
+          pickFirstText(responsePayload, ["recoveredGatewayTrxCode", "resolvedGatewayTrxCode", "selectedVirtualPosOrderId", "selectedTrxCode"]) ||
+          extractThreeDTrxCode(responsePayload?.Data) ||
+          asText(responsePayload?.extractedGatewayTrxCodeDiagnostic) ||
+          asText(responsePayload?.extractedGatewayTrxCodeCurrentPath) ||
+          extractThreeDTrxCode(requestPayload?.data_sample) ||
+          extractThreeDTrxCode(responsePayload);
 
-      const matchedByOtherTrxCode = detailRecords.find((item: Record<string, unknown>) =>
-        normalizeComparable(item?.OtherTrxCode ?? item?.MerchantOrderId ?? item?.MerchantRef) === normalizedShortTrxCode
-      );
-      const selectedRecord = matchedByOtherTrxCode ?? detailRecords[0] ?? null;
-
-      const recoveredVirtualPosOrderId = asText(selectedRecord?.VirtualPosOrderId);
-      const recoveredTrxCode = asText(selectedRecord?.TrxCode);
-      gatewayTrxCode = recoveredVirtualPosOrderId || recoveredTrxCode;
-
-      detailFallbackDiagnostics = {
-        shortTrxCode,
-        detailHttpStatus: detailRaw.status,
-        detailResultCode,
-        detailResultMessage: detailResultMessage.substring(0, 180),
-        recordCount: detailRecords.length,
-        matchedByOtherTrxCode: Boolean(matchedByOtherTrxCode),
-        selectedVirtualPosOrderId: recoveredVirtualPosOrderId,
-        selectedTrxCode: recoveredTrxCode,
-        recoveredGatewayTrxCode: gatewayTrxCode,
-        detailRecordsSnapshot: detailRecords.slice(0, 5).map((item: Record<string, unknown>) => ({
-          TrxCode: asText(item?.TrxCode),
-          VirtualPosOrderId: asText(item?.VirtualPosOrderId),
-          OtherTrxCode: asText(item?.OtherTrxCode ?? item?.MerchantOrderId ?? item?.MerchantRef),
-        })),
-      };
-
-      const detailLoggedPayload = detailJson && typeof detailJson === "object"
-        ? { ...(detailJson as Record<string, unknown>), _diag: detailFallbackDiagnostics }
-        : { raw: detailJson, _diag: detailFallbackDiagnostics };
-
-      await supabase.from("payment_transactions").insert({
-        intent_id: intent.id,
-        order_id: order.id,
-        operation: "inquiry",
-        request_payload: {
-          shortTrxCode,
-          type: "GetDealerPaymentTrxDetailList",
-          source: "bakiyem-void",
-        },
-        response_payload: detailLoggedPayload,
-        success: detailRaw.ok && detailResultCode === "Success" && Boolean(gatewayTrxCode),
-        error_code: detailResultCode || null,
-        error_message: detailResultMessage || null,
-      });
-
-      if (gatewayTrxCode) {
-        await supabase
-          .from("payment_intents")
-          .update({ gateway_trx_code: gatewayTrxCode })
-          .eq("id", intent.id);
+        if (recovered) {
+          gatewayTrxCode = recovered;
+          txRecoveryOperation = asText(tx?.operation);
+          break;
+        }
       }
+    }
+
+    const detailFallbackDiagnostics: JsonRecord = {
+      shortTrxCode,
+      gatewayTrxCodeFromIntent,
+      detailHttpStatus: detailRaw.status,
+      detailResultCode,
+      detailResultMessage: detailResultMessage.substring(0, 180),
+      recordCount: detailRecords.length,
+      matchedByOtherTrxCode: Boolean(matchedByOtherTrxCode),
+      matchedByGatewayVirtualPosOrderId: Boolean(matchedByGatewayVirtualPosOrderId),
+      matchedByGatewayTrxCode: Boolean(matchedByGatewayTrxCode),
+      selectedVirtualPosOrderId: recoveredVirtualPosOrderId,
+      selectedTrxCode: recoveredTrxCode,
+      txRecoveryOperation: txRecoveryOperation || null,
+      recoveredGatewayTrxCode: gatewayTrxCode,
+      detailRecordsSnapshot: detailRecords.slice(0, 5).map((item: Record<string, unknown>) => ({
+        TrxCode: asText(item?.TrxCode),
+        VirtualPosOrderId: asText(item?.VirtualPosOrderId),
+        OtherTrxCode: asText(item?.OtherTrxCode ?? item?.MerchantOrderId ?? item?.MerchantRef),
+      })),
+    };
+
+    const detailLoggedPayload = detailJson && typeof detailJson === "object"
+      ? { ...(detailJson as Record<string, unknown>), _diag: detailFallbackDiagnostics }
+      : { raw: detailJson, _diag: detailFallbackDiagnostics };
+
+    await supabase.from("payment_transactions").insert({
+      intent_id: intent.id,
+      order_id: order.id,
+      operation: "inquiry",
+      request_payload: {
+        shortTrxCode,
+        gatewayTrxCodeFromIntent,
+        type: "GetDealerPaymentTrxDetailList",
+        source: "bakiyem-void",
+      },
+      response_payload: detailLoggedPayload,
+      success: detailRaw.ok && detailResultCode === "Success" && Boolean(gatewayTrxCode),
+      error_code: detailResultCode || null,
+      error_message: detailResultMessage || null,
+    });
+
+    if (gatewayTrxCode && gatewayTrxCode !== gatewayTrxCodeFromIntent) {
+      await supabase
+        .from("payment_intents")
+        .update({ gateway_trx_code: gatewayTrxCode })
+        .eq("id", intent.id);
     }
 
     if (!gatewayTrxCode) {
@@ -276,30 +371,70 @@ serve(async (req: Request) => {
     }
 
     const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "127.0.0.1";
-    const voidRequest = {
-      PaymentDealerAuthentication: {
-        DealerCode: BAKIYEM_DEALER_CODE,
-        Username: BAKIYEM_API_USERNAME,
-        Password: BAKIYEM_API_PASSWORD,
-        CheckKey: checkKey,
-      },
-      PaymentDealerRequest: {
-        VirtualPosOrderId: gatewayTrxCode,
-        VoidRefundReason: 2,
-        ClientIP: clientIp,
-      },
+
+    const gatewayCandidates = Array.from(new Set([
+      recoveredVirtualPosOrderId,
+      gatewayTrxCode,
+      recoveredTrxCode,
+      gatewayTrxCodeFromIntent,
+    ]
+      .map((value) => asText(value))
+      .filter((value) => value.length > 0)));
+
+    let voidJson: Record<string, unknown> = {};
+    let isSuccess = false;
+    let selectedVoidVirtualPosOrderId = gatewayCandidates[0] ?? gatewayTrxCode;
+    const voidAttemptDiagnostics: JsonRecord[] = [];
+
+    for (const candidateVirtualPosOrderId of gatewayCandidates) {
+      const currentVoidRequest = {
+        PaymentDealerAuthentication: {
+          DealerCode: BAKIYEM_DEALER_CODE,
+          Username: BAKIYEM_API_USERNAME,
+          Password: BAKIYEM_API_PASSWORD,
+          CheckKey: checkKey,
+        },
+        PaymentDealerRequest: {
+          VirtualPosOrderId: candidateVirtualPosOrderId,
+          VoidRefundReason: 2,
+          ClientIP: clientIp,
+        },
+      };
+
+      const currentVoidRaw = await fetch(`${BAKIYEM_BASE_URL}/PaymentDealer/DoVoid`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(currentVoidRequest),
+      });
+
+      const currentVoidJson = await currentVoidRaw.json().catch(() => ({}));
+      const currentIsSuccess = currentVoidRaw.ok &&
+        (currentVoidJson?.ResultCode === "Success") &&
+        ((currentVoidJson?.Data?.IsSuccessful === true) || (currentVoidJson?.Data?.ResultCode === "00"));
+
+      voidAttemptDiagnostics.push({
+        virtualPosOrderId: candidateVirtualPosOrderId,
+        gatewayHttpStatus: currentVoidRaw.status,
+        gatewayResultCode: asText(currentVoidJson?.ResultCode),
+        gatewayResultMessage: asText(currentVoidJson?.ResultMessage).substring(0, 180),
+        dataResultCode: asText(currentVoidJson?.Data?.ResultCode),
+        dataIsSuccessful: currentVoidJson?.Data?.IsSuccessful === true,
+      });
+
+      voidJson = currentVoidJson as Record<string, unknown>;
+      selectedVoidVirtualPosOrderId = candidateVirtualPosOrderId;
+
+      if (currentIsSuccess) {
+        isSuccess = true;
+        break;
+      }
+    }
+
+    const voidRequestPayload: JsonRecord = {
+      VirtualPosOrderId: selectedVoidVirtualPosOrderId,
+      VoidRefundReason: 2,
+      ClientIP: clientIp,
     };
-
-    const voidRaw = await fetch(`${BAKIYEM_BASE_URL}/PaymentDealer/DoVoid`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(voidRequest),
-    });
-    const voidJson = await voidRaw.json().catch(() => ({}));
-
-    const isSuccess = voidRaw.ok &&
-      (voidJson?.ResultCode === "Success") &&
-      ((voidJson?.Data?.IsSuccessful === true) || (voidJson?.Data?.ResultCode === "00"));
 
     await supabase.from("payment_transactions").insert({
       intent_id: intent.id,
@@ -307,10 +442,13 @@ serve(async (req: Request) => {
       operation: "void",
       request_payload: {
         PaymentDealerAuthentication: { DealerCode: "masked", Username: "masked", Password: "masked", CheckKey: "masked" },
-        PaymentDealerRequest: voidRequest.PaymentDealerRequest,
+        PaymentDealerRequest: voidRequestPayload,
         _diag: {
-          detailFallbackUsed: Boolean(detailFallbackDiagnostics),
           detailFallbackDiagnostics,
+          gatewayCandidates,
+          selectedVoidVirtualPosOrderId,
+          voidAttemptCount: voidAttemptDiagnostics.length,
+          voidAttemptDiagnostics,
         },
       },
       response_payload: voidJson,
@@ -320,9 +458,12 @@ serve(async (req: Request) => {
     });
 
     if (isSuccess) {
+      const successIntentUpdate: JsonRecord = { status: "voided", gateway_status: "voided" };
+      if (selectedVoidVirtualPosOrderId) successIntentUpdate.gateway_trx_code = selectedVoidVirtualPosOrderId;
+
       await supabase
         .from("payment_intents")
-        .update({ status: "voided", gateway_status: "voided" })
+        .update(successIntentUpdate)
         .eq("id", intent.id);
 
       await supabase
@@ -333,9 +474,12 @@ serve(async (req: Request) => {
       return response(req, 200, { success: true, pending: false, message: "Void basarili" });
     }
 
+    const pendingIntentUpdate: JsonRecord = { status: "void_pending", gateway_status: "void_pending" };
+    if (selectedVoidVirtualPosOrderId) pendingIntentUpdate.gateway_trx_code = selectedVoidVirtualPosOrderId;
+
     await supabase
       .from("payment_intents")
-      .update({ status: "void_pending", gateway_status: "void_pending" })
+      .update(pendingIntentUpdate)
       .eq("id", intent.id);
 
     await supabase
@@ -345,7 +489,11 @@ serve(async (req: Request) => {
           intent_id: intent.id,
           order_id: order.id,
           reason: "stuck_void_pending",
-          details: { request: voidRequest.PaymentDealerRequest, response: voidJson },
+          details: {
+            request: voidRequestPayload,
+            response: voidJson,
+            attempts: voidAttemptDiagnostics,
+          },
           dedupe_key: `void_pending:${intent.id}`,
         },
         {

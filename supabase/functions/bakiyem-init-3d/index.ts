@@ -195,7 +195,14 @@ function parseThreeDPayload(data) {
 }
 function extractThreeDTrxCode(data) {
   if (data && typeof data === "object") {
-    const objectDirect = asText(data?.threeDTrxCode ?? data?.ThreeDTrxCode ?? data?.TrxCode ?? data?.trxCode);
+    const objectDirect = asText(
+      data?.threeDTrxCode ??
+      data?.ThreeDTrxCode ??
+      data?.TrxCode ??
+      data?.trxCode ??
+      data?.VirtualPosOrderId ??
+      data?.virtualPosOrderId,
+    );
     if (objectDirect) return objectDirect;
 
     const objectUrl = asText(data?.Url ?? data?.url ?? data?.RedirectUrl ?? data?.redirectUrl);

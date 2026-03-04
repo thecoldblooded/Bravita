@@ -75,13 +75,22 @@ function asText(value: unknown): string {
     return typeof value === "string" ? value.trim() : "";
 }
 
+function pickFirstText(record: Record<string, unknown> | null | undefined, keys: string[]): string {
+    if (!record) return "";
+    for (const key of keys) {
+        const value = asText(record[key]);
+        if (value) return value;
+    }
+    return "";
+}
+
 function extractThreeDTrxCode(data: unknown): string {
     if (data && typeof data === "object") {
         const objectRecord = data as Record<string, unknown>;
-        const direct = asText(objectRecord.threeDTrxCode ?? objectRecord.ThreeDTrxCode ?? objectRecord.TrxCode ?? objectRecord.trxCode);
+        const direct = pickFirstText(objectRecord, ["threeDTrxCode", "ThreeDTrxCode", "TrxCode", "trxCode", "VirtualPosOrderId", "virtualPosOrderId"]);
         if (direct) return direct;
 
-        const objectUrl = asText(objectRecord.Url ?? objectRecord.url ?? objectRecord.RedirectUrl ?? objectRecord.redirectUrl);
+        const objectUrl = pickFirstText(objectRecord, ["Url", "url", "RedirectUrl", "redirectUrl"]);
         if (objectUrl) {
             const objectUrlMatch = objectUrl.match(/[?&]threeDTrxCode=([^&]+)/i);
             if (objectUrlMatch?.[1]) {
@@ -183,22 +192,84 @@ serve(async (req: Request) => {
             return response(req, 404, { success: false, pending: false, message: "Payment intent bulunamadi" });
         }
 
-        let gatewayTrxCode = asText(intent.gateway_trx_code);
+        const shortTrxCode = intent.id.replace(/-/g, "").substring(0, 20);
+        const normalizedShortTrxCode = shortTrxCode.toLowerCase();
+        const gatewayTrxCodeFromIntent = asText(intent.gateway_trx_code);
+        const normalizedGatewayTrxCodeFromIntent = gatewayTrxCodeFromIntent.toLowerCase();
+
+        let recoveredVirtualPosOrderId = "";
+        let recoveredTrxCode = "";
+        let txRecoveryOperation = "";
+        let gatewayTrxCode = gatewayTrxCodeFromIntent;
+
+        const checkKey = await sha256Hex(`${BAKIYEM_DEALER_CODE}MK${BAKIYEM_API_USERNAME}PD${BAKIYEM_API_PASSWORD}`);
+
+        const detailRequestPayload: JsonRecord = {
+            OtherTrxCode: shortTrxCode,
+        };
+
+        if (gatewayTrxCodeFromIntent) {
+            detailRequestPayload.TrxCode = gatewayTrxCodeFromIntent;
+            detailRequestPayload.VirtualPosOrderId = gatewayTrxCodeFromIntent;
+        }
+
+        const detailRaw = await fetch(`${BAKIYEM_BASE_URL}/PaymentDealer/GetDealerPaymentTrxDetailList`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                PaymentDealerAuthentication: {
+                    DealerCode: BAKIYEM_DEALER_CODE,
+                    Username: BAKIYEM_API_USERNAME,
+                    Password: BAKIYEM_API_PASSWORD,
+                    CheckKey: checkKey,
+                },
+                PaymentDealerRequest: detailRequestPayload,
+            }),
+        });
+
+        const detailJson = await detailRaw.json().catch(() => ({}));
+        const detailResultCode = asText((detailJson as Record<string, unknown>)?.ResultCode);
+        const detailResultMessage = asText((detailJson as Record<string, unknown>)?.ResultMessage);
+        const detailRoot = (detailJson as Record<string, unknown>)?.Data as Record<string, unknown> | undefined;
+        const detailRecordsRaw = detailRoot?.PaymentTrxDetailList;
+        const detailRecords = Array.isArray(detailRecordsRaw)
+            ? detailRecordsRaw.filter((item) => !!item && typeof item === "object") as Record<string, unknown>[]
+            : [];
+
+        const matchedByOtherTrxCode = detailRecords.find((item: Record<string, unknown>) =>
+            asText(item?.OtherTrxCode ?? item?.MerchantOrderId ?? item?.MerchantRef).toLowerCase() === normalizedShortTrxCode,
+        );
+
+        const matchedByGatewayVirtualPosOrderId = normalizedGatewayTrxCodeFromIntent
+            ? detailRecords.find((item: Record<string, unknown>) => asText(item?.VirtualPosOrderId).toLowerCase() === normalizedGatewayTrxCodeFromIntent)
+            : null;
+
+        const matchedByGatewayTrxCode = normalizedGatewayTrxCodeFromIntent
+            ? detailRecords.find((item: Record<string, unknown>) => asText(item?.TrxCode).toLowerCase() === normalizedGatewayTrxCodeFromIntent)
+            : null;
+
+        const selectedRecord = matchedByOtherTrxCode ?? matchedByGatewayVirtualPosOrderId ?? matchedByGatewayTrxCode ?? detailRecords[0] ?? null;
+
+        recoveredVirtualPosOrderId = pickFirstText(selectedRecord, ["VirtualPosOrderId", "virtualPosOrderId"]);
+        recoveredTrxCode = pickFirstText(selectedRecord, ["TrxCode", "trxCode"]);
+
+        gatewayTrxCode = recoveredVirtualPosOrderId || recoveredTrxCode || gatewayTrxCodeFromIntent;
 
         if (!gatewayTrxCode) {
             const { data: recoveryCandidates } = await supabase
                 .from("payment_transactions")
                 .select("operation, response_payload, request_payload, created_at")
                 .eq("intent_id", intent.id)
-                .in("operation", ["init_3d", "diag_trx_code_extraction"])
+                .in("operation", ["init_3d", "diag_trx_code_extraction", "recover_gateway_trx_code", "inquiry"])
                 .order("created_at", { ascending: false })
-                .limit(10);
+                .limit(20);
 
             for (const tx of recoveryCandidates ?? []) {
                 const responsePayload = (tx?.response_payload ?? {}) as Record<string, unknown>;
                 const requestPayload = (tx?.request_payload ?? {}) as Record<string, unknown>;
 
                 const recovered =
+                    pickFirstText(responsePayload, ["recoveredGatewayTrxCode", "resolvedGatewayTrxCode", "selectedVirtualPosOrderId", "selectedTrxCode"]) ||
                     extractThreeDTrxCode((responsePayload as Record<string, unknown>)?.Data) ||
                     asText((responsePayload as Record<string, unknown>)?.extractedGatewayTrxCodeDiagnostic) ||
                     asText((responsePayload as Record<string, unknown>)?.extractedGatewayTrxCodeCurrentPath) ||
@@ -207,52 +278,83 @@ serve(async (req: Request) => {
 
                 if (recovered) {
                     gatewayTrxCode = recovered;
+                    txRecoveryOperation = asText(tx?.operation);
                     break;
                 }
             }
+        }
 
-            if (gatewayTrxCode) {
-                const persistResult = await supabase
-                    .from("payment_intents")
-                    .update({ gateway_trx_code: gatewayTrxCode })
-                    .eq("id", intent.id);
+        const detailFallbackDiagnostics = {
+            shortTrxCode,
+            gatewayTrxCodeFromIntent,
+            detailHttpStatus: detailRaw.status,
+            detailResultCode,
+            detailResultMessage: detailResultMessage.substring(0, 180),
+            recordCount: detailRecords.length,
+            matchedByOtherTrxCode: Boolean(matchedByOtherTrxCode),
+            matchedByGatewayVirtualPosOrderId: Boolean(matchedByGatewayVirtualPosOrderId),
+            matchedByGatewayTrxCode: Boolean(matchedByGatewayTrxCode),
+            selectedVirtualPosOrderId: recoveredVirtualPosOrderId,
+            selectedTrxCode: recoveredTrxCode,
+            txRecoveryOperation: txRecoveryOperation || null,
+            recoveredGatewayTrxCode: gatewayTrxCode,
+            detailRecordsSnapshot: detailRecords.slice(0, 5).map((item: Record<string, unknown>) => ({
+                TrxCode: asText(item?.TrxCode),
+                VirtualPosOrderId: asText(item?.VirtualPosOrderId),
+                OtherTrxCode: asText(item?.OtherTrxCode ?? item?.MerchantOrderId ?? item?.MerchantRef),
+            })),
+        };
 
-                await supabase.from("payment_transactions").insert({
-                    intent_id: intent.id,
-                    order_id: order.id,
-                    operation: "recover_gateway_trx_code",
-                    request_payload: {
-                        source: "bakiyem-refund",
-                        reason: "missing_gateway_trx_code",
-                    },
-                    response_payload: {
-                        recoveredGatewayTrxCode: gatewayTrxCode,
-                        persistedToIntent: !persistResult.error,
-                        persistError: persistResult.error?.message ?? null,
-                    },
-                    success: !persistResult.error,
-                    error_code: persistResult.error ? "RECOVERY_PERSIST_FAILED" : null,
-                    error_message: persistResult.error?.message ?? null,
-                });
-            }
+        await supabase.from("payment_transactions").insert({
+            intent_id: intent.id,
+            order_id: order.id,
+            operation: "inquiry",
+            request_payload: {
+                shortTrxCode,
+                gatewayTrxCodeFromIntent,
+                type: "GetDealerPaymentTrxDetailList",
+                source: "bakiyem-refund",
+            },
+            response_payload: detailJson && typeof detailJson === "object"
+                ? { ...(detailJson as Record<string, unknown>), _diag: detailFallbackDiagnostics }
+                : { raw: detailJson, _diag: detailFallbackDiagnostics },
+            success: detailRaw.ok && detailResultCode === "Success" && Boolean(gatewayTrxCode),
+            error_code: detailResultCode || null,
+            error_message: detailResultMessage || null,
+        });
+
+        if (gatewayTrxCode && gatewayTrxCode !== gatewayTrxCodeFromIntent) {
+            const persistResult = await supabase
+                .from("payment_intents")
+                .update({ gateway_trx_code: gatewayTrxCode })
+                .eq("id", intent.id);
+
+            await supabase.from("payment_transactions").insert({
+                intent_id: intent.id,
+                order_id: order.id,
+                operation: "recover_gateway_trx_code",
+                request_payload: {
+                    source: "bakiyem-refund",
+                    reason: "normalized_from_detail_or_logs",
+                },
+                response_payload: {
+                    recoveredGatewayTrxCode: gatewayTrxCode,
+                    persistedToIntent: !persistResult.error,
+                    persistError: persistResult.error?.message ?? null,
+                },
+                success: !persistResult.error,
+                error_code: persistResult.error ? "RECOVERY_PERSIST_FAILED" : null,
+                error_message: persistResult.error?.message ?? null,
+            });
         }
 
         if (!gatewayTrxCode) {
-            return response(req, 400, { success: false, pending: false, message: "Gateway trx code bulunamadi" });
+            return response(req, 400, { success: false, pending: false, message: "Gateway trx code / VirtualPosOrderId bulunamadi" });
         }
 
         const requestedAmountCents = Number(body.amountCents);
         const hasCustomAmount = Number.isFinite(requestedAmountCents) && requestedAmountCents > 0;
         const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "127.0.0.1";
-
-        const paymentDealerRequest: JsonRecord = {
-            VirtualPosOrderId: gatewayTrxCode,
-            ClientIP: clientIp,
-        };
-
-        if (hasCustomAmount) {
-            paymentDealerRequest.Amount = (requestedAmountCents / 100).toFixed(2);
-        }
 
         const { data: latestInitTx, error: latestInitTxError } = await supabase
             .from("payment_transactions")
@@ -268,7 +370,6 @@ serve(async (req: Request) => {
             ? latestInitDiagRaw as Record<string, unknown>
             : null;
 
-        const checkKey = await sha256Hex(`${BAKIYEM_DEALER_CODE}MK${BAKIYEM_API_USERNAME}PD${BAKIYEM_API_PASSWORD}`);
         const authFingerprint16 = (await sha256Hex(`${BAKIYEM_BASE_URL}|${BAKIYEM_DEALER_CODE}|${BAKIYEM_API_USERNAME}|${BAKIYEM_API_PASSWORD}`)).substring(0, 16);
         const refundAuthDiagnostics = {
             gatewayBaseUrl: BAKIYEM_BASE_URL,
@@ -287,6 +388,7 @@ serve(async (req: Request) => {
                 requestedAmountCents: hasCustomAmount ? requestedAmountCents : null,
                 clientIpPresent: clientIp.length > 0,
                 virtualPosOrderIdLength: gatewayTrxCode.length,
+                detailFallbackDiagnostics,
             },
             init3dReference: {
                 queryError: latestInitTxError?.message ?? null,
@@ -297,42 +399,93 @@ serve(async (req: Request) => {
             },
         };
 
-        console.log("[bakiyem-refund] auth_diagnostics", refundAuthDiagnostics);
+        const gatewayCandidates = Array.from(new Set([
+            recoveredVirtualPosOrderId,
+            gatewayTrxCode,
+            recoveredTrxCode,
+            gatewayTrxCodeFromIntent,
+        ]
+            .map((value) => asText(value))
+            .filter((value) => value.length > 0)));
 
-        const refundRequest = {
-            PaymentDealerAuthentication: {
-                DealerCode: BAKIYEM_DEALER_CODE,
-                Username: BAKIYEM_API_USERNAME,
-                Password: BAKIYEM_API_PASSWORD,
-                CheckKey: checkKey,
-            },
-            PaymentDealerRequest: paymentDealerRequest,
+        let refundJson: Record<string, unknown> = {};
+        let isSuccess = false;
+        let selectedRefundVirtualPosOrderId = gatewayCandidates[0] ?? gatewayTrxCode;
+        const refundAttemptDiagnostics: JsonRecord[] = [];
+
+        for (const candidateVirtualPosOrderId of gatewayCandidates) {
+            const paymentDealerRequestCurrent: JsonRecord = {
+                VirtualPosOrderId: candidateVirtualPosOrderId,
+                ClientIP: clientIp,
+            };
+
+            if (hasCustomAmount) {
+                paymentDealerRequestCurrent.Amount = (requestedAmountCents / 100).toFixed(2);
+            }
+
+            const refundRequestCurrent = {
+                PaymentDealerAuthentication: {
+                    DealerCode: BAKIYEM_DEALER_CODE,
+                    Username: BAKIYEM_API_USERNAME,
+                    Password: BAKIYEM_API_PASSWORD,
+                    CheckKey: checkKey,
+                },
+                PaymentDealerRequest: paymentDealerRequestCurrent,
+            };
+
+            const refundRawCurrent = await fetch(`${BAKIYEM_BASE_URL}/PaymentDealer/DoCreateRefundRequest`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(refundRequestCurrent),
+            });
+
+            const refundJsonCurrent = await refundRawCurrent.json().catch(() => ({}));
+
+            const currentIsSuccess = refundRawCurrent.ok &&
+                (refundJsonCurrent?.ResultCode === "Success") &&
+                ((refundJsonCurrent?.Data?.IsSuccessful === true) || (refundJsonCurrent?.Data?.ResultCode === "00"));
+
+            refundAttemptDiagnostics.push({
+                virtualPosOrderId: candidateVirtualPosOrderId,
+                gatewayHttpStatus: refundRawCurrent.status,
+                gatewayResultCode: asText(refundJsonCurrent?.ResultCode),
+                gatewayResultMessage: asText(refundJsonCurrent?.ResultMessage).substring(0, 180),
+                dataResultCode: asText(refundJsonCurrent?.Data?.ResultCode),
+                dataIsSuccessful: refundJsonCurrent?.Data?.IsSuccessful === true,
+            });
+
+            refundJson = refundJsonCurrent as Record<string, unknown>;
+            selectedRefundVirtualPosOrderId = candidateVirtualPosOrderId;
+
+            if (currentIsSuccess) {
+                isSuccess = true;
+                break;
+            }
+        }
+
+        const paymentDealerRequest: JsonRecord = {
+            VirtualPosOrderId: selectedRefundVirtualPosOrderId,
+            ClientIP: clientIp,
         };
 
-        const refundRaw = await fetch(`${BAKIYEM_BASE_URL}/PaymentDealer/DoCreateRefundRequest`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(refundRequest),
-        });
-        const refundJson = await refundRaw.json().catch(() => ({}));
+        if (hasCustomAmount) {
+            paymentDealerRequest.Amount = (requestedAmountCents / 100).toFixed(2);
+        }
+
         const refundResultDiagnostics = {
-            gatewayHttpStatus: refundRaw.status,
             gatewayResultCode: asText(refundJson?.ResultCode),
             gatewayResultMessage: asText(refundJson?.ResultMessage).substring(0, 180),
             gatewayBaseUrl: BAKIYEM_BASE_URL,
             gatewayHost: resolveHost(BAKIYEM_BASE_URL),
             authFingerprint16,
+            selectedRefundVirtualPosOrderId,
+            refundAttemptCount: refundAttemptDiagnostics.length,
+            refundAttemptDiagnostics,
         };
-
-        console.log("[bakiyem-refund] refund_result_diagnostics", refundResultDiagnostics);
 
         const loggedRefundResponsePayload = refundJson && typeof refundJson === "object"
             ? { ...(refundJson as Record<string, unknown>), _diag: refundResultDiagnostics }
             : { raw: refundJson, _diag: refundResultDiagnostics };
-
-        const isSuccess = refundRaw.ok &&
-            (refundJson?.ResultCode === "Success") &&
-            ((refundJson?.Data?.IsSuccessful === true) || (refundJson?.Data?.ResultCode === "00"));
 
         await supabase.from("payment_transactions").insert({
             intent_id: intent.id,
@@ -350,9 +503,12 @@ serve(async (req: Request) => {
         });
 
         if (isSuccess) {
+            const successIntentUpdate: JsonRecord = { status: "refunded", gateway_status: "refunded" };
+            if (selectedRefundVirtualPosOrderId) successIntentUpdate.gateway_trx_code = selectedRefundVirtualPosOrderId;
+
             await supabase
                 .from("payment_intents")
-                .update({ status: "refunded", gateway_status: "refunded" })
+                .update(successIntentUpdate)
                 .eq("id", intent.id);
 
             await supabase
@@ -363,9 +519,12 @@ serve(async (req: Request) => {
             return response(req, 200, { success: true, pending: false, message: "Refund basarili" });
         }
 
+        const pendingIntentUpdate: JsonRecord = { status: "refund_pending", gateway_status: "refund_pending" };
+        if (selectedRefundVirtualPosOrderId) pendingIntentUpdate.gateway_trx_code = selectedRefundVirtualPosOrderId;
+
         await supabase
             .from("payment_intents")
-            .update({ status: "refund_pending", gateway_status: "refund_pending" })
+            .update(pendingIntentUpdate)
             .eq("id", intent.id);
 
         await supabase
@@ -378,6 +537,7 @@ serve(async (req: Request) => {
                     details: {
                         request: paymentDealerRequest,
                         response: loggedRefundResponsePayload,
+                        attempts: refundAttemptDiagnostics,
                         provided_reason: body.reason ?? null,
                         auth_diagnostics: refundAuthDiagnostics,
                         result_diagnostics: refundResultDiagnostics,
