@@ -48,12 +48,35 @@ function normalizeBankCode(value: string): string {
     const trimmed = value.trim();
     if (!trimmed) return "";
 
-    // Turn "03" -> "003", but leave "3d_auth_failed" as is
+    // Turn "03" -> "003"
     if (/^\d+$/.test(trimmed)) {
         return trimmed.length <= 3 ? trimmed.padStart(3, "0") : trimmed;
     }
 
-    return trimmed;
+    // Turn "VPS-1005" / "vps1005" -> "1005"
+    const upper = trimmed.toUpperCase();
+    const vpsCodeMatch = upper.match(/^VPS-?(\d{3,4})$/);
+    if (vpsCodeMatch) {
+        return vpsCodeMatch[1];
+    }
+
+    return upper;
+}
+
+const INSTALLMENT_DECLINE_BANK_CODES = new Set(["1005"]);
+
+function resolveFailureCode(rawCode: string, bankCode: string): string {
+    const normalizedCode = rawCode.trim().toLowerCase();
+
+    if (!normalizedCode) {
+        return INSTALLMENT_DECLINE_BANK_CODES.has(bankCode) ? "installment_auth_declined" : "failed";
+    }
+
+    if ((normalizedCode === "failed" || normalizedCode === "fail") && INSTALLMENT_DECLINE_BANK_CODES.has(bankCode)) {
+        return "installment_auth_declined";
+    }
+
+    return normalizedCode;
 }
 
 const CODE_FIRST_MESSAGE_KEYS = new Set([
@@ -123,13 +146,14 @@ export default function PaymentFailed() {
 
     const { code, intent, bankCode, trxStatus } = useMemo(() => {
         const params = new URLSearchParams(location.search);
-        const codeParam = (params.get("code") || "failed").trim().toLowerCase();
+        const rawCode = (params.get("code") || "").trim();
         const rawBankCode = (params.get("bankCode") || "").trim();
+        const normalizedBankCode = normalizeBankCode(rawBankCode);
 
         return {
-            code: codeParam,
+            code: resolveFailureCode(rawCode, normalizedBankCode),
             intent: (params.get("intent") || params.get("intentId") || "").trim(),
-            bankCode: normalizeBankCode(rawBankCode),
+            bankCode: normalizedBankCode,
             trxStatus: (params.get("trxStatus") || "").trim(),
         };
     }, [location.search]);
@@ -164,7 +188,12 @@ export default function PaymentFailed() {
             return;
         }
 
-        navigate("/checkout");
+        const retryParams = new URLSearchParams();
+        if (code) {
+            retryParams.set("code", code);
+        }
+
+        navigate(retryParams.toString() ? `/checkout?${retryParams.toString()}` : "/checkout");
     };
 
     return (
