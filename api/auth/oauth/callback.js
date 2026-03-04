@@ -35,10 +35,11 @@ export default async function handler(req, res) {
     const upstreamError = typeof req.query?.error === "string" ? req.query.error : "";
     const upstreamErrorDescription = typeof req.query?.error_description === "string" ? req.query.error_description : "";
 
-    const redirectWithError = (errorCode, errorDescription) => {
+    const redirectWithError = (errorCode, errorDescription, options = {}) => {
         const safeDescription = typeof errorDescription === "string" && errorDescription.trim().length > 0
             ? errorDescription
             : "OAuth callback failed";
+        const extraParams = options && typeof options === "object" ? options : {};
 
         res.setHeader("Set-Cookie", clearOAuthCookies(req));
         return sendRedirect(
@@ -46,6 +47,7 @@ export default async function handler(req, res) {
             buildSiteUrl(req, "/", {
                 error: errorCode,
                 error_description: safeDescription,
+                ...extraParams,
             }),
         );
     };
@@ -118,12 +120,16 @@ export default async function handler(req, res) {
 
         return sendRedirect(res, buildSiteUrl(req, "/"));
     } catch (error) {
-        const message = error instanceof Error ? error.message : "Unexpected OAuth callback error";
         logAuthDiagnostic("oauth_callback_exception", req, {
             status: 500,
-            reason: message,
+            errorName: error instanceof Error ? error.name : "UnknownError",
+            errorMessage: error instanceof Error ? error.message : String(error),
         });
 
-        return redirectWithError("oauth_callback_exception", message);
+        return redirectWithError(
+            "oauth_callback_exception",
+            "Authentication service temporarily unavailable",
+            { server_error: "1" },
+        );
     }
 }

@@ -39,7 +39,6 @@ const PRE_3D_FAILURE_CODES = new Set([
 interface CheckoutData {
     addressId: string | null;
     paymentMethod: "credit_card" | "bank_transfer";
-    installmentNumber: number;
     cardDetails?: {
         number: string;
         expiry: string;
@@ -60,7 +59,6 @@ export default function Checkout() {
     const [checkoutData, setCheckoutData] = useState<CheckoutData>({
         addressId: null,
         paymentMethod: "credit_card",
-        installmentNumber: 1,
     });
     const [installmentRates, setInstallmentRates] = useState<InstallmentRate[]>([]);
 
@@ -117,7 +115,7 @@ export default function Checkout() {
 
     useEffect(() => {
         setCardAttemptCount(0);
-    }, [checkoutData.cardDetails?.number, checkoutData.cardDetails?.expiry, checkoutData.cardDetails?.cvv, checkoutData.cardDetails?.name, checkoutData.installmentNumber]);
+    }, [checkoutData.cardDetails?.number, checkoutData.cardDetails?.expiry, checkoutData.cardDetails?.cvv, checkoutData.cardDetails?.name]);
 
     useEffect(() => {
         const params = new URLSearchParams(location.search);
@@ -125,15 +123,10 @@ export default function Checkout() {
         if (!failedCode) return;
 
         if (failedCode === "installment_auth_declined") {
-            setCheckoutData((prev) => (
-                prev.installmentNumber === 1
-                    ? prev
-                    : { ...prev, installmentNumber: 1 }
-            ));
             toast.error(
                 t(
                     "checkout.validation.installment_declined_single_shot",
-                    "Taksitli ödeme bankanız tarafından onaylanmadı. Tek çekim seçildi, bu şekilde tekrar deneyin.",
+                    "Bankanız bu işlemi taksitli olarak onaylamadı. Mevzuat gereği ödeme yalnızca tek çekim olarak alınmaktadır; lütfen tekrar deneyin.",
                 ),
             );
             return;
@@ -161,9 +154,7 @@ export default function Checkout() {
                     // Name must contain at least two words (Name + Surname)
                     const nameParts = card.name.trim().split(/\s+/);
                     const isNameValid = nameParts.length >= 2 && nameParts.every(part => part.length >= 2);
-                    const isInstallmentValid = checkoutData.installmentNumber >= 1 && checkoutData.installmentNumber <= 12;
-
-                    return isNumberValid && isExpiryValid && isCvvValid && isNameValid && isInstallmentValid;
+                    return isNumberValid && isExpiryValid && isCvvValid && isNameValid;
                 }
                 return true; // Bank transfer doesn't need card details
             case 3:
@@ -245,7 +236,7 @@ export default function Checkout() {
 
                 const cardInitResult = await initiateCardPayment({
                     shippingAddressId: checkoutData.addressId,
-                    installmentNumber: checkoutData.installmentNumber,
+                    installmentNumber: 1,
                     items: cartItems.map((item) => ({
                         product_id: item.product_id || item.id,
                         quantity: item.quantity,
@@ -441,11 +432,9 @@ export default function Checkout() {
                             >
                                 <PaymentMethodSelector
                                     selectedMethod={checkoutData.paymentMethod}
-                                    installmentNumber={checkoutData.installmentNumber}
                                     installmentRates={installmentRates}
                                     cardDetails={checkoutData.cardDetails}
                                     onMethodChange={(method) => setCheckoutData({ ...checkoutData, paymentMethod: method })}
-                                    onInstallmentChange={(installmentNumber) => setCheckoutData({ ...checkoutData, installmentNumber })}
                                     onCardDetailsChange={(details) => setCheckoutData({ ...checkoutData, cardDetails: details })}
                                 />
                             </m.div>
@@ -461,7 +450,7 @@ export default function Checkout() {
                                 <OrderSummary
                                     addressId={checkoutData.addressId}
                                     paymentMethod={checkoutData.paymentMethod}
-                                    installmentNumber={checkoutData.installmentNumber}
+                                    installmentNumber={1}
                                     installmentRates={installmentRates}
                                     items={cartItems}
                                     totals={cartTotal}

@@ -358,6 +358,7 @@ export async function initiateCardPayment(params: CardPaymentInitParams): Promis
         const result = await supabase.functions.invoke("bakiyem-init-3d", {
             body: {
                 ...params,
+                installmentNumber: 1,
                 correlationId,
             },
             headers,
@@ -384,6 +385,7 @@ export async function initiateCardPayment(params: CardPaymentInitParams): Promis
             const retryResult = await supabase.functions.invoke("bakiyem-init-3d", {
                 body: {
                     ...params,
+                    installmentNumber: 1,
                     correlationId,
                 },
                 headers,

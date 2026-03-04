@@ -335,7 +335,7 @@ serve(async (req) => {
       p_items: normalizedItems,
       p_shipping_address_id: body.shippingAddressId,
       p_payment_method: "credit_card",
-      p_installment_number: body.installmentNumber || 1,
+      p_installment_number: 1,
       p_promo_code: body.promoCode ?? null
     });
     if (quoteError || !quoteData?.success) {
@@ -472,7 +472,7 @@ serve(async (req) => {
     const checkKey = await sha256Hex(`${BAKIYEM_DEALER_CODE}MK${BAKIYEM_API_USERNAME}PD${BAKIYEM_API_PASSWORD}`);
     const shortTrxCode = intentId.replace(/-/g, "").substring(0, 20);
     const paymentAmount = amountFromCents(paymentTotalCents);
-    const gatewayInstallmentNumber = normalizeGatewayInstallmentNumber(quoteData.installment_number ?? body.installmentNumber ?? 1);
+    const gatewayInstallmentNumber = 1;
     const requestOrigin = req.headers.get("origin") ?? "";
     const isRequestOriginAllowed = isAllowedOrigin(requestOrigin);
     const uiOrigin = isRequestOriginAllowed ? requestOrigin : APP_BASE_URL;

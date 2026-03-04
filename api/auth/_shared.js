@@ -13,6 +13,7 @@ const DEFAULT_ALLOWED_AUTH_ORIGINS = [
   "http://localhost:8080",
   "http://127.0.0.1:8080",
 ];
+const INTERNAL_SERVER_ERROR_MESSAGE = "Internal server error";
 
 function normalizeOrigin(value) {
   if (typeof value !== "string") return null;
@@ -473,10 +474,25 @@ function extractAuthErrorMessage(payload, fallbackMessage) {
   return fallbackMessage;
 }
 
+function sendInternalServerError(res, req, diagnosticEvent, error) {
+  const event = typeof diagnosticEvent === "string" && diagnosticEvent.trim().length > 0
+    ? diagnosticEvent
+    : "auth_internal_error";
+
+  logAuthDiagnostic(event, req, {
+    status: 500,
+    errorName: error instanceof Error ? error.name : "UnknownError",
+    errorMessage: error instanceof Error ? error.message : String(error),
+  });
+
+  return sendJson(res, 500, { error: INTERNAL_SERVER_ERROR_MESSAGE });
+}
+
 export {
   REFRESH_COOKIE_NAME,
   OAUTH_STATE_COOKIE_NAME,
   OAUTH_CODE_VERIFIER_COOKIE_NAME,
+  INTERNAL_SERVER_ERROR_MESSAGE,
   parseRequestBody,
   parseCookies,
   readRefreshTokenFromRequest,
@@ -501,6 +517,7 @@ export {
   sanitizeSessionResponse,
   sanitizeSignupResponse,
   extractAuthErrorMessage,
+  sendInternalServerError,
   assertValidAuthPostRequest,
   logAuthDiagnostic,
   resolveSiteOrigin,

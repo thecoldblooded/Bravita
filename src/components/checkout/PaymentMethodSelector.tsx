@@ -8,12 +8,13 @@ import {
     Lock,
     Copy,
     CheckCircle,
+    Info,
     type LucideIcon,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useTranslation } from "react-i18next";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 
 interface CardDetails {
@@ -25,7 +26,6 @@ interface CardDetails {
 
 interface PaymentMethodSelectorProps {
     selectedMethod: "credit_card" | "bank_transfer";
-    installmentNumber: number;
     installmentRates: Array<{
         installment_number: number;
         commission_rate: number;
@@ -33,7 +33,6 @@ interface PaymentMethodSelectorProps {
     }>;
     cardDetails?: CardDetails;
     onMethodChange: (method: "credit_card" | "bank_transfer") => void;
-    onInstallmentChange: (installment: number) => void;
     onCardDetailsChange: (details: CardDetails) => void;
 }
 
@@ -104,42 +103,42 @@ function PaymentMethodOption({
     );
 }
 
-interface InstallmentSelectProps {
-    installmentNumber: number;
-    installmentRates: InstallmentRate[];
+interface SinglePaymentInfoProps {
     selectedInstallmentRate: number;
-    onInstallmentChange: (installment: number) => void;
 }
 
-function InstallmentSelect({
-    installmentNumber,
-    installmentRates,
-    selectedInstallmentRate,
-    onInstallmentChange,
-}: InstallmentSelectProps) {
+function SinglePaymentInfo({ selectedInstallmentRate }: SinglePaymentInfoProps) {
     const { t } = useTranslation();
 
     return (
         <div className="space-y-2">
-            <Label className="text-gray-300">{t("checkout.payment.installments_label", "Taksit Seçeneği")}</Label>
-            <Select value={String(installmentNumber)} onValueChange={(value) => onInstallmentChange(Number(value))}>
-                <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
-                    <SelectValue placeholder={t("checkout.payment.select_installment", "Taksit seçin")} />
-                </SelectTrigger>
-                <SelectContent>
-                    {installmentRates
-                        .filter((rate) => rate.is_active && rate.installment_number >= 1 && rate.installment_number <= 12)
-                        .map((rate) => (
-                            <SelectItem key={rate.installment_number} value={String(rate.installment_number)}>
-                                {rate.installment_number === 1
-                                    ? `${t("checkout.payment.single_payment", "Tek çekim")} (%${rate.commission_rate.toFixed(2)} ${t("checkout.payment.commission_suffix", "komisyon")})`
-                                    : `${t("checkout.payment.installment_count", "{{count}} taksit", {
-                                        count: rate.installment_number,
-                                    })} (%${rate.commission_rate.toFixed(2)} ${t("checkout.payment.commission_suffix", "komisyon")})`}
-                            </SelectItem>
-                        ))}
-                </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2">
+                <Label className="text-gray-300">{t("checkout.payment.single_payment", "Tek çekim")}</Label>
+                <TooltipProvider delayDuration={100}>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <button
+                                type="button"
+                                aria-label={t("checkout.payment.installment_info_label", "Taksit bilgilendirmesi")}
+                                className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-gray-500 text-gray-300 transition-colors hover:border-gray-300 hover:text-white"
+                            >
+                                <Info className="h-3.5 w-3.5" />
+                            </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-80 border-gray-700 bg-gray-900 text-gray-100">
+                            {t(
+                                "checkout.payment.installment_regulation_note",
+                                "BDDK'nın Kredi Kartı Taksit Sınırları ve Yasakları mevzuatı 3. maddesi gereğince gıda takviyelerine kredi kartına taksit uygulanmamaktadır.",
+                            )}
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            </div>
+
+            <div className="rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-white">
+                {`${t("checkout.payment.single_payment", "Tek çekim")} (%${selectedInstallmentRate.toFixed(2)} ${t("checkout.payment.commission_suffix", "komisyon")})`}
+            </div>
+
             <p className="text-xs text-gray-400">
                 {t("checkout.payment.commission_applied", "Uygulanan komisyon: %{{rate}}", {
                     rate: selectedInstallmentRate.toFixed(2),
@@ -151,20 +150,14 @@ function InstallmentSelect({
 
 interface CreditCardPanelProps {
     cardDetails: CardDetails;
-    installmentNumber: number;
-    installmentRates: InstallmentRate[];
     selectedInstallmentRate: number;
     onCardChange: (field: keyof CardDetails, value: string) => void;
-    onInstallmentChange: (installment: number) => void;
 }
 
 function CreditCardPanel({
     cardDetails,
-    installmentNumber,
-    installmentRates,
     selectedInstallmentRate,
     onCardChange,
-    onInstallmentChange,
 }: CreditCardPanelProps) {
     const { t } = useTranslation();
 
@@ -244,12 +237,7 @@ function CreditCardPanel({
                     </div>
                 </div>
 
-                <InstallmentSelect
-                    installmentNumber={installmentNumber}
-                    installmentRates={installmentRates}
-                    selectedInstallmentRate={selectedInstallmentRate}
-                    onInstallmentChange={onInstallmentChange}
-                />
+                <SinglePaymentInfo selectedInstallmentRate={selectedInstallmentRate} />
             </div>
 
             <div className="flex items-center gap-2 mt-4 justify-center bg-gray-700/50 p-3 rounded-xl border border-gray-600/50">
@@ -367,11 +355,9 @@ function BankTransferPanel({ copiedItem, onCopy }: BankTransferPanelProps) {
 
 export function PaymentMethodSelector({
     selectedMethod,
-    installmentNumber,
     installmentRates,
     cardDetails,
     onMethodChange,
-    onInstallmentChange,
     onCardDetailsChange,
 }: PaymentMethodSelectorProps) {
     const { t } = useTranslation();
@@ -426,7 +412,7 @@ export function PaymentMethodSelector({
     };
 
     const selectedInstallmentRate =
-        installmentRates.find((rate) => rate.installment_number === installmentNumber)?.commission_rate ?? 0;
+        installmentRates.find((rate) => rate.installment_number === 1)?.commission_rate ?? 0;
 
     return (
         <div>
@@ -455,11 +441,8 @@ export function PaymentMethodSelector({
             {selectedMethod === CREDIT_CARD_METHOD ? (
                 <CreditCardPanel
                     cardDetails={resolvedCardDetails}
-                    installmentNumber={installmentNumber}
-                    installmentRates={installmentRates}
                     selectedInstallmentRate={selectedInstallmentRate}
                     onCardChange={handleCardChange}
-                    onInstallmentChange={onInstallmentChange}
                 />
             ) : (
                 <BankTransferPanel copiedItem={copiedItem} onCopy={copyToClipboard} />

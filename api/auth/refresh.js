@@ -7,6 +7,7 @@ import {
   refreshSessionFromToken,
   sanitizeSessionResponse,
   sendJson,
+  sendInternalServerError,
 } from "./_shared.js";
 
 export default async function handler(req, res) {
@@ -36,8 +37,7 @@ export default async function handler(req, res) {
     res.setHeader("Set-Cookie", buildRefreshCookie(data.refresh_token, req));
     return sendJson(res, 200, sanitizeSessionResponse(data));
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unexpected refresh error";
     res.setHeader("Set-Cookie", buildClearRefreshCookie(req));
-    return sendJson(res, 500, { error: message });
+    return sendInternalServerError(res, req, "refresh_exception", error);
   }
 }

@@ -6,6 +6,7 @@ import {
   parseRequestBody,
   sanitizeSignupResponse,
   sendJson,
+  sendInternalServerError,
 } from "./_shared.js";
 
 function normalizeOptionalString(value, maxLength) {
@@ -111,7 +112,6 @@ export default async function handler(req, res) {
 
     return sendJson(res, 200, sanitizeSignupResponse(normalizedSignupPayload));
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unexpected signup error";
-    return sendJson(res, 500, { error: message });
+    return sendInternalServerError(res, req, "signup_exception", error);
   }
 }

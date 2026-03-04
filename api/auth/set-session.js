@@ -2,6 +2,7 @@ import {
     assertValidAuthPostRequest,
     buildRefreshCookie,
     sendJson,
+    sendInternalServerError,
 } from "./_shared.js";
 
 export default async function handler(req, res) {
@@ -25,7 +26,6 @@ export default async function handler(req, res) {
         res.setHeader("Set-Cookie", buildRefreshCookie(refresh_token, req));
         return sendJson(res, 200, { success: true });
     } catch (error) {
-        const message = error instanceof Error ? error.message : "Unexpected set-session error";
-        return sendJson(res, 500, { error: message });
+        return sendInternalServerError(res, req, "set_session_exception", error);
     }
 }

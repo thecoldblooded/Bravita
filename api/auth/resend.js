@@ -4,6 +4,7 @@ import {
   extractAuthErrorMessage,
   parseRequestBody,
   sendJson,
+  sendInternalServerError,
 } from "./_shared.js";
 
 export default async function handler(req, res) {
@@ -37,7 +38,6 @@ export default async function handler(req, res) {
 
     return sendJson(res, 200, { success: true });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unexpected resend error";
-    return sendJson(res, 500, { error: message });
+    return sendInternalServerError(res, req, "resend_exception", error);
   }
 }

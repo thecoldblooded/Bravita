@@ -6,6 +6,7 @@ import {
     logAuthDiagnostic,
     sendJson,
     sendRedirect,
+    sendInternalServerError,
 } from "../../_shared.js";
 
 export default async function handler(req, res) {
@@ -34,11 +35,6 @@ export default async function handler(req, res) {
 
         return sendRedirect(res, authorizeUrl);
     } catch (error) {
-        const message = error instanceof Error ? error.message : "Unexpected OAuth start error";
-        logAuthDiagnostic("oauth_google_start_exception", req, {
-            status: 500,
-            reason: message,
-        });
-        return sendJson(res, 500, { error: message });
+        return sendInternalServerError(res, req, "oauth_google_start_exception", error);
     }
 }

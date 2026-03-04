@@ -7,6 +7,7 @@ import {
   extractAuthErrorMessage,
   assertValidAuthPostRequest,
   logAuthDiagnostic,
+  sendInternalServerError,
 } from "./_shared.js";
 
 export default async function handler(req, res) {
@@ -67,11 +68,6 @@ export default async function handler(req, res) {
     });
     return sendJson(res, 200, sanitizeSessionResponse(data));
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unexpected login error";
-    logAuthDiagnostic("login_exception", req, {
-      status: 500,
-      reason: message,
-    });
-    return sendJson(res, 500, { error: message });
+    return sendInternalServerError(res, req, "login_exception", error);
   }
 }

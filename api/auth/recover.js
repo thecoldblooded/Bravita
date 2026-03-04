@@ -5,6 +5,7 @@ import {
   logAuthDiagnostic,
   parseRequestBody,
   sendJson,
+  sendInternalServerError,
 } from "./_shared.js";
 
 const DEFAULT_SITE_URL = "https://bravita.com.tr";
@@ -161,10 +162,6 @@ export default async function handler(req, res) {
 
     return sendJson(res, 200, { success: true });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unexpected password recovery error";
-    logAuthDiagnostic("recover_request_handler_failed", req, {
-      errorMessage: message,
-    });
-    return sendJson(res, 500, { error: message });
+    return sendInternalServerError(res, req, "recover_request_handler_failed", error);
   }
 }
