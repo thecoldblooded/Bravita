@@ -1,19 +1,9 @@
-import { useLocation } from "react-router-dom";
-import { useEffect } from "react";
-
 import { m } from "framer-motion";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import notFoundAnimation from "@/assets/404-not-found.lottie";
 import bravitaLogo from "@/assets/bravita-logo.webp";
 
 const NotFound = () => {
-
-  const location = useLocation();
-
-  useEffect(() => {
-    console.error("404 Error: User attempted to access non-existent route:", location.pathname);
-  }, [location.pathname]);
-
   return (
     <div className="flex min-h-screen items-start justify-center bg-[#FFFBF4] p-4 pt-8 text-center">
       <m.div
