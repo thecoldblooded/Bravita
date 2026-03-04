@@ -6,7 +6,10 @@ import { classifyLinkedDrift } from "./classify-linked-drift.mjs";
 const ROOT = process.cwd();
 const DRIFT_SQL_PATH = path.resolve(ROOT, "drift.sql");
 const DRIFT_ERR_PATH = path.resolve(ROOT, "drift.err");
-const REMOTE_DUMP_SQL_PATH = path.resolve(ROOT, "_reports", "sql", "remote_public_ci_dump.sql");
+const REMOTE_DUMP_SQL_RELATIVE_PATH = path.join("_reports", "sql", "remote_public_ci_dump.sql");
+const REMOTE_DUMP_SQL_PATH = path.resolve(ROOT, REMOTE_DUMP_SQL_RELATIVE_PATH);
+const REMOTE_DUMP_STDOUT_PATH = path.resolve(ROOT, "_reports", "sql", "remote_public_ci_dump.out");
+const REMOTE_DUMP_STDERR_PATH = path.resolve(ROOT, "_reports", "sql", "remote_public_ci_dump.err");
 const DRIFT_CLASSIFICATION_REPORT_PATH = path.resolve(ROOT, "_reports", "sql", "drift_classification_report.txt");
 const DRIFT_STDERR_DROP_REPORT_PATH = path.resolve(ROOT, "_reports", "sql", "drift_stderr_drop_report.txt");
 
@@ -16,6 +19,7 @@ function parsePositiveInt(value, fallback) {
 }
 
 const DRIFT_TIMEOUT_MS = parsePositiveInt(process.env.SUPABASE_DRIFT_TIMEOUT_MS, 7 * 60 * 1000);
+const REMOTE_DUMP_TIMEOUT_MS = parsePositiveInt(process.env.SUPABASE_REMOTE_DUMP_TIMEOUT_MS, 3 * 60 * 1000);
 const DRIFT_HEARTBEAT_MS = 30 * 1000;
 const DRIFT_KILL_GRACE_MS = 30 * 1000;
 
@@ -53,17 +57,7 @@ function ensureDbPassword() {
     }
 }
 
-function buildCommand() {
-    const args = [
-        "supabase",
-        "db",
-        "diff",
-        "--linked",
-        "--use-migra",
-        "--schema",
-        "public"
-    ];
-
+function buildNpxCommand(args) {
     if (process.platform === "win32") {
         const escaped = args.join(" ");
         return {
@@ -78,9 +72,34 @@ function buildCommand() {
     };
 }
 
+function buildDiffCommand() {
+    return buildNpxCommand([
+        "supabase",
+        "db",
+        "diff",
+        "--linked",
+        "--use-migra",
+        "--schema",
+        "public"
+    ]);
+}
+
+function buildDumpCommand() {
+    return buildNpxCommand([
+        "supabase",
+        "db",
+        "dump",
+        "--linked",
+        "--schema",
+        "public",
+        "--file",
+        REMOTE_DUMP_SQL_RELATIVE_PATH
+    ]);
+}
+
 function runSupabaseDiff() {
     return new Promise((resolve, reject) => {
-        const { command, commandArgs } = buildCommand();
+        const { command, commandArgs } = buildDiffCommand();
 
         const child = spawn(command, commandArgs, {
             stdio: ["ignore", "pipe", "pipe"],
@@ -161,6 +180,142 @@ function runSupabaseDiff() {
     });
 }
 
+function runSupabaseDump() {
+    return new Promise((resolve, reject) => {
+        fs.mkdirSync(path.dirname(REMOTE_DUMP_SQL_PATH), { recursive: true });
+
+        const { command, commandArgs } = buildDumpCommand();
+        const child = spawn(command, commandArgs, {
+            stdio: ["ignore", "pipe", "pipe"],
+            env: {
+                ...process.env,
+                SUPABASE_DB_PASSWORD: process.env.SUPABASE_DB_PASSWORD
+            }
+        });
+
+        const stdoutChunks = [];
+        const stderrChunks = [];
+        const startedAt = Date.now();
+        let timedOut = false;
+
+        const heartbeatTimer = setInterval(() => {
+            const elapsedSeconds = Math.floor((Date.now() - startedAt) / 1000);
+            logWithTimestamp(`supabase db dump still running (elapsed=${elapsedSeconds}s)`);
+        }, DRIFT_HEARTBEAT_MS);
+        heartbeatTimer.unref();
+
+        const timeoutTimer = setTimeout(() => {
+            timedOut = true;
+            const timeoutSeconds = Math.floor(REMOTE_DUMP_TIMEOUT_MS / 1000);
+            console.error(`supabase db dump timed out after ${timeoutSeconds}s; sending SIGTERM...`);
+
+            try {
+                child.kill("SIGTERM");
+            } catch {
+                // no-op
+            }
+
+            setTimeout(() => {
+                if (child.exitCode === null && child.signalCode === null) {
+                    console.error("supabase db dump did not terminate after SIGTERM; sending SIGKILL...");
+                    try {
+                        child.kill("SIGKILL");
+                    } catch {
+                        // no-op
+                    }
+                }
+            }, DRIFT_KILL_GRACE_MS).unref();
+        }, REMOTE_DUMP_TIMEOUT_MS);
+        timeoutTimer.unref();
+
+        child.stdout.on("data", (chunk) => {
+            stdoutChunks.push(Buffer.from(chunk));
+        });
+
+        child.stderr.on("data", (chunk) => {
+            stderrChunks.push(Buffer.from(chunk));
+        });
+
+        child.on("error", (error) => {
+            clearInterval(heartbeatTimer);
+            clearTimeout(timeoutTimer);
+            reject(error);
+        });
+
+        child.on("close", (code) => {
+            clearInterval(heartbeatTimer);
+            clearTimeout(timeoutTimer);
+
+            const stdout = Buffer.concat(stdoutChunks).toString("utf8");
+            const stderr = Buffer.concat(stderrChunks).toString("utf8");
+            const elapsedMs = Date.now() - startedAt;
+
+            fs.writeFileSync(REMOTE_DUMP_STDOUT_PATH, stdout, "utf8");
+            fs.writeFileSync(REMOTE_DUMP_STDERR_PATH, stderr, "utf8");
+
+            resolve({
+                exitCode: typeof code === "number" ? code : 1,
+                stdout,
+                stderr,
+                timedOut,
+                elapsedMs
+            });
+        });
+    });
+}
+
+async function ensureRemoteDumpAvailable() {
+    const hasExistingDump = fs.existsSync(REMOTE_DUMP_SQL_PATH);
+    const existingDumpSize = hasExistingDump ? fs.statSync(REMOTE_DUMP_SQL_PATH).size : 0;
+
+    if (hasExistingDump && existingDumpSize > 0) {
+        console.log(`Remote dump hazır, mevcut dosya kullanılacak: ${REMOTE_DUMP_SQL_PATH} (bytes=${existingDumpSize})`);
+        return { status: "ok", generated: false };
+    }
+
+    const missingReason = hasExistingDump ? "dosya boş" : "dosya bulunamadı";
+    console.warn(`Remote dump ${missingReason}; otomatik üretim başlatılıyor: ${REMOTE_DUMP_SQL_PATH}`);
+
+    const timeoutSeconds = Math.floor(REMOTE_DUMP_TIMEOUT_MS / 1000);
+    logWithTimestamp(`Starting remote public dump generation with timeout=${timeoutSeconds}s`);
+
+    const { exitCode, timedOut, elapsedMs } = await runSupabaseDump();
+    const elapsedSeconds = Math.floor(elapsedMs / 1000);
+    logWithTimestamp(`supabase db dump completed (elapsed=${elapsedSeconds}s, exitCode=${exitCode}, timedOut=${timedOut})`);
+
+    if (timedOut) {
+        return {
+            status: "dump_timed_out",
+            error: `supabase db dump timed out after ${timeoutSeconds}s`
+        };
+    }
+
+    if (exitCode !== 0) {
+        return {
+            status: "dump_failed",
+            error: `supabase db dump failed with exit code ${exitCode}. See ${REMOTE_DUMP_STDERR_PATH}`
+        };
+    }
+
+    if (!fs.existsSync(REMOTE_DUMP_SQL_PATH)) {
+        return {
+            status: "dump_missing_output",
+            error: `supabase db dump completed but output file not found: ${REMOTE_DUMP_SQL_PATH}`
+        };
+    }
+
+    const dumpSize = fs.statSync(REMOTE_DUMP_SQL_PATH).size;
+    if (dumpSize === 0) {
+        return {
+            status: "dump_empty_output",
+            error: `supabase db dump produced an empty file: ${REMOTE_DUMP_SQL_PATH}`
+        };
+    }
+
+    console.log(`Remote dump generated: ${REMOTE_DUMP_SQL_PATH} (bytes=${dumpSize})`);
+    return { status: "ok", generated: true };
+}
+
 function printDiagnostics(stdout, stderr) {
     const sqlBytes = Buffer.byteLength(stdout, "utf8");
     const errBytes = Buffer.byteLength(stderr, "utf8");
@@ -224,16 +379,17 @@ function hasExecutableDriftSql(sqlText) {
     return /\b(CREATE|ALTER|DROP|INSERT|UPDATE|DELETE)\b/i.test(cleaned);
 }
 
-function classifyDriftAgainstRemoteDump(driftSql) {
-    if (!fs.existsSync(REMOTE_DUMP_SQL_PATH)) {
-        return {
-            status: "missing_remote_dump",
-            classification: null,
-            error: `Remote dump file not found: ${REMOTE_DUMP_SQL_PATH}`
-        };
-    }
-
+async function classifyDriftAgainstRemoteDump(driftSql) {
     try {
+        const remoteDumpStatus = await ensureRemoteDumpAvailable();
+        if (remoteDumpStatus.status !== "ok") {
+            return {
+                status: remoteDumpStatus.status,
+                classification: null,
+                error: remoteDumpStatus.error ?? `Remote dump file not found: ${REMOTE_DUMP_SQL_PATH}`
+            };
+        }
+
         const remoteDumpSql = fs.readFileSync(REMOTE_DUMP_SQL_PATH, "utf8");
         const classification = classifyLinkedDrift({
             driftSql,
@@ -329,7 +485,7 @@ async function main() {
     }
 
     if (hasExecutableDriftSql(stdout)) {
-        const classificationResult = classifyDriftAgainstRemoteDump(stdout);
+        const classificationResult = await classifyDriftAgainstRemoteDump(stdout);
 
         if (classificationResult.status !== "ok") {
             console.error(`❌ Database drift detected in public schema. ${classificationResult.error}`);
