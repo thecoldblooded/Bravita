@@ -78,7 +78,6 @@ function OrdersContent() {
 
         loadOrders();
 
-        // Real-time subscription for NEW orders
         const channel = supabase
             .channel('admin-order-updates')
             .on(
@@ -89,9 +88,30 @@ function OrdersContent() {
                     table: 'orders'
                 },
                 () => {
-                    // Update the list and show notification
                     loadOrders();
                     toast.info("Yeni bir siparişiniz var!");
+                }
+            )
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'orders'
+                },
+                () => {
+                    loadOrders();
+                }
+            )
+            .on(
+                'postgres_changes',
+                {
+                    event: 'DELETE',
+                    schema: 'public',
+                    table: 'orders'
+                },
+                () => {
+                    loadOrders();
                 }
             )
             .subscribe();

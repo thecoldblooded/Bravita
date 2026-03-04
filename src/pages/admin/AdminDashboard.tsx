@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef, Suspense, lazy } from "react"
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminGuard } from "@/components/admin/AdminGuard";
 import { getDashboardStats, DashboardStats } from "@/lib/admin";
+import { supabase } from "@/lib/supabase";
 import { DashboardSkeleton } from "@/components/admin/skeletons";
 import { Calendar, DollarSign, ShoppingBag, TrendingUp, RefreshCw, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -59,6 +60,49 @@ function DashboardContent() {
         loadStats();
     }, [loadStats]);
 
+    useEffect(() => {
+        const channel = supabase
+            .channel("admin-dashboard-order-updates")
+            .on(
+                "postgres_changes",
+                {
+                    event: "INSERT",
+                    schema: "public",
+                    table: "orders",
+                },
+                () => {
+                    loadStats();
+                }
+            )
+            .on(
+                "postgres_changes",
+                {
+                    event: "UPDATE",
+                    schema: "public",
+                    table: "orders",
+                },
+                () => {
+                    loadStats();
+                }
+            )
+            .on(
+                "postgres_changes",
+                {
+                    event: "DELETE",
+                    schema: "public",
+                    table: "orders",
+                },
+                () => {
+                    loadStats();
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [loadStats]);
+
     if (isLoading && !stats) {
         return (
             <div className="max-w-7xl mx-auto">
@@ -76,6 +120,9 @@ function DashboardContent() {
     const textSecondary = isDark ? "text-slate-400" : "text-gray-500";
     const gridColor = isDark ? "#1e293b" : "#f3f4f6"; // Slate 800
     const axisColor = isDark ? "#64748b" : "#9ca3af"; // Slate 500
+    const validOrderCount = stats?.order_count ?? 0;
+    const cancelledOrderCount = stats?.cancelled_count ?? 0;
+    const totalOrderCount = validOrderCount + cancelledOrderCount;
 
     return (
         <div className="max-w-7xl mx-auto">
@@ -180,8 +227,9 @@ function DashboardContent() {
                         </div>
                         <span className={`px-2 py-1 rounded-lg text-xs font-medium ${isDark ? "text-blue-400 bg-blue-500/20" : "text-blue-600 bg-blue-50"}`}>Satış</span>
                     </div>
-                    <p className={`text-sm ${textSecondary}`}>Geçerli Sipariş</p>
-                    <h3 className={`text-2xl font-bold ${textPrimary}`}>{stats?.order_count}</h3>
+                    <p className={`text-sm ${textSecondary}`}>Toplam Sipariş</p>
+                    <h3 className={`text-2xl font-bold ${textPrimary}`}>{totalOrderCount}</h3>
+                    <p className={`text-xs mt-1 ${textSecondary}`}>Geçerli: {validOrderCount}</p>
                 </div>
 
                 <div className={cardClass}>
@@ -192,7 +240,7 @@ function DashboardContent() {
                         <span className={`px-2 py-1 rounded-lg text-xs font-medium ${isDark ? "text-red-400 bg-red-500/20" : "text-red-600 bg-red-50"}`}>İptal</span>
                     </div>
                     <p className={`text-sm ${textSecondary}`}>İptal Edilen</p>
-                    <h3 className={`text-2xl font-bold ${textPrimary}`}>{stats?.cancelled_count || 0}</h3>
+                    <h3 className={`text-2xl font-bold ${textPrimary}`}>{cancelledOrderCount}</h3>
                 </div>
 
                 <div className={cardClass}>
@@ -204,8 +252,8 @@ function DashboardContent() {
                     </div>
                     <p className={`text-sm ${textSecondary}`}>Sepet Ortalaması</p>
                     <h3 className={`text-2xl font-bold ${textPrimary}`}>
-                        ₺{stats?.order_count > 0
-                            ? Math.round(stats.total_revenue / stats.order_count).toLocaleString("tr-TR")
+                        ₺{validOrderCount > 0
+                            ? Math.round((stats?.total_revenue ?? 0) / validOrderCount).toLocaleString("tr-TR")
                             : 0}
                     </h3>
                 </div>
