@@ -1,10 +1,14 @@
 import { useState, useEffect, useCallback, useRef, Suspense, lazy } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminGuard } from "@/components/admin/AdminGuard";
-import { getDashboardStats, DashboardStats } from "@/lib/admin";
+import { getDashboardStats, DashboardStats, STATUS_CONFIG, OrderStatus } from "@/lib/admin";
 import { supabase } from "@/lib/supabase";
 import { DashboardSkeleton } from "@/components/admin/skeletons";
-import { Calendar, DollarSign, ShoppingBag, TrendingUp, RefreshCw, ExternalLink } from "lucide-react";
+import { formatDate } from "@/lib/utils";
+import {
+    DollarSign, ShoppingBag, TrendingUp, RefreshCw, ExternalLink,
+    Users, Package, XCircle, UserPlus, Clock, CreditCard, Banknote
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAdminTheme } from "@/contexts/AdminThemeContext";
@@ -14,7 +18,7 @@ const DashboardCharts = lazy(() => import('./components/DashboardCharts'));
 function DashboardContent() {
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [dateRange, setDateRange] = useState("30"); // days
+    const [dateRange, setDateRange] = useState("30");
     const { theme } = useAdminTheme();
     const isDark = theme === "dark";
 
@@ -42,12 +46,10 @@ function DashboardContent() {
 
             setStats(data);
             if (manual) toast.success("Veriler güncellendi");
-            retryCount.current = 0; // Success, reset retries
+            retryCount.current = 0;
         } catch (error: unknown) {
-            // Retry on AbortError (max 3 times)
             if (error instanceof Error && (error.name === 'AbortError' || error.message?.includes('AbortError'))) {
                 retryCount.current = 0;
-                // Stop retrying but don't show error to user if it's just an abort
                 return;
             }
             if (manual) toast.error("Veriler alınırken hata oluştu");
@@ -63,44 +65,12 @@ function DashboardContent() {
     useEffect(() => {
         const channel = supabase
             .channel("admin-dashboard-order-updates")
-            .on(
-                "postgres_changes",
-                {
-                    event: "INSERT",
-                    schema: "public",
-                    table: "orders",
-                },
-                () => {
-                    loadStats();
-                }
-            )
-            .on(
-                "postgres_changes",
-                {
-                    event: "UPDATE",
-                    schema: "public",
-                    table: "orders",
-                },
-                () => {
-                    loadStats();
-                }
-            )
-            .on(
-                "postgres_changes",
-                {
-                    event: "DELETE",
-                    schema: "public",
-                    table: "orders",
-                },
-                () => {
-                    loadStats();
-                }
-            )
+            .on("postgres_changes", { event: "INSERT", schema: "public", table: "orders" }, () => loadStats())
+            .on("postgres_changes", { event: "UPDATE", schema: "public", table: "orders" }, () => loadStats())
+            .on("postgres_changes", { event: "DELETE", schema: "public", table: "orders" }, () => loadStats())
             .subscribe();
 
-        return () => {
-            supabase.removeChannel(channel);
-        };
+        return () => { supabase.removeChannel(channel); };
     }, [loadStats]);
 
     if (isLoading && !stats) {
@@ -111,22 +81,88 @@ function DashboardContent() {
         );
     }
 
-    // Dark mode styles
     const cardClass = isDark
-        ? "bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-sm"
-        : "bg-white p-6 rounded-2xl border border-gray-100 shadow-sm";
+        ? "bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-sm"
+        : "bg-white p-5 rounded-2xl border border-gray-100 shadow-sm";
 
     const textPrimary = isDark ? "text-slate-100" : "text-gray-900";
     const textSecondary = isDark ? "text-slate-400" : "text-gray-500";
-    const gridColor = isDark ? "#1e293b" : "#f3f4f6"; // Slate 800
-    const axisColor = isDark ? "#64748b" : "#9ca3af"; // Slate 500
+    const gridColor = isDark ? "#1e293b" : "#f3f4f6";
+    const axisColor = isDark ? "#64748b" : "#9ca3af";
     const validOrderCount = stats?.order_count ?? 0;
     const cancelledOrderCount = stats?.cancelled_count ?? 0;
     const totalOrderCount = validOrderCount + cancelledOrderCount;
 
+    const statCards = [
+        {
+            label: "Toplam Ciro",
+            value: `₺${stats?.total_revenue?.toLocaleString("tr-TR") ?? "0"}`,
+            badge: "Gelir",
+            icon: DollarSign,
+            colorLight: "bg-emerald-50 text-emerald-600",
+            colorDark: "bg-emerald-500/20 text-emerald-400",
+            badgeLight: "text-emerald-600 bg-emerald-50",
+            badgeDark: "text-emerald-400 bg-emerald-500/20",
+        },
+        {
+            label: "Toplam Sipariş",
+            value: totalOrderCount.toString(),
+            badge: "Satış",
+            icon: ShoppingBag,
+            colorLight: "bg-blue-50 text-blue-600",
+            colorDark: "bg-blue-500/20 text-blue-400",
+            badgeLight: "text-blue-600 bg-blue-50",
+            badgeDark: "text-blue-400 bg-blue-500/20",
+            sub: `Geçerli: ${validOrderCount}`,
+        },
+        {
+            label: "İptal Edilen",
+            value: cancelledOrderCount.toString(),
+            badge: "İptal",
+            icon: XCircle,
+            colorLight: "bg-red-50 text-red-600",
+            colorDark: "bg-red-500/20 text-red-400",
+            badgeLight: "text-red-600 bg-red-50",
+            badgeDark: "text-red-400 bg-red-500/20",
+        },
+        {
+            label: "Sepet Ortalaması",
+            value: `₺${validOrderCount > 0
+                ? Math.round((stats?.total_revenue ?? 0) / validOrderCount).toLocaleString("tr-TR")
+                : 0}`,
+            badge: "Ortalama",
+            icon: TrendingUp,
+            colorLight: "bg-orange-50 text-orange-600",
+            colorDark: "bg-orange-500/20 text-orange-400",
+            badgeLight: "text-orange-600 bg-orange-50",
+            badgeDark: "text-orange-400 bg-orange-500/20",
+        },
+        {
+            label: "Yeni Üyeler",
+            value: (stats?.new_member_count ?? 0).toString(),
+            badge: "Üye",
+            icon: UserPlus,
+            colorLight: "bg-teal-50 text-teal-600",
+            colorDark: "bg-teal-500/20 text-teal-400",
+            badgeLight: "text-teal-600 bg-teal-50",
+            badgeDark: "text-teal-400 bg-teal-500/20",
+        },
+        {
+            label: "Aktif Ürünler",
+            value: (stats?.active_product_count ?? 0).toString(),
+            badge: "Ürün",
+            icon: Package,
+            colorLight: "bg-amber-50 text-amber-600",
+            colorDark: "bg-amber-500/20 text-amber-400",
+            badgeLight: "text-amber-600 bg-amber-50",
+            badgeDark: "text-amber-400 bg-amber-500/20",
+        },
+    ];
+
     return (
         <div className="max-w-7xl mx-auto">
-            <div className="flex flex-col gap-4 mb-8">
+            {/* Header */}
+            <div className="flex flex-col gap-4 mb-6">
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className={`text-2xl md:text-3xl font-black ${textPrimary} flex items-center gap-3`}>
@@ -172,91 +208,45 @@ function DashboardContent() {
                     </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                    <Button
-                        variant={dateRange === "7" ? "default" : "outline"}
-                        onClick={() => setDateRange("7")}
-                        size="sm"
-                        className={dateRange !== "7" && isDark ? "bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600" : ""}
-                    >
-                        Son 7 Gün
-                    </Button>
-                    <Button
-                        variant={dateRange === "30" ? "default" : "outline"}
-                        onClick={() => setDateRange("30")}
-                        size="sm"
-                        className={dateRange !== "30" && isDark ? "bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600" : ""}
-                    >
-                        Son 30 Gün
-                    </Button>
-                    <Button
-                        variant={dateRange === "365" ? "default" : "outline"}
-                        onClick={() => setDateRange("365")}
-                        size="sm"
-                        className={dateRange !== "365" && isDark ? "bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600" : ""}
-                    >
-                        Son 1 Yıl
-                    </Button>
-                    <Button
-                        variant={dateRange === "730" ? "default" : "outline"}
-                        onClick={() => setDateRange("730")}
-                        size="sm"
-                        className={dateRange !== "730" && isDark ? "bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600" : ""}
-                    >
-                        Son 2 Yıl
-                    </Button>
+                    {[
+                        { value: "7", label: "Son 7 Gün" },
+                        { value: "30", label: "Son 30 Gün" },
+                        { value: "365", label: "Son 1 Yıl" },
+                        { value: "730", label: "Son 2 Yıl" },
+                    ].map(({ value, label }) => (
+                        <Button
+                            key={value}
+                            variant={dateRange === value ? "default" : "outline"}
+                            onClick={() => setDateRange(value)}
+                            size="sm"
+                            className={dateRange !== value && isDark ? "bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600" : ""}
+                        >
+                            {label}
+                        </Button>
+                    ))}
                 </div>
             </div>
 
-            {/* Stats Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
-                <div className={cardClass}>
-                    <div className="flex items-center justify-between mb-4">
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isDark ? "bg-green-500/20 text-green-400" : "bg-green-50 text-green-600"}`}>
-                            <DollarSign className="w-6 h-6" />
+            {/* 6 Stat Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 mb-6">
+                {statCards.map((card) => {
+                    const Icon = card.icon;
+                    return (
+                        <div key={card.label} className={cardClass}>
+                            <div className="flex items-center justify-between mb-3">
+                                <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center ${isDark ? card.colorDark : card.colorLight}`}>
+                                    <Icon className="w-5 h-5 md:w-6 md:h-6" />
+                                </div>
+                                <span className={`px-2 py-0.5 rounded-lg text-xs font-medium ${isDark ? card.badgeDark : card.badgeLight}`}>
+                                    {card.badge}
+                                </span>
+                            </div>
+                            <p className={`text-xs md:text-sm ${textSecondary}`}>{card.label}</p>
+                            <h3 className={`text-lg md:text-2xl font-bold ${textPrimary} truncate`}>{card.value}</h3>
+                            {card.sub && <p className={`text-xs mt-0.5 ${textSecondary}`}>{card.sub}</p>}
                         </div>
-                        <span className={`px-2 py-1 rounded-lg text-xs font-medium ${isDark ? "text-green-400 bg-green-500/20" : "text-green-600 bg-green-50"}`}>Gelir</span>
-                    </div>
-                    <p className={`text-sm ${textSecondary}`}>Toplam Ciro</p>
-                    <h3 className={`text-2xl font-bold ${textPrimary}`}>₺{stats?.total_revenue?.toLocaleString("tr-TR")}</h3>
-                </div>
-
-                <div className={cardClass}>
-                    <div className="flex items-center justify-between mb-4">
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isDark ? "bg-blue-500/20 text-blue-400" : "bg-blue-50 text-blue-600"}`}>
-                            <ShoppingBag className="w-6 h-6" />
-                        </div>
-                        <span className={`px-2 py-1 rounded-lg text-xs font-medium ${isDark ? "text-blue-400 bg-blue-500/20" : "text-blue-600 bg-blue-50"}`}>Satış</span>
-                    </div>
-                    <p className={`text-sm ${textSecondary}`}>Toplam Sipariş</p>
-                    <h3 className={`text-2xl font-bold ${textPrimary}`}>{totalOrderCount}</h3>
-                    <p className={`text-xs mt-1 ${textSecondary}`}>Geçerli: {validOrderCount}</p>
-                </div>
-
-                <div className={cardClass}>
-                    <div className="flex items-center justify-between mb-4">
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isDark ? "bg-red-500/20 text-red-400" : "bg-red-50 text-red-600"}`}>
-                            <ShoppingBag className="w-6 h-6" />
-                        </div>
-                        <span className={`px-2 py-1 rounded-lg text-xs font-medium ${isDark ? "text-red-400 bg-red-500/20" : "text-red-600 bg-red-50"}`}>İptal</span>
-                    </div>
-                    <p className={`text-sm ${textSecondary}`}>İptal Edilen</p>
-                    <h3 className={`text-2xl font-bold ${textPrimary}`}>{cancelledOrderCount}</h3>
-                </div>
-
-                <div className={cardClass}>
-                    <div className="flex items-center justify-between mb-4">
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isDark ? "bg-orange-500/20 text-orange-400" : "bg-orange-50 text-orange-600"}`}>
-                            <TrendingUp className="w-6 h-6" />
-                        </div>
-                        <span className={`px-2 py-1 rounded-lg text-xs font-medium ${isDark ? "text-orange-400 bg-orange-500/20" : "text-orange-600 bg-orange-50"}`}>Ortalama</span>
-                    </div>
-                    <p className={`text-sm ${textSecondary}`}>Sepet Ortalaması</p>
-                    <h3 className={`text-2xl font-bold ${textPrimary}`}>
-                        ₺{validOrderCount > 0
-                            ? Math.round((stats?.total_revenue ?? 0) / validOrderCount).toLocaleString("tr-TR")
-                            : 0}
-                    </h3>
-                </div>
+                    );
+                })}
             </div>
 
             {/* Charts */}
@@ -266,10 +256,131 @@ function DashboardContent() {
                     isDark={isDark}
                     cardClass={cardClass}
                     textPrimary={textPrimary}
+                    textSecondary={textSecondary}
                     gridColor={gridColor}
                     axisColor={axisColor}
                 />
             </Suspense>
+
+            {/* Recent Activity Feeds */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mt-6">
+                {/* Recent Orders */}
+                <div className={cardClass}>
+                    <h3 className={`text-base font-bold ${textPrimary} mb-4 flex items-center gap-2`}>
+                        <ShoppingBag className="w-4 h-4 text-blue-500" />
+                        Son Siparişler
+                    </h3>
+                    <div className="space-y-3">
+                        {(stats?.recent_orders ?? []).length === 0 ? (
+                            <p className={`text-sm ${textSecondary} text-center py-4`}>Henüz sipariş yok</p>
+                        ) : (
+                            stats?.recent_orders?.map((order) => {
+                                const statusConfig = STATUS_CONFIG[order.status as OrderStatus] ?? { label: order.status, color: "text-gray-700", bgColor: "bg-gray-100" };
+                                return (
+                                    <div
+                                        key={order.id}
+                                        className={`flex items-center justify-between py-2 border-b last:border-b-0 ${isDark ? "border-slate-700" : "border-gray-100"}`}
+                                    >
+                                        <div className="min-w-0 flex-1 mr-3">
+                                            <p className={`text-sm font-medium ${textPrimary} truncate`}>
+                                                {order.full_name || "İsimsiz"}
+                                            </p>
+                                            <div className="flex items-center gap-2 mt-0.5">
+                                                <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${isDark ? "bg-slate-700 text-slate-300" : statusConfig.bgColor + " " + statusConfig.color}`}>
+                                                    {statusConfig.label}
+                                                </span>
+                                                {order.payment_method === "credit_card" ? (
+                                                    <CreditCard className={`w-3 h-3 ${textSecondary}`} />
+                                                ) : (
+                                                    <Banknote className={`w-3 h-3 ${textSecondary}`} />
+                                                )}
+                                                <span className={`text-[10px] ${textSecondary}`}>
+                                                    {formatDate(order.created_at, { day: "numeric", month: "short", year: undefined })}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <span className={`text-sm font-semibold ${textPrimary} shrink-0`}>
+                                            ₺{order.total?.toLocaleString("tr-TR")}
+                                        </span>
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
+                </div>
+
+                {/* Recent Cancellations */}
+                <div className={cardClass}>
+                    <h3 className={`text-base font-bold ${textPrimary} mb-4 flex items-center gap-2`}>
+                        <XCircle className="w-4 h-4 text-red-500" />
+                        Son İptaller
+                    </h3>
+                    <div className="space-y-3">
+                        {(stats?.recent_cancellations ?? []).length === 0 ? (
+                            <p className={`text-sm ${textSecondary} text-center py-4`}>Henüz iptal yok</p>
+                        ) : (
+                            stats?.recent_cancellations?.map((cancel) => (
+                                <div
+                                    key={cancel.id}
+                                    className={`flex items-center justify-between py-2 border-b last:border-b-0 ${isDark ? "border-slate-700" : "border-gray-100"}`}
+                                >
+                                    <div className="min-w-0 flex-1 mr-3">
+                                        <p className={`text-sm font-medium ${textPrimary} truncate`}>
+                                            {cancel.full_name || "İsimsiz"}
+                                        </p>
+                                        <div className="flex items-center gap-2 mt-0.5">
+                                            {cancel.cancellation_reason && (
+                                                <span className={`text-[10px] ${textSecondary} truncate max-w-[120px]`} title={cancel.cancellation_reason}>
+                                                    {cancel.cancellation_reason}
+                                                </span>
+                                            )}
+                                            <Clock className={`w-3 h-3 ${textSecondary} shrink-0`} />
+                                            <span className={`text-[10px] ${textSecondary} shrink-0`}>
+                                                {formatDate(cancel.created_at, { day: "numeric", month: "short", year: undefined })}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <span className={`text-sm font-semibold text-red-500 shrink-0`}>
+                                        ₺{cancel.total?.toLocaleString("tr-TR")}
+                                    </span>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+
+                {/* Recent Members */}
+                <div className={cardClass}>
+                    <h3 className={`text-base font-bold ${textPrimary} mb-4 flex items-center gap-2`}>
+                        <Users className="w-4 h-4 text-teal-500" />
+                        Son Üyeler
+                    </h3>
+                    <div className="space-y-3">
+                        {(stats?.recent_members ?? []).length === 0 ? (
+                            <p className={`text-sm ${textSecondary} text-center py-4`}>Henüz üye yok</p>
+                        ) : (
+                            stats?.recent_members?.map((member) => (
+                                <div
+                                    key={member.id}
+                                    className={`flex items-center justify-between py-2 border-b last:border-b-0 ${isDark ? "border-slate-700" : "border-gray-100"}`}
+                                >
+                                    <div className="min-w-0 flex-1 mr-3">
+                                        <p className={`text-sm font-medium ${textPrimary} truncate`}>
+                                            {member.full_name || "İsimsiz"}
+                                        </p>
+                                        <p className={`text-[10px] ${textSecondary} truncate`}>
+                                            {member.email}
+                                        </p>
+                                    </div>
+                                    <span className={`text-[10px] ${textSecondary} shrink-0`}>
+                                        {formatDate(member.created_at, { day: "numeric", month: "short", year: undefined })}
+                                    </span>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }
@@ -283,4 +394,3 @@ export default function AdminDashboard() {
         </AdminGuard>
     );
 }
-

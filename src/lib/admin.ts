@@ -136,10 +136,42 @@ export interface DashboardStats {
     total_revenue: number;
     order_count: number;
     cancelled_count: number;
+    new_member_count: number;
+    active_product_count: number;
     daily_sales: {
         date: string;
         count: number;
         revenue: number;
+    }[];
+    order_status_distribution: {
+        status: string;
+        count: number;
+    }[];
+    top_products: {
+        product_name: string;
+        total_quantity: number;
+        total_revenue: number;
+    }[];
+    recent_orders: {
+        id: string;
+        full_name: string | null;
+        total: number;
+        status: string;
+        payment_method: string;
+        created_at: string;
+    }[];
+    recent_cancellations: {
+        id: string;
+        full_name: string | null;
+        total: number;
+        cancellation_reason: string | null;
+        created_at: string;
+    }[];
+    recent_members: {
+        id: string;
+        full_name: string | null;
+        email: string;
+        created_at: string;
     }[];
 }
 
@@ -651,7 +683,7 @@ export async function getOrderStatusHistory(orderId: string): Promise<OrderStatu
  */
 export async function getDashboardStats(startDate: Date, endDate: Date): Promise<DashboardStats> {
     const { data, error } = await supabase
-        .rpc('get_dashboard_stats', {
+        .rpc('get_dashboard_stats_v2', {
             start_date: startDate.toISOString(),
             end_date: endDate.toISOString()
         });
