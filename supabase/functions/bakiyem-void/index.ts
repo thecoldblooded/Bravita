@@ -47,7 +47,7 @@ function isAllowedOrigin(origin: string): boolean {
 
 function corsHeaders(req: Request): HeadersInit {
   const origin = req.headers.get("Origin") ?? "";
-  const allowed = isAllowedOrigin(origin) ? origin : ACTIVE_ALLOWED_ORIGINS[0] ?? "*";
+  const allowed = isAllowedOrigin(origin) ? origin : "null";
   return {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": allowed,
@@ -185,7 +185,23 @@ function extractUserJwt(req: Request): string | null {
 }
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders(req) });
+  if (req.method === "OPTIONS") {
+    const origin = req.headers.get("Origin") ?? "";
+    if (origin && !isAllowedOrigin(origin)) {
+      return new Response(JSON.stringify({ success: false, message: "Forbidden origin" }), {
+        status: 403,
+        headers: corsHeaders(req),
+      });
+    }
+
+    return new Response("ok", { headers: corsHeaders(req) });
+  }
+
+  const origin = req.headers.get("Origin") ?? "";
+  if (origin && !isAllowedOrigin(origin)) {
+    return response(req, 403, { success: false, message: "Forbidden origin" });
+  }
+
   if (req.method !== "POST") return response(req, 405, { success: false, message: "Method not allowed" });
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return response(req, 500, { success: false, message: "Server config missing" });
 

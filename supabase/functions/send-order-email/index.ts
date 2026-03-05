@@ -534,18 +534,23 @@ serve(async (req: Request) => {
         });
 
     } catch (error: any) {
-        const errorMessage = error.message || "Unknown error";
+        const errorMessage = typeof error?.message === "string" ? error.message : "Unknown error";
+        const normalized = errorMessage.toLowerCase();
         const status = errorMessage === "Unauthorized: Invalid token"
             ? 401
-            : (errorMessage.includes("Forbidden") ? 403 : 400);
+            : (normalized.includes("forbidden") ? 403 : 400);
         const clientError = status === 401
             ? "Yetkisiz erişim."
             : (status === 403 ? "Bu işlem için yetkiniz yok." : "İşlem sırasında bir hata oluştu.");
 
+        console.error("send-order-email failed", {
+            status,
+            errorMessage,
+        });
+
         return new Response(JSON.stringify({
             error: clientError,
-            message: errorMessage, // Include internal message for debugging
-            status
+            status,
         }), {
             headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
             status,

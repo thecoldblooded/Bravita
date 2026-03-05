@@ -35,10 +35,8 @@ export default async function handler(req, res) {
     const upstreamError = typeof req.query?.error === "string" ? req.query.error : "";
     const upstreamErrorDescription = typeof req.query?.error_description === "string" ? req.query.error_description : "";
 
-    const redirectWithError = (errorCode, errorDescription, options = {}) => {
-        const safeDescription = typeof errorDescription === "string" && errorDescription.trim().length > 0
-            ? errorDescription
-            : "OAuth callback failed";
+    const redirectWithError = (errorCode, _errorDescription, options = {}) => {
+        const safeDescription = "Authentication failed";
         const extraParams = options && typeof options === "object" ? options : {};
 
         res.setHeader("Set-Cookie", clearOAuthCookies(req));
@@ -104,7 +102,7 @@ export default async function handler(req, res) {
                 reason: message,
             });
 
-            return redirectWithError("oauth_exchange_failed", message);
+            return redirectWithError("oauth_exchange_failed", "Authentication failed");
         }
 
         res.setHeader("Set-Cookie", [

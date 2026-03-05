@@ -581,16 +581,33 @@ function sanitizeSignupResponse(signupPayload) {
 }
 
 function extractAuthErrorMessage(payload, fallbackMessage) {
-  if (typeof payload?.msg === "string" && payload.msg.trim().length > 0) {
-    return payload.msg;
+  const fallback = typeof fallbackMessage === "string" && fallbackMessage.trim().length > 0
+    ? fallbackMessage.trim()
+    : "Authentication failed";
+
+  const rawMessage =
+    (typeof payload?.msg === "string" && payload.msg.trim().length > 0 ? payload.msg.trim() : "")
+    || (typeof payload?.error_description === "string" && payload.error_description.trim().length > 0
+      ? payload.error_description.trim()
+      : "")
+    || (typeof payload?.error === "string" && payload.error.trim().length > 0 ? payload.error.trim() : "");
+
+  if (!rawMessage) {
+    return fallback;
   }
-  if (typeof payload?.error_description === "string" && payload.error_description.trim().length > 0) {
-    return payload.error_description;
+
+  const normalized = rawMessage.toLowerCase();
+
+  if (normalized.includes("invalid login credentials")
+    || normalized.includes("invalid credentials")
+    || normalized.includes("email not confirmed")
+    || normalized.includes("otp expired")
+    || normalized.includes("token has expired")
+    || normalized.includes("captcha")) {
+    return rawMessage;
   }
-  if (typeof payload?.error === "string" && payload.error.trim().length > 0) {
-    return payload.error;
-  }
-  return fallbackMessage;
+
+  return fallback;
 }
 
 function sendInternalServerError(res, req, diagnosticEvent, error) {

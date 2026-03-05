@@ -134,6 +134,19 @@ async function sha256Hex(input: string): Promise<string> {
     .join("");
 }
 
+function timingSafeEqualText(a: string, b: string): boolean {
+  const aBytes = new TextEncoder().encode(a);
+  const bBytes = new TextEncoder().encode(b);
+  if (aBytes.length !== bBytes.length) return false;
+
+  let mismatch = 0;
+  for (let i = 0; i < aBytes.length; i += 1) {
+    mismatch |= aBytes[i] ^ bBytes[i];
+  }
+
+  return mismatch === 0;
+}
+
 async function computeCheckKey(): Promise<string> {
   return sha256Hex(`${BAKIYEM_DEALER_CODE}MK${BAKIYEM_API_USERNAME}PD${BAKIYEM_API_PASSWORD}`);
 }
@@ -414,7 +427,7 @@ serve(async (req: Request) => {
   }
 
   const providedSecret = (req.headers.get("x-maintenance-secret") ?? "").trim();
-  if (providedSecret !== expectedSecret) {
+  if (!timingSafeEqualText(providedSecret, expectedSecret)) {
     return jsonResponse(401, { success: false, message: "Unauthorized" });
   }
 
