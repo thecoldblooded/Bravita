@@ -15,6 +15,70 @@ const DEFAULT_ALLOWED_AUTH_ORIGINS = [
 ];
 const INTERNAL_SERVER_ERROR_MESSAGE = "Internal server error";
 
+function isTruthyEnvFlag(value) {
+  return String(value ?? "").trim().toLowerCase() === "true";
+}
+
+function isLocalhostHostname(value) {
+  if (typeof value !== "string") return false;
+
+  const hostname = value.trim().toLowerCase();
+  if (!hostname) return false;
+
+  if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1" || hostname === "[::1]") {
+    return true;
+  }
+
+  return hostname.endsWith(".localhost");
+}
+
+function extractRequestHostname(req) {
+  const requestOrigin = extractRequestOrigin(req);
+  if (requestOrigin) {
+    try {
+      return new URL(requestOrigin).hostname.toLowerCase();
+    } catch {
+      // Fall through to host headers.
+    }
+  }
+
+  const hostCandidates = [
+    normalizeHeaderValue(req.headers["x-forwarded-host"]),
+    normalizeHeaderValue(req.headers.host),
+  ];
+
+  for (const candidate of hostCandidates) {
+    if (!candidate) continue;
+
+    const firstCandidate = candidate.split(",")[0].trim();
+    if (!firstCandidate) continue;
+
+    try {
+      return new URL(`http://${firstCandidate}`).hostname.toLowerCase();
+    } catch {
+      // Ignore parse errors and continue.
+    }
+  }
+
+  return null;
+}
+
+function shouldBypassCaptchaForRequest(req) {
+  if (String(process.env.NODE_ENV ?? "").toLowerCase() === "production") {
+    return false;
+  }
+
+  const skipCaptchaEnabled = isTruthyEnvFlag(process.env.AUTH_DEV_SKIP_CAPTCHA)
+    || isTruthyEnvFlag(process.env.VITE_SKIP_CAPTCHA);
+
+  if (!skipCaptchaEnabled) {
+    return false;
+  }
+
+  const requestHostname = extractRequestHostname(req);
+  return isLocalhostHostname(requestHostname);
+}
+
 function normalizeOrigin(value) {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
@@ -154,11 +218,33 @@ function assertValidAuthPostRequest(req, res) {
 }
 
 function getSupabaseConfig() {
-  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const anonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+  const serverUrl = process.env.SUPABASE_URL;
+  const clientUrl = process.env.VITE_SUPABASE_URL;
+  const serverAnonKey = process.env.SUPABASE_ANON_KEY;
+  const clientAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
+
+  const url = serverUrl || clientUrl;
+  const anonKey = serverAnonKey || clientAnonKey;
 
   if (!url || !anonKey) {
+    console.error("[AUTH] supabase_config_missing", {
+      hasSupabaseUrl: typeof serverUrl === "string" && serverUrl.trim().length > 0,
+      hasViteSupabaseUrl: typeof clientUrl === "string" && clientUrl.trim().length > 0,
+      hasSupabaseAnonKey: typeof serverAnonKey === "string" && serverAnonKey.trim().length > 0,
+      hasViteSupabaseAnonKey: typeof clientAnonKey === "string" && clientAnonKey.trim().length > 0,
+    });
     throw new Error("Missing SUPABASE_URL or SUPABASE_ANON_KEY in server environment");
+  }
+
+  try {
+    // Validate URL once so downstream fetch failures are easier to diagnose.
+    new URL(url);
+  } catch {
+    console.error("[AUTH] supabase_url_invalid", {
+      hasProtocol: typeof url === "string" ? /^https?:\/\//i.test(url) : false,
+      urlPreview: typeof url === "string" ? `${url.slice(0, 32)}${url.length > 32 ? "..." : ""}` : null,
+    });
+    throw new Error("Invalid SUPABASE_URL in server environment");
   }
 
   return { url, anonKey };
@@ -413,6 +499,8 @@ async function callSupabaseAuth(path, options = {}) {
     ? options.accessToken
     : anonKey;
 
+  const requestUrl = `${url}${path}`;
+
   const requestInit = {
     method,
     headers: {
@@ -426,8 +514,39 @@ async function callSupabaseAuth(path, options = {}) {
     requestInit.body = JSON.stringify(options.body);
   }
 
-  const response = await fetch(`${url}${path}`, requestInit);
-  const data = await response.json().catch(() => null);
+  let response;
+  try {
+    response = await fetch(requestUrl, requestInit);
+  } catch (error) {
+    let upstreamOrigin = null;
+    try {
+      upstreamOrigin = new URL(url).origin;
+    } catch {
+      upstreamOrigin = null;
+    }
+
+    console.error("[AUTH] supabase_fetch_failed", {
+      path,
+      method,
+      upstreamOrigin,
+      errorName: error instanceof Error ? error.name : "UnknownError",
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+
+  const data = await response.json().catch((parseError) => {
+    console.error("[AUTH] supabase_response_parse_failed", {
+      path,
+      method,
+      status: response.status,
+      statusText: response.statusText,
+      errorName: parseError instanceof Error ? parseError.name : "UnknownError",
+      errorMessage: parseError instanceof Error ? parseError.message : String(parseError),
+    });
+    return null;
+  });
+
   return { response, data };
 }
 
@@ -479,6 +598,14 @@ function sendInternalServerError(res, req, diagnosticEvent, error) {
     ? diagnosticEvent
     : "auth_internal_error";
 
+  console.error("[AUTH] internal_error", {
+    event,
+    method: req?.method ?? null,
+    url: req?.url ?? null,
+    errorName: error instanceof Error ? error.name : "UnknownError",
+    errorMessage: error instanceof Error ? error.message : String(error),
+  });
+
   logAuthDiagnostic(event, req, {
     status: 500,
     errorName: error instanceof Error ? error.name : "UnknownError",
@@ -521,4 +648,5 @@ export {
   assertValidAuthPostRequest,
   logAuthDiagnostic,
   resolveSiteOrigin,
+  shouldBypassCaptchaForRequest,
 };

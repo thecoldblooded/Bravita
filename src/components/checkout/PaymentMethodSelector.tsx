@@ -113,7 +113,7 @@ function SinglePaymentInfo({ selectedInstallmentRate }: SinglePaymentInfoProps) 
     return (
         <div className="space-y-2">
             <div className="flex items-center gap-2">
-                <Label className="text-gray-300">{t("checkout.payment.single_payment", "Tek çekim")}</Label>
+                <Label className="text-gray-300">{t("checkout.payment.installment_title", "Taksit")}</Label>
                 <TooltipProvider delayDuration={100}>
                     <Tooltip>
                         <TooltipTrigger asChild>

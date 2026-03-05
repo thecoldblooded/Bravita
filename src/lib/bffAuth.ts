@@ -1,4 +1,5 @@
 const BFF_AUTH_ENABLED = String(import.meta.env.VITE_USE_BFF_AUTH ?? "true").toLowerCase() === "true";
+const BFF_UNAVAILABLE_ERROR_MESSAGE = "BFF_AUTH_UNAVAILABLE";
 
 export interface BffSessionPayload {
   access_token: string;
@@ -66,22 +67,48 @@ function normalizeErrorMessage(status: number, payload: unknown, fallback: strin
   return fallback;
 }
 
+function isBffUnreachableError(error: unknown) {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  const message = error.message.toLowerCase();
+  return error.name === "TypeError"
+    && (
+      message.includes("failed to fetch")
+      || message.includes("networkerror")
+      || message.includes("load failed")
+    );
+}
+
 async function authRequest<T>(path: string, init: AuthRequestInit = {}): Promise<T | null> {
   const { ignoreUnauthorized = false, ...requestInit } = init;
 
-  const response = await fetch(path, {
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(requestInit.headers ?? {}),
-    },
-    ...requestInit,
-  });
+  let response: Response;
+  try {
+    response = await fetch(path, {
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        ...(requestInit.headers ?? {}),
+      },
+      ...requestInit,
+    });
+  } catch (error) {
+    if (isBffUnreachableError(error)) {
+      throw new Error(BFF_UNAVAILABLE_ERROR_MESSAGE);
+    }
+    throw error;
+  }
 
   const payload = await response.json().catch(() => null);
   if (!response.ok) {
     if (ignoreUnauthorized && response.status === 401) {
       return null;
+    }
+
+    if (response.status >= 500) {
+      throw new Error(BFF_UNAVAILABLE_ERROR_MESSAGE);
     }
 
     const message = normalizeErrorMessage(response.status, payload, "Authentication request failed");
@@ -163,4 +190,8 @@ export async function logoutBffSession() {
     body: "{}",
     ignoreUnauthorized: true,
   });
+}
+
+export function getBffUnavailableErrorMessage() {
+  return BFF_UNAVAILABLE_ERROR_MESSAGE;
 }

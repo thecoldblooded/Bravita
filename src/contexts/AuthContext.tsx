@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode, useCallback,
 import { Session } from "@supabase/supabase-js";
 import { supabase, UserProfile } from "@/lib/supabase";
 import { billionMail } from "@/lib/billionmail";
-import { getBffRefreshDelayMs, isBffAuthEnabled, refreshBffSession, restoreBffSession, toSupabaseSessionInput, setBffSessionFromClient } from "@/lib/bffAuth";
+import { getBffRefreshDelayMs, getBffUnavailableErrorMessage, isBffAuthEnabled, refreshBffSession, restoreBffSession, toSupabaseSessionInput, setBffSessionFromClient } from "@/lib/bffAuth";
 
 declare global {
   interface Window {
@@ -33,6 +33,9 @@ type AuthDebugGlobal = typeof globalThis & {
 };
 
 const getAuthDebugGlobal = (): AuthDebugGlobal => globalThis as AuthDebugGlobal;
+
+const isBffUnavailableAuthError = (error: unknown): boolean =>
+  error instanceof Error && error.message === getBffUnavailableErrorMessage();
 
 const normalizeSessionPhone = (value: unknown): string | null => {
   if (typeof value !== "string") {
@@ -217,6 +220,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } = await supabase.auth.refreshSession();
       setSession(newSession);
     } catch (error) {
+      if (bffAuthEnabled && isBffUnavailableAuthError(error)) {
+        setSession(null);
+        setUserDebug(null);
+        return;
+      }
+
       console.error("Refresh session error:", error);
     }
   }, [bffAuthEnabled, setUserDebug]);
@@ -677,8 +686,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               setUserDebug(bootstrapStub);
             }
           }
-        } catch {
-          // Ignore bootstrap restoration errors in silent mode.
+        } catch (error) {
+          if (isBffUnavailableAuthError(error)) {
+            if (mounted) {
+              setSession(null);
+              setUserDebug(null);
+              setIsLoading(false);
+              setIsSplashScreenActive(false);
+            }
+          } else {
+            console.error("BFF bootstrap restore error:", error);
+          }
         } finally {
           if (mounted) {
             setIsBffBootstrapComplete(true);

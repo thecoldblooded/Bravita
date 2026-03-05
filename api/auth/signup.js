@@ -7,6 +7,7 @@ import {
   sanitizeSignupResponse,
   sendJson,
   sendInternalServerError,
+  shouldBypassCaptchaForRequest,
 } from "./_shared.js";
 
 function normalizeOptionalString(value, maxLength) {
@@ -60,7 +61,9 @@ export default async function handler(req, res) {
     const body = parseRequestBody(req);
     const email = typeof body.email === "string" ? body.email.trim() : "";
     const password = typeof body.password === "string" ? body.password : "";
-    const captchaToken = typeof body.captchaToken === "string" ? body.captchaToken : undefined;
+    const rawCaptchaToken = typeof body.captchaToken === "string" ? body.captchaToken.trim() : "";
+    const parsedCaptchaToken = rawCaptchaToken.length > 0 ? rawCaptchaToken : undefined;
+    const captchaToken = shouldBypassCaptchaForRequest(req) ? undefined : parsedCaptchaToken;
     const profileData = normalizeSignupProfileData(body.profileData);
 
     if (!email || !password) {

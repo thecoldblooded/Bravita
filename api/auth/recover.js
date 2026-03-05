@@ -6,6 +6,7 @@ import {
   parseRequestBody,
   sendJson,
   sendInternalServerError,
+  shouldBypassCaptchaForRequest,
 } from "./_shared.js";
 
 const DEFAULT_SITE_URL = "https://bravita.com.tr";
@@ -118,7 +119,10 @@ export default async function handler(req, res) {
     const body = parseRequestBody(req);
     const email = typeof body.email === "string" ? body.email.trim() : "";
     const redirectTo = typeof body.redirectTo === "string" ? body.redirectTo : undefined;
-    const captchaToken = typeof body.captchaToken === "string" ? body.captchaToken : undefined;
+    const rawCaptchaToken = typeof body.captchaToken === "string" ? body.captchaToken.trim() : "";
+    const parsedCaptchaToken = rawCaptchaToken.length > 0 ? rawCaptchaToken : undefined;
+    const bypassCaptcha = shouldBypassCaptchaForRequest(req);
+    const captchaToken = bypassCaptcha ? undefined : parsedCaptchaToken;
 
     if (!email) {
       return sendJson(res, 400, { error: "Email is required" });
@@ -130,6 +134,7 @@ export default async function handler(req, res) {
     logAuthDiagnostic("recover_request_received", req, {
       ...emailAudit,
       hasCaptchaToken: hasNonEmptyString(captchaToken),
+      captchaBypassed: bypassCaptcha,
       redirectProvided: hasNonEmptyString(redirectTo),
       redirectAccepted: Boolean(recoverTarget.safeRedirect),
     });

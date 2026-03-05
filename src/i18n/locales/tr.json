@@ -453,6 +453,7 @@
             "secure_payment": "Güvenli Ödeme - 256-bit SSL Korumalı",
             "installments_label": "Taksit Seçeneği",
             "select_installment": "Taksit seçin",
+            "installment_title": "Taksit",
             "single_payment": "Tek çekim",
             "installment_count": "{{count}} taksit",
             "commission_suffix": "komisyon",

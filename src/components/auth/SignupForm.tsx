@@ -41,6 +41,32 @@ const isCaptchaDebugEnabled = (): boolean => {
   return params.get("captchaDebug") === "1" || window.localStorage.getItem("bravita_captcha_debug") === "1";
 };
 
+function isLocalhostHostname(value: string): boolean {
+  const hostname = value.trim().toLowerCase();
+  if (!hostname) {
+    return false;
+  }
+
+  return hostname === "localhost"
+    || hostname === "127.0.0.1"
+    || hostname === "::1"
+    || hostname === "[::1]"
+    || hostname.endsWith(".localhost");
+}
+
+function shouldBypassCaptchaForLocalDev(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  if (import.meta.env.PROD) {
+    return false;
+  }
+
+  const skipCaptchaFlag = String(import.meta.env.VITE_SKIP_CAPTCHA ?? "").toLowerCase() === "true";
+  return skipCaptchaFlag && isLocalhostHostname(window.location.hostname);
+}
+
 type CaptchaTelemetryPayload = Record<string, unknown>;
 
 function sanitizeCaptchaTelemetryValue(value: unknown): string | number | boolean | null {
@@ -710,6 +736,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
   const captchaRef = useRef<HCaptcha>(null);
 
   const HCAPTCHA_SITE_KEY = String(import.meta.env.VITE_HCAPTCHA_SITE_KEY ?? "").trim();
+  const shouldBypassCaptcha = shouldBypassCaptchaForLocalDev();
 
   const individualForm = useForm<IndividualSignupForm>({
     resolver: zodResolver(individualSignupSchema),
@@ -727,7 +754,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
 
   const handleIndividualSignupSubmit = async (data: IndividualSignupForm) => {
     try {
-      if (!captchaToken) {
+      if (!captchaToken && !shouldBypassCaptcha) {
         toast.error(t("auth.captcha_required"));
         return;
       }
@@ -737,7 +764,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
         password: data.password,
         phone: data.phone,
         fullName: data.fullName,
-        captchaToken: captchaToken,
+        captchaToken: shouldBypassCaptcha ? undefined : (captchaToken ?? undefined),
       });
 
       localStorage.setItem("profile_in_progress", "true");

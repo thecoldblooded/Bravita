@@ -38,6 +38,30 @@ type CaptchaSectionProps = {
   onTokenChange: (token: string | null) => void;
 };
 
+function isLocalhostHostname(value: string): boolean {
+  const hostname = value.trim().toLowerCase();
+  if (!hostname) return false;
+
+  return hostname === "localhost"
+    || hostname === "127.0.0.1"
+    || hostname === "::1"
+    || hostname === "[::1]"
+    || hostname.endsWith(".localhost");
+}
+
+function shouldBypassCaptchaForLocalDev(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  if (import.meta.env.PROD) {
+    return false;
+  }
+
+  const skipCaptchaFlag = String(import.meta.env.VITE_SKIP_CAPTCHA ?? "").toLowerCase() === "true";
+  return skipCaptchaFlag && isLocalhostHostname(window.location.hostname);
+}
+
 function CaptchaSection({ siteKey, captchaRef, onTokenChange }: CaptchaSectionProps) {
   if (!siteKey) {
     return (
@@ -246,6 +270,7 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
   const captchaRef = useRef<HCaptcha>(null);
 
   const HCAPTCHA_SITE_KEY = String(import.meta.env.VITE_HCAPTCHA_SITE_KEY ?? "").trim();
+  const shouldBypassCaptcha = shouldBypassCaptchaForLocalDev();
 
   const individualForm = useForm<IndividualLoginForm>({
     resolver: zodResolver(individualLoginSchema),
@@ -262,7 +287,7 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
 
   const handleIndividualLogin = async (data: IndividualLoginForm) => {
     try {
-      if (!captchaToken) {
+      if (!captchaToken && !shouldBypassCaptcha) {
         toast.error(t("auth.captcha_required"));
         return;
       }
@@ -270,7 +295,7 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
       await loginWithEmail({
         email: data.email,
         password: data.password,
-        captchaToken: captchaToken!,
+        captchaToken: shouldBypassCaptcha ? undefined : (captchaToken ?? undefined),
       });
       toast.success(t("auth.login_successful"));
 
@@ -301,12 +326,12 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
     }
 
     try {
-      if (!captchaToken) {
+      if (!captchaToken && !shouldBypassCaptcha) {
         toast.error(t("auth.captcha_required"));
         return;
       }
 
-      await resetPassword(email, captchaToken!);
+      await resetPassword(email, shouldBypassCaptcha ? undefined : (captchaToken ?? undefined));
       toast.success(t("auth.password_reset_sent"));
 
       resetCaptchaState();

@@ -31,6 +31,7 @@ const ERROR_MAP: Record<string, string> = {
     "Captcha token is required": "auth.captcha_required",
     "captcha verification process failed": "auth.captcha_required",
     "captcha protection": "auth.captcha_required",
+    "BFF_AUTH_UNAVAILABLE": "errors.network_error",
 
     // Database errors
     "duplicate key value violates unique constraint": "errors.duplicate_entry",
