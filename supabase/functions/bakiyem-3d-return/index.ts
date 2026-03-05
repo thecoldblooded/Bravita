@@ -1099,26 +1099,30 @@ serve(async (req: Request) => {
         });
       }
 
-      const { data: existingSuccessfulEmailTx } = await supabase
+      const { data: recentOrderInquiryTx } = await supabase
         .from("payment_transactions")
-        .select("created_at")
+        .select("created_at, success, request_payload")
         .eq("intent_id", intentId)
         .eq("order_id", resolvedOrderId)
-        .eq("operation", "order_confirmation_email")
-        .eq("success", true)
+        .eq("operation", "inquiry")
         .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .limit(20);
+
+      const existingSuccessfulEmailTx = (recentOrderInquiryTx ?? []).find((tx: any) => {
+        const txRequestPayload = asRecord(tx?.request_payload);
+        return Boolean(tx?.success) && asText(txRequestPayload?.type) === "order_confirmation";
+      });
 
       if (existingSuccessfulEmailTx) {
         await supabase.from("payment_transactions").insert({
           intent_id: intentId,
           order_id: resolvedOrderId,
-          operation: "order_confirmation_email",
+          operation: "inquiry",
           success: true,
           request_payload: {
             order_id: resolvedOrderId,
             type: "order_confirmation",
+            source: "bakiyem_3d_return_email_dispatch",
             skipped: true,
             reason: "already_succeeded",
           },
@@ -1130,9 +1134,14 @@ serve(async (req: Request) => {
         await supabase.from("payment_transactions").insert({
           intent_id: intentId,
           order_id: resolvedOrderId,
-          operation: "order_confirmation_email",
+          operation: "inquiry",
           success: false,
           error_message: "APP_WEBHOOK_SECRET is missing",
+          request_payload: {
+            order_id: resolvedOrderId,
+            type: "order_confirmation",
+            source: "bakiyem_3d_return_email_dispatch",
+          },
         });
       } else {
         let emailInvokePayload: any = null;
@@ -1169,7 +1178,7 @@ serve(async (req: Request) => {
         await supabase.from("payment_transactions").insert({
           intent_id: intentId,
           order_id: resolvedOrderId,
-          operation: "order_confirmation_email",
+          operation: "inquiry",
           success: emailOperationSuccess,
           error_message: emailOperationSuccess
             ? null
@@ -1177,6 +1186,7 @@ serve(async (req: Request) => {
           request_payload: {
             order_id: resolvedOrderId,
             type: "order_confirmation",
+            source: "bakiyem_3d_return_email_dispatch",
           },
           response_payload: {
             status: emailInvokeStatus,
@@ -1191,11 +1201,35 @@ serve(async (req: Request) => {
       return callbackAckResponse();
     }
 
+    const { data: releaseData, error: releaseError } = await supabase.rpc("release_intent_reservations_v1", {
+      p_intent_id: intentId,
+      p_new_status: "failed",
+    });
+
+    await supabase.from("payment_transactions").insert({
+      intent_id: intentId,
+      operation: "inquiry",
+      request_payload: {
+        type: "release_reservations_on_failure_v1",
+        effectiveFailureCode,
+        trxStatus,
+        paymentStatus,
+        bankCode,
+      },
+      response_payload: {
+        release_data: safeSerializeForLog(releaseData),
+        release_error: releaseError ? { message: releaseError.message } : null,
+      },
+      success: !releaseError,
+      error_code: releaseError ? "release_intent_reservations_failed" : null,
+      error_message: releaseError?.message ?? null,
+    });
+
     await supabase
       .from("payment_intents")
       .update({ status: "failed", gateway_status: `callback_failed:${effectiveFailureCode || "unknown"}` })
       .eq("id", intentId)
-      .in("status", ["pending", "awaiting_3d"]);
+      .in("status", ["pending", "awaiting_3d", "failed"]);
 
     // 4. Detailed Failure
     if (shouldRedirectClient) {

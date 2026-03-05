@@ -43,6 +43,10 @@ export function ProductRow({
     onDelete
 }: ProductRowProps) {
     const { t } = useTranslation();
+    const reservedStock = product.reserved_stock || 0;
+    const computedTotalStockForDisplay = product.stock;
+    const computedSellableStockForDisplay = Math.max(product.stock - reservedStock, 0);
+
     return (
         <tr
             className={`transition-all relative ${rowHoverClass} ${isHighlighted
@@ -112,14 +116,14 @@ export function ProductRow({
                                 onChange={(e) => onSetStockInput(e.target.value)}
                                 className={`h-8 text-sm ${isDark ? "bg-gray-600 border-gray-500 text-white" : ""}`}
                                 type="number"
-                                min={product.reserved_stock}
+                                min={reservedStock}
                                 aria-label={t("admin.products.stock_input_label", "Toplam stok miktarı")}
                             />
                         </div>
 
                         <div className={`flex items-center justify-between text-[10px] px-1 ${textSecondary}`}>
-                            <span>Rezerve: <span className="text-orange-600 font-bold">{product.reserved_stock}</span></span>
-                            <span>Yeni Satılabilir: <span className="text-green-600 font-bold">{(parseInt(stockInput) || 0) - (product.reserved_stock || 0)}</span></span>
+                            <span>Rezerve: <span className="text-orange-600 font-bold">{reservedStock}</span></span>
+                            <span>Yeni Satılabilir: <span className="text-green-600 font-bold">{Math.max((parseInt(stockInput) || 0) - reservedStock, 0)}</span></span>
                         </div>
 
                         <div className="flex gap-2 mt-1">
@@ -145,14 +149,14 @@ export function ProductRow({
                         <div className="flex items-center justify-between text-xs">
                             <span className={`font-medium ${textSecondary}`}>Toplam Depo:</span>
                             <span className={`font-bold ${textPrimary}`}>
-                                {product.stock + (product.reserved_stock || 0)}
+                                {computedTotalStockForDisplay}
                             </span>
                         </div>
                         <div className={`h-px ${isDark ? "bg-gray-600" : "bg-gray-100"}`} />
                         <div className="flex items-center gap-2">
                             <div className={`flex items-center gap-1.5 px-2 py-1 rounded border flex-1 justify-center ${isDark ? "bg-green-500/20 border-green-500/30" : "bg-green-50 border-green-100"}`}>
                                 <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                                <span className={`text-xs font-bold ${isDark ? "text-green-400" : "text-green-700"}`}>{product.stock}</span>
+                                <span className={`text-xs font-bold ${isDark ? "text-green-400" : "text-green-700"}`}>{computedSellableStockForDisplay}</span>
                                 <span className={`text-[10px] uppercase tracking-tight ${isDark ? "text-green-400/80" : "text-green-600/80"}`}>Satılabilir</span>
                             </div>
                             <div className={`flex items-center gap-1.5 px-2 py-1 rounded border flex-1 justify-center
@@ -170,7 +174,7 @@ export function ProductRow({
                             </div>
                         </div>
                         <button
-                            onClick={() => onEditStock(product.id, (product.stock + (product.reserved_stock || 0)).toString())}
+                            onClick={() => onEditStock(product.id, computedTotalStockForDisplay.toString())}
                             className="text-[10px] text-blue-600 hover:text-blue-700 hover:underline text-center w-full mt-0.5 font-medium"
                         >
                             Hızlı Stok Düzenle

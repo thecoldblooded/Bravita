@@ -202,12 +202,11 @@ function ProductsContent() {
             return;
         }
 
-        const newAvailable = newTotal - reserved;
         try {
-            await updateProductStock(product.id, newAvailable);
+            await updateProductStock(product.id, newTotal);
             dispatch({
                 type: 'SET_PRODUCTS', payload: products.map(p =>
-                    p.id === product.id ? { ...p, stock: newAvailable } : p
+                    p.id === product.id ? { ...p, stock: newTotal } : p
                 )
             });
             dispatch({ type: 'SET_EDITING_STOCK', payload: { id: null } });
