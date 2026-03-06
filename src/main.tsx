@@ -21,7 +21,9 @@ document.addEventListener('gestureend', function (e) {
   e.preventDefault();
 });
 
-createRoot(document.getElementById("root")!).render(
+const rootElement = document.getElementById("root");
+
+createRoot(rootElement!).render(
   <HelmetProvider>
     <AuthProvider>
       <CartProvider>
@@ -30,3 +32,32 @@ createRoot(document.getElementById("root")!).render(
     </AuthProvider>
   </HelmetProvider>
 );
+
+const markAppReady = () => {
+  document.documentElement.classList.add("app-ready");
+
+  const seoShell = document.getElementById("seo-shell");
+  if (!seoShell) return;
+
+  seoShell.setAttribute("aria-hidden", "true");
+
+  const removalDelay = document.documentElement.classList.contains("seo-shell-overlay") ? 760 : 0;
+  window.setTimeout(() => {
+    if (seoShell.isConnected) {
+      seoShell.remove();
+    }
+  }, removalDelay);
+};
+
+const scheduleSeoShellDismiss = () => {
+  if (typeof globalThis.requestAnimationFrame === "function") {
+    globalThis.requestAnimationFrame(() => {
+      globalThis.requestAnimationFrame(markAppReady);
+    });
+    return;
+  }
+
+  globalThis.setTimeout(markAppReady, 120);
+};
+
+scheduleSeoShellDismiss();

@@ -4,72 +4,749 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
-  <title>Bravita - Çocuklar İçin Multivitamin Sıvı Takviye | Büyümenin Formülü</title>
+  <title>Bravita | Çocuklar İçin Sıvı Multivitamin</title>
   <meta name="description"
-    content="Bravita, Fosfotidilserin, Kolin, L-Karnitin, L-Arjinin, Multivitamin ve Multimineral içeren lezzetli sıvı takviye edici gıda. Çocukların sağlıklı büyümesi için bilimsel formül." />
+    content="Bravita, çocukların günlük gelişimini desteklemek için vitamin, mineral ve seçili besin öğeleri içeren sıvı takviye edici gıdadır." />
   <meta name="keywords"
     content="bravita, çocuk vitamini, multivitamin, sıvı vitamin, takviye edici gıda, çocuk gelişimi, vitamin D, çinko" />
   <meta name="author" content="Bravita" />
   <link rel="canonical" href="https://bravita.com.tr" />
 
-  <meta property="og:title" content="Bravita - Büyümenin Formülü Burada!" />
+  <meta property="og:title" content="Bravita | Çocuklar İçin Sıvı Multivitamin" />
   <meta property="og:description"
-    content="Çocukların sağlıklı büyümesi için Fosfotidilserin, Kolin, L-Karnitin ve 20+ vitamin mineral içeren lezzetli sıvı takviye." />
+    content="Çocukların günlük gelişimini desteklemek için geliştirilen sıvı multivitamin ve mineral takviyesi." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://bravita.com.tr" />
   <meta property="og:image" content="https://bravita.com.tr/og-image.webp" />
   <meta property="og:image:type" content="image/webp" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="Bravita - Çocuklar İçin Multivitamin Sıvı Takviye" />
+  <meta property="og:image:alt" content="Bravita çocuklar için sıvı multivitamin" />
   <meta property="og:site_name" content="Bravita" />
   <meta property="og:locale" content="tr_TR" />
 
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:site" content="@Bravita" />
-  <meta name="twitter:title" content="Bravita - Büyümenin Formülü Burada!" />
-  <meta name="twitter:description" content="Çocukların sağlıklı büyümesi için bilimsel formül." />
+  <meta name="twitter:title" content="Bravita | Çocuklar İçin Sıvı Multivitamin" />
+  <meta name="twitter:description"
+    content="Çocukların günlük gelişimini desteklemek için geliştirilen sıvı multivitamin ve mineral takviyesi." />
   <meta name="twitter:image" content="https://bravita.com.tr/og-image.webp" />
 
-  <!-- Preconnect to external resources -->
+  <script type="application/ld+json">
+    [
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Bravita",
+        "url": "https://bravita.com.tr",
+        "inLanguage": "tr-TR"
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Bravita",
+        "url": "https://bravita.com.tr",
+        "logo": "https://bravita.com.tr/apple-touch-icon.png",
+        "email": "support@bravita.com.tr",
+        "telephone": "+90 312 328 25 26"
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": "Bravita Çocuklar İçin Sıvı Multivitamin",
+        "brand": {
+          "@type": "Brand",
+          "name": "Bravita"
+        },
+        "category": "DietarySupplement",
+        "description": "Bravita, çocukların günlük gelişimini desteklemek için vitamin, mineral ve seçili besin öğeleri içeren sıvı takviye edici gıdadır.",
+        "image": "https://bravita.com.tr/og-image.webp",
+        "url": "https://bravita.com.tr"
+      }
+    ]
+  </script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
-  <!-- Preload critical assets -->
-
-  <link rel="preload" as="image" href="/bravita.gif" fetchpriority="high" />
+  <link rel="preload" as="image" href="/bravita-bottle.webp" fetchpriority="high" />
+  <link rel="preload" as="image" href="/bravita.gif" />
   <link rel="stylesheet"
     href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" />
 
   <link rel="icon" type="image/x-icon" href="/favicon.ico" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
-  <!-- Security Headers -->
+  <style>
+    :root {
+      color-scheme: light;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+    }
+
+    body {
+      margin: 0;
+      background: #fffbf7;
+      color: #2d334a;
+      font-family: "Baloo 2", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      overflow-x: hidden;
+    }
+
+    [data-app-root] {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+    }
+
+    .skip-link {
+      position: absolute;
+      left: 16px;
+      top: -56px;
+      z-index: 10000;
+      background: #f97316;
+      color: #fff;
+      padding: 12px 16px;
+      border-radius: 999px;
+      text-decoration: none;
+      font-weight: 800;
+      transition: top 0.2s ease;
+    }
+
+    .skip-link:focus {
+      top: 16px;
+    }
+
+    #seo-shell {
+      position: relative;
+      z-index: 2;
+      background: linear-gradient(135deg, #fff9f0 0%, #fff1e6 50%, #fef3c7 100%);
+      isolation: isolate;
+    }
+
+    #seo-shell::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 15% 20%, rgba(255, 255, 255, 0.92), transparent 30%),
+        radial-gradient(circle at 85% 18%, rgba(251, 191, 36, 0.18), transparent 20%),
+        radial-gradient(circle at 72% 72%, rgba(249, 115, 22, 0.08), transparent 24%);
+    }
+
+    .seo-shell__inner {
+      position: relative;
+      max-width: 1440px;
+      margin: 0 auto;
+      min-height: 100vh;
+      padding: 24px clamp(20px, 4vw, 48px) 72px;
+    }
+
+    .seo-header {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 24px;
+      margin-bottom: 28px;
+    }
+
+    .seo-logo {
+      display: flex;
+      align-items: center;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .seo-logo__letter {
+      display: inline-block;
+      font-family: "Baloo 2", system-ui, sans-serif;
+      font-size: clamp(2.75rem, 4vw, 4.25rem);
+      font-weight: 800;
+      line-height: 0.9;
+      -webkit-text-stroke: 2px #000;
+      paint-order: stroke fill;
+      text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.08);
+      transform-origin: bottom center;
+    }
+
+    .seo-nav {
+      justify-self: center;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.88);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      box-shadow: 0 20px 40px rgba(45, 51, 74, 0.12);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .seo-nav a,
+    .seo-actions a,
+    .seo-actions span {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0 18px;
+      border-radius: 999px;
+      color: #4b5563;
+      font-weight: 800;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .seo-nav a.is-active {
+      background: linear-gradient(180deg, #fff8ed 0%, #fee7c3 100%);
+      color: #f97316;
+      box-shadow: 0 10px 24px rgba(249, 115, 22, 0.16);
+    }
+
+    .seo-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      justify-self: end;
+    }
+
+    .seo-lang-pill {
+      min-width: 56px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      box-shadow: 0 12px 30px rgba(45, 51, 74, 0.1);
+      color: #ef4444;
+    }
+
+    .seo-action-pill {
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      box-shadow: 0 12px 30px rgba(45, 51, 74, 0.1);
+    }
+
+    .seo-action-pill--primary {
+      color: #ea580c !important;
+    }
+
+    .seo-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+      gap: clamp(28px, 5vw, 56px);
+      align-items: center;
+      min-height: calc(100vh - 132px);
+      padding: 20px 0 40px;
+    }
+
+    .seo-hero__copy {
+      max-width: 680px;
+      padding-top: 20px;
+    }
+
+    .seo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 28px;
+      padding: 10px 18px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid #fed7aa;
+      color: #6b7280;
+      font-size: 0.8rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      box-shadow: 0 18px 40px rgba(45, 51, 74, 0.08);
+    }
+
+    .seo-badge__spark {
+      color: #f97316;
+      font-size: 0.95rem;
+    }
+
+    .seo-title {
+      margin: 0 0 28px;
+      font-family: "Baloo 2", system-ui, sans-serif;
+      font-size: clamp(3.4rem, 7vw, 7rem);
+      line-height: 0.97;
+      letter-spacing: -0.04em;
+      color: #2d334a;
+    }
+
+    .seo-title__accent {
+      background: linear-gradient(90deg, #f97316 0%, #fbbf24 42%, #84cc16 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .seo-lead {
+      max-width: 38rem;
+      margin: 0 0 32px;
+      color: rgba(71, 85, 105, 0.92);
+      font-size: clamp(1.05rem, 2vw, 1.5rem);
+      line-height: 1.7;
+    }
+
+    .seo-ingredients {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 0 0 32px;
+    }
+
+    .seo-ingredients span {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 18px;
+      border-radius: 999px;
+      background: #ff8a4c;
+      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 800;
+      box-shadow: 0 10px 22px rgba(249, 115, 22, 0.2);
+    }
+
+    .seo-cta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 62px;
+      padding: 0 30px;
+      border-radius: 999px;
+      background: #f97316;
+      color: #fff;
+      text-decoration: none;
+      font-weight: 900;
+      font-size: 1.05rem;
+      box-shadow: 0 22px 50px rgba(249, 115, 22, 0.28);
+    }
+
+    .seo-hero__visual {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 620px;
+      padding: 20px 12px 0;
+    }
+
+    .seo-hero__glow {
+      position: absolute;
+      inset: 12% 6% 10%;
+      border-radius: 999px;
+      background: radial-gradient(circle at center, rgba(255, 255, 255, 0.95) 0%, rgba(255, 241, 230, 0.8) 46%, rgba(254, 243, 199, 0.36) 70%, rgba(254, 243, 199, 0) 100%);
+      filter: blur(18px);
+    }
+
+    .seo-bottle {
+      position: relative;
+      z-index: 2;
+      width: min(100%, 420px);
+      height: auto;
+      object-fit: contain;
+      filter: drop-shadow(0 28px 60px rgba(45, 51, 74, 0.22));
+    }
+
+    .seo-bottle-meta,
+    .seo-flavor-card {
+      position: absolute;
+      z-index: 3;
+      box-shadow: 0 18px 40px rgba(45, 51, 74, 0.12);
+    }
+
+    .seo-bottle-meta {
+      top: 90px;
+      right: 32px;
+      padding: 10px 16px;
+      border-radius: 999px;
+      background: #ffc529;
+      color: #2d334a;
+      font-weight: 900;
+      font-size: 0.95rem;
+    }
+
+    .seo-flavor-card {
+      bottom: 48px;
+      left: 18px;
+      padding: 14px 18px;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .seo-flavor-card span {
+      display: block;
+      margin-bottom: 6px;
+      color: #94a3b8;
+      font-size: 0.75rem;
+      font-weight: 800;
+    }
+
+    .seo-flavor-card strong {
+      display: block;
+      color: #ea580c;
+      font-size: 1.35rem;
+      font-weight: 900;
+      line-height: 1.1;
+    }
+
+    .seo-content-shell {
+      display: grid;
+      gap: 22px;
+      margin-top: 20px;
+    }
+
+    .seo-section {
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(251, 146, 60, 0.14);
+      border-radius: 32px;
+      padding: clamp(22px, 3vw, 34px);
+      box-shadow: 0 18px 50px rgba(15, 23, 42, 0.06);
+    }
+
+    .seo-section h2 {
+      margin: 0 0 14px;
+      font-family: "Baloo 2", system-ui, sans-serif;
+      font-size: clamp(2rem, 3.4vw, 3rem);
+      line-height: 1.02;
+      letter-spacing: -0.03em;
+      color: #2d334a;
+    }
+
+    .seo-section p,
+    .seo-section li {
+      color: #475569;
+      font-size: 1.05rem;
+      line-height: 1.8;
+    }
+
+    .seo-section ul {
+      margin: 14px 0 0;
+      padding-left: 20px;
+    }
+
+    .seo-section li+li {
+      margin-top: 8px;
+    }
+
+    .seo-usage-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+
+    .seo-usage-card {
+      padding: 18px 20px;
+      border-radius: 24px;
+      background: #fff;
+      border: 1px solid rgba(251, 146, 60, 0.16);
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04);
+    }
+
+    .seo-usage-card strong {
+      display: block;
+      margin-bottom: 6px;
+      color: #1f2937;
+      font-size: 1rem;
+    }
+
+    .seo-usage-card span {
+      color: #64748b;
+      font-size: 0.98rem;
+      line-height: 1.6;
+    }
+
+    .seo-legal-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .seo-legal-links a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0 18px;
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid #fed7aa;
+      color: #c2410c;
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    html.seo-shell-skip #seo-shell {
+      display: none;
+    }
+
+    html.seo-shell-overlay #seo-shell {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 30;
+      transition: opacity 420ms ease, transform 640ms cubic-bezier(0.22, 1, 0.36, 1), filter 420ms ease;
+      transform-origin: center top;
+      will-change: opacity, transform, filter;
+    }
+
+    html.app-ready #seo-shell {
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(18px) scale(1.015);
+      filter: blur(10px);
+    }
+
+    @media (max-width: 1120px) {
+      .seo-header {
+        grid-template-columns: 1fr;
+        justify-items: start;
+      }
+
+      .seo-nav,
+      .seo-actions {
+        justify-self: start;
+      }
+
+      .seo-hero {
+        grid-template-columns: 1fr;
+        min-height: auto;
+      }
+
+      .seo-hero__copy {
+        max-width: none;
+      }
+
+      .seo-hero__visual {
+        order: -1;
+        min-height: 480px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .seo-shell__inner {
+        padding-top: 20px;
+      }
+
+      .seo-nav {
+        width: 100%;
+        overflow-x: auto;
+        scrollbar-width: none;
+      }
+
+      .seo-nav::-webkit-scrollbar {
+        display: none;
+      }
+
+      .seo-actions {
+        flex-wrap: wrap;
+      }
+
+      .seo-title {
+        font-size: clamp(3rem, 15vw, 5.2rem);
+      }
+
+      .seo-lead {
+        font-size: 1rem;
+      }
+
+      .seo-ingredients span {
+        font-size: 0.85rem;
+        padding: 10px 15px;
+      }
+
+      .seo-hero__visual {
+        min-height: 420px;
+        padding-top: 0;
+      }
+
+      .seo-bottle {
+        width: min(100%, 300px);
+      }
+
+      .seo-bottle-meta {
+        top: 54px;
+        right: 8px;
+      }
+
+      .seo-flavor-card {
+        left: 0;
+        bottom: 24px;
+      }
+
+      .seo-usage-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+
+      .skip-link,
+      html.seo-shell-overlay #seo-shell {
+        transition: none !important;
+      }
+    }
+  </style>
+
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self'; script-src 'self' blob: 'wasm-unsafe-eval' https://*.contentsquare.net https://js.hcaptcha.com https://*.hcaptcha.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.contentsquare.net https://*.hcaptcha.com; img-src 'self' data: https: blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cdn.lordicon.com https://*.contentsquare.net https://cdn.jsdelivr.net https://unpkg.com https://*.hcaptcha.com https://hcaptcha.com https://visitor.6developer.com; frame-src 'self' https://*.hcaptcha.com https://hcaptcha.com; worker-src 'self' blob:; object-src 'none'; form-action 'self'; base-uri 'self'; upgrade-insecure-requests; block-all-mixed-content;">
 
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <meta name="referrer" content="strict-origin-when-cross-origin">
+  <script src="/seo-shell-boot.js"></script>
 </head>
 
 <body>
-  <nav aria-label="Yasal bağlantılar"
-    style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">
-    <a href="/kullanim-kosullari">Kullanım Koşulları</a>
-    <a href="/gizlilik-politikasi">Gizlilik Politikası</a>
-  </nav>
-  <div id="root">
-    <div
-      style="position: fixed; inset: 0; background-color: #FFFBF7; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999;">
-      <div style="position: relative; width: 128px; height: 128px; margin-bottom: 16px;">
-        <img src="/bravita.gif" alt="Bravita Loading" style="width: 100%; height: 100%; object-fit: contain;" />
-      </div>
-      <p
-        style="color: #6a3a1a; font-family: 'Baloo 2', cursive; font-weight: 500; font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.4; margin-bottom: 24px;">
-        Yükleniyor
-      </p>
+  <a href="#main-content" class="skip-link">Ana içeriğe geç</a>
+
+  <div id="seo-shell">
+    <div class="seo-shell__inner">
+      <header class="seo-header">
+        <div class="seo-logo" aria-label="Bravita">
+          <span class="seo-logo__letter"
+            style="color:#EE4036; transform: rotate(-3deg) scaleX(0.76); margin-left:0;">B</span>
+          <span class="seo-logo__letter"
+            style="color:#F68B28; transform: rotate(-1deg) scaleX(0.76); margin-left:-0.15em;">R</span>
+          <span class="seo-logo__letter"
+            style="color:#FDB813; transform: rotate(1deg) scaleX(0.76); margin-left:-0.13em;">A</span>
+          <span class="seo-logo__letter"
+            style="color:#CDDC39; transform: rotate(-2deg) scaleX(0.76); margin-left:-0.155em;">V</span>
+          <span class="seo-logo__letter"
+            style="color:#4CAF50; transform: rotate(2deg) scaleX(0.76); margin-left:-0.12em;">i</span>
+          <span class="seo-logo__letter"
+            style="color:#00ADEF; transform: rotate(1deg) scaleX(0.76); margin-left:-0.06em;">T</span>
+          <span class="seo-logo__letter"
+            style="color:#9E499B; transform: rotate(3deg) scaleX(0.76); margin-left:-0.17em;">A</span>
+        </div>
+
+        <nav class="seo-nav" aria-label="Hızlı gezinme">
+          <a href="#hero-shell" class="is-active">Merhaba</a>
+          <a href="#one-cikanlar">Açıklama</a>
+          <a href="#icerik-bilgisi">İçindekiler</a>
+          <a href="#kullanim-bilgisi">Kullanım</a>
+          <a href="#hakkinda-bilgisi">Hakkında</a>
+        </nav>
+
+        <div class="seo-actions" aria-label="Kısa işlemler">
+          <span class="seo-lang-pill">TR</span>
+          <a href="#seo-shell-more" class="seo-action-pill seo-action-pill--primary">Satın Al</a>
+          <a href="#seo-shell-more" class="seo-action-pill">Giriş Yap</a>
+        </div>
+      </header>
+
+      <main id="main-content">
+        <section id="hero-shell" class="seo-hero" aria-labelledby="seo-hero-title">
+          <div class="seo-hero__copy">
+            <p class="seo-badge"><span class="seo-badge__spark" aria-hidden="true">✦</span> SIVI TAKVİYE EDİCİ GIDA</p>
+            <h1 id="seo-hero-title" class="seo-title">Büyümenin <span class="seo-title__accent">Formülü</span> Burada!
+            </h1>
+            <p class="seo-lead">
+              Aminoasitlerle birlikte zengin multivitamin ve mineral kompleksi içeren lezzetli sıvı takviye edici gıda.
+              Çocukların normal büyüme ve gelişimini desteklemek için özel olarak formüle edildi.
+            </p>
+            <div class="seo-ingredients" aria-label="Öne çıkan bileşenler">
+              <span>Sitikolin</span>
+              <span>L-Arjinin</span>
+              <span>Taurin</span>
+              <span>Fosfotidilserin</span>
+              <span>Multimineral</span>
+              <span>Multivitamin</span>
+            </div>
+            <a class="seo-cta" href="#seo-shell-more">Daha Fazla Bilgi</a>
+          </div>
+
+          <div class="seo-hero__visual" aria-hidden="true">
+            <div class="seo-hero__glow"></div>
+            <div class="seo-bottle-meta">150ml</div>
+            <img src="/bravita-bottle.webp" alt="Bravita Sıvı Takviye" class="seo-bottle" />
+            <div class="seo-flavor-card">
+              <span>Tutti Frutti & Vanilya</span>
+              <strong>Tadı Harika!</strong>
+            </div>
+          </div>
+        </section>
+
+        <div class="seo-content-shell">
+          <section id="seo-shell-more" class="seo-section" aria-labelledby="one-cikanlar">
+            <h2 id="one-cikanlar">Bravita'nın öne çıkan özellikleri</h2>
+            <p>
+              Çocukların günlük rutinine kolayca uyum sağlayan sıvı formu, kullanım sürecini pratik hale getirmeyi
+              hedefler. Ürün sayfasında içerik detayları, kullanım bilgileri ve yasal bilgilendirme dokümanları bir
+              arada
+              sunulur.
+            </p>
+            <ul>
+              <li>Çocuklara yönelik sıvı formda takviye edici gıda yaklaşımı</li>
+              <li>Vitamin, mineral ve seçili besin öğelerini bir araya getiren içerik kurgusu</li>
+              <li>Ürün, kullanım ve yasal bilgilere hızlı erişim sağlayan sade sayfa yapısı</li>
+            </ul>
+          </section>
+
+          <section id="icerik-bilgisi" class="seo-section" aria-labelledby="icerik-bilgisi-baslik">
+            <h2 id="icerik-bilgisi-baslik">İçerik ve kullanım hakkında genel bilgi</h2>
+            <p>
+              Bravita sayfasında ürünün öne çıkan bileşenleri, kullanım deneyimi ve destekleyici açıklamalar birlikte
+              sunulur. Takviye edici gıdalar ilaç değildir. Çocukların beslenme düzeni, özel ihtiyaçları veya mevcut
+              sağlık
+              durumları için doktor ya da eczacı görüşü alınması önerilir.
+            </p>
+            <p>
+              Ürün hakkında daha ayrıntılı bilgiye ulaşmak için ana sayfa bölümlerini inceleyebilir, ayrıca gizlilik
+              politikası ve kullanım koşulları sayfalarından veri işleme ve kullanım esaslarını görüntüleyebilirsiniz.
+            </p>
+          </section>
+
+          <section id="kullanim-bilgisi" class="seo-section" aria-labelledby="kullanim-bilgisi-baslik">
+            <h2 id="kullanim-bilgisi-baslik">Kullanım notları</h2>
+            <p>
+              Günlük kullanım miktarı yaş grubuna göre değişir. Kullanmadan önce iyice çalkalanması ve tavsiye edilen
+              günlük
+              porsiyonun aşılmaması önerilir.
+            </p>
+            <div class="seo-usage-grid">
+              <div class="seo-usage-card">
+                <strong>4-10 Yaş Çocuklar</strong>
+                <span>Günde 1 ölçek (5 ml)</span>
+              </div>
+              <div class="seo-usage-card">
+                <strong>11 Yaş Üzeri ve Yetişkinler</strong>
+                <span>Günde 2 ölçek (10 ml)</span>
+              </div>
+            </div>
+          </section>
+
+          <section id="hakkinda-bilgisi" class="seo-section" aria-labelledby="marka-bilgi-baslik">
+            <h2 id="marka-bilgi-baslik">Bravita ve kurumsal bilgiler</h2>
+            <p>
+              Bravita, ürün ve marka iletişimini tek bir çatı altında sunarak kullanıcıların resmi bilgilere hızlı
+              şekilde
+              ulaşmasını amaçlar. Çocukların sağlıklı gelişim yolculuğuna modern, sade ve güven veren bir dijital
+              deneyimle
+              eşlik eder.
+            </p>
+            <div class="seo-legal-links">
+              <a href="/gizlilik-politikasi">Gizlilik Politikası</a>
+              <a href="/kullanim-kosullari">Kullanım Koşulları</a>
+            </div>
+          </section>
+        </div>
+      </main>
     </div>
   </div>
+
+  <div id="root" data-app-root></div>
+
   <script src="/console-noise-filter.js"></script>
   <script type="module" src="/src/main.tsx"></script>
 </body>

@@ -73,15 +73,34 @@ export default defineConfig(({ mode }) => {
       react(),
       svgr(),
       mode === "development" && componentTagger(),
-      // Custom plugin to handle admin routes in dev
+      // Custom plugin to handle route-specific HTML entry points in dev
       {
-        name: "admin-spa-fallback",
+        name: "route-specific-html-fallbacks",
         configureServer(server: ViteDevServer) {
           server.middlewares.use((req: IncomingMessage, _res: ServerResponse, next: () => void) => {
-            // If accessing /admin or /admin/* routes, serve admin.html
-            if (req.url && (req.url === "/admin" || req.url.startsWith("/admin/"))) {
-              req.url = "/admin.html";
+            if (!req.url) {
+              next();
+              return;
             }
+
+            if (req.url === "/admin" || req.url.startsWith("/admin/")) {
+              req.url = "/admin.html";
+              next();
+              return;
+            }
+
+            if (req.url === "/gizlilik-politikasi" || req.url === "/gizlilik-politikasi/") {
+              req.url = "/gizlilik-politikasi/index.html";
+              next();
+              return;
+            }
+
+            if (req.url === "/kullanim-kosullari" || req.url === "/kullanim-kosullari/") {
+              req.url = "/kullanim-kosullari/index.html";
+              next();
+              return;
+            }
+
             next();
           });
         },
@@ -134,6 +153,8 @@ export default defineConfig(({ mode }) => {
         input: {
           main: path.resolve(__dirname, "index.html"),
           admin: path.resolve(__dirname, "admin.html"),
+          privacy: path.resolve(__dirname, "gizlilik-politikasi/index.html"),
+          terms: path.resolve(__dirname, "kullanim-kosullari/index.html"),
         },
       },
     },

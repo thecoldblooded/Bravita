@@ -35,6 +35,43 @@ const Index = () => {
     () => typeof window !== "undefined" && window.location.hash.startsWith("#legal:")
   );
 
+  const canonicalUrl = "https://bravita.com.tr";
+  const pageTitle = "Bravita | Çocuklar İçin Sıvı Multivitamin";
+  const pageDescription = "Bravita, çocukların günlük gelişimini desteklemek için vitamin, mineral ve seçili besin öğeleri içeren sıvı takviye edici gıdadır.";
+  const socialDescription = "Çocukların günlük gelişimini desteklemek için geliştirilen sıvı multivitamin ve mineral takviyesi.";
+  const skipToContentLabel = t("accessibility.skip_to_content", "Ana içeriğe geç");
+  const structuredData = [
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: "Bravita",
+      url: canonicalUrl,
+      inLanguage: "tr-TR",
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: "Bravita",
+      url: canonicalUrl,
+      logo: `${canonicalUrl}/apple-touch-icon.png`,
+      email: "support@bravita.com.tr",
+      telephone: "+90 312 328 25 26",
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: "Bravita Çocuklar İçin Sıvı Multivitamin",
+      description: pageDescription,
+      image: `${canonicalUrl}/og-image.webp`,
+      url: canonicalUrl,
+      category: "DietarySupplement",
+      brand: {
+        "@type": "Brand",
+        name: "Bravita",
+      },
+    },
+  ];
+
   useEffect(() => {
     const trackLegalHashIntent = () => {
       if (window.location.hash.startsWith("#legal:")) {
@@ -56,17 +93,34 @@ const Index = () => {
   return (
     <div className="min-h-screen">
       <Helmet>
-        <title>Bravita - Çocuklar İçin Vitamin | Bağışıklık Güçlendirici</title>
-        <meta name="description" content="Bravita, çocukların sağlıklı gelişimi için gerekli vitamin ve mineralleri içeren, lezzetli ve eğlenceli çiğnenebilir formda takviye edici gıdadır." />
-        <link rel="canonical" href="https://bravita.com.tr" />
-        <meta property="og:title" content="Bravita - Çocuklar İçin Vitamin | Bağışıklık Güçlendirici" />
-        <meta property="og:description" content="Bravita, çocukların sağlıklı gelişimi için gerekli vitamin ve mineralleri içeren, lezzetli takviye edici gıda." />
-        <meta property="og:image" content="https://bravita.com.tr/og-image.jpg" />
-        <meta property="og:url" content="https://bravita.com.tr" />
+        <title>{pageTitle}</title>
+        <meta name="description" content={pageDescription} />
+        <meta name="robots" content="index,follow" />
+        <link rel="canonical" href={canonicalUrl} />
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content={socialDescription} />
+        <meta property="og:image" content={`${canonicalUrl}/og-image.webp`} />
+        <meta property="og:image:alt" content="Bravita çocuklar için sıvı multivitamin" />
+        <meta property="og:url" content={canonicalUrl} />
         <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Bravita" />
+        <meta property="og:locale" content="tr_TR" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content="@Bravita" />
+        <meta name="twitter:title" content={pageTitle} />
+        <meta name="twitter:description" content={socialDescription} />
+        <meta name="twitter:image" content={`${canonicalUrl}/og-image.webp`} />
+        <meta name="twitter:image:alt" content="Bravita çocuklar için sıvı multivitamin" />
+        <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
       </Helmet>
+      <a
+        href="#main-content"
+        className="sr-only fixed left-4 top-4 z-[100] rounded-full bg-orange-500 px-4 py-3 font-bold text-white shadow-lg focus:not-sr-only"
+      >
+        {skipToContentLabel}
+      </a>
       <Header />
-      <main>
+      <main id="main-content">
         <Hero />
 
         <LazySection id="benefits" className="scroll-mt-25 w-full" placeholder={<SectionFallback minHeight="70vh" />} rootMargin="500px 0px">
