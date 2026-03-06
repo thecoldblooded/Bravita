@@ -14,6 +14,24 @@ const DEFAULT_ALLOWED_AUTH_ORIGINS = [
   "http://127.0.0.1:8080",
 ];
 const INTERNAL_SERVER_ERROR_MESSAGE = "Internal server error";
+const MAX_INSPECTION_CHARS = Number(process.env.AUTH_MAX_INSPECTION_CHARS || 8192);
+
+const SUSPICIOUS_REQUEST_SIGNATURES = Object.freeze([
+  { code: "xss_script", regex: /<\s*script\b/i },
+  { code: "xss_dom_event", regex: /\bon(?:error|load|mouseover|focus|toggle)\s*=/i },
+  { code: "xss_javascript_protocol", regex: /javascript\s*:/i },
+  { code: "sqli_union_select", regex: /\bunion(?:\/\*.*?\*\/|\s)+select\b/i },
+  { code: "sqli_boolean_bypass", regex: /(?:'|%27|\")\s*or\s+1\s*=\s*1/i },
+  { code: "sqli_drop_table", regex: /\bdrop\s+table\b/i },
+  { code: "sqli_time_delay", regex: /\b(?:sleep\s*\(|waitfor\s+delay)\b/i },
+  { code: "path_traversal", regex: /(?:\.\.\/|\.\.\\|%2e%2e%2f|%2e%2e%5c|%252e%252e%252f|%252e%252e%255c)/i },
+  {
+    code: "sensitive_file_probe",
+    regex: /(?:^|\/)(?:\.git(?:\/|$)|\.env(?:$|[.\-_])|wp-config\.php|config\.php|id_rsa(?:\.pub)?|database\.(?:yml|bak)|appsettings\.json|composer\.(?:json|lock)|package(?:-lock)?\.json|yarn\.lock|requirements\.txt|docker-compose\.ya?ml|web\.config|\.htaccess|\.htpasswd)(?:$|[/?#])/i,
+  },
+  { code: "command_injection", regex: /(?:\$\(|`[^`]+`|(?:^|[;&|])\s*(?:cat|id|whoami|ls|ping|nc|curl|wget)\b|&&\s*(?:cat|id|whoami|ls|ping|nc|curl|wget)\b)/i },
+  { code: "ssrf_localhost_or_file", regex: /(?:file:\/\/\/?|gopher:\/\/|dict:\/\/|http:\/\/(?:127\.0\.0\.1|localhost|0\.0\.0\.0)|169\.254\.169\.254)/i },
+]);
 
 function isTruthyEnvFlag(value) {
   return String(value ?? "").trim().toLowerCase() === "true";
@@ -135,6 +153,243 @@ function normalizeHeaderValue(value) {
   return typeof value === "string" ? value : "";
 }
 
+function getInspectionCharLimit() {
+  if (Number.isFinite(MAX_INSPECTION_CHARS) && MAX_INSPECTION_CHARS > 256) {
+    return Math.min(MAX_INSPECTION_CHARS, 32_768);
+  }
+  return 8192;
+}
+
+function normalizeInspectionSample(value, limit) {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return "";
+  }
+
+  return trimmed.slice(0, limit);
+}
+
+function decodeUriComponentSafe(value) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+const HTML_ENTITY_MAP = Object.freeze({
+  amp: "&",
+  apos: "'",
+  gt: ">",
+  lt: "<",
+  quot: '"',
+});
+
+function decodeHtmlEntities(value) {
+  if (typeof value !== "string" || value.length === 0) {
+    return value;
+  }
+
+  return value
+    .replace(/&#(\d+);?/g, (match, decimal) => {
+      const codePoint = Number(decimal);
+      if (!Number.isFinite(codePoint)) {
+        return match;
+      }
+
+      try {
+        return String.fromCodePoint(codePoint);
+      } catch {
+        return match;
+      }
+    })
+    .replace(/&#x([0-9a-f]+);?/gi, (match, hex) => {
+      const codePoint = Number.parseInt(hex, 16);
+      if (!Number.isFinite(codePoint)) {
+        return match;
+      }
+
+      try {
+        return String.fromCodePoint(codePoint);
+      } catch {
+        return match;
+      }
+    })
+    .replace(/&(amp|apos|gt|lt|quot);/gi, (match, entityName) => HTML_ENTITY_MAP[entityName.toLowerCase()] ?? match);
+}
+
+function decodeUnicodeEscapes(value) {
+  if (typeof value !== "string" || value.length === 0) {
+    return value;
+  }
+
+  return value
+    .replace(/\\u([0-9a-f]{4})/gi, (match, hex) => {
+      const codePoint = Number.parseInt(hex, 16);
+      if (!Number.isFinite(codePoint)) {
+        return match;
+      }
+
+      try {
+        return String.fromCodePoint(codePoint);
+      } catch {
+        return match;
+      }
+    })
+    .replace(/\\x([0-9a-f]{2})/gi, (match, hex) => {
+      const codePoint = Number.parseInt(hex, 16);
+      if (!Number.isFinite(codePoint)) {
+        return match;
+      }
+
+      try {
+        return String.fromCodePoint(codePoint);
+      } catch {
+        return match;
+      }
+    });
+}
+
+function normalizeObfuscatedPayload(value) {
+  if (typeof value !== "string" || value.length === 0) {
+    return value;
+  }
+
+  return value
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .replace(/%c0%ae/gi, ".")
+    .replace(/%c0%af/gi, "/")
+    .replace(/%c1%9c/gi, "\\")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function addInspectionVariant(variants, seen, value, limit) {
+  const normalized = normalizeInspectionSample(value, limit).toLowerCase();
+  if (!normalized || seen.has(normalized)) {
+    return;
+  }
+
+  seen.add(normalized);
+  variants.push(normalized);
+}
+
+function buildInspectionVariants(value, limit) {
+  const baseValue = normalizeInspectionSample(value, limit);
+  if (!baseValue) {
+    return [];
+  }
+
+  const variants = [];
+  const seen = new Set();
+  const uriDecodedCandidates = [baseValue];
+
+  let decoded = baseValue;
+  for (let index = 0; index < 3; index += 1) {
+    decoded = decodeUriComponentSafe(decoded);
+    uriDecodedCandidates.push(decoded);
+  }
+
+  for (const candidate of uriDecodedCandidates) {
+    const htmlDecoded = decodeHtmlEntities(candidate);
+    const unicodeDecoded = decodeUnicodeEscapes(candidate);
+    const canonicalCandidates = [
+      candidate,
+      htmlDecoded,
+      unicodeDecoded,
+      decodeUnicodeEscapes(htmlDecoded),
+      normalizeObfuscatedPayload(candidate),
+      normalizeObfuscatedPayload(htmlDecoded),
+      normalizeObfuscatedPayload(unicodeDecoded),
+      normalizeObfuscatedPayload(decodeUnicodeEscapes(htmlDecoded)),
+    ];
+
+    for (const canonicalCandidate of canonicalCandidates) {
+      addInspectionVariant(variants, seen, canonicalCandidate, limit);
+    }
+  }
+
+  return variants;
+}
+
+function extractBodyInspectionSample(body, limit) {
+  if (body == null) {
+    return "";
+  }
+
+  if (typeof body === "string") {
+    return normalizeInspectionSample(body, limit);
+  }
+
+  if (typeof body === "object") {
+    try {
+      return normalizeInspectionSample(JSON.stringify(body), limit);
+    } catch {
+      return "";
+    }
+  }
+
+  return normalizeInspectionSample(String(body), limit);
+}
+
+function detectSuspiciousValue(value, limit = getInspectionCharLimit()) {
+  const variants = buildInspectionVariants(value, limit);
+  for (const variant of variants) {
+    for (const signature of SUSPICIOUS_REQUEST_SIGNATURES) {
+      if (signature.regex.test(variant)) {
+        return {
+          code: signature.code,
+          sample: variant.slice(0, 180),
+        };
+      }
+    }
+  }
+
+  return null;
+}
+
+function detectSuspiciousRequest(req) {
+  const limit = getInspectionCharLimit();
+  const candidates = [
+    typeof req?.url === "string" ? req.url : "",
+    normalizeHeaderValue(req?.headers?.origin),
+    normalizeHeaderValue(req?.headers?.referer),
+    normalizeHeaderValue(req?.headers?.["user-agent"]),
+    normalizeHeaderValue(req?.headers?.["x-forwarded-host"]),
+    extractBodyInspectionSample(req?.body, limit),
+  ];
+
+  for (const candidate of candidates) {
+    const detection = detectSuspiciousValue(candidate, limit);
+    if (detection) {
+      return detection;
+    }
+  }
+
+  return null;
+}
+
+function assertSafeAuthRequest(req, res) {
+  const detection = detectSuspiciousRequest(req);
+  if (!detection) {
+    return true;
+  }
+
+  console.warn("[AUTH] suspicious_request_blocked", {
+    path: req?.url ?? null,
+    method: req?.method ?? null,
+    detection: detection.code,
+    sample: detection.sample,
+  });
+
+  sendJson(res, 403, { error: "Forbidden: suspicious request payload" });
+  return false;
+}
+
 function summarizeCookieHeader(req) {
   const cookieHeader = normalizeHeaderValue(req.headers.cookie);
   if (!cookieHeader) {
@@ -189,6 +444,10 @@ function logAuthDiagnostic(event, req, extra = {}) {
 }
 
 function assertValidAuthPostRequest(req, res) {
+  if (!assertSafeAuthRequest(req, res)) {
+    return false;
+  }
+
   const requestOrigin = extractRequestOrigin(req);
   const allowedOrigins = loadAllowedAuthOrigins();
 
@@ -663,7 +922,9 @@ export {
   extractAuthErrorMessage,
   sendInternalServerError,
   assertValidAuthPostRequest,
+  assertSafeAuthRequest,
   logAuthDiagnostic,
   resolveSiteOrigin,
   shouldBypassCaptchaForRequest,
+  detectSuspiciousValue,
 };

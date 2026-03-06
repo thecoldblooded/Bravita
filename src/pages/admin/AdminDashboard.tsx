@@ -330,7 +330,7 @@ function DashboardContent() {
                                         </p>
                                         <div className="flex items-center gap-2 mt-0.5">
                                             {cancel.cancellation_reason && (
-                                                <span className={`text-[10px] ${textSecondary} truncate max-w-[120px]`} title={cancel.cancellation_reason}>
+                                                <span className={`text-[10px] ${textSecondary} truncate max-w-30`} title={cancel.cancellation_reason}>
                                                     {cancel.cancellation_reason}
                                                 </span>
                                             )}
