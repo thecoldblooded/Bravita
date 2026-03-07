@@ -11,6 +11,7 @@
     root.classList.add("seo-shell-js");
 
     if (isHome) {
+        root.dataset.seoShellStartedAt = String(Date.now());
         root.classList.add("seo-shell-overlay", "seo-shell-pending");
     } else {
         root.classList.add("seo-shell-skip");

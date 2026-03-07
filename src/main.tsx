@@ -11,6 +11,8 @@ import { HelmetProvider } from "react-helmet-async";
 setWasmUrl(wasmUrl);
 
 const HERO_SHELL_LCP_IMAGE_SRC = "/bravita-bottle.webp";
+const SEO_LOADER_GIF_SRC = "/bravita.gif";
+const MIN_SEO_LOADER_VISIBLE_MS = 2200;
 
 // Prevent zoom on Safari/iOS
 document.addEventListener('gesturestart', function (e) {
@@ -51,6 +53,21 @@ const markAppReady = () => {
       seoShell.remove();
     }
   }, removalDelay);
+};
+
+const waitForMinimumLoaderExposure = async () => {
+  const startedAtRaw = document.documentElement.dataset.seoShellStartedAt;
+  const startedAt = startedAtRaw ? Number.parseInt(startedAtRaw, 10) : Date.now();
+  const elapsed = Date.now() - startedAt;
+  const remaining = MIN_SEO_LOADER_VISIBLE_MS - elapsed;
+
+  if (!Number.isFinite(remaining) || remaining <= 0) {
+    return;
+  }
+
+  await new Promise<void>((resolve) => {
+    globalThis.setTimeout(resolve, remaining);
+  });
 };
 
 const waitForFontReadiness = async () => {
@@ -115,6 +132,7 @@ const waitForVisualReadiness = async () => {
   await Promise.all([
     waitForFontReadiness(),
     waitForImageReadiness(HERO_SHELL_LCP_IMAGE_SRC),
+    waitForImageReadiness(SEO_LOADER_GIF_SRC),
   ]);
 };
 
@@ -130,7 +148,11 @@ const scheduleSeoShellDismiss = () => {
 };
 
 const revealAppWhenReady = async () => {
-  await waitForVisualReadiness();
+  await Promise.all([
+    waitForVisualReadiness(),
+    waitForMinimumLoaderExposure(),
+  ]);
+
   scheduleSeoShellDismiss();
 };
 

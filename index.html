@@ -70,7 +70,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
   <link rel="preload" as="image" href="/bravita-bottle.webp" fetchpriority="high" />
-  <link rel="preload" as="image" href="/bravita.gif" />
+  <link rel="preload" as="image" href="/bravita.gif" fetchpriority="high" />
   <link rel="stylesheet"
     href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" />
 
@@ -153,6 +153,66 @@
         radial-gradient(circle at 15% 20%, rgba(255, 255, 255, 0.92), transparent 30%),
         radial-gradient(circle at 85% 18%, rgba(251, 191, 36, 0.18), transparent 20%),
         radial-gradient(circle at 72% 72%, rgba(249, 115, 22, 0.08), transparent 24%);
+    }
+
+    .seo-shell-loader {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      pointer-events: none;
+      opacity: 0;
+      visibility: hidden;
+      background: #fffbf7;
+      transition:
+        opacity 220ms ease,
+        visibility 0s linear 220ms;
+    }
+
+    .seo-shell-loader::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 50% 45%, rgba(249, 115, 22, 0.08), transparent 22%),
+        linear-gradient(135deg, #fff9f0 0%, #fff1e6 52%, #fef3c7 100%);
+    }
+
+    .seo-shell-loader__panel {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: clamp(144px, 16vw, 196px);
+      height: clamp(144px, 16vw, 196px);
+      padding: 0;
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+
+    .seo-shell-loader__media {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .seo-shell-loader__media img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 24px 44px rgba(249, 115, 22, 0.14));
+    }
+
+    .seo-shell-loader__label {
+      display: none;
     }
 
     .seo-shell__inner {
@@ -523,6 +583,24 @@
       will-change: opacity, transform, filter;
     }
 
+    html.seo-shell-pending .seo-shell-loader {
+      opacity: 1;
+      visibility: visible;
+      transition-delay: 0s, 0s;
+    }
+
+    html.app-ready .seo-shell-loader {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    html.seo-shell-pending #seo-shell {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: none;
+    }
+
     html.seo-shell-pending #seo-shell .seo-header,
     html.seo-shell-pending #seo-shell .seo-content-shell {
       display: none;
@@ -551,18 +629,18 @@
     }
 
     html.seo-shell-pending #seo-shell .seo-title {
-      margin-bottom: 16px;
-      opacity: 0.18;
-      transform: translateY(12px);
-      filter: blur(10px);
+      margin-bottom: 0;
+      opacity: 0;
+      transform: translateY(18px);
+      filter: blur(16px);
     }
 
     html.seo-shell-pending #seo-shell .seo-lead {
       margin-bottom: 0;
       max-width: 34rem;
-      opacity: 0.1;
-      transform: translateY(12px);
-      filter: blur(10px);
+      opacity: 0;
+      transform: translateY(18px);
+      filter: blur(16px);
     }
 
     html.seo-shell-pending #seo-shell .seo-badge,
@@ -575,6 +653,10 @@
 
     html.seo-shell-pending #seo-shell .seo-hero__visual {
       min-height: clamp(420px, 72vh, 640px);
+      opacity: 0.32;
+      transform: translateY(6px) scale(0.995);
+      filter: saturate(0.92) blur(3px);
+      transition: opacity 240ms ease, transform 420ms cubic-bezier(0.22, 1, 0.36, 1), filter 240ms ease;
     }
 
     html.seo-shell-pending #seo-shell .seo-hero__glow {
@@ -702,6 +784,15 @@
 
 <body>
   <a href="#main-content" class="skip-link">Ana içeriğe geç</a>
+
+  <div class="seo-shell-loader" aria-hidden="true">
+    <div class="seo-shell-loader__panel" role="status" aria-live="polite" aria-label="Yükleniyor">
+      <div class="seo-shell-loader__media">
+        <img src="/bravita.gif" alt="" loading="eager" fetchpriority="high" decoding="sync" />
+      </div>
+      <span class="seo-shell-loader__label">Yükleniyor</span>
+    </div>
+  </div>
 
   <div id="seo-shell">
     <div class="seo-shell__inner">
