@@ -56,7 +56,7 @@ const PrivacyPolicy = () => {
             </Helmet>
             <a
                 href="#main-content"
-                className="sr-only fixed left-4 top-4 z-[100] rounded-full bg-orange-500 px-4 py-3 font-bold text-white shadow-lg focus:not-sr-only"
+                className="sr-only fixed left-4 top-4 z-100 rounded-full bg-orange-500 px-4 py-3 font-bold text-white shadow-lg focus:not-sr-only"
             >
                 {skipToContentLabel}
             </a>

@@ -34,7 +34,8 @@ except:
 SKIP_DIRS = {
     'node_modules', '.next', 'dist', 'build', '.git', '.github',
     '__pycache__', '.vscode', '.idea', 'coverage', 'test', 'tests',
-    '__tests__', 'spec', 'docs', 'documentation', 'examples', 'artifacts'
+    '__tests__', 'spec', 'docs', 'documentation', 'examples', 'artifacts',
+    '.venv', 'venv', '_reports', 'email_templates', 'supabase'
 }
 
 # Files to skip (not pages)
@@ -48,30 +49,26 @@ SKIP_PATTERNS = [
 def is_page_file(file_path: Path) -> bool:
     """Check if this file is likely a public-facing page."""
     name = file_path.name.lower()
-    stem = file_path.stem.lower()
-    
+    suffix = file_path.suffix.lower()
+
     # Skip utility/config files
     if any(skip in name for skip in SKIP_PATTERNS):
         return False
-    
-    # Check path - pages in specific directories are likely pages
+
     parts = [p.lower() for p in file_path.parts]
-    page_dirs = ['pages', 'app', 'routes', 'views', 'screens']
-    
-    if any(d in parts for d in page_dirs):
-        return True
-    
-    # Filename indicators for pages
-    page_names = ['page', 'index', 'home', 'about', 'contact', 'blog',
-                  'post', 'article', 'product', 'landing']
-    
-    if any(p in stem for p in page_names):
-        return True
-    
-    # HTML files are usually pages
-    if file_path.suffix.lower() in ['.html', '.htm']:
-        return True
-    
+    page_dirs = {'pages', 'app', 'routes', 'views', 'screens'}
+
+    # React page files should live in page-like directories, not components/templates.
+    if suffix in ['.jsx', '.tsx']:
+        return any(d in parts for d in page_dirs)
+
+    # Static HTML pages should be actual route entrypoints, not templates/reports/vendor docs.
+    if suffix in ['.html', '.htm']:
+        if len(parts) == 1:
+            return True
+
+        return name == 'index.html'
+
     return False
 
 
