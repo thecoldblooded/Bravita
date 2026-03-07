@@ -101,6 +101,24 @@ class UXAuditor:
         self.warnings = []
         self.passed_count = 0
         self.files_checked = 0
+
+    def _extract_navigation_scope(self, content: str) -> str:
+        nav_blocks = re.findall(r'<nav\b[^>]*>.*?</nav>', content, re.IGNORECASE | re.DOTALL)
+        if nav_blocks:
+            return "\n".join(nav_blocks)
+
+        nav_containers = re.findall(
+            r'<(?:div|header|aside|ul)\b[^>]*(?:class|classname|aria-label)\s*=\s*["\'][^"\']*(?:nav|menu|navbar|navigation)[^"\']*["\'][^>]*>.*?</(?:div|header|aside|ul)>',
+            content,
+            re.IGNORECASE | re.DOTALL,
+        )
+        if nav_containers:
+            return "\n".join(nav_containers)
+
+        if re.search(r'nav-item', content, re.IGNORECASE):
+            return content
+
+        return ""
     
     def audit_file(self, filepath: str) -> None:
         try:
@@ -122,9 +140,10 @@ class UXAuditor:
 
         # --- 1. PSYCHOLOGY LAWS ---
         # Hick's Law
-        react_nav_links = len(re.findall(r'<NavLink\b|<Link\b', content))
-        anchor_nav_links = len(re.findall(r'<a\s+href\b', content, re.IGNORECASE))
-        nav_class_items = len(re.findall(r'nav-item', content, re.IGNORECASE))
+        nav_scope = self._extract_navigation_scope(content)
+        react_nav_links = len(re.findall(r'<NavLink\b|<Link\b', nav_scope))
+        anchor_nav_links = len(re.findall(r'<a\s+href\b', nav_scope, re.IGNORECASE))
+        nav_class_items = len(re.findall(r'nav-item', nav_scope, re.IGNORECASE))
         nav_items = react_nav_links + anchor_nav_links + nav_class_items
         if nav_items > 7:
             self.issues.append(f"[Hick's Law] {filename}: {nav_items} nav items (Max 7)")
@@ -145,8 +164,8 @@ class UXAuditor:
         # Serial Position Effect - Important items at beginning/end
         if nav_items > 3:
             # Check if last nav item is important (contact, login, etc.)
-            anchor_labels = re.findall(r'<a\s+href[^>]*>\s*([^<]+?)\s*</a>', content, re.IGNORECASE)
-            component_labels = re.findall(r'<(?:NavLink|Link)\b[^>]*>\s*([^<{]+?)\s*</(?:NavLink|Link)>', content)
+            anchor_labels = re.findall(r'<a\s+href[^>]*>\s*([^<]+?)\s*</a>', nav_scope, re.IGNORECASE)
+            component_labels = re.findall(r'<(?:NavLink|Link)\b[^>]*>\s*([^<{]+?)\s*</(?:NavLink|Link)>', nav_scope)
             nav_content = [label.strip() for label in (anchor_labels + component_labels) if label.strip()]
             if nav_content and len(nav_content) > 2:
                 last_item = nav_content[-1].lower()
