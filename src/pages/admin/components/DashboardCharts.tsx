@@ -161,8 +161,8 @@ export default function DashboardCharts({
                                         label={renderCustomLabel}
                                         labelLine={false}
                                     >
-                                        {statusData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={entry.fill} stroke="none" />
+                                        {statusData.map((entry) => (
+                                            <Cell key={`status-${entry.status}`} fill={entry.fill} stroke="none" />
                                         ))}
                                     </Pie>
                                     <Tooltip
@@ -288,8 +288,11 @@ export default function DashboardCharts({
                                         }}
                                     />
                                     <Bar dataKey="total_quantity" name="Adet" radius={[0, 4, 4, 0]} barSize={20}>
-                                        {topProducts.map((_entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={TOP_PRODUCT_COLORS[index % TOP_PRODUCT_COLORS.length]} />
+                                        {topProducts.map((entry, index) => (
+                                            <Cell
+                                                key={`product-${entry.product_name}`}
+                                                fill={TOP_PRODUCT_COLORS[index % TOP_PRODUCT_COLORS.length]}
+                                            />
                                         ))}
                                     </Bar>
                                 </BarChart>

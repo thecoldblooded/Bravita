@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { LazyMotion, domAnimation, m, AnimatePresence } from 'framer-motion';
 
 interface WelcomeAnimationProps {
     onComplete: () => void;
@@ -63,80 +63,82 @@ export default function WelcomeAnimation({ onComplete }: WelcomeAnimationProps) 
     }, [finishAnimation]);
 
     return (
-        <AnimatePresence>
-            {!isFinished && (
-                <motion.div
-                    initial={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.5, ease: "easeIn" }}
-                    className="fixed inset-0 z-100 bg-[#FFFBF7] flex items-center justify-center p-6"
-                >
-                    <div className="w-full max-w-225 flex justify-center items-center">
-                        <svg
-                            className="w-full h-auto block"
-                            viewBox="0 0 1728 1117"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                            aria-label="merhaba"
-                        >
-                            <defs>
-                                <clipPath id="clip0_2002_2">
-                                    <rect width="1728" height="1117" fill="white" />
-                                </clipPath>
+        <LazyMotion features={domAnimation}>
+            <AnimatePresence>
+                {!isFinished && (
+                    <m.div
+                        initial={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.5, ease: "easeIn" }}
+                        className="fixed inset-0 z-100 bg-[#FFFBF7] flex items-center justify-center p-6"
+                    >
+                        <div className="w-full max-w-225 flex justify-center items-center">
+                            <svg
+                                className="w-full h-auto block"
+                                viewBox="0 0 1728 1117"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                                aria-label="merhaba"
+                            >
+                                <defs>
+                                    <clipPath id="clip0_2002_2">
+                                        <rect width="1728" height="1117" fill="white" />
+                                    </clipPath>
 
-                                {/* Bravita Logo Gradient Left to Right */}
-                                <linearGradient id="bravita-rainbow" x1="346" y1="0" x2="1381" y2="0" gradientUnits="userSpaceOnUse">
-                                    <stop offset="0%" stopColor="#ef4444" /> {/* Red */}
-                                    <stop offset="16.6%" stopColor="#f97316" /> {/* Orange */}
-                                    <stop offset="33.3%" stopColor="#facc15" /> {/* Yellow */}
-                                    <stop offset="50%" stopColor="#a3e635" /> {/* Lime */}
-                                    <stop offset="66.6%" stopColor="#22c55e" /> {/* Green */}
-                                    <stop offset="83.3%" stopColor="#0ea5e9" /> {/* Blue */}
-                                    <stop offset="100%" stopColor="#9c27b0" /> {/* Mor */}
-                                </linearGradient>
-                            </defs>
+                                    {/* Bravita Logo Gradient Left to Right */}
+                                    <linearGradient id="bravita-rainbow" x1="346" y1="0" x2="1381" y2="0" gradientUnits="userSpaceOnUse">
+                                        <stop offset="0%" stopColor="#ef4444" /> {/* Red */}
+                                        <stop offset="16.6%" stopColor="#f97316" /> {/* Orange */}
+                                        <stop offset="33.3%" stopColor="#facc15" /> {/* Yellow */}
+                                        <stop offset="50%" stopColor="#a3e635" /> {/* Lime */}
+                                        <stop offset="66.6%" stopColor="#22c55e" /> {/* Green */}
+                                        <stop offset="83.3%" stopColor="#0ea5e9" /> {/* Blue */}
+                                        <stop offset="100%" stopColor="#9c27b0" /> {/* Mor */}
+                                    </linearGradient>
+                                </defs>
 
-                            <g clipPath="url(#clip0_2002_2)">
-                                {svgPaths.map((pathData, index) => {
-                                    // Make different paths take different times (some are longer)
-                                    // A uniform duration is fine, but shorter paths could be faster
-                                    const baseDuration = (index === 2 || index === 3 || index === 6) ? 1.0 : 0.6;
-                                    const delay = index * 0.22;
+                                <g clipPath="url(#clip0_2002_2)">
+                                    {svgPaths.map((pathData, index) => {
+                                        // Make different paths take different times (some are longer)
+                                        // A uniform duration is fine, but shorter paths could be faster
+                                        const baseDuration = (index === 2 || index === 3 || index === 6) ? 1.0 : 0.6;
+                                        const delay = index * 0.22;
 
-                                    // On the last path, wait a tiny bit then finish
-                                    const isLast = index === svgPaths.length - 1;
+                                        // On the last path, wait a tiny bit then finish
+                                        const isLast = index === svgPaths.length - 1;
 
-                                    return (
-                                        <motion.path
-                                            key={index}
-                                            d={pathData}
-                                            stroke="url(#bravita-rainbow)"
-                                            strokeLinecap="round"
-                                            className="stroke-[8px] sm:stroke-[10px] md:stroke-[12px] lg:stroke-[14.8883px]"
-                                            strokeLinejoin="round"
-                                            fill="transparent"
-                                            initial={{ pathLength: 0, opacity: 0 }}
-                                            animate={{ pathLength: 1, opacity: 1 }}
-                                            transition={{
-                                                pathLength: { duration: baseDuration, delay: delay, ease: "easeInOut" },
-                                                opacity: { duration: 0.01, delay: delay }
-                                            }}
-                                            onAnimationComplete={() => {
-                                                if (isLast) {
-                                                    // Add a small pause to admire the artwork before dispatching finish
-                                                    setTimeout(() => {
-                                                        finishAnimation();
-                                                    }, 600);
-                                                }
-                                            }}
-                                        />
-                                    );
-                                })}
-                            </g>
-                        </svg>
-                    </div>
-                </motion.div>
-            )}
-        </AnimatePresence>
+                                        return (
+                                            <m.path
+                                                key={pathData}
+                                                d={pathData}
+                                                stroke="url(#bravita-rainbow)"
+                                                strokeLinecap="round"
+                                                className="stroke-[8px] sm:stroke-[10px] md:stroke-[12px] lg:stroke-[14.8883px]"
+                                                strokeLinejoin="round"
+                                                fill="transparent"
+                                                initial={{ pathLength: 0, opacity: 0 }}
+                                                animate={{ pathLength: 1, opacity: 1 }}
+                                                transition={{
+                                                    pathLength: { duration: baseDuration, delay: delay, ease: "easeInOut" },
+                                                    opacity: { duration: 0.01, delay: delay }
+                                                }}
+                                                onAnimationComplete={() => {
+                                                    if (isLast) {
+                                                        // Add a small pause to admire the artwork before dispatching finish
+                                                        setTimeout(() => {
+                                                            finishAnimation();
+                                                        }, 600);
+                                                    }
+                                                }}
+                                            />
+                                        );
+                                    })}
+                                </g>
+                            </svg>
+                        </div>
+                    </m.div>
+                )}
+            </AnimatePresence>
+        </LazyMotion>
     );
 }
