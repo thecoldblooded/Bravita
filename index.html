@@ -101,6 +101,24 @@
       min-height: 100vh;
     }
 
+    html.seo-shell-pending [data-app-root] {
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(10px) scale(0.995);
+      transition:
+        opacity 320ms ease,
+        transform 620ms cubic-bezier(0.22, 1, 0.36, 1),
+        visibility 0s linear 320ms;
+      will-change: opacity, transform;
+    }
+
+    html.app-ready [data-app-root] {
+      opacity: 1;
+      visibility: visible;
+      transform: none;
+      transition-delay: 70ms, 70ms, 0s;
+    }
+
     .skip-link {
       position: absolute;
       left: 16px;
@@ -496,16 +514,91 @@
       overflow: hidden;
       pointer-events: none;
       z-index: 30;
-      transition: opacity 420ms ease, transform 640ms cubic-bezier(0.22, 1, 0.36, 1), filter 420ms ease;
+      transition:
+        opacity 280ms ease,
+        transform 620ms cubic-bezier(0.22, 1, 0.36, 1),
+        filter 320ms ease,
+        visibility 0s linear 320ms;
       transform-origin: center top;
       will-change: opacity, transform, filter;
+    }
+
+    html.seo-shell-pending #seo-shell .seo-header,
+    html.seo-shell-pending #seo-shell .seo-content-shell {
+      display: none;
+    }
+
+    html.seo-shell-pending #seo-shell .seo-hero {
+      min-height: 100vh;
+      padding: 0;
+      gap: clamp(20px, 4vw, 48px);
+    }
+
+    html.seo-shell-pending #seo-shell .seo-hero__copy {
+      padding-top: 0;
+      max-width: 36rem;
+    }
+
+    html.seo-shell-pending #seo-shell .seo-title,
+    html.seo-shell-pending #seo-shell .seo-lead,
+    html.seo-shell-pending #seo-shell .seo-badge,
+    html.seo-shell-pending #seo-shell .seo-ingredients,
+    html.seo-shell-pending #seo-shell .seo-cta,
+    html.seo-shell-pending #seo-shell .seo-bottle-meta,
+    html.seo-shell-pending #seo-shell .seo-flavor-card {
+      transition: opacity 220ms ease, transform 420ms cubic-bezier(0.22, 1, 0.36, 1), filter 220ms ease;
+      will-change: opacity, transform, filter;
+    }
+
+    html.seo-shell-pending #seo-shell .seo-title {
+      margin-bottom: 16px;
+      opacity: 0.18;
+      transform: translateY(12px);
+      filter: blur(10px);
+    }
+
+    html.seo-shell-pending #seo-shell .seo-lead {
+      margin-bottom: 0;
+      max-width: 34rem;
+      opacity: 0.1;
+      transform: translateY(12px);
+      filter: blur(10px);
+    }
+
+    html.seo-shell-pending #seo-shell .seo-badge,
+    html.seo-shell-pending #seo-shell .seo-ingredients,
+    html.seo-shell-pending #seo-shell .seo-cta {
+      opacity: 0;
+      transform: translateY(12px);
+      filter: blur(10px);
+    }
+
+    html.seo-shell-pending #seo-shell .seo-hero__visual {
+      min-height: clamp(420px, 72vh, 640px);
+    }
+
+    html.seo-shell-pending #seo-shell .seo-hero__glow {
+      opacity: 0.88;
+      filter: blur(28px);
+    }
+
+    html.seo-shell-pending #seo-shell .seo-bottle-meta {
+      opacity: 0.16;
+      transform: translateY(8px) scale(0.98);
+      filter: blur(6px);
+    }
+
+    html.seo-shell-pending #seo-shell .seo-flavor-card {
+      opacity: 0.1;
+      transform: translateY(12px) scale(0.985);
+      filter: blur(10px);
     }
 
     html.app-ready #seo-shell {
       opacity: 0;
       visibility: hidden;
-      transform: translateY(18px) scale(1.015);
-      filter: blur(10px);
+      transform: scale(1.01);
+      filter: blur(16px);
     }
 
     @media (max-width: 1120px) {
@@ -669,7 +762,8 @@
           <div class="seo-hero__visual" aria-hidden="true">
             <div class="seo-hero__glow"></div>
             <div class="seo-bottle-meta">150ml</div>
-            <img src="/bravita-bottle.webp" alt="Bravita Sıvı Takviye" class="seo-bottle" />
+            <img src="/bravita-bottle.webp" alt="Bravita Sıvı Takviye" class="seo-bottle" loading="eager"
+              fetchpriority="high" decoding="async" />
             <div class="seo-flavor-card">
               <span>Tutti Frutti & Vanilya</span>
               <strong>Tadı Harika!</strong>

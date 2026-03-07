@@ -9,5 +9,10 @@
     var isHome = path === "/" || path === "/index.html";
 
     root.classList.add("seo-shell-js");
-    root.classList.add(isHome ? "seo-shell-overlay" : "seo-shell-skip");
+
+    if (isHome) {
+        root.classList.add("seo-shell-overlay", "seo-shell-pending");
+    } else {
+        root.classList.add("seo-shell-skip");
+    }
 })();

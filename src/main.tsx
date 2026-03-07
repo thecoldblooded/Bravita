@@ -10,6 +10,8 @@ import { HelmetProvider } from "react-helmet-async";
 
 setWasmUrl(wasmUrl);
 
+const HERO_SHELL_LCP_IMAGE_SRC = "/bravita-bottle.webp";
+
 // Prevent zoom on Safari/iOS
 document.addEventListener('gesturestart', function (e) {
   e.preventDefault();
@@ -34,19 +36,86 @@ createRoot(rootElement!).render(
 );
 
 const markAppReady = () => {
-  document.documentElement.classList.add("app-ready");
+  const documentRoot = document.documentElement;
+  documentRoot.classList.add("app-ready");
+  documentRoot.classList.remove("seo-shell-pending");
 
   const seoShell = document.getElementById("seo-shell");
   if (!seoShell) return;
 
   seoShell.setAttribute("aria-hidden", "true");
 
-  const removalDelay = document.documentElement.classList.contains("seo-shell-overlay") ? 760 : 0;
-  window.setTimeout(() => {
+  const removalDelay = documentRoot.classList.contains("seo-shell-overlay") ? 760 : 0;
+  globalThis.setTimeout(() => {
     if (seoShell.isConnected) {
       seoShell.remove();
     }
   }, removalDelay);
+};
+
+const waitForFontReadiness = async () => {
+  if (!("fonts" in document)) {
+    return;
+  }
+
+  try {
+    await Promise.race([
+      document.fonts.ready.then(() => undefined),
+      new Promise<void>((resolve) => {
+        globalThis.setTimeout(resolve, 1500);
+      }),
+    ]);
+  } catch {
+    // no-op
+  }
+};
+
+const waitForImageReadiness = (src: string) =>
+  new Promise<void>((resolve) => {
+    const image = new Image();
+    let settled = false;
+
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      resolve();
+    };
+
+    const timeoutId = globalThis.setTimeout(finish, 1500);
+
+    image.onload = () => {
+      globalThis.clearTimeout(timeoutId);
+      finish();
+    };
+
+    image.onerror = () => {
+      globalThis.clearTimeout(timeoutId);
+      finish();
+    };
+
+    image.src = src;
+
+    if (image.complete) {
+      globalThis.clearTimeout(timeoutId);
+      finish();
+      return;
+    }
+
+    if (typeof image.decode === "function") {
+      image.decode().then(() => {
+        globalThis.clearTimeout(timeoutId);
+        finish();
+      }).catch(() => {
+        // onload/onerror/timeout will resolve
+      });
+    }
+  });
+
+const waitForVisualReadiness = async () => {
+  await Promise.all([
+    waitForFontReadiness(),
+    waitForImageReadiness(HERO_SHELL_LCP_IMAGE_SRC),
+  ]);
 };
 
 const scheduleSeoShellDismiss = () => {
@@ -60,4 +129,9 @@ const scheduleSeoShellDismiss = () => {
   globalThis.setTimeout(markAppReady, 120);
 };
 
-scheduleSeoShellDismiss();
+const revealAppWhenReady = async () => {
+  await waitForVisualReadiness();
+  scheduleSeoShellDismiss();
+};
+
+void revealAppWhenReady();
