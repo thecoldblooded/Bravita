@@ -149,7 +149,7 @@ jobs:
         run: npm run lint
 
       - name: React Doctor
-        run: npx react-doctor@latest -y --no-ami
+        run: npx react-doctor@latest . -y --offline
 
       - name: Build
         run: npm run build
