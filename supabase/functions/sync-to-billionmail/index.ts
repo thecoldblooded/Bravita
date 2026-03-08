@@ -22,7 +22,7 @@ function getCorsHeaders(req: Request) {
     const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
     return {
         "Access-Control-Allow-Origin": allowedOrigin,
-        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-user-jwt",
         "Access-Control-Allow-Methods": "POST, OPTIONS",
     };
 }
@@ -41,6 +41,20 @@ function normalizeEmail(value: unknown): string | null {
     return normalized;
 }
 
+function extractUserJwt(req: Request): string | null {
+    const xUserJwt = req.headers.get("x-user-jwt");
+    if (xUserJwt && xUserJwt.trim().length > 0) {
+        return xUserJwt.replace(/^Bearer\s+/i, "").trim();
+    }
+
+    const authHeader = req.headers.get("authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+        return authHeader.replace(/^Bearer\s+/i, "").trim();
+    }
+
+    return null;
+}
+
 serve(async (req: Request) => {
     if (req.method === "OPTIONS") {
         return new Response("ok", { headers: getCorsHeaders(req) });
@@ -56,12 +70,10 @@ serve(async (req: Request) => {
             return jsonResponse(req, { success: false, error: "Server configuration error" }, 500);
         }
 
-        const authHeader = req.headers.get("Authorization");
-        if (!authHeader?.startsWith("Bearer ")) {
+        const authToken = extractUserJwt(req);
+        if (!authToken) {
             return jsonResponse(req, { success: false, error: "Unauthorized" }, 401);
         }
-
-        const authToken = authHeader.replace("Bearer ", "");
         const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
         const { data: authData, error: authError } = await supabase.auth.getUser(authToken);
 
