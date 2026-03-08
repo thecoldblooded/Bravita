@@ -215,19 +215,20 @@ export function useAuthOperations() {
     }
   }, []);
 
-  const resendEmailConfirmation = async (email: string) => {
+  const resendEmailConfirmation = async (email: string, captchaToken?: string) => {
     setIsLoading(true);
     setError(null);
 
     try {
       if (isBffAuthEnabled()) {
-        await resendSignupConfirmationWithBff(email);
+        await resendSignupConfirmationWithBff(email, captchaToken);
         return { success: true };
       }
 
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email,
+        options: captchaToken ? { captchaToken } : undefined,
       });
 
       if (error) throw error;

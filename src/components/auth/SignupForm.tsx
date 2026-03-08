@@ -227,6 +227,11 @@ type EmailConfirmationViewProps = {
   isResending: boolean;
   onResend: () => Promise<void>;
   onBack: () => void;
+  hcaptchaSiteKey: string;
+  captchaRef: RefObject<HCaptcha | null>;
+  onTokenChange: (token: string | null) => void;
+  requiresCaptcha: boolean;
+  hasCaptchaToken: boolean;
 };
 
 function EmailConfirmationView({
@@ -235,6 +240,11 @@ function EmailConfirmationView({
   isResending,
   onResend,
   onBack,
+  hcaptchaSiteKey,
+  captchaRef,
+  onTokenChange,
+  requiresCaptcha,
+  hasCaptchaToken,
 }: EmailConfirmationViewProps) {
   return (
     <div className="space-y-6 py-8 text-center">
@@ -251,12 +261,23 @@ function EmailConfirmationView({
       </div>
 
       <div className="space-y-3">
+        {requiresCaptcha ? (
+          <div className="space-y-2">
+            <p className="text-xs text-gray-500">{t("auth.captcha_required")}</p>
+            <CaptchaSection
+              siteKey={hcaptchaSiteKey}
+              captchaRef={captchaRef}
+              onTokenChange={onTokenChange}
+            />
+          </div>
+        ) : null}
+
         <Button
           type="button"
           variant="outline"
           className="w-full"
           onClick={onResend}
-          disabled={isResending}
+          disabled={isResending || (requiresCaptcha && !hasCaptchaToken)}
         >
           {isResending ? (
             <Loader size="1.25rem" noMargin />
@@ -783,13 +804,23 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
   const handleResendEmail = async () => {
     if (!registeredEmail) return;
 
+    if (!captchaToken && !shouldBypassCaptcha) {
+      toast.error(t("auth.captcha_required"));
+      return;
+    }
+
     dispatch({ type: "SET_IS_RESENDING", isResending: true });
     try {
-      await resendEmailConfirmation(registeredEmail);
+      await resendEmailConfirmation(
+        registeredEmail,
+        shouldBypassCaptcha ? undefined : (captchaToken ?? undefined),
+      );
       toast.success(t("auth.email_sent"));
     } catch (err) {
       toast.error(translateError(err, t));
     } finally {
+      captchaRef.current?.resetCaptcha();
+      dispatch({ type: "SET_CAPTCHA_TOKEN", token: null });
       dispatch({ type: "SET_IS_RESENDING", isResending: false });
     }
   };
@@ -814,6 +845,11 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
         isResending={isResending}
         onResend={handleResendEmail}
         onBack={() => dispatch({ type: "HIDE_EMAIL_CONFIRMATION" })}
+        hcaptchaSiteKey={HCAPTCHA_SITE_KEY}
+        captchaRef={captchaRef}
+        onTokenChange={(token) => dispatch({ type: "SET_CAPTCHA_TOKEN", token })}
+        requiresCaptcha={!shouldBypassCaptcha}
+        hasCaptchaToken={Boolean(captchaToken)}
       />
     );
   }

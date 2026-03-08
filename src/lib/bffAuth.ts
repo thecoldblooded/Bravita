@@ -140,12 +140,13 @@ export async function signupWithBff(payload: BffSignupRequest) {
   });
 }
 
-export async function resendSignupConfirmationWithBff(email: string) {
+export async function resendSignupConfirmationWithBff(email: string, captchaToken?: string) {
   await authRequest<{ success: boolean }>("/api/auth/resend", {
     method: "POST",
     body: JSON.stringify({
       email,
       type: "signup",
+      captchaToken,
     }),
   });
 }
