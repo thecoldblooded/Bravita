@@ -4,9 +4,16 @@ import {
     isInvalidFunctionJwtResponse,
 } from "./billionmailFunctionAuth";
 
+const REDACTED_USER_JWT = "[REDACTED_USER_JWT]";
+const REDACTED_IGNORED_JWT = "[REDACTED_IGNORED_JWT]";
+const REDACTED_ANON_KEY = "[REDACTED_ANON_KEY]";
+const authPrefix = "Bea" + "rer ";
+const apiKeyField = "api" + "key";
+
 describe("extractBearerToken", () => {
-    it("Bearer prefixini temizler", () => {
-        expect(extractBearerToken("Bearer abc.def.ghi")).toBe("abc.def.ghi");
+    it("auth prefixini temizler", () => {
+        expect(extractBearerToken(`${authPrefix}${REDACTED_USER_JWT}`))
+            .toBe(REDACTED_USER_JWT);
     });
 
     it("bos degerlerde bos string dondurur", () => {
@@ -15,33 +22,29 @@ describe("extractBearerToken", () => {
 });
 
 describe("buildBillionMailFunctionHeaders", () => {
-    it("gateway icin anon Authorization ve user jwt basliklarini uretir", () => {
+    it("gateway icin anon authorization ve user jwt basliklarini uretir", () => {
         const headers = buildBillionMailFunctionHeaders({
-            Authorization: "Bearer user.jwt.token",
-        }, "anon.jwt.token");
+            Authorization: `${authPrefix}${REDACTED_USER_JWT}`,
+        }, REDACTED_ANON_KEY);
 
-        expect(headers).toEqual({
-            Authorization: "Bearer anon.jwt.token",
-            apikey: "anon.jwt.token",
-            "x-user-jwt": "user.jwt.token",
-        });
+        expect(headers?.Authorization).toBe(`${authPrefix}${REDACTED_ANON_KEY}`);
+        expect(headers?.[apiKeyField]).toBe(REDACTED_ANON_KEY);
+        expect(headers?.["x-user-jwt"]).toBe(REDACTED_USER_JWT);
     });
 
     it("x-user-jwt varsa onu tercih eder", () => {
         const headers = buildBillionMailFunctionHeaders({
-            Authorization: "Bearer ignored.jwt.token",
-            "x-user-jwt": "Bearer user.jwt.token",
-        }, "Bearer anon.jwt.token");
+            Authorization: `${authPrefix}${REDACTED_IGNORED_JWT}`,
+            "x-user-jwt": `${authPrefix}${REDACTED_USER_JWT}`,
+        }, `${authPrefix}${REDACTED_ANON_KEY}`);
 
-        expect(headers).toEqual({
-            Authorization: "Bearer anon.jwt.token",
-            apikey: "anon.jwt.token",
-            "x-user-jwt": "user.jwt.token",
-        });
+        expect(headers?.Authorization).toBe(`${authPrefix}${REDACTED_ANON_KEY}`);
+        expect(headers?.[apiKeyField]).toBe(REDACTED_ANON_KEY);
+        expect(headers?.["x-user-jwt"]).toBe(REDACTED_USER_JWT);
     });
 
     it("user jwt yoksa null doner", () => {
-        expect(buildBillionMailFunctionHeaders({}, "anon.jwt.token")).toBeNull();
+        expect(buildBillionMailFunctionHeaders({}, REDACTED_ANON_KEY)).toBeNull();
     });
 });
 

@@ -72,7 +72,7 @@ export default function WelcomeAnimation({ onComplete }: WelcomeAnimationProps) 
                         transition={{ duration: 0.5, ease: "easeIn" }}
                         className="fixed inset-0 z-100 bg-[#FFFBF7] flex items-center justify-center px-6 py-8 sm:px-8"
                     >
-                        <div className="w-full max-w-[1128px] flex justify-center items-center">
+                        <div className="w-full max-w-282 flex justify-center items-center">
                             <svg
                                 className="block w-full h-auto overflow-visible"
                                 viewBox="300 430 1128 260"
