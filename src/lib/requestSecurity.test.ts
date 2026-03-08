@@ -36,6 +36,11 @@ describe("detectSuspiciousValue", () => {
         expect(detectSuspiciousValue("file:///etc/passwd")?.code).toBe("ssrf_localhost_or_file");
     });
 
+    it("yerel geliştirme portlarını bloklamaz", () => {
+        expect(detectSuspiciousValue("http://localhost:8080/")).toBeNull();
+        expect(detectSuspiciousValue("http://127.0.0.1:3901/")).toBeNull();
+    });
+
     it("güvenli uygulama rotalarını bloklamaz", () => {
         const detection = detectSuspiciousValue("/iletisim?utm_source=instagram");
 

@@ -269,7 +269,7 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
                             </div>
                         ) : isProductLoadFailed ? (
                             <div className="flex h-full flex-col justify-center gap-6 pt-6">
-                                <div className="rounded-[2rem] border border-red-100 bg-red-50/70 p-8 text-center shadow-[0_12px_30px_rgba(239,68,68,0.08)]">
+                                <div className="rounded-4xl border border-red-100 bg-red-50/70 p-8 text-center shadow-[0_12px_30px_rgba(239,68,68,0.08)]">
                                     <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-red-500 shadow-sm ring-1 ring-red-100">
                                         <PackageX className="h-7 w-7" />
                                     </div>
@@ -294,7 +294,7 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
                                     initial={{ opacity: 0, y: 12 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.35, ease: "easeOut" }}
-                                    className="relative overflow-hidden rounded-[2rem] border border-orange-100 bg-linear-to-br from-orange-50 via-white to-amber-50/80 p-8 text-center shadow-[0_18px_40px_rgba(246,139,40,0.12)]"
+                                    className="relative overflow-hidden rounded-4xl border border-orange-100 bg-linear-to-br from-orange-50 via-white to-amber-50/80 p-8 text-center shadow-[0_18px_40px_rgba(246,139,40,0.12)]"
                                 >
                                     <div className="absolute inset-x-10 top-0 h-px bg-linear-to-r from-transparent via-orange-300/70 to-transparent" />
 
@@ -318,7 +318,7 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
                                         {t("cart.catalog_empty_description", "Ürün pasife alınmış veya satıştan kaldırılmış olabilir. Sepetiniz yalnızca aktif ürünlerle devam edecek şekilde güncellendi.")}
                                     </p>
 
-                                    <div className="mt-6 rounded-[1.5rem] border border-white/80 bg-white/80 p-4 text-left shadow-[0_8px_30px_rgba(15,23,42,0.05)] backdrop-blur">
+                                    <div className="mt-6 rounded-3xl border border-white/80 bg-white/80 p-4 text-left shadow-[0_8px_30px_rgba(15,23,42,0.05)] backdrop-blur">
                                         <div className="flex items-start gap-3">
                                             <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-100 text-orange-600">
                                                 <ShoppingCart className="h-4 w-4" />

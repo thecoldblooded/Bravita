@@ -30,7 +30,7 @@ const SUSPICIOUS_REQUEST_SIGNATURES = Object.freeze([
     regex: /(?:^|\/)(?:\.git(?:\/|$)|\.env(?:$|[.\-_])|wp-config\.php|config\.php|id_rsa(?:\.pub)?|database\.(?:yml|bak)|appsettings\.json|composer\.(?:json|lock)|package(?:-lock)?\.json|yarn\.lock|requirements\.txt|docker-compose\.ya?ml|web\.config|\.htaccess|\.htpasswd)(?:$|[/?#])/i,
   },
   { code: "command_injection", regex: /(?:\$\(|`[^`]+`|(?:^|[;&|])\s*(?:cat|id|whoami|ls|ping|nc|curl|wget)\b|&&\s*(?:cat|id|whoami|ls|ping|nc|curl|wget)\b)/i },
-  { code: "ssrf_localhost_or_file", regex: /(?:file:\/\/\/?|gopher:\/\/|dict:\/\/|http:\/\/(?:127\.0\.0\.1|localhost|0\.0\.0\.0)|169\.254\.169\.254)/i },
+  { code: "ssrf_localhost_or_file", regex: /(?:file:\/\/\/?|gopher:\/\/|dict:\/\/|http:\/\/(?:127\.0\.0\.1|localhost|0\.0\.0\.0)(?!:(?:8080|3901)\b)|169\.254\.169\.254)/i },
 ]);
 
 function isTruthyEnvFlag(value) {
