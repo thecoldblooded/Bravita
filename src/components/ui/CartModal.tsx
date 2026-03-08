@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useReducer } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./dialog";
 import { useTranslation } from "react-i18next";
-import { ShoppingCart } from "lucide-react";
+import { PackageX, ShoppingCart, Sparkles } from "lucide-react";
 import bravitaGif from "@/assets/bravita.gif";
 import { Button } from "./button";
 import { m, AnimatePresence, LazyMotion, domAnimation } from "framer-motion";
@@ -82,7 +82,7 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
 
     useScrollLock(open);
 
-    const { data: productData, isLoading, isFetching } = useQuery({
+    const { data: productData, isLoading, isFetching, isError } = useQuery({
         queryKey: ['productPrice', 'bravita-multivitamin'],
         queryFn: () => getProductPrice("bravita-multivitamin"),
         enabled: open,
@@ -90,15 +90,17 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
     });
 
     const isPriceLoading = isLoading || (!productData && isFetching);
+    const isProductLoadFailed = !isPriceLoading && isError;
+    const isProductUnavailable = !isPriceLoading && !isError && !productData;
 
     const PRICING = useMemo(() => ({
-        UNIT_PRICE: productData?.price ?? 600,
+        UNIT_PRICE: productData?.price ?? 0,
         VAT_RATE: settings.vat_rate,
-        MAX_QUANTITY: productData?.maxQuantity ?? 99,
+        MAX_QUANTITY: productData?.maxQuantity ?? 0,
         MIN_QUANTITY: 1,
     }), [productData, settings.vat_rate]);
 
-    const currentStock = productData?.stock ?? 1000;
+    const currentStock = productData?.stock ?? 0;
     const productId = productData?.id ?? null;
 
     useEffect(() => {
@@ -182,6 +184,11 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
     };
 
     const handleCheckout = async () => {
+        if (!productData || !productId) {
+            toast.error(t("cart.catalog_empty_title", "Şu anda aktif ürün bulunmuyor"));
+            return;
+        }
+
         if (!isAuthenticated) {
             toast.error(t("cart.login_required") || "Lütfen giriş yapın");
             onOpenChange(false);
@@ -259,6 +266,76 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
                                     <img src={bravitaGif} alt="Loading" className="w-20 h-20" />
                                 </m.div>
                                 <p className="text-neutral-500 font-medium animate-pulse">{t("common.calculating_price", "Güncel fiyat hesaplanıyor...")}</p>
+                            </div>
+                        ) : isProductLoadFailed ? (
+                            <div className="flex h-full flex-col justify-center gap-6 pt-6">
+                                <div className="rounded-[2rem] border border-red-100 bg-red-50/70 p-8 text-center shadow-[0_12px_30px_rgba(239,68,68,0.08)]">
+                                    <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-red-500 shadow-sm ring-1 ring-red-100">
+                                        <PackageX className="h-7 w-7" />
+                                    </div>
+                                    <h3 className="text-2xl font-black tracking-tight text-neutral-900">
+                                        {t("cart.catalog_error_title", "Ürün bilgisi şu anda alınamıyor")}
+                                    </h3>
+                                    <p className="mt-3 text-sm leading-7 text-neutral-600">
+                                        {t("cart.catalog_error_description", "Kısa bir bağlantı sorunu yaşanıyor olabilir. Lütfen birkaç saniye sonra tekrar deneyin.")}
+                                    </p>
+                                </div>
+
+                                <Button
+                                    disabled
+                                    className="h-16 rounded-[1.25rem] border-none bg-neutral-100 text-neutral-400 cursor-not-allowed font-black text-lg"
+                                >
+                                    {t("cart.unavailable_checkout", "Şu anda satın alınamıyor")}
+                                </Button>
+                            </div>
+                        ) : isProductUnavailable ? (
+                            <div className="flex h-full flex-col justify-center gap-6 pt-6">
+                                <m.div
+                                    initial={{ opacity: 0, y: 12 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.35, ease: "easeOut" }}
+                                    className="relative overflow-hidden rounded-[2rem] border border-orange-100 bg-linear-to-br from-orange-50 via-white to-amber-50/80 p-8 text-center shadow-[0_18px_40px_rgba(246,139,40,0.12)]"
+                                >
+                                    <div className="absolute inset-x-10 top-0 h-px bg-linear-to-r from-transparent via-orange-300/70 to-transparent" />
+
+                                    <m.div
+                                        animate={{ y: [0, -4, 0] }}
+                                        transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+                                        className="mx-auto mb-5 flex h-18 w-18 items-center justify-center rounded-[1.75rem] bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)] ring-1 ring-orange-100"
+                                    >
+                                        <PackageX className="h-8 w-8 text-orange-500" />
+                                    </m.div>
+
+                                    <div className="mx-auto mb-4 inline-flex items-center gap-2 rounded-full border border-orange-200 bg-white/90 px-4 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-orange-600">
+                                        <Sparkles className="h-3.5 w-3.5" />
+                                        {t("cart.catalog_empty_badge", "Aktif Ürün Yok")}
+                                    </div>
+
+                                    <h3 className="text-2xl font-black tracking-tight text-neutral-900">
+                                        {t("cart.catalog_empty_title", "Bu ürün şu anda satışta değil")}
+                                    </h3>
+                                    <p className="mt-3 text-sm leading-7 text-neutral-600">
+                                        {t("cart.catalog_empty_description", "Ürün pasife alınmış veya satıştan kaldırılmış olabilir. Sepetiniz yalnızca aktif ürünlerle devam edecek şekilde güncellendi.")}
+                                    </p>
+
+                                    <div className="mt-6 rounded-[1.5rem] border border-white/80 bg-white/80 p-4 text-left shadow-[0_8px_30px_rgba(15,23,42,0.05)] backdrop-blur">
+                                        <div className="flex items-start gap-3">
+                                            <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-100 text-orange-600">
+                                                <ShoppingCart className="h-4 w-4" />
+                                            </div>
+                                            <p className="text-sm font-medium leading-6 text-neutral-600">
+                                                {t("cart.catalog_empty_hint", "Aktif ürün tekrar satışa açıldığında sepetten güvenle devam edebilirsiniz. Şimdilik ödeme adımı devre dışı bırakıldı.")}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </m.div>
+
+                                <Button
+                                    disabled
+                                    className="h-16 rounded-[1.25rem] border-none bg-neutral-100 text-neutral-400 cursor-not-allowed font-black text-lg"
+                                >
+                                    {t("cart.unavailable_checkout", "Şu anda satın alınamıyor")}
+                                </Button>
                             </div>
                         ) : (
                             <>

@@ -76,10 +76,14 @@ export async function getProductPrice(slug: string): Promise<{
         .select("id, price, original_price, stock, max_quantity_per_order")
         .eq("slug", slug)
         .eq("is_active", true)
-        .single();
+        .maybeSingle();
 
-    if (error || !data) {
+    if (error) {
         console.error("Product fetch error:", error);
+        throw error;
+    }
+
+    if (!data) {
         return null;
     }
 
@@ -100,7 +104,17 @@ export async function checkStock(slug: string, quantity: number): Promise<{
     currentStock: number;
     message?: string;
 }> {
-    const product = await getProductPrice(slug);
+    let product: Awaited<ReturnType<typeof getProductPrice>>;
+
+    try {
+        product = await getProductPrice(slug);
+    } catch {
+        return {
+            available: false,
+            currentStock: 0,
+            message: "Ürün bilgisi alınamadı",
+        };
+    }
 
     if (!product) {
         return {

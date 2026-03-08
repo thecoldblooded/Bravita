@@ -2,6 +2,8 @@
 import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { getProductPrice } from "@/lib/checkout";
+import { toast } from "sonner";
+import { reconcileCartItemsWithCatalog } from "./cartSync";
 
 interface CartItem {
     id: string;
@@ -46,8 +48,6 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-const VAT_RATE = 0.01;
-
 export function CartProvider({ children }: { children: ReactNode }) {
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [cartItems, setCartItems] = useState<CartItem[]>(() => {
@@ -69,37 +69,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         localStorage.setItem("bravita_cart", JSON.stringify(cartItems));
     }, [cartItems]);
-
-    // Sync prices from server whenever cart is opened
-    useEffect(() => {
-        async function syncPrices() {
-            if (cartItems.length === 0) return;
-
-            const updatedItems = await Promise.all(
-                cartItems.map(async (item) => {
-                    // Always fetch fresh price
-                    const product = await getProductPrice(item.slug);
-                    if (product) {
-                        return { ...item, price: product.price };
-                    }
-                    return item;
-                })
-            );
-
-            // Only update if prices changed to avoid infinite loop
-            const pricesChanged = updatedItems.some(
-                (item, i) => item.price !== cartItems[i].price
-            );
-
-            if (pricesChanged) {
-                setCartItems(updatedItems);
-            }
-        }
-
-        if (isCartOpen) {
-            syncPrices();
-        }
-    }, [isCartOpen, cartItems]); // Only runs when cart opens or items change
 
     const openCart = () => setIsCartOpen(true);
     const closeCart = () => setIsCartOpen(false);
@@ -168,6 +137,54 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setPromoCode(null);
         setDiscountAmount(0);
     }, []);
+
+    // Keep local cart synchronized with active catalog data
+    useEffect(() => {
+        let isCancelled = false;
+
+        async function syncCartItems() {
+            if (cartItems.length === 0) return;
+
+            const catalogEntries = await Promise.all(
+                cartItems.map(async (item) => {
+                    try {
+                        return [item.slug, await getProductPrice(item.slug)] as const;
+                    } catch {
+                        return [item.slug, undefined] as const;
+                    }
+                })
+            );
+
+            if (isCancelled) {
+                return;
+            }
+
+            const catalog = Object.fromEntries(catalogEntries);
+            const result = reconcileCartItemsWithCatalog(cartItems, catalog);
+
+            if (result.hasChanges) {
+                setCartItems(result.items);
+            }
+
+            if (result.removedItems.length > 0) {
+                toast.info(
+                    result.removedItems.length === 1
+                        ? "Pasif ürün sepetinizden kaldırıldı."
+                        : `${result.removedItems.length} pasif ürün sepetinizden kaldırıldı.`,
+                );
+            }
+
+            if (result.removedItems.length > 0 && result.items.length === 0) {
+                removePromoCode();
+            }
+        }
+
+        void syncCartItems();
+
+        return () => {
+            isCancelled = true;
+        };
+    }, [cartItems, removePromoCode]);
 
     const clearCart = useCallback(() => {
         setCartItems([]);

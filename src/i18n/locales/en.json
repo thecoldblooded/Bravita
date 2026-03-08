@@ -372,7 +372,14 @@
         "login_required": "Please login to continue",
         "profile_incomplete": "Please complete your profile first",
         "quantity_label": "Quantity",
-        "unit": "unit"
+        "unit": "unit",
+        "catalog_empty_badge": "No Active Product",
+        "catalog_empty_title": "This product is currently unavailable",
+        "catalog_empty_description": "The product may have been deactivated or removed from sale. Your cart has been updated to continue only with active products.",
+        "catalog_empty_hint": "Once the product is active again, you can safely continue from your cart. For now, checkout is disabled.",
+        "catalog_error_title": "Product details are currently unavailable",
+        "catalog_error_description": "There may be a temporary connection issue. Please try again in a few seconds.",
+        "unavailable_checkout": "Currently unavailable for purchase"
     },
     "promo": {
         "valid_until": "valid until",

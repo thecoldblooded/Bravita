@@ -372,7 +372,14 @@
         "login_required": "Devam etmek için lütfen giriş yapın",
         "profile_incomplete": "Lütfen önce profilinizi tamamlayın",
         "quantity_label": "Adet",
-        "unit": "birim"
+        "unit": "birim",
+        "catalog_empty_badge": "Aktif Ürün Yok",
+        "catalog_empty_title": "Bu ürün şu anda satışta değil",
+        "catalog_empty_description": "Ürün pasife alınmış veya satıştan kaldırılmış olabilir. Sepetiniz yalnızca aktif ürünlerle devam edecek şekilde güncellendi.",
+        "catalog_empty_hint": "Aktif ürün tekrar satışa açıldığında sepetten güvenle devam edebilirsiniz. Şimdilik ödeme adımı devre dışı bırakıldı.",
+        "catalog_error_title": "Ürün bilgisi şu anda alınamıyor",
+        "catalog_error_description": "Kısa bir bağlantı sorunu yaşanıyor olabilir. Lütfen birkaç saniye sonra tekrar deneyin.",
+        "unavailable_checkout": "Şu anda satın alınamıyor"
     },
     "promo": {
         "valid_until": "tarihine kadar geçerli",
