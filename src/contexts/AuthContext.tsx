@@ -1,8 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useRef } from "react";
 import { Session } from "@supabase/supabase-js";
 import { supabase, UserProfile } from "@/lib/supabase";
-import { billionMail } from "@/lib/billionmail";
-import { buildBillionMailContactFromProfile, shouldSyncConfirmedSignupToBillionMail } from "@/lib/billionmailSync";
 import { getBffRefreshDelayMs, getBffUnavailableErrorMessage, isBffAuthEnabled, refreshBffSession, restoreBffSession, toSupabaseSessionInput, setBffSessionFromClient } from "@/lib/bffAuth";
 
 declare global {
@@ -50,6 +48,24 @@ const normalizeSessionPhone = (value: unknown): string | null => {
 
   const normalized = `+${trimmed.replace(/\D/g, "")}`;
   return /^\+[0-9]{10,15}$/.test(normalized) ? normalized : null;
+};
+
+const hasAuthCallbackInUrl = () => {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const hash = window.location.hash;
+  const search = window.location.search;
+
+  return (
+    hash.includes("access_token=") ||
+    hash.includes("type=signup") ||
+    hash.includes("type=recovery") ||
+    search.includes("code=") ||
+    search.includes("type=signup") ||
+    search.includes("type=recovery")
+  );
 };
 
 const authContextInstanceId = `authctx_${Math.random().toString(36).slice(2, 10)}`;
@@ -106,6 +122,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [hasResolvedInitialAuth, setHasResolvedInitialAuth] = useState(false);
   const [isBffBootstrapComplete, setIsBffBootstrapComplete] = useState(() => !bffAuthEnabled);
   const [isSplashScreenActive, setIsSplashScreenActive] = useState(() => {
+    // Auth callbacks should go straight to the React-managed screen flow.
+    if (hasAuthCallbackInUrl()) {
+      return false;
+    }
+
     // Only active on first load of the session
     return !sessionStorage.getItem("bravita_splash_shown");
   });
@@ -126,7 +147,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const lastProcessedRef = useRef<string | null>(null);
   const hasSeenFirstAuthEventRef = useRef(false);
   const isSplashScreenActiveRef = useRef(false);
-  const billionMailSyncAttemptedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -196,39 +216,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return null;
   }, [session?.user?.id, setUserDebug]);
-
-  const syncConfirmedSignupToBillionMail = useCallback(async (
-    authUser: Session["user"] | null | undefined,
-    profile: Pick<UserProfile, "email" | "full_name" | "phone" | "user_type" | "company_name">,
-  ) => {
-    if (!authUser?.id || billionMailSyncAttemptedRef.current.has(authUser.id)) {
-      return;
-    }
-
-    const authUserRecord = authUser as Session["user"] & {
-      email_confirmed_at?: string | null;
-      confirmed_at?: string | null;
-    };
-
-    const shouldSync = shouldSyncConfirmedSignupToBillionMail({
-      email: authUser.email,
-      email_confirmed_at: authUserRecord.email_confirmed_at ?? authUserRecord.confirmed_at ?? null,
-      last_sign_in_at: authUser.last_sign_in_at ?? null,
-    });
-
-    if (!shouldSync) {
-      return;
-    }
-
-    billionMailSyncAttemptedRef.current.add(authUser.id);
-
-    try {
-      await billionMail.subscribeContact(buildBillionMailContactFromProfile(profile));
-    } catch (error) {
-      billionMailSyncAttemptedRef.current.delete(authUser.id);
-      console.error("BillionMail sync failed:", error);
-    }
-  }, []);
 
   const refreshSession = useCallback(async () => {
     try {
@@ -620,9 +607,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               }
             }
 
-            if (userProfile) {
-              void syncConfirmedSignupToBillionMail(newSession.user, userProfile);
-            }
           } catch (err: unknown) {
             // "Not Found" handling for completely new users
             const errorMessage = err instanceof Error ? err.message : String(err);
@@ -653,7 +637,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
               if (!insertError && mounted) {
                 setUserDebug(newProfile);
-                void syncConfirmedSignupToBillionMail(newSession.user, newProfile);
               } else if (insertError && (insertError.code === '23505' || insertError.code === '409') && mounted) {
                 // Conflict detected - profile exists but initial fetch failed. Retry fetch.
                 const { data: existingProfile } = await supabase
@@ -667,7 +650,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   if (existingProfile.profile_complete) {
                     localStorage.setItem("profile_known_complete", "true");
                   }
-                  void syncConfirmedSignupToBillionMail(newSession.user, existingProfile);
                 }
               }
             }
@@ -789,7 +771,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       subscription.unsubscribe();
       clearTimeout(safetyTimer);
     };
-  }, [bffAuthEnabled, setUserDebug, syncPendingProfile, syncConfirmedSignupToBillionMail]); // Initialize listener once; avoid resubscribe race on session updates.
+  }, [bffAuthEnabled, setUserDebug, syncPendingProfile]); // Initialize listener once; avoid resubscribe race on session updates.
 
   const activeUserId = session?.user?.id;
   const activeSessionExpiry = session?.expires_at ?? null;

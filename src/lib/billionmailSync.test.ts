@@ -1,34 +1,34 @@
 import {
     buildBillionMailContactFromProfile,
-    shouldSyncConfirmedSignupToBillionMail,
+    shouldSyncCompletedProfileToBillionMail,
 } from "./billionmailSync";
 
-describe("shouldSyncConfirmedSignupToBillionMail", () => {
-    it("yeni doğrulanmış kayıt için senkronu etkinleştirir", () => {
-        const shouldSync = shouldSyncConfirmedSignupToBillionMail({
+describe("shouldSyncCompletedProfileToBillionMail", () => {
+    it("profil ilk kez complete olduğunda senkronu etkinleştirir", () => {
+        const shouldSync = shouldSyncCompletedProfileToBillionMail({
             email: "yeni@example.com",
-            email_confirmed_at: "2026-03-08T10:05:00.000Z",
-            last_sign_in_at: "2026-03-08T10:05:25.000Z",
+            profile_complete: true,
+            previous_profile_complete: false,
         });
 
         expect(shouldSync).toBe(true);
     });
 
-    it("eski kullanıcı girişlerinde geçmişe dönük senkron başlatmaz", () => {
-        const shouldSync = shouldSyncConfirmedSignupToBillionMail({
-            email: "mevcut@example.com",
-            email_confirmed_at: "2026-02-01T09:00:00.000Z",
-            last_sign_in_at: "2026-03-08T10:05:25.000Z",
+    it("profil henüz complete değilse senkron başlatmaz", () => {
+        const shouldSync = shouldSyncCompletedProfileToBillionMail({
+            email: "beklemede@example.com",
+            profile_complete: false,
+            previous_profile_complete: false,
         });
 
         expect(shouldSync).toBe(false);
     });
 
-    it("e-posta doğrulanmamışsa senkron başlatmaz", () => {
-        const shouldSync = shouldSyncConfirmedSignupToBillionMail({
-            email: "beklemede@example.com",
-            email_confirmed_at: null,
-            last_sign_in_at: "2026-03-08T10:05:25.000Z",
+    it("zaten complete olan profil için tekrar senkron başlatmaz", () => {
+        const shouldSync = shouldSyncCompletedProfileToBillionMail({
+            email: "mevcut@example.com",
+            profile_complete: true,
+            previous_profile_complete: true,
         });
 
         expect(shouldSync).toBe(false);

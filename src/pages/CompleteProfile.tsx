@@ -7,6 +7,8 @@ import { z } from "zod";
 import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import { useAuth } from "@/contexts/AuthContext";
+import { billionMail } from "@/lib/billionmail";
+import { buildBillionMailContactFromProfile, shouldSyncCompletedProfileToBillionMail } from "@/lib/billionmailSync";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import Loader from "@/components/ui/Loader";
@@ -170,6 +172,27 @@ export default function CompleteProfile() {
       if (addressError) {
         toast.error("Adres kaydedilirken hata oluştu: " + addressError.message);
         return;
+      }
+
+      const shouldSyncToBillionMail = shouldSyncCompletedProfileToBillionMail({
+        email: session.user.email || "",
+        profile_complete: true,
+        previous_profile_complete: user?.profile_complete ?? false,
+      });
+
+      if (shouldSyncToBillionMail) {
+        const contactPayload = buildBillionMailContactFromProfile({
+          email: session.user.email || "",
+          full_name: data.fullName,
+          phone: data.phone,
+          user_type: "individual",
+          company_name: null,
+        });
+
+        let syncResult = await billionMail.subscribeContact(contactPayload);
+        if (syncResult?.success !== true) {
+          syncResult = await billionMail.subscribeContact(contactPayload);
+        }
       }
 
       // Refresh the context to get the updated profile

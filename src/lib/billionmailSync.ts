@@ -1,13 +1,9 @@
 import type { UserProfile } from "./supabase";
 
-const RECENT_SIGNUP_SYNC_WINDOW_MS = 15 * 60 * 1000;
-
-type ConfirmedSignupSyncCandidate = {
+type CompletedProfileSyncCandidate = {
     email?: string | null;
-    email_confirmed_at?: string | null;
-    last_sign_in_at?: string | null;
-    created_at?: string | null;
-    isNewSignupIntent?: boolean;
+    profile_complete?: boolean | null;
+    previous_profile_complete?: boolean | null;
 };
 
 type BillionMailContactPayload = {
@@ -31,15 +27,6 @@ const normalizeEmail = (value: string | null | undefined): string | null => {
     return normalized.includes("@") ? normalized : null;
 };
 
-const toTimestamp = (value: string | null | undefined): number | null => {
-    if (typeof value !== "string" || value.trim().length === 0) {
-        return null;
-    }
-
-    const timestamp = Date.parse(value);
-    return Number.isFinite(timestamp) ? timestamp : null;
-};
-
 const splitName = (fullName: string | null | undefined): { firstName?: string; lastName?: string } => {
     if (typeof fullName !== "string") {
         return {};
@@ -60,30 +47,18 @@ const splitName = (fullName: string | null | undefined): { firstName?: string; l
     };
 };
 
-export function shouldSyncConfirmedSignupToBillionMail(
-    candidate: ConfirmedSignupSyncCandidate,
+export function shouldSyncCompletedProfileToBillionMail(
+    candidate: CompletedProfileSyncCandidate,
 ): boolean {
     if (!normalizeEmail(candidate.email)) {
         return false;
     }
 
-    const emailConfirmedAt = toTimestamp(candidate.email_confirmed_at);
-    if (emailConfirmedAt === null) {
+    if (candidate.profile_complete !== true) {
         return false;
     }
 
-    if (candidate.isNewSignupIntent) {
-        return true;
-    }
-
-    const lastSignInAt = toTimestamp(candidate.last_sign_in_at);
-    if (lastSignInAt === null) {
-        return false;
-    }
-
-    const firstConfirmedSession = Math.abs(lastSignInAt - emailConfirmedAt) <= RECENT_SIGNUP_SYNC_WINDOW_MS;
-
-    return firstConfirmedSession;
+    return candidate.previous_profile_complete !== true;
 }
 
 export function buildBillionMailContactFromProfile(

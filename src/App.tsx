@@ -158,17 +158,23 @@ const App = () => {
 
     // Check if intentional flag was set explicitly by SignupForm.tsx
     const isNewSignupIntent = localStorage.getItem("bravita_new_signup") === 'true';
+    const isProfileInProgress = localStorage.getItem("profile_in_progress") === "true";
+    const oauthProvider = localStorage.getItem("oauth_provider");
 
-    // Fallback: Check traditional URL parameters
+    // Fallback: Check traditional URL parameters and email-confirmation returns
     const hashType = window.location.hash.includes("type=signup");
     const searchType = window.location.search.includes("type=signup");
+    const isEmailConfirmationReturn =
+      window.location.search.includes("code=") &&
+      isProfileInProgress &&
+      oauthProvider !== "google";
 
     // Clear the intentional flag to prevent loop
     if (isNewSignupIntent) {
       localStorage.removeItem("bravita_new_signup");
     }
 
-    return isNewSignupIntent || hashType || searchType;
+    return isNewSignupIntent || hashType || searchType || isEmailConfirmationReturn;
   });
 
   useEffect(() => {

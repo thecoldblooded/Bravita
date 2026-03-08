@@ -14,6 +14,20 @@ const HERO_SHELL_LCP_IMAGE_SRC = "/bravita-bottle.webp";
 const SEO_LOADER_GIF_SRC = "/bravita.gif";
 const MIN_SEO_LOADER_VISIBLE_MS = 2200;
 
+const isAuthCallbackRequest = () => {
+  const hash = window.location.hash;
+  const search = window.location.search;
+
+  return (
+    hash.includes("access_token=") ||
+    hash.includes("type=signup") ||
+    hash.includes("type=recovery") ||
+    search.includes("code=") ||
+    search.includes("type=signup") ||
+    search.includes("type=recovery")
+  );
+};
+
 // Prevent zoom on Safari/iOS
 document.addEventListener('gesturestart', function (e) {
   e.preventDefault();
@@ -129,11 +143,16 @@ const waitForImageReadiness = (src: string) =>
   });
 
 const waitForVisualReadiness = async () => {
-  await Promise.all([
+  const tasks = [
     waitForFontReadiness(),
     waitForImageReadiness(HERO_SHELL_LCP_IMAGE_SRC),
-    waitForImageReadiness(SEO_LOADER_GIF_SRC),
-  ]);
+  ];
+
+  if (!isAuthCallbackRequest()) {
+    tasks.push(waitForImageReadiness(SEO_LOADER_GIF_SRC));
+  }
+
+  await Promise.all(tasks);
 };
 
 const scheduleSeoShellDismiss = () => {
@@ -148,6 +167,11 @@ const scheduleSeoShellDismiss = () => {
 };
 
 const revealAppWhenReady = async () => {
+  if (isAuthCallbackRequest()) {
+    markAppReady();
+    return;
+  }
+
   await Promise.all([
     waitForVisualReadiness(),
     waitForMinimumLoaderExposure(),

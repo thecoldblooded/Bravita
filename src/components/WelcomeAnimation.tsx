@@ -70,19 +70,20 @@ export default function WelcomeAnimation({ onComplete }: WelcomeAnimationProps) 
                         initial={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.5, ease: "easeIn" }}
-                        className="fixed inset-0 z-100 bg-[#FFFBF7] flex items-center justify-center p-6"
+                        className="fixed inset-0 z-100 bg-[#FFFBF7] flex items-center justify-center px-6 py-8 sm:px-8"
                     >
-                        <div className="w-full max-w-225 flex justify-center items-center">
+                        <div className="w-full max-w-[1128px] flex justify-center items-center">
                             <svg
-                                className="w-full h-auto block"
-                                viewBox="0 0 1728 1117"
+                                className="block w-full h-auto overflow-visible"
+                                viewBox="300 430 1128 260"
                                 fill="none"
                                 xmlns="http://www.w3.org/2000/svg"
+                                preserveAspectRatio="xMidYMid meet"
                                 aria-label="merhaba"
                             >
                                 <defs>
-                                    <clipPath id="clip0_2002_2">
-                                        <rect width="1728" height="1117" fill="white" />
+                                    <clipPath id="clip0_2002_2" clipPathUnits="userSpaceOnUse">
+                                        <rect x="300" y="430" width="1128" height="260" fill="white" />
                                     </clipPath>
 
                                     {/* Bravita Logo Gradient Left to Right */}
