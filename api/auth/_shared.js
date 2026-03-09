@@ -6,10 +6,12 @@ const OAUTH_STATE_COOKIE_NAME = "bravita_oauth_state";
 const OAUTH_CODE_VERIFIER_COOKIE_NAME = "bravita_oauth_code_verifier";
 const OAUTH_COOKIE_MAX_AGE_SECONDS = 60 * 10;
 const DEFAULT_SITE_URL = "https://bravita.com.tr";
-const DEFAULT_ALLOWED_AUTH_ORIGINS = [
+const PRODUCTION_ALLOWED_AUTH_ORIGINS = [
   "https://bravita.com.tr",
-  "https://bravita.vercel.app",
   "https://www.bravita.com.tr",
+  "https://bravita.vercel.app",
+];
+const DEVELOPMENT_ONLY_ALLOWED_AUTH_ORIGINS = [
   "http://localhost:8080",
   "http://127.0.0.1:8080",
 ];
@@ -110,6 +112,10 @@ function normalizeOrigin(value) {
 }
 
 function loadAllowedAuthOrigins() {
+  if (String(process.env.NODE_ENV ?? "").toLowerCase() === "production") {
+    return PRODUCTION_ALLOWED_AUTH_ORIGINS;
+  }
+
   const configured = String(process.env.ALLOWED_AUTH_ORIGINS || "")
     .split(",")
     .map((value) => normalizeOrigin(value))
@@ -122,7 +128,8 @@ function loadAllowedAuthOrigins() {
   const merged = [
     ...configured,
     ...(siteUrl ? [siteUrl] : []),
-    ...DEFAULT_ALLOWED_AUTH_ORIGINS,
+    ...PRODUCTION_ALLOWED_AUTH_ORIGINS,
+    ...DEVELOPMENT_ONLY_ALLOWED_AUTH_ORIGINS,
   ];
 
   return Array.from(new Set(merged));

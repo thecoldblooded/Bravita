@@ -11,27 +11,51 @@ import {
 
 const DEFAULT_SITE_URL = "https://bravita.com.tr";
 
-const DEFAULT_ALLOWED_RECOVERY_ORIGINS = [
+const PRODUCTION_ALLOWED_RECOVERY_ORIGINS = [
   "https://bravita.com.tr",
-  "https://bravita.vercel.app",
   "https://www.bravita.com.tr",
-  "http://localhost:8080",
+  "https://bravita.vercel.app",
 ];
 
+const DEVELOPMENT_ONLY_ALLOWED_RECOVERY_ORIGINS = [
+  "http://localhost:8080",
+  "http://127.0.0.1:8080",
+];
+
+function normalizeOrigin(value) {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  try {
+    return new URL(trimmed).origin;
+  } catch {
+    return null;
+  }
+}
+
 function loadAllowedRecoveryOrigins() {
-  const configured = String(process.env.ALLOWED_RECOVERY_REDIRECT_ORIGINS || "")
-    .split(",")
-    .map((value) => value.trim())
-    .filter((value) => value.length > 0);
-
-  if (configured.length > 0) return configured;
-
-  const siteUrl = String(process.env.SITE_URL || process.env.VITE_SITE_URL || DEFAULT_SITE_URL).trim();
-  if (siteUrl.length > 0) {
-    return Array.from(new Set([...DEFAULT_ALLOWED_RECOVERY_ORIGINS, siteUrl]));
+  if (String(process.env.NODE_ENV ?? "").toLowerCase() === "production") {
+    return PRODUCTION_ALLOWED_RECOVERY_ORIGINS;
   }
 
-  return DEFAULT_ALLOWED_RECOVERY_ORIGINS;
+  const configured = String(process.env.ALLOWED_RECOVERY_REDIRECT_ORIGINS || "")
+    .split(",")
+    .map((value) => normalizeOrigin(value))
+    .filter((value) => Boolean(value));
+
+  const siteUrl = normalizeOrigin(
+    process.env.SITE_URL || process.env.VITE_SITE_URL || DEFAULT_SITE_URL,
+  );
+
+  const merged = [
+    ...configured,
+    ...(siteUrl ? [siteUrl] : []),
+    ...PRODUCTION_ALLOWED_RECOVERY_ORIGINS,
+    ...DEVELOPMENT_ONLY_ALLOWED_RECOVERY_ORIGINS,
+  ];
+
+  return Array.from(new Set(merged));
 }
 
 function sanitizeRecoverRedirect(redirectTo) {
