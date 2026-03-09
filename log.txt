@@ -1,0 +1,588 @@
+security-gate	Set up job	﻿2026-02-23T07:23:38.8573781Z Current runner version: '2.331.0'
+security-gate	Set up job	2026-02-23T07:23:38.8598755Z ##[group]Runner Image Provisioner
+security-gate	Set up job	2026-02-23T07:23:38.8599614Z Hosted Compute Agent
+security-gate	Set up job	2026-02-23T07:23:38.8600239Z Version: 20260123.484
+security-gate	Set up job	2026-02-23T07:23:38.8600855Z Commit: 6bd6555ca37d84114959e1c76d2c01448ff61c5d
+security-gate	Set up job	2026-02-23T07:23:38.8601492Z Build Date: 2026-01-23T19:41:17Z
+security-gate	Set up job	2026-02-23T07:23:38.8602134Z Worker ID: {8c84e3f9-faa9-4601-99f0-c0cda5caff04}
+security-gate	Set up job	2026-02-23T07:23:38.8602823Z Azure Region: northcentralus
+security-gate	Set up job	2026-02-23T07:23:38.8603370Z ##[endgroup]
+security-gate	Set up job	2026-02-23T07:23:38.8604763Z ##[group]Operating System
+security-gate	Set up job	2026-02-23T07:23:38.8605351Z Ubuntu
+security-gate	Set up job	2026-02-23T07:23:38.8605827Z 24.04.3
+security-gate	Set up job	2026-02-23T07:23:38.8606403Z LTS
+security-gate	Set up job	2026-02-23T07:23:38.8606849Z ##[endgroup]
+security-gate	Set up job	2026-02-23T07:23:38.8607416Z ##[group]Runner Image
+security-gate	Set up job	2026-02-23T07:23:38.8608175Z Image: ubuntu-24.04
+security-gate	Set up job	2026-02-23T07:23:38.8608702Z Version: 20260201.15.1
+security-gate	Set up job	2026-02-23T07:23:38.8609600Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260201.15/images/ubuntu/Ubuntu2404-Readme.md
+security-gate	Set up job	2026-02-23T07:23:38.8611179Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260201.15
+security-gate	Set up job	2026-02-23T07:23:38.8612140Z ##[endgroup]
+security-gate	Set up job	2026-02-23T07:23:38.8613227Z ##[group]GITHUB_TOKEN Permissions
+security-gate	Set up job	2026-02-23T07:23:38.8615510Z Contents: read
+security-gate	Set up job	2026-02-23T07:23:38.8616071Z Metadata: read
+security-gate	Set up job	2026-02-23T07:23:38.8616587Z Packages: read
+security-gate	Set up job	2026-02-23T07:23:38.8617121Z ##[endgroup]
+security-gate	Set up job	2026-02-23T07:23:38.8619553Z Secret source: Actions
+security-gate	Set up job	2026-02-23T07:23:38.8620633Z Prepare workflow directory
+security-gate	Set up job	2026-02-23T07:23:38.9086171Z Prepare all required actions
+security-gate	Set up job	2026-02-23T07:23:38.9142235Z Getting action download info
+security-gate	Set up job	2026-02-23T07:23:39.2569883Z Download action repository 'actions/checkout@v4' (SHA:34e114876b0b11c390a56381ad16ebd13914f8d5)
+security-gate	Set up job	2026-02-23T07:23:39.3192066Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+security-gate	Set up job	2026-02-23T07:23:39.3899851Z Download action repository 'millionco/react-doctor@0.0.1' (SHA:bf21a87d53e09d2c519e72b02fd7bd1680544c93)
+security-gate	Set up job	2026-02-23T07:23:39.8925816Z Getting action download info
+security-gate	Set up job	2026-02-23T07:23:40.0597224Z Complete job name: security-gate
+security-gate	Checkout	﻿2026-02-23T07:23:40.1336209Z ##[group]Run actions/checkout@v4
+security-gate	Checkout	2026-02-23T07:23:40.1336999Z with:
+security-gate	Checkout	2026-02-23T07:23:40.1337428Z   repository: thecoldblooded/Bravita
+security-gate	Checkout	2026-02-23T07:23:40.1338269Z   token: ***
+security-gate	Checkout	2026-02-23T07:23:40.1338657Z   ssh-strict: true
+security-gate	Checkout	2026-02-23T07:23:40.1339073Z   ssh-user: git
+security-gate	Checkout	2026-02-23T07:23:40.1339493Z   persist-credentials: true
+security-gate	Checkout	2026-02-23T07:23:40.1339958Z   clean: true
+security-gate	Checkout	2026-02-23T07:23:40.1340380Z   sparse-checkout-cone-mode: true
+security-gate	Checkout	2026-02-23T07:23:40.1340853Z   fetch-depth: 1
+security-gate	Checkout	2026-02-23T07:23:40.1341250Z   fetch-tags: false
+security-gate	Checkout	2026-02-23T07:23:40.1341645Z   show-progress: true
+security-gate	Checkout	2026-02-23T07:23:40.1342051Z   lfs: false
+security-gate	Checkout	2026-02-23T07:23:40.1342431Z   submodules: false
+security-gate	Checkout	2026-02-23T07:23:40.1342845Z   set-safe-directory: true
+security-gate	Checkout	2026-02-23T07:23:40.1343460Z env:
+security-gate	Checkout	2026-02-23T07:23:40.1343850Z   SKIP_SUPABASE: false
+security-gate	Checkout	2026-02-23T07:23:40.1344284Z   SKIP_DRIFT: false
+security-gate	Checkout	2026-02-23T07:23:40.1344694Z ##[endgroup]
+security-gate	Checkout	2026-02-23T07:23:40.2381077Z Syncing repository: thecoldblooded/Bravita
+security-gate	Checkout	2026-02-23T07:23:40.2382954Z ##[group]Getting Git version info
+security-gate	Checkout	2026-02-23T07:23:40.2383714Z Working directory is '/home/runner/work/Bravita/Bravita'
+security-gate	Checkout	2026-02-23T07:23:40.2384615Z [command]/usr/bin/git version
+security-gate	Checkout	2026-02-23T07:23:40.2420043Z git version 2.52.0
+security-gate	Checkout	2026-02-23T07:23:40.2443398Z ##[endgroup]
+security-gate	Checkout	2026-02-23T07:23:40.2458255Z Temporarily overriding HOME='/home/runner/work/_temp/b3c68faa-b6d3-4837-b768-815e55300705' before making global git config changes
+security-gate	Checkout	2026-02-23T07:23:40.2460494Z Adding repository directory to the temporary git global config as a safe directory
+security-gate	Checkout	2026-02-23T07:23:40.2471994Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/Bravita/Bravita
+security-gate	Checkout	2026-02-23T07:23:40.2506419Z Deleting the contents of '/home/runner/work/Bravita/Bravita'
+security-gate	Checkout	2026-02-23T07:23:40.2510089Z ##[group]Initializing the repository
+security-gate	Checkout	2026-02-23T07:23:40.2514689Z [command]/usr/bin/git init /home/runner/work/Bravita/Bravita
+security-gate	Checkout	2026-02-23T07:23:40.2588412Z hint: Using 'master' as the name for the initial branch. This default branch name
+security-gate	Checkout	2026-02-23T07:23:40.2589765Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+security-gate	Checkout	2026-02-23T07:23:40.2591292Z hint: to use in all of your new repositories, which will suppress this warning,
+security-gate	Checkout	2026-02-23T07:23:40.2592454Z hint: call:
+security-gate	Checkout	2026-02-23T07:23:40.2593088Z hint:
+security-gate	Checkout	2026-02-23T07:23:40.2593820Z hint: 	git config --global init.defaultBranch <name>
+security-gate	Checkout	2026-02-23T07:23:40.2594746Z hint:
+security-gate	Checkout	2026-02-23T07:23:40.2595575Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+security-gate	Checkout	2026-02-23T07:23:40.2596952Z hint: 'development'. The just-created branch can be renamed via this command:
+security-gate	Checkout	2026-02-23T07:23:40.2598269Z hint:
+security-gate	Checkout	2026-02-23T07:23:40.2598927Z hint: 	git branch -m <name>
+security-gate	Checkout	2026-02-23T07:23:40.2599691Z hint:
+security-gate	Checkout	2026-02-23T07:23:40.2600612Z hint: Disable this message with "git config set advice.defaultBranchName false"
+security-gate	Checkout	2026-02-23T07:23:40.2602114Z Initialized empty Git repository in /home/runner/work/Bravita/Bravita/.git/
+security-gate	Checkout	2026-02-23T07:23:40.2604602Z [command]/usr/bin/git remote add origin https://github.com/thecoldblooded/Bravita
+security-gate	Checkout	2026-02-23T07:23:40.2631936Z ##[endgroup]
+security-gate	Checkout	2026-02-23T07:23:40.2633131Z ##[group]Disabling automatic garbage collection
+security-gate	Checkout	2026-02-23T07:23:40.2636635Z [command]/usr/bin/git config --local gc.auto 0
+security-gate	Checkout	2026-02-23T07:23:40.2660285Z ##[endgroup]
+security-gate	Checkout	2026-02-23T07:23:40.2661395Z ##[group]Setting up auth
+security-gate	Checkout	2026-02-23T07:23:40.2667438Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+security-gate	Checkout	2026-02-23T07:23:40.2694514Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+security-gate	Checkout	2026-02-23T07:23:40.2956252Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+security-gate	Checkout	2026-02-23T07:23:40.2981071Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+security-gate	Checkout	2026-02-23T07:23:40.3150924Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+security-gate	Checkout	2026-02-23T07:23:40.3176397Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+security-gate	Checkout	2026-02-23T07:23:40.3355378Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+security-gate	Checkout	2026-02-23T07:23:40.3384544Z ##[endgroup]
+security-gate	Checkout	2026-02-23T07:23:40.3385773Z ##[group]Fetching the repository
+security-gate	Checkout	2026-02-23T07:23:40.3394081Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +80e77a5cb9eedbdd8ce7ef63a54ed754412ef20a:refs/remotes/origin/master
+security-gate	Checkout	2026-02-23T07:23:42.0673339Z From https://github.com/thecoldblooded/Bravita
+security-gate	Checkout	2026-02-23T07:23:42.0674357Z  * [new ref]         80e77a5cb9eedbdd8ce7ef63a54ed754412ef20a -> origin/master
+security-gate	Checkout	2026-02-23T07:23:42.0699814Z ##[endgroup]
+security-gate	Checkout	2026-02-23T07:23:42.0700906Z ##[group]Determining the checkout info
+security-gate	Checkout	2026-02-23T07:23:42.0702057Z ##[endgroup]
+security-gate	Checkout	2026-02-23T07:23:42.0707078Z [command]/usr/bin/git sparse-checkout disable
+security-gate	Checkout	2026-02-23T07:23:42.0740068Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+security-gate	Checkout	2026-02-23T07:23:42.0759875Z ##[group]Checking out the ref
+security-gate	Checkout	2026-02-23T07:23:42.0764417Z [command]/usr/bin/git checkout --progress --force -B master refs/remotes/origin/master
+security-gate	Checkout	2026-02-23T07:23:42.4463715Z Reset branch 'master'
+security-gate	Checkout	2026-02-23T07:23:42.4465683Z branch 'master' set up to track 'origin/master'.
+security-gate	Checkout	2026-02-23T07:23:42.4485393Z ##[endgroup]
+security-gate	Checkout	2026-02-23T07:23:42.4519954Z [command]/usr/bin/git log -1 --format=%H
+security-gate	Checkout	2026-02-23T07:23:42.4539287Z 80e77a5cb9eedbdd8ce7ef63a54ed754412ef20a
+security-gate	Setup Node	﻿2026-02-23T07:23:42.4746425Z ##[group]Run actions/setup-node@v4
+security-gate	Setup Node	2026-02-23T07:23:42.4746812Z with:
+security-gate	Setup Node	2026-02-23T07:23:42.4747043Z   node-version: 22
+security-gate	Setup Node	2026-02-23T07:23:42.4747267Z   cache: npm
+security-gate	Setup Node	2026-02-23T07:23:42.4747839Z   always-auth: false
+security-gate	Setup Node	2026-02-23T07:23:42.4748099Z   check-latest: false
+security-gate	Setup Node	2026-02-23T07:23:42.4748518Z   token: ***
+security-gate	Setup Node	2026-02-23T07:23:42.4748724Z env:
+security-gate	Setup Node	2026-02-23T07:23:42.4748946Z   SKIP_SUPABASE: false
+security-gate	Setup Node	2026-02-23T07:23:42.4749203Z   SKIP_DRIFT: false
+security-gate	Setup Node	2026-02-23T07:23:42.4749440Z ##[endgroup]
+security-gate	Setup Node	2026-02-23T07:23:42.6394284Z Found in cache @ /opt/hostedtoolcache/node/22.22.0/x64
+security-gate	Setup Node	2026-02-23T07:23:42.6400290Z ##[group]Environment details
+security-gate	Setup Node	2026-02-23T07:23:46.3560109Z node: v22.22.0
+security-gate	Setup Node	2026-02-23T07:23:46.3560552Z npm: 10.9.4
+security-gate	Setup Node	2026-02-23T07:23:46.3560915Z yarn: 1.22.22
+security-gate	Setup Node	2026-02-23T07:23:46.3561642Z ##[endgroup]
+security-gate	Setup Node	2026-02-23T07:23:46.3582767Z [command]/opt/hostedtoolcache/node/22.22.0/x64/bin/npm config get cache
+security-gate	Setup Node	2026-02-23T07:23:46.6536678Z /home/runner/.npm
+security-gate	Setup Node	2026-02-23T07:23:46.7805721Z Cache hit for: node-cache-Linux-x64-npm-f58129283f887bb87ec95bddb26e8a304234a0cbc078e4795f7e7a21f37d6526
+security-gate	Setup Node	2026-02-23T07:23:47.8061743Z Received 125622604 of 125622604 (100.0%), 133.4 MBs/sec
+security-gate	Setup Node	2026-02-23T07:23:47.8063111Z Cache Size: ~120 MB (125622604 B)
+security-gate	Setup Node	2026-02-23T07:23:47.8096554Z [command]/usr/bin/tar -xf /home/runner/work/_temp/f4fb6afa-1e59-472b-9832-67f8662ca4fe/cache.tzst -P -C /home/runner/work/Bravita/Bravita --use-compress-program unzstd
+security-gate	Setup Node	2026-02-23T07:23:47.9748954Z Cache restored successfully
+security-gate	Setup Node	2026-02-23T07:23:47.9901716Z Cache restored from key: node-cache-Linux-x64-npm-f58129283f887bb87ec95bddb26e8a304234a0cbc078e4795f7e7a21f37d6526
+security-gate	Install dependencies	﻿2026-02-23T07:23:48.0033341Z ##[group]Run npm ci
+security-gate	Install dependencies	2026-02-23T07:23:48.0033713Z [36;1mnpm ci[0m
+security-gate	Install dependencies	2026-02-23T07:23:48.0063884Z shell: /usr/bin/bash -e {0}
+security-gate	Install dependencies	2026-02-23T07:23:48.0064210Z env:
+security-gate	Install dependencies	2026-02-23T07:23:48.0064413Z   SKIP_SUPABASE: false
+security-gate	Install dependencies	2026-02-23T07:23:48.0064630Z   SKIP_DRIFT: false
+security-gate	Install dependencies	2026-02-23T07:23:48.0064868Z ##[endgroup]
+security-gate	Install dependencies	2026-02-23T07:23:52.6599604Z npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+security-gate	Install dependencies	2026-02-23T07:23:52.8394473Z npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+security-gate	Install dependencies	2026-02-23T07:23:53.1105873Z npm warn deprecated @studio-freight/lenis@1.0.42: The '@studio-freight/lenis' package has been renamed to 'lenis'. Please update your dependencies: npm install lenis and visit the documentation: https://www.npmjs.com/package/lenis
+security-gate	Install dependencies	2026-02-23T07:23:53.1459640Z npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+security-gate	Install dependencies	2026-02-23T07:23:53.5228229Z npm warn deprecated @supabase/auth-helpers-react@0.15.0: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+security-gate	Install dependencies	2026-02-23T07:23:58.1423705Z 
+security-gate	Install dependencies	2026-02-23T07:23:58.1424584Z added 728 packages, and audited 729 packages in 10s
+security-gate	Install dependencies	2026-02-23T07:23:58.1425096Z 
+security-gate	Install dependencies	2026-02-23T07:23:58.1425402Z 135 packages are looking for funding
+security-gate	Install dependencies	2026-02-23T07:23:58.1426153Z   run `npm fund` for details
+security-gate	Install dependencies	2026-02-23T07:23:58.1438339Z 
+security-gate	Install dependencies	2026-02-23T07:23:58.1439134Z found 0 vulnerabilities
+security-gate	Diagnose Supabase CLI and Docker	﻿2026-02-23T07:23:58.1932807Z ##[group]Run echo "Supabase CLI version:"
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.1933177Z [36;1mecho "Supabase CLI version:"[0m
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.1933463Z [36;1mnpx supabase --version || true[0m
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.1933710Z [36;1m[0m
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.1933899Z [36;1mecho "Docker version:"[0m
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.1934140Z [36;1mdocker version || true[0m
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.1934358Z [36;1m[0m
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.1934586Z [36;1mif docker info >/dev/null 2>&1; then[0m
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.1934884Z [36;1m  echo "✅ Docker daemon is reachable."[0m
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.1935147Z [36;1melse[0m
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.1935545Z [36;1m  echo "::warning::Docker daemon is not reachable. Drift check may fail when creating shadow database."[0m
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.1935984Z [36;1mfi[0m
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.1956125Z shell: /usr/bin/bash -e {0}
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.1956403Z env:
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.1956607Z   SKIP_SUPABASE: false
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.1956841Z   SKIP_DRIFT: false
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.1957034Z ##[endgroup]
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.1999031Z Supabase CLI version:
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.4699663Z 2.76.9
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.6055524Z Docker version:
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.6669357Z Client: Docker Engine - Community
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.6670004Z  Version:           28.0.4
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.6670405Z  API version:       1.48
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.6670778Z  Go version:        go1.23.7
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.6671157Z  Git commit:        b8034c0
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.6671613Z  Built:             Tue Mar 25 15:07:16 2025
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.6672080Z  OS/Arch:           linux/amd64
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.6672421Z  Context:           default
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.6672637Z 
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.6672851Z Server: Docker Engine - Community
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.6673208Z  Engine:
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.6673475Z   Version:          28.0.4
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.6673900Z   API version:      1.48 (minimum version 1.24)
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.6674333Z   Go version:       go1.23.7
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.6674682Z   Git commit:       6430e49
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.6675116Z   Built:            Tue Mar 25 15:07:16 2025
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.6675594Z   OS/Arch:          linux/amd64
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.6675958Z   Experimental:     false
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.6676304Z  containerd:
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.6676586Z   Version:          v2.2.1
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.6677135Z   GitCommit:        dea7da592f5d1d2b7755e3a161be07f43fad8f75
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.6677757Z  runc:
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.6678054Z   Version:          1.3.4
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.6678419Z   GitCommit:        v1.3.4-0-gd6d73eb8
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.6678777Z  docker-init:
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.6679065Z   Version:          0.19.0
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:23:58.6679418Z   GitCommit:        de40ad0
+security-gate	Diagnose Supabase CLI and Docker	2026-02-23T07:24:01.7425908Z ✅ Docker daemon is reachable.
+security-gate	Audit dependencies	﻿2026-02-23T07:24:01.7455515Z ##[group]Run npm audit --audit-level=high
+security-gate	Audit dependencies	2026-02-23T07:24:01.7455841Z [36;1mnpm audit --audit-level=high[0m
+security-gate	Audit dependencies	2026-02-23T07:24:01.7474806Z shell: /usr/bin/bash -e {0}
+security-gate	Audit dependencies	2026-02-23T07:24:01.7475055Z env:
+security-gate	Audit dependencies	2026-02-23T07:24:01.7475267Z   SKIP_SUPABASE: false
+security-gate	Audit dependencies	2026-02-23T07:24:01.7475498Z   SKIP_DRIFT: false
+security-gate	Audit dependencies	2026-02-23T07:24:01.7475692Z ##[endgroup]
+security-gate	Audit dependencies	2026-02-23T07:24:02.2512727Z found 0 vulnerabilities
+security-gate	Run Security Checklist (Static)	﻿2026-02-23T07:24:02.2595603Z ##[group]Run python .agent/scripts/checklist.py .
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:02.2596460Z [36;1mpython .agent/scripts/checklist.py .[0m
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:02.2615445Z shell: /usr/bin/bash -e {0}
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:02.2615698Z env:
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:02.2615943Z   SKIP_SUPABASE: false
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:02.2616160Z   SKIP_DRIFT: false
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:02.2616349Z ##[endgroup]
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4569696Z 
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4570497Z [1m[96m============================================================[0m
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4571098Z [1m[96m            🚀 ANTIGRAVITY KIT - MASTER CHECKLIST            [0m
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4571581Z [1m[96m============================================================[0m
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4571794Z 
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4571976Z Project: /home/runner/work/Bravita/Bravita
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4572334Z URL: Not provided (performance checks skipped)
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4572568Z 
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4572813Z [1m[96m============================================================[0m
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4573315Z [1m[96m                       📋 CORE CHECKS                        [0m
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4573762Z [1m[96m============================================================[0m
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4573963Z 
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4574320Z [1m[94m🔄 Running: Security Scan[0m
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4574683Z [92m✅ Security Scan: PASSED[0m
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4575012Z [1m[94m🔄 Running: Lint Check[0m
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4575321Z [92m✅ Lint Check: PASSED[0m
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4575655Z [1m[94m🔄 Running: Schema Validation[0m
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4575997Z [92m✅ Schema Validation: PASSED[0m
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4576322Z [1m[94m🔄 Running: Test Runner[0m
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4576639Z [92m✅ Test Runner: PASSED[0m
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4576951Z [1m[94m🔄 Running: UX Audit[0m
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4577238Z [92m✅ UX Audit: PASSED[0m
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4578095Z [1m[94m🔄 Running: SEO Check[0m
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4578400Z [92m✅ SEO Check: PASSED[0m
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4578557Z 
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4578812Z [1m[96m============================================================[0m
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4579287Z [1m[96m                    📊 CHECKLIST SUMMARY                     [0m
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4579737Z [1m[96m============================================================[0m
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4579942Z 
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4580024Z Total Checks: 6
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4580275Z [92m✅ Passed: 6[0m
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4580526Z [91m❌ Failed: 0[0m
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4580782Z [93m⏭️  Skipped: 0[0m
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4580914Z 
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4581125Z [92m✅[0m Security Scan
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4581383Z [92m✅[0m Lint Check
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4581638Z [92m✅[0m Schema Validation
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4581904Z [92m✅[0m Test Runner
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4582140Z [92m✅[0m UX Audit
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4582370Z [92m✅[0m SEO Check
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4582498Z 
+security-gate	Run Security Checklist (Static)	2026-02-23T07:24:16.4582660Z [92m✅ All checks PASSED ✨[0m
+security-gate	Lint	﻿2026-02-23T07:24:16.4648767Z ##[group]Run npm run lint
+security-gate	Lint	2026-02-23T07:24:16.4649033Z [36;1mnpm run lint[0m
+security-gate	Lint	2026-02-23T07:24:16.4667007Z shell: /usr/bin/bash -e {0}
+security-gate	Lint	2026-02-23T07:24:16.4667259Z env:
+security-gate	Lint	2026-02-23T07:24:16.4667445Z   SKIP_SUPABASE: false
+security-gate	Lint	2026-02-23T07:24:16.4667864Z   SKIP_DRIFT: false
+security-gate	Lint	2026-02-23T07:24:16.4668053Z ##[endgroup]
+security-gate	Lint	2026-02-23T07:24:16.5484993Z 
+security-gate	Lint	2026-02-23T07:24:16.5485577Z > vite_react_shadcn_ts@0.0.0 lint
+security-gate	Lint	2026-02-23T07:24:16.5485918Z > eslint .
+security-gate	Lint	2026-02-23T07:24:16.5486041Z 
+security-gate	React Doctor	﻿2026-02-23T07:24:26.9496069Z ##[group]Run millionco/react-doctor@0.0.1
+security-gate	React Doctor	2026-02-23T07:24:26.9496363Z with:
+security-gate	React Doctor	2026-02-23T07:24:26.9496547Z   directory: .
+security-gate	React Doctor	2026-02-23T07:24:26.9496734Z   verbose: true
+security-gate	React Doctor	2026-02-23T07:24:26.9496921Z   node-version: 20
+security-gate	React Doctor	2026-02-23T07:24:26.9497099Z env:
+security-gate	React Doctor	2026-02-23T07:24:26.9497270Z   SKIP_SUPABASE: false
+security-gate	React Doctor	2026-02-23T07:24:26.9497468Z   SKIP_DRIFT: false
+security-gate	React Doctor	2026-02-23T07:24:26.9497859Z ##[endgroup]
+security-gate	React Doctor	2026-02-23T07:24:26.9680721Z ##[group]Run actions/setup-node@v4
+security-gate	React Doctor	2026-02-23T07:24:26.9680983Z with:
+security-gate	React Doctor	2026-02-23T07:24:26.9681166Z   node-version: 20
+security-gate	React Doctor	2026-02-23T07:24:26.9681367Z   always-auth: false
+security-gate	React Doctor	2026-02-23T07:24:26.9681572Z   check-latest: false
+security-gate	React Doctor	2026-02-23T07:24:26.9681891Z   token: ***
+security-gate	React Doctor	2026-02-23T07:24:26.9682063Z env:
+security-gate	React Doctor	2026-02-23T07:24:26.9682240Z   SKIP_SUPABASE: false
+security-gate	React Doctor	2026-02-23T07:24:26.9682438Z   SKIP_DRIFT: false
+security-gate	React Doctor	2026-02-23T07:24:26.9682624Z ##[endgroup]
+security-gate	React Doctor	2026-02-23T07:24:27.1335496Z Found in cache @ /opt/hostedtoolcache/node/20.20.0/x64
+security-gate	React Doctor	2026-02-23T07:24:27.1341039Z ##[group]Environment details
+security-gate	React Doctor	2026-02-23T07:24:27.4531266Z node: v20.20.0
+security-gate	React Doctor	2026-02-23T07:24:27.4531696Z npm: 10.8.2
+security-gate	React Doctor	2026-02-23T07:24:27.4532003Z yarn: 1.22.22
+security-gate	React Doctor	2026-02-23T07:24:27.4532663Z ##[endgroup]
+security-gate	React Doctor	2026-02-23T07:24:27.4608784Z ##[group]Run FLAGS=""
+security-gate	React Doctor	2026-02-23T07:24:27.4609043Z [36;1mFLAGS=""[0m
+security-gate	React Doctor	2026-02-23T07:24:27.4609337Z [36;1mif [ "$INPUT_VERBOSE" = "true" ]; then FLAGS="$FLAGS --verbose"; fi[0m
+security-gate	React Doctor	2026-02-23T07:24:27.4609810Z [36;1mif [ -n "$INPUT_PROJECT" ]; then FLAGS="$FLAGS --project $INPUT_PROJECT"; fi[0m
+security-gate	React Doctor	2026-02-23T07:24:27.4610269Z [36;1mnpx -y react-doctor@latest "$INPUT_DIRECTORY" $FLAGS[0m
+security-gate	React Doctor	2026-02-23T07:24:27.4635773Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+security-gate	React Doctor	2026-02-23T07:24:27.4636101Z env:
+security-gate	React Doctor	2026-02-23T07:24:27.4636284Z   SKIP_SUPABASE: false
+security-gate	React Doctor	2026-02-23T07:24:27.4636493Z   SKIP_DRIFT: false
+security-gate	React Doctor	2026-02-23T07:24:27.4636688Z   INPUT_DIRECTORY: .
+security-gate	React Doctor	2026-02-23T07:24:27.4636886Z   INPUT_VERBOSE: true
+security-gate	React Doctor	2026-02-23T07:24:27.4637082Z   INPUT_PROJECT: 
+security-gate	React Doctor	2026-02-23T07:24:27.4637263Z ##[endgroup]
+security-gate	React Doctor	2026-02-23T07:24:35.5667749Z react-doctor v0.0.29
+security-gate	React Doctor	2026-02-23T07:24:35.5670861Z 
+security-gate	React Doctor	2026-02-23T07:24:35.5683137Z [32m✔[39m Select projects to scan [2m›[22m vite_react_shadcn_ts
+security-gate	React Doctor	2026-02-23T07:24:35.9032171Z [2mScanning /home/runner/work/Bravita/Bravita...[22m
+security-gate	React Doctor	2026-02-23T07:24:35.9032704Z 
+security-gate	React Doctor	2026-02-23T07:24:35.9102696Z - Detecting framework. Found [36mVite[39m.
+security-gate	React Doctor	2026-02-23T07:24:35.9104708Z [32m✔[39m Detecting framework. Found [36mVite[39m.
+security-gate	React Doctor	2026-02-23T07:24:35.9105880Z - Detecting React version. Found [36mReact ^18.3.1[39m.
+security-gate	React Doctor	2026-02-23T07:24:35.9106768Z [32m✔[39m Detecting React version. Found [36mReact ^18.3.1[39m.
+security-gate	React Doctor	2026-02-23T07:24:35.9107501Z - Detecting language. Found [36mTypeScript[39m.
+security-gate	React Doctor	2026-02-23T07:24:35.9108498Z [32m✔[39m Detecting language. Found [36mTypeScript[39m.
+security-gate	React Doctor	2026-02-23T07:24:35.9109142Z - Detecting React Compiler. Not found.
+security-gate	React Doctor	2026-02-23T07:24:35.9109788Z [32m✔[39m Detecting React Compiler. Not found.
+security-gate	React Doctor	2026-02-23T07:24:35.9110394Z - Found [36m198[39m source files.
+security-gate	React Doctor	2026-02-23T07:24:35.9111002Z [32m✔[39m Found [36m198[39m source files.
+security-gate	React Doctor	2026-02-23T07:24:35.9111338Z 
+security-gate	React Doctor	2026-02-23T07:24:35.9112588Z - Running lint checks...
+security-gate	React Doctor	2026-02-23T07:24:37.0661910Z - Running lint checks.
+security-gate	React Doctor	2026-02-23T07:24:37.0668804Z [32m✔[39m Running lint checks.
+security-gate	React Doctor	2026-02-23T07:24:37.0669271Z - Detecting dead code...
+security-gate	React Doctor	2026-02-23T07:24:38.3783483Z [32m✔[39m Detecting dead code.
+security-gate	React Doctor	2026-02-23T07:24:38.9540128Z   [33m⚠[39m Enforce a clickable non-interactive element has at least one keyboard event listener.[33m (5)[39m
+security-gate	React Doctor	2026-02-23T07:24:38.9541947Z [2m    Visible, non-interactive elements with click handlers must have one of `keyup`, `keydown`, or `keypress` listener.[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9543168Z [2m    src/components/ui/text-cursor-proximity.tsx: 196[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9544022Z [2m    src/components/checkout/SalesAgreements.tsx: 48[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9544809Z [2m    src/pages/admin/AdminOrders.tsx: 293, 303[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9545515Z [2m    src/pages/admin/AdminSupport.tsx: 418[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9545853Z 
+security-gate	React Doctor	2026-02-23T07:24:38.9546789Z   [33m⚠[39m Static HTML elements with event handlers require a role.[33m (5)[39m
+security-gate	React Doctor	2026-02-23T07:24:38.9548026Z [2m    Add a role attribute to this element, or use a semantic HTML element instead.[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9549054Z [2m    src/components/ui/text-cursor-proximity.tsx: 196[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9549897Z [2m    src/components/checkout/SalesAgreements.tsx: 48[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9550667Z [2m    src/pages/admin/AdminOrders.tsx: 293, 303[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9551359Z [2m    src/pages/admin/AdminSupport.tsx: 418[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9551702Z 
+security-gate	React Doctor	2026-02-23T07:24:38.9552014Z   [33m⚠[39m Unknown property found[33m (2)[39m
+security-gate	React Doctor	2026-02-23T07:24:38.9552621Z [2m    Remove unknown property[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9553271Z [2m    src/components/ui/glowing-shadow.tsx: 14[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9553930Z [2m    src/components/ui/command.tsx: 46[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9554237Z 
+security-gate	React Doctor	2026-02-23T07:24:38.9554973Z   [33m⚠[39m Import "m" with LazyMotion instead of "motion" — saves ~30kb in bundle size[33m (2)[39m
+security-gate	React Doctor	2026-02-23T07:24:38.9556314Z [2m    Use `import { LazyMotion, m } from "framer-motion"` with `domAnimation` features — saves ~30kb[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9557267Z [2m    src/components/ui/scroll-reveal.tsx: 2[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9558036Z [2m    src/components/ui/hover-footer.tsx: 3[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9558363Z 
+security-gate	React Doctor	2026-02-23T07:24:38.9559086Z   [33m⚠[39m useEffect simulating an event handler — move logic to an actual event handler instead[33m (2)[39m
+security-gate	React Doctor	2026-02-23T07:24:38.9560394Z [2m    Move the conditional logic into onClick, onChange, or onSubmit handlers directly[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9561674Z [2m    src/components/ui/CartModal.tsx: 104[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9562333Z [2m    src/contexts/AuthContext.tsx: 143[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9562652Z 
+security-gate	React Doctor	2026-02-23T07:24:38.9563515Z   [33m⚠[39m Component "HeroScrollVideo" is 547 lines — consider breaking it into smaller focused components[33m (11)[39m
+security-gate	React Doctor	2026-02-23T07:24:38.9564821Z [2m    Extract logical sections into focused components: `<UserHeader />`, `<UserActions />`, etc.[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9565831Z [2m    src/components/ui/scroll-animated-video.tsx: 140[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9566574Z [2m    src/contexts/AuthContext.tsx: 78[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9567304Z [2m    src/components/profile/AddressBook.tsx: 25[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9568216Z [2m    src/pages/OrderConfirmation.tsx: 54[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9569125Z [2m    src/pages/Checkout.tsx: 45[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9569745Z [2m    src/pages/admin/AdminAuditLogs.tsx: 159[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9570410Z [2m    src/pages/admin/AdminOrders.tsx: 17[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9571048Z [2m    src/pages/admin/AdminEmails.tsx: 172[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9571710Z [2m    src/pages/admin/AdminOrderDetail.tsx: 17[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9572551Z [2m    src/pages/admin/AdminSupport.tsx: 68[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9573336Z [2m    src/components/profile/SupportCenter.tsx: 33[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9573712Z 
+security-gate	React Doctor	2026-02-23T07:24:38.9574238Z   [33m⚠[39m Array index "i" used as key — causes bugs when list is reordered or filtered
+security-gate	React Doctor	2026-02-23T07:24:38.9575516Z [2m    Use a stable unique identifier: `key={item.id}` or `key={item.slug}` — index keys break on reorder/filter[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9576630Z [2m    src/components/ui/scroll-animated-video.tsx: 535[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9577013Z 
+security-gate	React Doctor	2026-02-23T07:24:38.9577930Z   [33m⚠[39m Component "OrderSummary" has 6 useState calls — consider useReducer for related state[33m (15)[39m
+security-gate	React Doctor	2026-02-23T07:24:38.9579483Z [2m    Group related state: `const [state, dispatch] = useReducer(reducer, { field1, field2, ... })`[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9580543Z [2m    src/components/checkout/OrderSummary.tsx: 65[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9581201Z [2m    src/contexts/AuthContext.tsx: 78[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9581847Z [2m    src/contexts/CartContext.tsx: 51[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9582590Z [2m    src/components/profile/AddressBook.tsx: 25[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9583266Z [2m    src/pages/Checkout.tsx: 45[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9584118Z [2m    src/pages/admin/AdminPromoCodes.tsx: 15[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9584558Z [2m    src/pages/admin/AdminAuditLogs.tsx: 159[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9584958Z [2m    src/pages/admin/AdminUsers.tsx: 67[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9585354Z [2m    src/pages/admin/AdminOrders.tsx: 17[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9585753Z [2m    src/pages/admin/AdminEmails.tsx: 172[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9586248Z [2m    src/components/ui/background-gradient-animation.tsx: 35[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9586767Z [2m    src/components/profile/ChangePasswordModal.tsx: 26[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9587215Z [2m    src/pages/admin/AdminOrderDetail.tsx: 17[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9587790Z [2m    src/pages/admin/AdminSupport.tsx: 68[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9588272Z [2m    src/components/profile/SupportCenter.tsx: 33[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9588488Z 
+security-gate	React Doctor	2026-02-23T07:24:38.9589072Z   [33m⚠[39m useState initialized from prop "product" — if this value should stay in sync with the prop, derive it during render instead[33m (3)[39m
+security-gate	React Doctor	2026-02-23T07:24:38.9589955Z [2m    Remove useState and compute the value inline: `const value = transform(propName)`[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9590515Z [2m    src/components/admin/ProductModal.tsx: 34, 35[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9590925Z [2m    src/components/auth/AuthModal.tsx: 29[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9591123Z 
+security-gate	React Doctor	2026-02-23T07:24:38.9591531Z   [33m⚠[39m 3 setState calls in a single useEffect — consider using useReducer or deriving state[33m (7)[39m
+security-gate	React Doctor	2026-02-23T07:24:38.9592310Z [2m    Combine into useReducer: `const [state, dispatch] = useReducer(reducer, initialState)`[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9592846Z [2m    src/contexts/AuthContext.tsx: 143, 293[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9593285Z [2m    src/components/ui/scroll-image-sequence.tsx: 167[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9593791Z [2m    src/pages/OrderConfirmation.tsx: 63[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9594199Z [2m    src/components/PeriodicGif.tsx: 56[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9594577Z [2m    src/pages/admin/AdminOrders.tsx: 70[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9594984Z [2m    src/components/ui/feature-steps.tsx: 56[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9595191Z 
+security-gate	React Doctor	2026-02-23T07:24:38.9595586Z   [33m⚠[39m Headings must have content and the content must be accessible by a screen reader.[33m (2)[39m
+security-gate	React Doctor	2026-02-23T07:24:38.9596278Z [2m    Provide screen reader accessible content when using heading elements.[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9596740Z [2m    src/components/ui/card.tsx: 19[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9597282Z [2m    src/components/ui/alert.tsx: 31[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9597472Z 
+security-gate	React Doctor	2026-02-23T07:24:38.9597798Z   [33m⚠[39m A form label must be associated with a control.[33m (5)[39m
+security-gate	React Doctor	2026-02-23T07:24:38.9598766Z [2m    Either give the label a `htmlFor` attribute with the id of the associated control, or wrap the label around the control.[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9599468Z [2m    src/pages/admin/AdminAuditLogs.tsx: 403, 419, 435, 446[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9599962Z [2m    src/pages/admin/AdminOrderDetail.tsx: 431[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9600295Z 
+security-gate	React Doctor	2026-02-23T07:24:38.9600942Z   [33m⚠[39m "recharts" is a heavy library — use React.lazy() or next/dynamic for code splitting
+security-gate	React Doctor	2026-02-23T07:24:38.9602350Z [2m    Use `const Component = dynamic(() => import('library'), { ssr: false })` from next/dynamic or React.lazy()[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9602929Z [2m    src/pages/admin/AdminDashboard.tsx: 6[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9603332Z 
+security-gate	React Doctor	2026-02-23T07:24:38.9604155Z   [33m⚠[39m Permanent will-change wastes GPU memory — apply only during active animation and remove after[33m (2)[39m
+security-gate	React Doctor	2026-02-23T07:24:38.9605898Z [2m    Add will-change on animation start (`onMouseEnter`) and remove on end (`onAnimationEnd`). Permanent promotion wastes GPU memory and can degrade performance[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9607181Z [2m    src/pages/admin/AdminOrderDetail.tsx: 527[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9608110Z [2m    src/pages/admin/components/ProductRow.tsx: 76[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9608501Z 
+security-gate	React Doctor	2026-02-23T07:24:38.9608991Z   [33m⚠[39m The `autoFocus` attribute is found here, which can cause usability issues for sighted and non-sighted users.
+security-gate	React Doctor	2026-02-23T07:24:38.9609760Z [2m    Remove the `autoFocus` attribute.[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9610192Z [2m    src/pages/admin/components/ProductRow.tsx: 117[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9610418Z 
+security-gate	React Doctor	2026-02-23T07:24:38.9610803Z   [33m⚠[39m "touchmove" listener without { passive: true } — blocks scrolling performance[33m (2)[39m
+security-gate	React Doctor	2026-02-23T07:24:38.9611632Z [2m    Add `{ passive: true }` as the third argument: `addEventListener('scroll', handler, { passive: true })`[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9612227Z [2m    src/components/auth/AuthModal.tsx: 75, 88[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9612439Z 
+security-gate	React Doctor	2026-02-23T07:24:38.9612592Z   [33m⚠[39m Unused file[33m (75)[39m
+security-gate	React Doctor	2026-02-23T07:24:38.9613043Z [2m    This file is not imported by any other file in the project.[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9613439Z [2m    check-drift.mjs[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9613702Z [2m    run.cjs[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9614011Z [2m    public/console-noise-filter.js[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9614407Z [2m    scripts/make-alpaca-transparent.mjs[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9614795Z [2m    scripts/optimize-frames-webp.mjs[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9615155Z [2m    scripts/optimize-frames.mjs[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9615492Z [2m    scripts/optimize-gifs.mjs[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9615827Z [2m    scripts/optimize-images.mjs[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9616165Z [2m    scripts/optimize-videos.mjs[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9616586Z [2m    scripts/test-sync-auth-templates-negative.mjs[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9616946Z [2m    src/AdminApp.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9617240Z [2m    src/App.css[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9617504Z [2m    src/admin.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9617967Z [2m    api/auth/_shared.js[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9618269Z [2m    api/auth/login.js[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9618587Z [2m    api/auth/logout.js[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9618888Z [2m    api/auth/recover.js[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9619184Z [2m    api/auth/refresh.js[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9619480Z [2m    api/auth/resend.js[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9619779Z [2m    api/auth/session.js[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9620120Z [2m    api/auth/signup.js[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9620428Z [2m    src/components/NavLink.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9620773Z [2m    src/components/SupportForm.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9621157Z [2m    src/hooks/use-mouse-position-ref.ts[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9621607Z [2m    src/hooks/use-progressive-image-loader.ts[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9622099Z [2m    src/lib/getGifDuration.ts[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9622455Z [2m    src/components/checkout/index.ts[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9622815Z [2m    src/components/ui/accordion.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9623160Z [2m    src/components/ui/alert.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9623526Z [2m    src/components/ui/aspect-ratio.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9623899Z [2m    src/components/ui/breadcrumb.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9624259Z [2m    src/components/ui/calendar.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9624601Z [2m    src/components/ui/carousel.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9624974Z [2m    src/components/ui/collapsible.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9625331Z [2m    src/components/ui/command.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9625681Z [2m    src/components/ui/confetti.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9626046Z [2m    src/components/ui/context-menu.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9626406Z [2m    src/components/ui/drawer.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9626765Z [2m    src/components/ui/hover-card.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9627121Z [2m    src/components/ui/input-otp.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9627481Z [2m    src/components/ui/lazy-image.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9628027Z [2m    src/components/ui/menubar.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9628435Z [2m    src/components/ui/navigation-menu.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9628817Z [2m    src/components/ui/pagination.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9629229Z [2m    src/components/ui/progress.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9629629Z [2m    src/components/ui/radio-group.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9629985Z [2m    src/components/ui/resizable.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9630497Z [2m    src/components/ui/scroll-area.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9630864Z [2m    src/components/ui/separator.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9631211Z [2m    src/components/ui/sheet.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9631559Z [2m    src/components/ui/sidebar.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9631931Z [2m    src/components/ui/slider.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9632301Z [2m    src/components/ui/toggle-group.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9632654Z [2m    src/components/ui/toggle.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9633020Z [2m    src/components/ui/use-toast.ts[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9633451Z [2m    supabase/functions/_shared/email-renderer.test.ts[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9633914Z [2m    supabase/functions/_shared/email-renderer.ts[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9634360Z [2m    supabase/functions/bakiyem-3d-return/index.ts[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9634797Z [2m    supabase/functions/bakiyem-capture/index.ts[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9635219Z [2m    supabase/functions/bakiyem-init-3d/index.ts[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9635644Z [2m    supabase/functions/bakiyem-refund/index.ts[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9636103Z [2m    supabase/functions/bakiyem-tokenize-card/index.ts[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9636542Z [2m    supabase/functions/bakiyem-void/index.ts[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9636985Z [2m    supabase/functions/payment-maintenance/index.ts[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9637440Z [2m    supabase/functions/send-order-email/index.ts[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9638097Z [2m    supabase/functions/send-order-email/template.ts[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9638557Z [2m    supabase/functions/send-order-email/types.d.ts[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9639008Z [2m    supabase/functions/send-support-email/index.ts[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9639443Z [2m    supabase/functions/send-test-email/index.ts[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9639884Z [2m    supabase/functions/send-test-email/types.d.ts[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9640331Z [2m    supabase/functions/send-welcome-email/index.ts[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9640794Z [2m    supabase/functions/send-welcome-email/types.d.ts[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9641286Z [2m    supabase/functions/sync-auth-templates/index.ts[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9641758Z [2m    supabase/functions/sync-auth-templates/types.d.ts[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9642227Z [2m    supabase/functions/sync-to-billionmail/index.ts[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9642464Z 
+security-gate	React Doctor	2026-02-23T07:24:38.9642666Z   [33m⚠[39m Unused export: default[33m (47)[39m
+security-gate	React Doctor	2026-02-23T07:24:38.9643101Z [2m    src/i18n/config.ts[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9643424Z [2m    src/components/ui/sonner.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9643795Z [2m    src/components/ui/tooltip.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9644122Z [2m    src/lib/checkout.ts[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9644464Z [2m    src/components/ui/toast.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9644793Z [2m    src/hooks/use-toast.ts[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9645121Z [2m    src/lib/errorTranslator.ts[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9645444Z [2m    src/components/ui/form.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9645772Z [2m    src/components/ui/card.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9646134Z [2m    src/components/ui/dialog.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9646508Z [2m    src/components/ui/dropdown-menu.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9646868Z [2m    src/components/ui/select.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9647229Z [2m    src/components/ui/alert-dialog.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9647693Z [2m    src/components/ui/avatar.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9648111Z [2m    src/components/ui/badge.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9648500Z [2m    src/components/ui/loading-skeleton.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9648871Z [2m    src/components/ui/table.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9649048Z 
+security-gate	React Doctor	2026-02-23T07:24:38.9649241Z   [33m⚠[39m Unused type: ButtonProps[33m (24)[39m
+security-gate	React Doctor	2026-02-23T07:24:38.9649616Z [2m    src/components/ui/button.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9649935Z [2m    src/lib/supabase.ts[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9650317Z [2m    src/components/ui/scroll-animated-video.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9650676Z [2m    src/lib/bffAuth.ts[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9651051Z [2m    src/lib/checkout.ts[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9651349Z [2m    src/hooks/useAuth.ts[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9651633Z [2m    src/lib/admin.ts[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9651972Z [2m    src/types/order.ts[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9652293Z [2m    src/components/ui/textarea.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9652634Z [2m    src/components/ui/badge.tsx[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9652816Z 
+security-gate	React Doctor	2026-02-23T07:24:38.9653056Z   [2m┌────────────────────────────────────────────────────┐[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9653532Z   [2m│[22m [32m┌─────┐[39m                                            [2m│[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9654025Z   [2m│[22m [32m│ ◠ ◠ │[39m                                            [2m│[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9654505Z   [2m│[22m [32m│  ▽  │[39m                                            [2m│[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9654977Z   [2m│[22m [32m└─────┘[39m                                            [2m│[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9655477Z   [2m│[22m React Doctor [2m(www.react.doctor)[22m                    [2m│[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9655970Z   [2m│[22m                                                    [2m│[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9656483Z   [2m│[22m [32m86[39m / 100  [32mGreat[39m                                    [2m│[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9656967Z   [2m│[22m                                                    [2m│[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9657496Z   [2m│[22m [32m███████████████████████████████████████████[39m[2m░░░░░░░[22m [2m│[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9658151Z   [2m│[22m                                                    [2m│[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9658709Z   [2m│[22m [33m⚠ 212 warnings[39m  [2macross 129/198 files[22m  [2min 2.5s[22m      [2m│[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9659254Z   [2m└────────────────────────────────────────────────────┘[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9659473Z 
+security-gate	React Doctor	2026-02-23T07:24:38.9659889Z [2m  Full diagnostics written to /tmp/react-doctor-43a75afd-a854-41b3-9eb8-03bbdccbe3e4[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9660245Z 
+security-gate	React Doctor	2026-02-23T07:24:38.9660744Z [2m  Share your results: [36mhttps://www.react.doctor/share?p=vite_react_shadcn_ts&s=86&w=212&f=129[39m[22m
+security-gate	React Doctor	2026-02-23T07:24:38.9661136Z 
+security-gate	React Doctor	2026-02-23T07:24:39.0516774Z ##[group]Run SCORE=$(npx -y react-doctor@latest "$INPUT_DIRECTORY" --score 2>/dev/null || echo "")
+security-gate	React Doctor	2026-02-23T07:24:39.0517423Z [36;1mSCORE=$(npx -y react-doctor@latest "$INPUT_DIRECTORY" --score 2>/dev/null || echo "")[0m
+security-gate	React Doctor	2026-02-23T07:24:39.0518570Z [36;1mecho "score=$SCORE" >> "$GITHUB_OUTPUT"[0m
+security-gate	React Doctor	2026-02-23T07:24:39.0537378Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+security-gate	React Doctor	2026-02-23T07:24:39.0537860Z env:
+security-gate	React Doctor	2026-02-23T07:24:39.0538060Z   SKIP_SUPABASE: false
+security-gate	React Doctor	2026-02-23T07:24:39.0538282Z   SKIP_DRIFT: false
+security-gate	React Doctor	2026-02-23T07:24:39.0538485Z   INPUT_DIRECTORY: .
+security-gate	React Doctor	2026-02-23T07:24:39.0538685Z ##[endgroup]
+security-gate	React Doctor	2026-02-23T07:24:44.3335560Z ##[error]Unable to process file command 'output' successfully.
+security-gate	React Doctor	2026-02-23T07:24:44.3336790Z ##[error]Invalid format '86'
+security-gate	Post React Doctor	﻿2026-02-23T07:24:44.3528856Z Post job cleanup.
+security-gate	Post Checkout	﻿2026-02-23T07:24:44.3585528Z Post job cleanup.
+security-gate	Post Checkout	2026-02-23T07:24:44.4450144Z [command]/usr/bin/git version
+security-gate	Post Checkout	2026-02-23T07:24:44.4482277Z git version 2.52.0
+security-gate	Post Checkout	2026-02-23T07:24:44.4522087Z Temporarily overriding HOME='/home/runner/work/_temp/647e33c6-c7e3-4887-8f79-a4f3de22a5b8' before making global git config changes
+security-gate	Post Checkout	2026-02-23T07:24:44.4523507Z Adding repository directory to the temporary git global config as a safe directory
+security-gate	Post Checkout	2026-02-23T07:24:44.4536369Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/Bravita/Bravita
+security-gate	Post Checkout	2026-02-23T07:24:44.4567208Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+security-gate	Post Checkout	2026-02-23T07:24:44.4595641Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+security-gate	Post Checkout	2026-02-23T07:24:44.4774638Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+security-gate	Post Checkout	2026-02-23T07:24:44.4792061Z http.https://github.com/.extraheader
+security-gate	Post Checkout	2026-02-23T07:24:44.4803656Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+security-gate	Post Checkout	2026-02-23T07:24:44.4833786Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+security-gate	Post Checkout	2026-02-23T07:24:44.5004074Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+security-gate	Post Checkout	2026-02-23T07:24:44.5029357Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+security-gate	Complete job	﻿2026-02-23T07:24:44.5295282Z Cleaning up orphan processes

@@ -44,15 +44,6 @@ supabase/.temp/
 .roo/
 
 # Reports and temporary files
-*.txt
-*.json
-!package.json
-!package-lock.json
-!tsconfig.app.json
-!tsconfig.json
-!tsconfig.node.json
-!components.json
-!vercel.json
 *.bak
 .tmp/
 .tmp-lighthouse-desktop.json
@@ -62,24 +53,19 @@ git-push-and-fix.md
 /artifacts/
 /_reports/
 organize_reports.py
-*.md
-!README.md
-!CODEBASE.md
-!ARCHITECTURE.md
-!SECURITY_AUDIT_REPORT.md
-!SECURITY_IMPLEMENTATION_COMPLETE.md
-!IMPLEMENTATION_COMPLETE.md
-!AUTHENTICATION_SETUP.md
-!BUILD_VERIFICATION.md
-!DEPLOYMENT_GUIDE.md
-!PERFORMANCE_OPTIMIZATION.md
-!QUICK_START.md
-!RLS_FIX_INSTRUCTIONS.md
-!USER_GUIDE.md
-!.agent/**/*.md
+drift.err
+drift.sql
 deploy.tar.gz
 dist-deploy.zip
 deploy-dist-posix.tar.gz
-drift.err
-drift.sql
 dist-deploy.tar.gz
+
+# Planning/report docs not required in repo
+.github/prompts/*.prompt.md
+plans/
+docs/PLAN-*.md
+performance-optimization.md
+
+# Sensitive local secrets
+client_secrets.json
+mcp_settings.json
