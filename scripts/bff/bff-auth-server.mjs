@@ -4,17 +4,17 @@ import http from "node:http";
 import { URL } from "node:url";
 import { createHash } from "node:crypto";
 
-import captchaDiagnosticHandler from "../api/auth/captcha-diagnostic.js";
-import loginHandler from "../api/auth/login.js";
-import logoutHandler from "../api/auth/logout.js";
-import recoverHandler from "../api/auth/recover.js";
-import refreshHandler from "../api/auth/refresh.js";
-import resendHandler from "../api/auth/resend.js";
-import sessionHandler from "../api/auth/session.js";
-import signupHandler from "../api/auth/signup.js";
-import setSessionHandler from "../api/auth/set-session.js";
-import oauthGoogleStartHandler from "../api/auth/oauth/google/start.js";
-import oauthCallbackHandler from "../api/auth/oauth/callback.js";
+import captchaDiagnosticHandler from "../../api/auth/captcha-diagnostic.js";
+import loginHandler from "../../api/auth/login.js";
+import logoutHandler from "../../api/auth/logout.js";
+import recoverHandler from "../../api/auth/recover.js";
+import refreshHandler from "../../api/auth/refresh.js";
+import resendHandler from "../../api/auth/resend.js";
+import sessionHandler from "../../api/auth/session.js";
+import signupHandler from "../../api/auth/signup.js";
+import setSessionHandler from "../../api/auth/set-session.js";
+import oauthGoogleStartHandler from "../../api/auth/oauth/google/start.js";
+import oauthCallbackHandler from "../../api/auth/oauth/callback.js";
 
 function loadEnvFileOnce(filePath) {
     if (!existsSync(filePath)) {
