@@ -2,7 +2,7 @@ import {
     buildBillionMailFunctionHeaders,
     extractBearerToken,
     isInvalidFunctionJwtResponse,
-} from "./billionmailFunctionAuth";
+} from "../email/billionmailFunctionAuth";
 
 const REDACTED_USER_JWT = "[REDACTED_USER_JWT]";
 const REDACTED_IGNORED_JWT = "[REDACTED_IGNORED_JWT]";

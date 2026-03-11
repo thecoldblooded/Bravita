@@ -1,4 +1,4 @@
-import { decideRequestGateAction } from "../../request-gate.js";
+import { decideRequestGateAction } from "../../../request-gate.js";
 
 describe("decideRequestGateAction", () => {
     it("WAF raporundaki query-string XSS denemelerini bloklar", () => {

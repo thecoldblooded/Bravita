@@ -3,7 +3,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
-const nginxConfig = readFileSync(resolve(currentDir, "../../nginx.conf"), "utf8").replace(/\r\n/g, "\n");
+const nginxConfig = readFileSync(resolve(currentDir, "../../../config/nginx.conf"), "utf8").replace(/\r\n/g, "\n");
 const sensitivePathGuard = `location ~* ^/(?:.*\\/)?(?:wp-config\\.php|config\\.php|id_rsa(?:\\.pub)?|database\\.(?:yml|bak)|appsettings\\.json|composer\\.(?:json|lock)|package(?:-lock)?\\.json|yarn\\.lock|requirements\\.txt|docker-compose\\.ya?ml|web\\.config)$ {\n        return 404;\n    }`;
 
 describe("nginx sensitive path remediation", () => {

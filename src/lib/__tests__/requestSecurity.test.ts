@@ -1,4 +1,4 @@
-import { detectSuspiciousValue } from "../../api/auth/_shared.js";
+import { detectSuspiciousValue } from "../../../api/auth/_shared.js";
 
 describe("detectSuspiciousValue", () => {
     it("WAF raporundaki script payloadlarını yakalar", () => {

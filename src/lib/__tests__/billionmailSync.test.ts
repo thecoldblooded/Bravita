@@ -1,7 +1,7 @@
 import {
     buildBillionMailContactFromProfile,
     shouldSyncCompletedProfileToBillionMail,
-} from "./billionmailSync";
+} from "../email/billionmailSync";
 
 describe("shouldSyncCompletedProfileToBillionMail", () => {
     it("profil ilk kez complete olduğunda senkronu etkinleştirir", () => {

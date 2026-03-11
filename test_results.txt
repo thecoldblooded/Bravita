@@ -1,0 +1,139 @@
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90mC:/Users/Umut/.gemini/antigravity/scratch/bravita-future-focused-growth-main[39m
+
+ [31mΓ¥»[39m src/contexts/__tests__/cartSync.test.ts [2m([22m[2m0 test[22m[2m)[22m
+ [31mΓ¥»[39m src/lib/__tests__/billionmailFunctionAuth.test.ts [2m([22m[2m0 test[22m[2m)[22m
+ [31mΓ¥»[39m src/lib/__tests__/billionmailSync.test.ts [2m([22m[2m0 test[22m[2m)[22m
+ [31mΓ¥»[39m src/lib/__tests__/requestGate.test.ts [2m([22m[2m0 test[22m[2m)[22m
+ [31mΓ¥»[39m src/lib/__tests__/emailHtmlSanitizer.test.ts [2m([22m[2m0 test[22m[2m)[22m
+ [31mΓ¥»[39m src/lib/__tests__/requestSecurity.test.ts [2m([22m[2m0 test[22m[2m)[22m
+ [31mΓ¥»[39m src/lib/__tests__/nginxSensitivePaths.test.ts [2m([22m[2m0 test[22m[2m)[22m
+ [32mΓ£ô[39m src/lib/__tests__/__vitest_smoke__.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 2[2mms[22m[39m
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ» Failed Suites 7 ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»
+
+ FAIL  src/contexts/__tests__/cartSync.test.ts [ src/contexts/__tests__/cartSync.test.ts ]
+Error: Failed to resolve import "./cartSync" from "src/contexts/__tests__/cartSync.test.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: C:/Users/Umut/.gemini/antigravity/scratch/bravita-future-focused-growth-main/src/contexts/__tests__/cartSync.test.ts:1:95
+  1  |  import { reconcileCartItemsWithCatalog } from "./cartSync";
+     |                                                 ^
+  2  |  describe("reconcileCartItemsWithCatalog", () => {
+  3  |    it("pasif veya bulunamayan ├╝r├╝nleri sepetten kald─▒r─▒r", () => {
+ Γ¥» TransformPluginContext._formatLog node_modules/vite/dist/node/chunks/config.js:28999:43
+ Γ¥» TransformPluginContext.error node_modules/vite/dist/node/chunks/config.js:28996:14
+ Γ¥» normalizeUrl node_modules/vite/dist/node/chunks/config.js:27119:18
+ Γ¥» node_modules/vite/dist/node/chunks/config.js:27177:32
+ Γ¥» TransformPluginContext.transform node_modules/vite/dist/node/chunks/config.js:27145:4
+ Γ¥» EnvironmentPluginContainer.transform node_modules/vite/dist/node/chunks/config.js:28797:14
+ Γ¥» loadAndTransform node_modules/vite/dist/node/chunks/config.js:22670:26
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[1/7]ΓÄ»
+
+ FAIL  src/lib/__tests__/billionmailFunctionAuth.test.ts [ src/lib/__tests__/billionmailFunctionAuth.test.ts ]
+Error: Failed to resolve import "./billionmailFunctionAuth" from "src/lib/__tests__/billionmailFunctionAuth.test.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: C:/Users/Umut/.gemini/antigravity/scratch/bravita-future-focused-growth-main/src/lib/__tests__/billionmailFunctionAuth.test.ts:5:7
+  3  |    extractBearerToken,
+  4  |    isInvalidFunctionJwtResponse
+  5  |  } from "./billionmailFunctionAuth";
+     |          ^
+  6  |  const REDACTED_USER_JWT = "[REDACTED_USER_JWT]";
+  7  |  const REDACTED_IGNORED_JWT = "[REDACTED_IGNORED_JWT]";
+ Γ¥» TransformPluginContext._formatLog node_modules/vite/dist/node/chunks/config.js:28999:43
+ Γ¥» TransformPluginContext.error node_modules/vite/dist/node/chunks/config.js:28996:14
+ Γ¥» normalizeUrl node_modules/vite/dist/node/chunks/config.js:27119:18
+ Γ¥» node_modules/vite/dist/node/chunks/config.js:27177:32
+ Γ¥» TransformPluginContext.transform node_modules/vite/dist/node/chunks/config.js:27145:4
+ Γ¥» EnvironmentPluginContainer.transform node_modules/vite/dist/node/chunks/config.js:28797:14
+ Γ¥» loadAndTransform node_modules/vite/dist/node/chunks/config.js:22670:26
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[2/7]ΓÄ»
+
+ FAIL  src/lib/__tests__/billionmailSync.test.ts [ src/lib/__tests__/billionmailSync.test.ts ]
+Error: Failed to resolve import "./billionmailSync" from "src/lib/__tests__/billionmailSync.test.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: C:/Users/Umut/.gemini/antigravity/scratch/bravita-future-focused-growth-main/src/lib/__tests__/billionmailSync.test.ts:4:7
+  2  |    buildBillionMailContactFromProfile,
+  3  |    shouldSyncCompletedProfileToBillionMail
+  4  |  } from "./billionmailSync";
+     |          ^
+  5  |  describe("shouldSyncCompletedProfileToBillionMail", () => {
+  6  |    it("profil ilk kez complete oldu─ƒunda senkronu etkinle┼ƒtirir", () => {
+ Γ¥» TransformPluginContext._formatLog node_modules/vite/dist/node/chunks/config.js:28999:43
+ Γ¥» TransformPluginContext.error node_modules/vite/dist/node/chunks/config.js:28996:14
+ Γ¥» normalizeUrl node_modules/vite/dist/node/chunks/config.js:27119:18
+ Γ¥» node_modules/vite/dist/node/chunks/config.js:27177:32
+ Γ¥» TransformPluginContext.transform node_modules/vite/dist/node/chunks/config.js:27145:4
+ Γ¥» EnvironmentPluginContainer.transform node_modules/vite/dist/node/chunks/config.js:28797:14
+ Γ¥» loadAndTransform node_modules/vite/dist/node/chunks/config.js:22670:26
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[3/7]ΓÄ»
+
+ FAIL  src/lib/__tests__/emailHtmlSanitizer.test.ts [ src/lib/__tests__/emailHtmlSanitizer.test.ts ]
+Error: Failed to resolve import "./emailHtmlSanitizer" from "src/lib/__tests__/emailHtmlSanitizer.test.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: C:/Users/Umut/.gemini/antigravity/scratch/bravita-future-focused-growth-main/src/lib/__tests__/emailHtmlSanitizer.test.ts:1:64
+  1  |  import { sanitizeEmailHtmlForPreview, sanitizePreviewUrl } from "./emailHtmlSanitizer";
+     |                                                                   ^
+  2  |  function parseHtmlFragment(html) {
+  3  |    return new DOMParser().parseFromString(html, "text/html");
+ Γ¥» TransformPluginContext._formatLog node_modules/vite/dist/node/chunks/config.js:28999:43
+ Γ¥» TransformPluginContext.error node_modules/vite/dist/node/chunks/config.js:28996:14
+ Γ¥» normalizeUrl node_modules/vite/dist/node/chunks/config.js:27119:18
+ Γ¥» node_modules/vite/dist/node/chunks/config.js:27177:32
+ Γ¥» TransformPluginContext.transform node_modules/vite/dist/node/chunks/config.js:27145:4
+ Γ¥» EnvironmentPluginContainer.transform node_modules/vite/dist/node/chunks/config.js:28797:14
+ Γ¥» loadAndTransform node_modules/vite/dist/node/chunks/config.js:22670:26
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[4/7]ΓÄ»
+
+ FAIL  src/lib/__tests__/nginxSensitivePaths.test.ts [ src/lib/__tests__/nginxSensitivePaths.test.ts ]
+Error: ENOENT: no such file or directory, open 'C:\Users\Umut\.gemini\antigravity\scratch\bravita-future-focused-growth-main\src\nginx.conf'
+ Γ¥» src/lib/__tests__/nginxSensitivePaths.test.ts:6:21
+
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[5/7]ΓÄ»
+
+ FAIL  src/lib/__tests__/requestGate.test.ts [ src/lib/__tests__/requestGate.test.ts ]
+Error: Failed to resolve import "../../request-gate.js" from "src/lib/__tests__/requestGate.test.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: C:/Users/Umut/.gemini/antigravity/scratch/bravita-future-focused-growth-main/src/lib/__tests__/requestGate.test.ts:1:40
+  1  |  import { decideRequestGateAction } from "../../request-gate.js";
+     |                                           ^
+  2  |  describe("decideRequestGateAction", () => {
+  3  |    it("WAF raporundaki query-string XSS denemelerini bloklar", () => {
+ Γ¥» TransformPluginContext._formatLog node_modules/vite/dist/node/chunks/config.js:28999:43
+ Γ¥» TransformPluginContext.error node_modules/vite/dist/node/chunks/config.js:28996:14
+ Γ¥» normalizeUrl node_modules/vite/dist/node/chunks/config.js:27119:18
+ Γ¥» node_modules/vite/dist/node/chunks/config.js:27177:32
+ Γ¥» TransformPluginContext.transform node_modules/vite/dist/node/chunks/config.js:27145:4
+ Γ¥» EnvironmentPluginContainer.transform node_modules/vite/dist/node/chunks/config.js:28797:14
+ Γ¥» loadAndTransform node_modules/vite/dist/node/chunks/config.js:22670:26
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[6/7]ΓÄ»
+
+ FAIL  src/lib/__tests__/requestSecurity.test.ts [ src/lib/__tests__/requestSecurity.test.ts ]
+Error: Failed to resolve import "../../api/auth/_shared.js" from "src/lib/__tests__/requestSecurity.test.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: C:/Users/Umut/.gemini/antigravity/scratch/bravita-future-focused-growth-main/src/lib/__tests__/requestSecurity.test.ts:1:38
+  1  |  import { detectSuspiciousValue } from "../../api/auth/_shared.js";
+     |                                         ^
+  2  |  describe("detectSuspiciousValue", () => {
+  3  |    it("WAF raporundaki script payloadlar─▒n─▒ yakalar", () => {
+ Γ¥» TransformPluginContext._formatLog node_modules/vite/dist/node/chunks/config.js:28999:43
+ Γ¥» TransformPluginContext.error node_modules/vite/dist/node/chunks/config.js:28996:14
+ Γ¥» normalizeUrl node_modules/vite/dist/node/chunks/config.js:27119:18
+ Γ¥» node_modules/vite/dist/node/chunks/config.js:27177:32
+ Γ¥» TransformPluginContext.transform node_modules/vite/dist/node/chunks/config.js:27145:4
+ Γ¥» EnvironmentPluginContainer.transform node_modules/vite/dist/node/chunks/config.js:28797:14
+ Γ¥» loadAndTransform node_modules/vite/dist/node/chunks/config.js:22670:26
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[7/7]ΓÄ»
+
+
+[2m Test Files [22m [1m[31m7 failed[39m[22m[2m | [22m[1m[32m1 passed[39m[22m[90m (8)[39m
+[2m      Tests [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m   Start at [22m 15:10:19
+[2m   Duration [22m 1.74s[2m (transform 26ms, setup 0ms, import 16ms, tests 2ms, environment 10.93s)[22m
+

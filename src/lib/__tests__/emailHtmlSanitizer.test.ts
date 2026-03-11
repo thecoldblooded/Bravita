@@ -1,4 +1,4 @@
-import { sanitizeEmailHtmlForPreview, sanitizePreviewUrl } from "./emailHtmlSanitizer";
+import { sanitizeEmailHtmlForPreview, sanitizePreviewUrl } from "../email/emailHtmlSanitizer";
 
 function parseHtmlFragment(html: string): Document {
     return new DOMParser().parseFromString(html, "text/html");

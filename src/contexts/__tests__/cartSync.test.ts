@@ -1,4 +1,4 @@
-import { reconcileCartItemsWithCatalog, type CartCatalogSnapshot, type CartItemSnapshot } from "./cartSync";
+import { reconcileCartItemsWithCatalog, type CartCatalogSnapshot, type CartItemSnapshot } from "../cartSync";
 
 describe("reconcileCartItemsWithCatalog", () => {
     it("pasif veya bulunamayan ürünleri sepetten kaldırır", () => {
