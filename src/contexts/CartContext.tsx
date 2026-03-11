@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { getProductPrice } from "@/lib/checkout";
+import { getProductPrice } from "@/lib/checkout/checkout";
 import { toast } from "sonner";
 import { reconcileCartItemsWithCatalog } from "./cartSync";
 

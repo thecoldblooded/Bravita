@@ -2,7 +2,7 @@ import { AnimatePresence, m } from "framer-motion";
 import { Truck, Coins, Building2, Save, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { SiteSettings } from "@/lib/admin";
+import { SiteSettings } from "@/lib/admin/admin";
 
 interface SiteSettingsSectionProps {
     isOpen: boolean;

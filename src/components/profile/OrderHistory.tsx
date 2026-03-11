@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { isValidPhoneNumber } from "react-phone-number-input";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
-import { getUserOrders } from "@/lib/checkout";
+import { getUserOrders } from "@/lib/checkout/checkout";
 import Loader from "@/components/ui/Loader";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";

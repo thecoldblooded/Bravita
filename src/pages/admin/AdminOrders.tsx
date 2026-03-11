@@ -3,7 +3,7 @@ import { m, AnimatePresence } from "framer-motion";
 import { Package, Search, Filter, ChevronRight, RefreshCw } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminGuard } from "@/components/admin/AdminGuard";
-import { getAllOrders, Order, OrderStatus, STATUS_CONFIG } from "@/lib/admin";
+import { getAllOrders, Order, OrderStatus, STATUS_CONFIG } from "@/lib/admin/admin";
 import { Link, useSearchParams } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";

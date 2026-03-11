@@ -10,7 +10,7 @@ import { SalesAgreements } from "./SalesAgreements";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useCart } from "@/contexts/CartContext";
-import { validatePromoCode } from "@/lib/checkout";
+import { validatePromoCode } from "@/lib/checkout/checkout";
 
 interface CartItem {
     id: string;

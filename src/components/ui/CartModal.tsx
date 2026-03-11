@@ -10,7 +10,7 @@ import { CartItem } from "../cart/CartItem";
 import { CartSummary } from "../cart/CartSummary";
 import { PromoCodeInput } from "../cart/PromoCodeInput";
 import { cn } from "@/lib/utils";
-import { getProductPrice } from "@/lib/checkout";
+import { getProductPrice } from "@/lib/checkout/checkout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
@@ -160,7 +160,7 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
 
         dispatch({ type: 'SET_APPLYING_PROMO', payload: true });
         try {
-            const result = await import("@/lib/checkout").then(m => m.validatePromoCode(inputPromoCode, subtotal, subtotal));
+            const result = await import("@/lib/checkout/checkout").then(m => m.validatePromoCode(inputPromoCode, subtotal, subtotal));
             if (result.valid) {
                 dispatch({
                     type: 'SET_APPLIED_PROMO', payload: {

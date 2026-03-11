@@ -1,4 +1,4 @@
-import { Product } from "@/lib/admin";
+import { Product } from "@/lib/admin/admin";
 import { ProductRow } from "./ProductRow";
 
 interface ProductsTableProps {

@@ -4,7 +4,7 @@ import {
 } from "recharts";
 import { TrendingUp, ShoppingBag, PieChart as PieChartIcon, Package } from "lucide-react";
 import { formatDate } from "@/lib/utils";
-import { DashboardStats } from "@/lib/admin";
+import { DashboardStats } from "@/lib/admin/admin";
 
 const STATUS_LABELS: Record<string, string> = {
     pending: "Beklemede",

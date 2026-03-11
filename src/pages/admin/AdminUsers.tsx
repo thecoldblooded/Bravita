@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminGuard } from "@/components/admin/AdminGuard";
-import { getAdminUsers, setUserAdmin, searchUsersByEmail } from "@/lib/admin";
+import { getAdminUsers, setUserAdmin, searchUsersByEmail } from "@/lib/admin/admin";
 import { Search, Shield, ShieldOff, UserPlus, RefreshCw, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";

@@ -25,7 +25,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminTheme } from "@/contexts/AdminThemeContext";
-import { getAuditLogs, AuditLogEntry } from "@/lib/admin";
+import { getAuditLogs, AuditLogEntry } from "@/lib/admin/admin";
 import Loader from "@/components/ui/Loader";
 import { toast } from "sonner";
 import { m, AnimatePresence } from "framer-motion";

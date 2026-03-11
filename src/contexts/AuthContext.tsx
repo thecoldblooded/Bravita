@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useRef } from "react";
 import { Session } from "@supabase/supabase-js";
 import { supabase, UserProfile } from "@/lib/supabase";
-import { getBffRefreshDelayMs, getBffUnavailableErrorMessage, isBffAuthEnabled, refreshBffSession, restoreBffSession, toSupabaseSessionInput, setBffSessionFromClient } from "@/lib/bffAuth";
+import { getBffRefreshDelayMs, getBffUnavailableErrorMessage, isBffAuthEnabled, refreshBffSession, restoreBffSession, toSupabaseSessionInput, setBffSessionFromClient } from "@/lib/auth/bffAuth";
 
 declare global {
   interface Window {

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminGuard } from "@/components/admin/AdminGuard";
 import { supabase } from "@/lib/supabase";
-import { getFunctionAuthHeaders } from "@/lib/functionAuth";
+import { getFunctionAuthHeaders } from "@/lib/auth/functionAuth";
 import {
     Mail,
     Settings,
@@ -46,7 +46,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-import { sanitizeEmailHtmlForPreview } from "@/lib/emailHtmlSanitizer";
+import { sanitizeEmailHtmlForPreview } from "@/lib/email/emailHtmlSanitizer";
 
 interface EmailTemplate {
     id: string;

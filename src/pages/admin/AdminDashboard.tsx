@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, Suspense, lazy } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminGuard } from "@/components/admin/AdminGuard";
-import { getDashboardStats, DashboardStats, STATUS_CONFIG, OrderStatus } from "@/lib/admin";
+import { getDashboardStats, DashboardStats, STATUS_CONFIG, OrderStatus } from "@/lib/admin/admin";
 import { supabase } from "@/lib/supabase";
 import { DashboardSkeleton } from "@/components/admin/skeletons";
 import { formatDate } from "@/lib/utils";

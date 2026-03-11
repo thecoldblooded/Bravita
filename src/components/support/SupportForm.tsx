@@ -6,7 +6,7 @@ import * as z from "zod";
 import { useTranslation } from "react-i18next";
 import { supabase, type UserProfile } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import { getFunctionAuthHeaders } from "@/lib/functionAuth";
+import { getFunctionAuthHeaders } from "@/lib/auth/functionAuth";
 import { toast } from "sonner";
 import {
     Form,

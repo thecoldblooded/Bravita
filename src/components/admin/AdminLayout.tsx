@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { AdminSidebar } from "./AdminSidebar";
-import { Order } from "@/lib/admin";
+import { Order } from "@/lib/admin/admin";
 import { AdminThemeProvider, useAdminTheme } from "@/contexts/AdminThemeContext";
 import { Menu, X } from "lucide-react";
 

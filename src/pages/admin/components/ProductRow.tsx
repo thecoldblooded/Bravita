@@ -1,6 +1,6 @@
 import { m } from "framer-motion";
 import { Package, Edit2, Trash2, CheckCircle, AlertCircle, X } from "lucide-react";
-import { Product } from "@/lib/admin";
+import { Product } from "@/lib/admin/admin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTranslation } from "react-i18next";

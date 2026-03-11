@@ -1,16 +1,16 @@
 import { lazy, Suspense, useEffect, useState } from "react";
-import Header from "@/components/Header";
-import Hero from "@/components/Hero";
+import Header from "@/components/layout/Header";
+import Hero from "@/components/landing/Hero";
 import ScrollReveal from "@/components/ui/scroll-reveal";
 import LazySection from "@/components/ui/lazy-section";
 
 // Lazy load below-the-fold components for better initial load
-const Benefits = lazy(() => import("@/components/Benefits"));
-const ProductShowcase = lazy(() => import("@/components/ProductShowcase"));
-const Ingredients = lazy(() => import("@/components/Ingredients"));
-const Usage = lazy(() => import("@/components/Usage"));
-const About = lazy(() => import("@/components/About"));
-const Footer = lazy(() => import("@/components/Footer"));
+const Benefits = lazy(() => import("@/components/landing/Benefits"));
+const ProductShowcase = lazy(() => import("@/components/landing/ProductShowcase"));
+const Ingredients = lazy(() => import("@/components/landing/Ingredients"));
+const Usage = lazy(() => import("@/components/landing/Usage"));
+const About = lazy(() => import("@/components/landing/About"));
+const Footer = lazy(() => import("@/components/layout/Footer"));
 
 import bravitaGif from "@/assets/bravita.gif";
 

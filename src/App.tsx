@@ -7,26 +7,26 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { LazyMotion, domAnimation, m } from "framer-motion";
 import Index from "./pages/Index";
 import "@/i18n/config"; // Ensure i18n is initialized
-import UnderConstruction from "@/components/UnderConstruction";
+import UnderConstruction from "@/components/common/UnderConstruction";
 import { initializeConsentAwareAnalytics } from "@/lib/performance/loadContentSquare";
 import periodicAlpacaGif from "@/assets/alpaca.gif";
-import { ImageWithFallback } from "@/components/ImageWithFallback";
-import WelcomeAnimation from "@/components/WelcomeAnimation";
+import { ImageWithFallback } from "@/components/common/ImageWithFallback";
+import WelcomeAnimation from "@/components/common/WelcomeAnimation";
 
 // Admin pages
 const NotFound = lazy(() => import("./pages/NotFound"));
-const CompleteProfile = lazy(() => import("./pages/CompleteProfile"));
-const Profile = lazy(() => import("./pages/Profile"));
-const UpdatePassword = lazy(() => import("./pages/UpdatePassword"));
-const Checkout = lazy(() => import("./pages/Checkout"));
-const OrderConfirmation = lazy(() => import("./pages/OrderConfirmation"));
-const ThreeDSRedirect = lazy(() => import("./pages/ThreeDSRedirect"));
-const PaymentFailed = lazy(() => import("./pages/PaymentFailed"));
-const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
-const TermsOfService = lazy(() => import("./pages/TermsOfService"));
-const PeriodicGif = lazy(() => import("@/components/PeriodicGif"));
-const PromotionMarquee = lazy(() => import("@/components/PromotionMarquee"));
-const CookieConsent = lazy(() => import("@/components/CookieConsent"));
+const CompleteProfile = lazy(() => import("./pages/auth/CompleteProfile"));
+const Profile = lazy(() => import("./pages/profile/Profile"));
+const UpdatePassword = lazy(() => import("./pages/auth/UpdatePassword"));
+const Checkout = lazy(() => import("./pages/checkout/Checkout"));
+const OrderConfirmation = lazy(() => import("./pages/checkout/OrderConfirmation"));
+const ThreeDSRedirect = lazy(() => import("./pages/checkout/ThreeDSRedirect"));
+const PaymentFailed = lazy(() => import("./pages/checkout/PaymentFailed"));
+const PrivacyPolicy = lazy(() => import("./pages/legal/PrivacyPolicy"));
+const TermsOfService = lazy(() => import("./pages/legal/TermsOfService"));
+const PeriodicGif = lazy(() => import("@/components/common/PeriodicGif"));
+const PromotionMarquee = lazy(() => import("@/components/landing/PromotionMarquee"));
+const CookieConsent = lazy(() => import("@/components/common/CookieConsent"));
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
 const AdminOrders = lazy(() => import("@/pages/admin/AdminOrders"));
 const AdminOrderDetail = lazy(() => import("@/pages/admin/AdminOrderDetail"));
@@ -36,7 +36,7 @@ const AdminPromoCodes = lazy(() => import("@/pages/admin/AdminPromoCodes"));
 const AdminAuditLogs = lazy(() => import("@/pages/admin/AdminAuditLogs"));
 const AdminSupport = lazy(() => import("@/pages/admin/AdminSupport"));
 const AdminEmails = lazy(() => import("@/pages/admin/AdminEmails"));
-const EmailPreview = lazy(() => import("./pages/EmailPreview"));
+const EmailPreview = lazy(() => import("./pages/email/EmailPreview"));
 
 /**
  * 🚧 MAINTENANCE MODE FLAG

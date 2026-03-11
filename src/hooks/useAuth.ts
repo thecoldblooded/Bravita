@@ -10,7 +10,7 @@ import {
   setBffSessionFromClient,
   signupWithBff,
   toSupabaseSessionInput,
-} from "@/lib/bffAuth";
+} from "@/lib/auth/bffAuth";
 // BillionMail sync moved to AuthContext - only after email confirmation
 
 export interface SignupData {

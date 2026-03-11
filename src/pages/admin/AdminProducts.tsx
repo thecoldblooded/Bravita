@@ -1,7 +1,7 @@
 import React, { useEffect, useCallback, useReducer } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminGuard } from "@/components/admin/AdminGuard";
-import { getProducts, updateProductStock, updateProduct, addProduct, deleteProduct, Product, getSiteSettings, updateSiteSettings, SiteSettings } from "@/lib/admin";
+import { getProducts, updateProductStock, updateProduct, addProduct, deleteProduct, Product, getSiteSettings, updateSiteSettings, SiteSettings } from "@/lib/admin/admin";
 import { ProductGridSkeleton } from "@/components/admin/skeletons";
 import { toast } from "sonner";
 import { useSearchParams } from "react-router-dom";

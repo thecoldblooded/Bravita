@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminGuard } from "@/components/admin/AdminGuard";
-import { getPromoCodes, addPromoCode, updatePromoCode, deletePromoCode, PromoCode } from "@/lib/admin";
+import { getPromoCodes, addPromoCode, updatePromoCode, deletePromoCode, PromoCode } from "@/lib/admin/admin";
 import { TableSkeleton } from "@/components/admin/skeletons";
 import { Search, Edit2, Trash2, Plus, Percent, Coins, CheckCircle, AlertCircle, History } from "lucide-react";
 import { Input } from "@/components/ui/input";
