@@ -340,11 +340,26 @@ jobs:
           if [ -s drift.sql ]; then
             log "drift.sql is non-empty; running classifier against remote public dump"
 
+            CLASSIFIER_SCRIPT=""
+            if [ -f scripts/classify-linked-drift.mjs ]; then
+              CLASSIFIER_SCRIPT="scripts/classify-linked-drift.mjs"
+            elif [ -f scripts/drift/classify-linked-drift.mjs ]; then
+              CLASSIFIER_SCRIPT="scripts/drift/classify-linked-drift.mjs"
+            else
+              echo "::error::Drift classifier script not found in expected locations."
+              find scripts -maxdepth 2 -type f | sort || true
+              exit 1
+            fi
+
+            log "Using drift classifier script: ${CLASSIFIER_SCRIPT}"
+
             CLASSIFY_EXIT=0
-            node scripts/classify-linked-drift.mjs \
+            node "${CLASSIFIER_SCRIPT}" \
               drift.sql \
               _reports/sql/remote_public_ci_dump.sql \
               _reports/sql/drift_classification_report.txt || CLASSIFY_EXIT=$?
+
+            log "drift classifier exit_code=${CLASSIFY_EXIT}"
 
             if [ "$CLASSIFY_EXIT" -ne 0 ]; then
               echo "❌ Database drift detected in public schema. Please create a migration for manual changes."
