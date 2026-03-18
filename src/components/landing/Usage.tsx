@@ -17,7 +17,7 @@ const Usage = () => {
         subtitle={t('usage.video_subtitle')}
         meta="2025"
         media={usageVideo}
-        poster="/bravita-bottle.webp"
+        poster="/bravita-bottle1.webp"
         mediaType="video"
         targetSize="fullscreen"
         scrollHeightVh={isMobile ? 120 : 200}

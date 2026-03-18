@@ -41,19 +41,19 @@ function TestimonialCard({
   active,
 }: TestimonialCardProps) {
   return (
-    <div className={cn("relative flex h-full flex-col overflow-hidden", className)}>
+    <div className={cn("relative flex h-full max-w-full flex-col overflow-hidden", className)}>
       <div className="pointer-events-none absolute right-0 top-0 h-32 w-32 rounded-full bg-bravita-yellow/20 blur-3xl" />
       <div className="pointer-events-none absolute bottom-0 left-0 h-28 w-28 rounded-full bg-bravita-orange/10 blur-3xl" />
 
       <div className="relative flex h-full flex-col">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-wrap items-start justify-between gap-3 sm:flex-nowrap sm:gap-4">
           <ReviewStars rating={item.rating} />
-          <span className="rounded-full border border-orange-200/80 bg-white/75 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#2D334A]/55">
+          <span className="shrink-0 rounded-full border border-orange-200/80 bg-white/75 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#2D334A]/55">
             {item.date}
           </span>
         </div>
 
-        <div className={cn("min-h-0 flex-1", compact ? "mt-6" : "mt-8")}>
+        <div className={cn("min-h-0 flex-1 overflow-hidden", compact ? "mt-5" : "mt-8")}>
           <Quote
             className={cn(
               "shrink-0 rotate-180 text-bravita-orange/70",
@@ -65,23 +65,23 @@ function TestimonialCard({
             className={cn(
               "mt-5 font-semibold tracking-[-0.02em] text-[#2D334A]",
               compact
-                ? "text-lg leading-8"
-                : "text-[1.24rem] leading-[1.95rem] xl:text-[1.38rem] xl:leading-[2.1rem]",
+                ? "text-base leading-7 wrap-anywhere sm:text-lg sm:leading-8"
+                : "text-[1.24rem] leading-[1.95rem] wrap-anywhere xl:text-[1.38rem] xl:leading-[2.1rem]",
             )}
           >
             <SegmentedRevealText
               text={item.comment}
               active={active}
               once={compact}
-              segmentSize={2}
+              segmentSize={compact ? 1 : 2}
               blurAmount={10}
               stagger={0.04}
             />
           </blockquote>
         </div>
 
-        <div className="mt-auto flex shrink-0 items-center justify-between border-t border-orange-200/60 pt-5">
-          <span className="text-base font-bold text-[#2D334A]">{item.name}</span>
+        <div className="mt-auto flex shrink-0 items-center justify-between gap-3 border-t border-orange-200/60 pt-5">
+          <span className="min-w-0 flex-1 truncate text-base font-bold text-[#2D334A]">{item.name}</span>
           <Quote
             className="h-7 w-7 shrink-0 text-bravita-orange/60"
             aria-hidden="true"
@@ -191,7 +191,7 @@ const Testimonials = () => {
   }
 
   return (
-    <section id="testimonials" className="relative">
+    <section id="testimonials" className="relative overflow-x-clip">
       {/* Vanta.js fog background — sticky so it stays fixed during card scroll */}
       <VantaBackground />
 
@@ -228,7 +228,7 @@ const Testimonials = () => {
           </div>
 
           <div className="mt-10 md:mt-0">
-            <div className="relative mx-auto h-124 w-full max-w-104 sm:h-128 sm:max-w-120 md:ml-auto md:mr-0 md:h-128 md:max-w-lg">
+            <div className="relative mx-auto h-124 w-full max-w-104 overflow-x-clip sm:h-128 sm:max-w-120 md:ml-auto md:mr-0 md:h-128 md:max-w-lg">
               {testimonials.map((testimonial, index) => {
                 const offset = index - activeCardIndex;
                 const absOffset = Math.abs(offset);
@@ -243,10 +243,10 @@ const Testimonials = () => {
                     whileInView={{ opacity: 1, y: 0, scale: 1 }}
                     viewport={{ once: true, amount: 0.25 }}
                     animate={{
-                      x: offset * 20,
-                      y: absOffset * 14,
+                      x: offset * 14,
+                      y: absOffset * 12,
                       scale: 1 - absOffset * 0.04,
-                      rotate: isActive ? 0 : offset > 0 ? 4 : -4,
+                      rotate: isActive ? 0 : offset > 0 ? 3 : -3,
                       opacity: isVisible ? 1 - absOffset * 0.18 : 0,
                     }}
                     transition={{
@@ -272,7 +272,7 @@ const Testimonials = () => {
                         item={testimonial}
                         compact
                         active={isActive}
-                        className="h-full overflow-hidden rounded-4xl border border-white/70 bg-white/80 p-6 shadow-[0_20px_60px_-35px_rgba(236,119,44,0.28)] backdrop-blur-xl"
+                        className="h-full overflow-hidden rounded-4xl border border-white/70 bg-white/80 p-5 shadow-[0_20px_60px_-35px_rgba(236,119,44,0.28)] backdrop-blur-xl sm:p-6"
                       />
                     </m.div>
                   </m.div>

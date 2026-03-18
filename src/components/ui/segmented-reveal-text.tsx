@@ -56,11 +56,15 @@ export default function SegmentedRevealText({
             : isInView
 
     return (
-        <span ref={ref} className={cn("inline", className)} {...props}>
+        <span
+            ref={ref}
+            className={cn("inline max-w-full whitespace-normal wrap-anywhere", className)}
+            {...props}
+        >
             {segments.map((segment, index) => (
                 <m.span
                     key={`${segment}-${index}`}
-                    className="inline-block whitespace-pre-wrap"
+                    className="inline-block max-w-full whitespace-pre-wrap wrap-anywhere align-top"
                     initial={false}
                     animate={
                         shouldShow

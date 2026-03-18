@@ -10,7 +10,7 @@ import { HelmetProvider } from "react-helmet-async";
 
 setWasmUrl(wasmUrl);
 
-const HERO_SHELL_LCP_IMAGE_SRC = "/bravita-bottle.webp";
+const HERO_SHELL_LCP_IMAGE_SRC = "/src/assets/bravita-bottle1.webp";
 const SEO_LOADER_GIF_SRC = "/bravita.gif";
 const MIN_SEO_LOADER_VISIBLE_MS = 2200;
 

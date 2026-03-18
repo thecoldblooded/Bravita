@@ -1,7 +1,7 @@
 
 import { m, AnimatePresence } from "framer-motion";
 import { Plus, Minus, ShoppingCart } from "lucide-react";
-import bravitaBottle from "@/assets/bravita-bottle.webp";
+import bravitaBottle from "@/assets/bravita-bottle1.webp";
 
 interface CartItemProps {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

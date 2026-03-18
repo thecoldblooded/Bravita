@@ -3,9 +3,10 @@ import { Star, Sparkles, ChevronDown } from "lucide-react";
 import { m } from "framer-motion";
 import TextCursorProximity from "@/components/ui/text-cursor-proximity";
 import { useTranslation } from "react-i18next";
+import bravitaBottle1 from "@/assets/bravita-bottle1.webp";
 
-// Keep source stable so it can be preloaded from index.html
-const HERO_LCP_IMAGE_SRC = "/bravita-bottle.webp";
+// Import from src so Vite includes the asset in the bundle and resolves the correct URL.
+const HERO_LCP_IMAGE_SRC = bravitaBottle1;
 
 type HeroTranslate = ReturnType<typeof useTranslation>["t"];
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { MapPin, CreditCard, Building2, Package, X, Loader2 } from "lucide-react";
 import { supabase, UserProfile } from "@/lib/supabase";
-import bravitaBottle from "@/assets/bravita-bottle.webp";
+import bravitaBottle from "@/assets/bravita-bottle1.webp";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

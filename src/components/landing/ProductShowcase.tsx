@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { useState, useRef, useEffect } from "react";
 
 // Use dynamic imports for images to enable code splitting
-const bravitaBottle = new URL("@/assets/bravita-bottle.webp", import.meta.url).href;
+const bravitaBottle = new URL("@/assets/bravita-bottle1.webp", import.meta.url).href;
 const bravitaBox = new URL("@/assets/bravita-box.webp", import.meta.url).href;
 
 const ProductShowcase = () => {
@@ -48,7 +48,7 @@ const ProductShowcase = () => {
           <div className="relative flex justify-center items-end min-h-75">
             <div className="relative group z-20 -mr-12 md:-mr-24">
               <div className="absolute inset-0 bg-linear-to-br from-bravita-yellow/30 to-bravita-orange/30 rounded-3xl blur-2xl opacity-60 group-hover:opacity-80 transition-opacity" />
-              {!bottleLoaded && <div className="w-44 md:w-54 h-64 bg-linear-to-br from-bravita-yellow/20 to-bravita-orange/20 rounded-2xl animate-pulse" />}
+              {!bottleLoaded && <div className="w-44 md:w-64 h-64 bg-linear-to-br from-bravita-yellow/20 to-bravita-orange/20 rounded-2xl animate-pulse" />}
               {isInView && (
                 <img
                   src={bravitaBottle}
@@ -56,7 +56,7 @@ const ProductShowcase = () => {
                   loading="lazy"
                   decoding="async"
                   onLoad={() => setBottleLoaded(true)}
-                  className={`relative z-10 w-44 md:w-54 drop-shadow-xl group-hover:scale-105 transition-all duration-500 ${bottleLoaded ? 'opacity-100' : 'opacity-0 absolute'}`}
+                  className={`relative z-10 w-44 md:w-64 drop-shadow-xl group-hover:scale-105 transition-all duration-500 ${bottleLoaded ? 'opacity-100' : 'opacity-0 absolute'}`}
                 />
               )}
             </div>

@@ -5,7 +5,7 @@ import { Check, Package, MapPin, CreditCard, Building2, ArrowRight, Copy, CheckC
 import { Button } from "@/components/ui/button";
 import { getOrderById, getBankDetails } from "@/lib/checkout/checkout";
 import Loader from "@/components/ui/Loader";
-import bravitaBottle from "@/assets/bravita-bottle.webp";
+import bravitaBottle from "@/assets/bravita-bottle1.webp";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
