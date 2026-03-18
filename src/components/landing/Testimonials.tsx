@@ -228,7 +228,7 @@ const Testimonials = () => {
           </div>
 
           <div className="mt-10 md:mt-0">
-            <div className="relative mx-auto h-[31rem] w-full max-w-[26rem] sm:h-[32rem] sm:max-w-[30rem] md:ml-auto md:mr-0 md:h-[32rem] md:max-w-[32rem]">
+            <div className="relative mx-auto h-124 w-full max-w-104 sm:h-128 sm:max-w-120 md:ml-auto md:mr-0 md:h-128 md:max-w-lg">
               {testimonials.map((testimonial, index) => {
                 const offset = index - activeCardIndex;
                 const absOffset = Math.abs(offset);

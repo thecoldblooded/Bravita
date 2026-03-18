@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { lazy, Suspense, useEffect, useState } from "react";
-import { LazyMotion, domAnimation, m } from "framer-motion";
+import { LazyMotion, domMax, m } from "framer-motion";
 import Index from "./pages/Index";
 import "@/i18n/config"; // Ensure i18n is initialized
 import UnderConstruction from "@/components/common/UnderConstruction";
@@ -222,7 +222,7 @@ const App = () => {
 
   return (
     <ErrorBoundary>
-      <LazyMotion features={domAnimation}>
+      <LazyMotion features={domMax}>
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
             <AdminThemeProvider>
