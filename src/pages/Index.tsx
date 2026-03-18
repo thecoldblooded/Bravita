@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import Header from "@/components/layout/Header";
 import Hero from "@/components/landing/Hero";
+import Testimonials from "@/components/landing/Testimonials";
 import ScrollReveal from "@/components/ui/scroll-reveal";
 import LazySection from "@/components/ui/lazy-section";
 
@@ -162,6 +163,8 @@ const Index = () => {
             </ScrollReveal>
           </Suspense>
         </LazySection>
+
+        <Testimonials />
       </main>
       {shouldEagerLoadFooter ? (
         <Suspense fallback={<SectionFallback minHeight="40vh" />}>

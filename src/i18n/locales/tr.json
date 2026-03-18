@@ -164,6 +164,46 @@
             "step": "Motto",
             "title": "Gücün Kaynağı",
             "content": "Modern hayatın koşturmacasında zinde kalmak için \"Büyümenin Formülü Burada\" mottosuyla günlük beslenmenize pratik bir destek sunuyoruz."
+        },
+        "testimonials": {
+            "badge": "Kullanıcı Yorumları",
+            "title": "Ailelerin",
+            "title_accent": "Deneyimleri",
+            "description": "Bravita'yı günlük rutine dahil eden ailelerin kullanım kolaylığı, lezzet ve düzenli tüketim deneyimine dair kısa yorumları.",
+            "count_label": "yorum",
+            "scroll_hint": "Yorumları kaydırarak sırayla inceleyin.",
+            "items": [
+                {
+                    "name": "Elif K.",
+                    "comment": "Oğlum her sabah kahvaltıda Bravita'sını içmek için koşarak geliyor, bu beni çok mutlu ediyor. Daha önce birkaç farklı takviye denedik ama hepsinde ilaç gibi bir tat vardı ve çocuğa zorla içiriyorduk. Bravita'nın meyvemsi tadı gerçekten fark yarattı. Sıvı formda olması da bizim gibi sabahları koşturan aileler için büyük kolaylık. Üç aydır düzenli kullanıyoruz ve artık günlük rutinimizin vazgeçilmez bir parçası oldu.",
+                    "date": "12 Şubat 2026",
+                    "rating": 5
+                },
+                {
+                    "name": "Mert A.",
+                    "comment": "Bir baba olarak çocuğuma ne verdiğimi bilmek benim için her şeyden önemli. Bravita'nın içerik tablosunu detaylıca inceledim, eczacı bir arkadaşıma da danıştım ve gerçekten güven veren bir formül olduğunu gördüm. Ölçekli kapağı sayesinde dozajlamak çok kolay, fazla ya da eksik verme gibi bir endişem olmuyor. Kızım da tadını çok seviyor, hiç direnmeden içiyor. Ebeveyn olarak bu kadar rahat edebilmek paha biçilmez.",
+                    "date": "28 Ocak 2026",
+                    "rating": 5
+                },
+                {
+                    "name": "Zeynep T.",
+                    "comment": "Sabahları okul hazırlığı, kahvaltı derken zaman hep kısıtlı oluyor. Bravita sayesinde çocuğumun vitamin ihtiyacını pratik ve hızlı bir şekilde karşılayabiliyorum. En çok sevdiğim yanı ise çocuğumun bunu bir görev gibi değil, keyifle tüketmesi. Her sabah 'annee Bravita'mı ver!' demesi benim için en güzel geri bildirim. Anneler olarak birbirimize gönül rahatlığıyla önerebileceğimiz bir ürün.",
+                    "date": "05 Mart 2026",
+                    "rating": 5
+                },
+                {
+                    "name": "Burak D.",
+                    "comment": "Şişe tasarımı hem şık hem de son derece kullanışlı. Kapağı çocuk kilidi gibi güvenli, ama biz yetişkinler kolayca açabiliyoruz. Sıvı kıvamı akışkan olduğu için kaşıkla uğraşmadan doğrudan verebiliyoruz. İki çocuğum var ve ikisi de sabah kahvaltısında severek içiyor. Daha önce tablet formunda takviyeler denemiştik ama yutma konusunda hep sorun yaşıyorduk. Bravita ile bu sorun tamamen ortadan kalktı, günlük rutinimize çok doğal bir şekilde oturdu.",
+                    "date": "19 Şubat 2026",
+                    "rating": 5
+                },
+                {
+                    "name": "Selin Y.",
+                    "comment": "Komşumun tavsiyesiyle aldım ve gerçekten çok memnun kaldım. Lezzeti güzel, çocuklar hiç zorlanmadan içiyor. Kullanım kolaylığı da cabası; sabah koşturmacasında iki dakikada halloluyor. En önemlisi, düzenli kullanım alışkanlığı oluşturmak artık bir mücadele değil. Kızım kendisi hatırlatıyor bile! Ailece güvenle kullandığımız, içimiz rahat bir ürün. Çevremde soran herkese tereddütsüz öneriyorum.",
+                    "date": "02 Mart 2026",
+                    "rating": 5
+                }
+            ]
         }
     },
     "footer": {
