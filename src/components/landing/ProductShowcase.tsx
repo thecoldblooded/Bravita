@@ -45,34 +45,38 @@ const ProductShowcase = () => {
 
         <div ref={containerRef} className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Product Images */}
-          <div className="relative flex justify-center items-end min-h-75">
-            <div className="relative group z-20 -mr-12 md:-mr-24">
-              <div className="absolute inset-0 bg-linear-to-br from-bravita-yellow/30 to-bravita-orange/30 rounded-3xl blur-2xl opacity-60 group-hover:opacity-80 transition-opacity" />
-              {!bottleLoaded && <div className="w-44 md:w-64 h-64 bg-linear-to-br from-bravita-yellow/20 to-bravita-orange/20 rounded-2xl animate-pulse" />}
-              {isInView && (
-                <img
-                  src={bravitaBottle}
-                  alt={t('hero.delicious')}
-                  loading="lazy"
-                  decoding="async"
-                  onLoad={() => setBottleLoaded(true)}
-                  className={`relative z-10 w-44 md:w-64 drop-shadow-xl group-hover:scale-105 transition-all duration-500 ${bottleLoaded ? 'opacity-100' : 'opacity-0 absolute'}`}
-                />
-              )}
+          <div className="relative mx-auto mt-8 min-[500px]:mt-16 md:mt-20 lg:mt-0 min-h-[clamp(28rem,76vw,36rem)] w-full max-w-2xl overflow-visible">
+            <div className="absolute bottom-[clamp(0.35rem,1vw,0.65rem)] left-[38%] w-[clamp(12.5rem,50%,20rem)]">
+              <div className="relative group z-10">
+                <div className="absolute inset-0 bg-linear-to-br from-bravita-orange/30 to-bravita-red/30 rounded-3xl blur-2xl opacity-60 group-hover:opacity-80 transition-opacity" />
+                {!boxLoaded && <div className="aspect-320/567 w-full bg-linear-to-br from-bravita-orange/20 to-bravita-red/20 rounded-2xl animate-pulse" />}
+                {isInView && (
+                  <img
+                    src={bravitaBox}
+                    alt="Bravita"
+                    loading="lazy"
+                    decoding="async"
+                    onLoad={() => setBoxLoaded(true)}
+                    className={`relative z-10 w-full group-hover:scale-105 transition-all duration-500 ${boxLoaded ? 'opacity-100' : 'opacity-0 absolute inset-0'}`}
+                  />
+                )}
+              </div>
             </div>
-            <div className="relative group z-10">
-              <div className="absolute inset-0 bg-linear-to-br from-bravita-orange/30 to-bravita-red/30 rounded-3xl blur-2xl opacity-60 group-hover:opacity-80 transition-opacity" />
-              {!boxLoaded && <div className="w-60 md:w-80 h-72 bg-linear-to-br from-bravita-orange/20 to-bravita-red/20 rounded-2xl animate-pulse" />}
-              {isInView && (
-                <img
-                  src={bravitaBox}
-                  alt="Bravita"
-                  loading="lazy"
-                  decoding="async"
-                  onLoad={() => setBoxLoaded(true)}
-                  className={`relative z-10 w-60 md:w-80 group-hover:scale-105 transition-all duration-500 ${boxLoaded ? 'opacity-100' : 'opacity-0 absolute'}`}
-                />
-              )}
+            <div className="absolute bottom-0 left-[15%] z-20 w-[clamp(9.25rem,36%,16rem)]">
+              <div className="relative group">
+                <div className="absolute inset-0 bg-linear-to-br from-bravita-yellow/30 to-bravita-orange/30 rounded-3xl blur-2xl opacity-60 group-hover:opacity-80 transition-opacity" />
+                {!bottleLoaded && <div className="aspect-256/453 w-full bg-linear-to-br from-bravita-yellow/20 to-bravita-orange/20 rounded-2xl animate-pulse" />}
+                {isInView && (
+                  <img
+                    src={bravitaBottle}
+                    alt={t('hero.delicious')}
+                    loading="lazy"
+                    decoding="async"
+                    onLoad={() => setBottleLoaded(true)}
+                    className={`relative z-10 w-full drop-shadow-xl group-hover:scale-105 transition-all duration-500 ${bottleLoaded ? 'opacity-100' : 'opacity-0 absolute inset-0'}`}
+                  />
+                )}
+              </div>
             </div>
           </div>
 

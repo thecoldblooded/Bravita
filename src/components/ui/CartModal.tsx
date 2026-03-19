@@ -2,7 +2,7 @@ import { useEffect, useMemo, useReducer } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./dialog";
 import { useTranslation } from "react-i18next";
 import { PackageX, ShoppingCart, Sparkles } from "lucide-react";
-import bravitaGif from "@/assets/bravita.gif";
+const bravitaGif = "/bravita.gif";
 import { Button } from "./button";
 import { m, AnimatePresence, LazyMotion, domAnimation } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";

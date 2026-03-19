@@ -1,4 +1,4 @@
-import bravitaGif from "@/assets/bravita.gif";
+const bravitaGif = "/bravita.gif";
 
 /**
  * Under Construction Page

@@ -129,7 +129,7 @@ function VantaBackground() {
   return (
     <div
       ref={vantaRef}
-      className="sticky top-0 z-0 h-screen w-full"
+      className="relative z-0 h-screen w-full min-[1025px]:sticky min-[1025px]:top-0"
     />
   );
 }
@@ -191,11 +191,11 @@ const Testimonials = () => {
   }
 
   return (
-    <section id="testimonials" className="relative overflow-x-clip">
+    <section id="testimonials" className="relative overflow-x-visible overflow-y-hidden min-[1025px]:overflow-x-clip min-[1025px]:overflow-y-visible">
       {/* Vanta.js fog background — sticky so it stays fixed during card scroll */}
       <VantaBackground />
 
-      <div className="relative z-10 -mt-[100vh] container mx-auto px-4 pt-10 pb-6 md:pt-16 md:pb-10 lg:hidden">
+      <div className="relative z-10 -mt-[100vh] container mx-auto px-4 pt-10 pb-12 md:pt-16 md:pb-16 min-[1025px]:hidden">
         <div className="mx-auto max-w-6xl md:grid md:grid-cols-[minmax(0,0.92fr)_minmax(0,1fr)] md:items-center md:gap-8">
           <div>
             <ScrollReveal delay={0.05}>
@@ -228,7 +228,7 @@ const Testimonials = () => {
           </div>
 
           <div className="mt-10 md:mt-0">
-            <div className="relative mx-auto h-124 w-full max-w-104 overflow-x-clip sm:h-128 sm:max-w-120 md:ml-auto md:mr-0 md:h-128 md:max-w-lg">
+            <div className="relative mx-auto h-116 w-full max-w-94 overflow-visible px-4 sm:h-120 sm:max-w-108 sm:px-5 md:ml-auto md:mr-0 md:h-120 md:max-w-115 md:px-6">
               {testimonials.map((testimonial, index) => {
                 const offset = index - activeCardIndex;
                 const absOffset = Math.abs(offset);
@@ -239,14 +239,14 @@ const Testimonials = () => {
                   <m.div
                     key={`${testimonial.name}-${index}`}
                     className="absolute inset-0"
-                    initial={{ opacity: 0, y: 28, scale: 0.98 }}
-                    whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                    initial={{ opacity: 0, y: 24, scale: 0.92 }}
+                    whileInView={{ opacity: 1, y: 0, scale: 0.92 }}
                     viewport={{ once: true, amount: 0.25 }}
                     animate={{
-                      x: offset * 14,
-                      y: absOffset * 12,
-                      scale: 1 - absOffset * 0.04,
-                      rotate: isActive ? 0 : offset > 0 ? 3 : -3,
+                      x: offset * 12,
+                      y: absOffset * 10,
+                      scale: 0.9 - absOffset * 0.035,
+                      rotate: isActive ? 0 : offset > 0 ? 2.5 : -2.5,
                       opacity: isVisible ? 1 - absOffset * 0.18 : 0,
                     }}
                     transition={{
@@ -283,7 +283,7 @@ const Testimonials = () => {
         </div>
       </div>
 
-      <div ref={stageRef} className="relative z-10 -mt-[100vh] hidden lg:block">
+      <div ref={stageRef} className="relative z-10 -mt-[100vh] hidden min-[1025px]:block">
         <ContainerScroll className="h-[300vh] xl:h-[320vh]">
           <div className="sticky left-0 top-0 flex h-screen items-center px-4">
             <div className="container mx-auto grid w-full items-center gap-12 xl:grid-cols-[0.84fr_1fr] xl:gap-14">

@@ -13,7 +13,7 @@ const Usage = lazy(() => import("@/components/landing/Usage"));
 const About = lazy(() => import("@/components/landing/About"));
 const Footer = lazy(() => import("@/components/layout/Footer"));
 
-import bravitaGif from "@/assets/bravita.gif";
+const bravitaGif = "/bravita.gif";
 
 const SectionFallback = ({ minHeight }: { minHeight: string }) => (
   <div className="w-full bg-[#FFFBF7]/50 flex items-center justify-center overflow-hidden" style={{ minHeight }} aria-hidden="true">

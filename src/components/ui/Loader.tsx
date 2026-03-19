@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import bravitaGif from "@/assets/bravita.gif";
+const bravitaGif = "/bravita.gif";
 
 interface LoaderProps {
   size?: string;

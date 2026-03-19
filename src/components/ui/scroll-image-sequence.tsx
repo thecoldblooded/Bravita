@@ -6,8 +6,8 @@ import { LoadingSkeleton } from "./loading-skeleton";
 // Register GSAP plugins
 gsap.registerPlugin(ScrollTrigger);
 
-// Generate frame URLs - 81 frames (from public folder for production)
-const frameCount = 81;
+// Generate frame URLs - 227 frames (from public folder for production)
+const frameCount = 227;
 const frameUrls = Array.from({ length: frameCount }, (_, i) =>
   `/frames/ezgif-frame-${String(i + 1).padStart(3, '0')}.webp`
 );
