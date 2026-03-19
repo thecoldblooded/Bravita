@@ -39,7 +39,8 @@ function buildCommand() {
         ".",
         "--json",
         "--no-banner",
-        "--no-spinner"
+        "--no-spinner",
+        "--reach-analysis-timeout", "300"
     ];
 
     if (process.platform === "win32") {
@@ -63,7 +64,8 @@ function runSocketCi() {
             stdio: "inherit",
             env: {
                 ...process.env,
-                SOCKET_CLI_API_TOKEN: process.env.SOCKET_CLI_API_TOKEN
+                SOCKET_CLI_API_TOKEN: process.env.SOCKET_CLI_API_TOKEN,
+                SOCKET_CLI_API_TIMEOUT: process.env.SOCKET_CLI_API_TIMEOUT || "300000"
             }
         });
 
