@@ -53,20 +53,19 @@ createRoot(rootElement!).render(
 
 const markAppReady = () => {
   const documentRoot = document.documentElement;
-  documentRoot.classList.add("app-ready");
-  documentRoot.classList.remove("seo-shell-pending");
-
   const seoShell = document.getElementById("seo-shell");
-  if (!seoShell) return;
 
-  seoShell.setAttribute("aria-hidden", "true");
+  documentRoot.classList.remove("seo-shell-pending", "seo-shell-overlay");
 
-  const removalDelay = documentRoot.classList.contains("seo-shell-overlay") ? 760 : 0;
-  globalThis.setTimeout(() => {
-    if (seoShell.isConnected) {
-      seoShell.remove();
-    }
-  }, removalDelay);
+  if (seoShell) {
+    seoShell.setAttribute("aria-hidden", "true");
+    seoShell.style.opacity = "0";
+    seoShell.style.visibility = "hidden";
+    seoShell.style.display = "none";
+    seoShell.remove();
+  }
+
+  documentRoot.classList.add("app-ready");
 };
 
 const waitForMinimumLoaderExposure = async () => {
