@@ -174,7 +174,13 @@ const Testimonials = () => {
   });
 
   useMotionValueEvent(scrollYProgress, "change", (latest) => {
-    if (prefersReducedMotion || !testimonials.length) return;
+    if (
+      prefersReducedMotion ||
+      !testimonials.length ||
+      (typeof window !== "undefined" && window.innerWidth < 1025)
+    ) {
+      return;
+    }
 
     const nextIndex = Math.min(
       testimonials.length - 1,
