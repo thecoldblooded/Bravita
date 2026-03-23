@@ -102,7 +102,7 @@ function VantaBackground() {
       el: vantaRef.current,
       THREE,
       mouseControls: true,
-      touchControls: true,
+      touchControls: false,
       gyroControls: false,
       minHeight: 200,
       minWidth: 200,
@@ -114,6 +114,11 @@ function VantaBackground() {
       speed: 0.5,
       zoom: 1.0,
     });
+
+    const canvas = vantaRef.current.querySelector("canvas");
+    if (canvas instanceof HTMLCanvasElement) {
+      canvas.style.pointerEvents = "none";
+    }
   }, []);
 
   useEffect(() => {
@@ -197,11 +202,18 @@ const Testimonials = () => {
   }
 
   return (
-    <section id="testimonials" className="relative overflow-x-visible overflow-y-hidden min-[1025px]:overflow-x-clip min-[1025px]:overflow-y-visible">
-      {/* Vanta.js fog background — sticky so it stays fixed during card scroll */}
-      <VantaBackground />
+    <section id="testimonials" className="relative overflow-hidden min-[1025px]:overflow-x-clip min-[1025px]:overflow-y-visible">
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 z-0 min-[1025px]:hidden bg-[radial-gradient(circle_at_50%_20%,rgba(236,119,44,0.24),transparent_32%),radial-gradient(circle_at_50%_58%,rgba(236,119,44,0.18),transparent_38%),linear-gradient(180deg,#230a05_0%,#431306_28%,#2f0d04_56%,#170805_100%)]"
+      />
 
-      <div className="relative z-10 -mt-[100vh] container mx-auto px-4 pt-10 pb-12 md:pt-16 md:pb-16 min-[1025px]:hidden">
+      <div className="hidden min-[1025px]:block">
+        {/* Vanta.js fog background — sticky so it stays fixed during card scroll */}
+        <VantaBackground />
+      </div>
+
+      <div className="relative z-10 container mx-auto px-4 pt-10 pb-12 md:pt-16 md:pb-16 min-[1025px]:hidden">
         <div className="mx-auto max-w-6xl md:grid md:grid-cols-[minmax(0,0.92fr)_minmax(0,1fr)] md:items-center md:gap-8">
           <div>
             <ScrollReveal delay={0.05}>
