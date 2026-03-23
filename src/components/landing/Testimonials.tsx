@@ -134,7 +134,7 @@ function VantaBackground() {
   return (
     <div
       ref={vantaRef}
-      className="relative z-0 h-screen w-full min-[1025px]:sticky min-[1025px]:top-0"
+      className="relative z-0 hidden h-screen w-full min-[1025px]:block min-[1025px]:sticky min-[1025px]:top-0"
     />
   );
 }
@@ -208,10 +208,8 @@ const Testimonials = () => {
         className="absolute inset-0 z-0 min-[1025px]:hidden bg-[radial-gradient(circle_at_50%_20%,rgba(236,119,44,0.24),transparent_32%),radial-gradient(circle_at_50%_58%,rgba(236,119,44,0.18),transparent_38%),linear-gradient(180deg,#230a05_0%,#431306_28%,#2f0d04_56%,#170805_100%)]"
       />
 
-      <div className="hidden min-[1025px]:block">
-        {/* Vanta.js fog background — sticky so it stays fixed during card scroll */}
-        <VantaBackground />
-      </div>
+      {/* Vanta.js fog background — sticky so it stays fixed during card scroll */}
+      <VantaBackground />
 
       <div className="relative z-10 container mx-auto px-4 pt-10 pb-12 md:pt-16 md:pb-16 min-[1025px]:hidden">
         <div className="mx-auto max-w-6xl md:grid md:grid-cols-[minmax(0,0.92fr)_minmax(0,1fr)] md:items-center md:gap-8">
