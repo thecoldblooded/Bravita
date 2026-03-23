@@ -11,6 +11,7 @@ const ProductShowcase = lazy(() => import("@/components/landing/ProductShowcase"
 const Ingredients = lazy(() => import("@/components/landing/Ingredients"));
 const Usage = lazy(() => import("@/components/landing/Usage"));
 const About = lazy(() => import("@/components/landing/About"));
+const Faq = lazy(() => import("@/components/landing/Faq"));
 const Footer = lazy(() => import("@/components/layout/Footer"));
 
 const bravitaGif = "/bravita.gif";
@@ -165,6 +166,14 @@ const Index = () => {
         </LazySection>
 
         <Testimonials />
+
+        <LazySection id="faq" className="scroll-mt-25 w-full" placeholder={<SectionFallback minHeight="55vh" />} rootMargin="250px 0px">
+          <Suspense fallback={<SectionFallback minHeight="55vh" />}>
+            <ScrollReveal delay={0.08}>
+              <Faq />
+            </ScrollReveal>
+          </Suspense>
+        </LazySection>
       </main>
       {shouldEagerLoadFooter ? (
         <Suspense fallback={<SectionFallback minHeight="40vh" />}>

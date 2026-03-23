@@ -31,9 +31,9 @@ const ProductShowcase = () => {
   }, []);
 
   return (
-    <section className="py-20 md:py-32 bg-linear-to-b from-background via-secondary/20 to-background overflow-hidden">
+    <section className="py-14 md:py-20 lg:py-32 bg-linear-to-b from-background via-secondary/20 to-background overflow-hidden">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
+        <div className="text-center mb-10 md:mb-12 lg:mb-16">
 
           <h2 className="text-3xl md:text-5xl font-extrabold mt-2 mb-4">
             {t('product.title')} <span className="text-gradient">{t('product.title_accent')}</span>
@@ -43,9 +43,9 @@ const ProductShowcase = () => {
           </p>
         </div>
 
-        <div ref={containerRef} className="grid lg:grid-cols-2 gap-12 items-center">
+        <div ref={containerRef} className="grid lg:grid-cols-2 gap-6 md:gap-8 lg:gap-12 items-center">
           {/* Product Images */}
-          <div className="relative mx-auto mt-8 min-[500px]:mt-16 md:mt-20 lg:mt-0 min-h-[clamp(28rem,76vw,36rem)] w-full max-w-2xl overflow-visible">
+          <div className="relative mx-auto mt-2 min-[500px]:mt-6 md:mt-8 lg:mt-0 min-h-[clamp(23rem,68vw,30rem)] md:min-h-[clamp(25rem,65vw,33rem)] lg:min-h-[clamp(28rem,76vw,36rem)] w-full max-w-2xl overflow-visible">
             <div className="absolute bottom-[clamp(0.35rem,1vw,0.65rem)] left-[38%] w-[clamp(12.5rem,50%,20rem)]">
               <div className="relative group z-10">
                 <div className="absolute inset-0 bg-linear-to-br from-bravita-orange/30 to-bravita-red/30 rounded-3xl blur-2xl opacity-60 group-hover:opacity-80 transition-opacity" />

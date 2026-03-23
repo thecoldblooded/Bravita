@@ -204,6 +204,34 @@
                     "rating": 5
                 }
             ]
+        },
+        "faq": {
+            "badge": "Frequently Asked Questions",
+            "title": "Details You",
+            "title_accent": "May Wonder About",
+            "description": "We gathered the questions families ask most often about Bravita in one place.",
+            "items": [
+                {
+                    "question": "Which age group is Bravita suitable for?",
+                    "answer": "According to the recommended use information, Bravita is suggested as 1 scoop (5 ml) daily for children aged 4-10, and 2 scoops (10 ml) daily for children aged 11 and above as well as adults."
+                },
+                {
+                    "question": "At what time of day can Bravita be used?",
+                    "answer": "You can choose a time that fits your daily routine. Many families prefer to use it at breakfast or during the morning routine; the key point is making regular use a habit."
+                },
+                {
+                    "question": "Should the bottle be shaken before use?",
+                    "answer": "Yes. It is recommended to shake the bottle well before use so the formula can be consumed evenly."
+                },
+                {
+                    "question": "How should it be stored after opening?",
+                    "answer": "You can store the product at room temperature below 25°C, protected from moisture and sunlight. It is recommended to consume it within 6 months after opening."
+                },
+                {
+                    "question": "Can Bravita be used instead of medicine?",
+                    "answer": "No. Bravita is a dietary supplement; it does not replace a normal diet and is not intended for the prevention or treatment of diseases."
+                }
+            ]
         }
     },
     "footer": {

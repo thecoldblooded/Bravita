@@ -204,6 +204,34 @@
                     "rating": 5
                 }
             ]
+        },
+        "faq": {
+            "badge": "Sık Sorulan Sorular",
+            "title": "Merak Edilen",
+            "title_accent": "Detaylar",
+            "description": "Ailelerin Bravita hakkında en sık sorduğu konuları tek bölümde topladık.",
+            "items": [
+                {
+                    "question": "Bravita hangi yaş grubu için uygundur?",
+                    "answer": "Bravita'nın önerilen kullanım bilgisine göre 4-10 yaş arası çocuklar için günlük 1 ölçek (5 ml), 11 yaş ve üzeri çocuklar ile yetişkinler için günlük 2 ölçek (10 ml) tavsiye edilir."
+                },
+                {
+                    "question": "Bravita günün hangi saatinde kullanılabilir?",
+                    "answer": "Günlük kullanım rutininize uygun bir zaman seçebilirsiniz. Pek çok aile kahvaltı sırasında ya da sabah rutininde kullanmayı tercih eder; önemli olan düzenli kullanımı bir alışkanlık haline getirmektir."
+                },
+                {
+                    "question": "Kullanmadan önce şişeyi çalkalamak gerekir mi?",
+                    "answer": "Evet. Formülün homojen şekilde tüketilebilmesi için kullanımdan önce şişenin iyice çalkalanması önerilir."
+                },
+                {
+                    "question": "Açıldıktan sonra nasıl saklanmalıdır?",
+                    "answer": "Ürünü 25°C'nin altındaki oda sıcaklığında, nemden ve güneş ışığından koruyarak saklayabilirsiniz. Açıldıktan sonra 6 ay içinde tüketilmesi önerilir."
+                },
+                {
+                    "question": "Bravita ilaç yerine kullanılabilir mi?",
+                    "answer": "Hayır. Bravita takviye edici gıdadır; normal beslenmenin yerine geçmez ve hastalıkların önlenmesi veya tedavisi amacıyla kullanılmaz."
+                }
+            ]
         }
     },
     "footer": {
