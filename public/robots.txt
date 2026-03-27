@@ -1,16 +1,34 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
+# robots.txt for https://bravita.com.tr/
+# Minimal, maintainable crawl policy
 
 User-agent: *
 Allow: /
+Disallow: /cart/
+Disallow: /checkout/
+Disallow: /my-account/
+Disallow: /?s=
+Disallow: /*?add-to-cart=
+Disallow: /*?wc-ajax=
+
+# Allowed preview and AI/user agents inherit the global policy above.
+# Only explicitly blocked crawler families are listed below.
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
+
+User-agent: BLEXBot
+Disallow: /
+
+User-agent: DataForSeoBot
+Disallow: /
 
 Sitemap: https://bravita.com.tr/sitemap.xml
