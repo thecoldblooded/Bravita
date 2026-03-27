@@ -733,30 +733,32 @@ function buildClearRefreshCookie(req) {
   return `${REFRESH_COOKIE_NAME}=; HttpOnly; Path=/api/auth; SameSite=Strict; Priority=High; Max-Age=0${securePart}`;
 }
 
-function buildScopedCookie(name, value, req, path, maxAgeSeconds) {
+function buildScopedCookie(name, value, req, path, maxAgeSeconds, sameSite = "Strict") {
   const securePart = isSecureRequest(req) ? "; Secure" : "";
-  return `${name}=${encodeURIComponent(value)}; HttpOnly; Path=${path}; SameSite=Strict; Priority=High; Max-Age=${maxAgeSeconds}${securePart}`;
+  const sameSitePart = sameSite === "Lax" ? "Lax" : "Strict";
+  return `${name}=${encodeURIComponent(value)}; HttpOnly; Path=${path}; SameSite=${sameSitePart}; Priority=High; Max-Age=${maxAgeSeconds}${securePart}`;
 }
 
-function buildScopedClearCookie(name, req, path) {
+function buildScopedClearCookie(name, req, path, sameSite = "Strict") {
   const securePart = isSecureRequest(req) ? "; Secure" : "";
-  return `${name}=; HttpOnly; Path=${path}; SameSite=Strict; Priority=High; Max-Age=0${securePart}`;
+  const sameSitePart = sameSite === "Lax" ? "Lax" : "Strict";
+  return `${name}=; HttpOnly; Path=${path}; SameSite=${sameSitePart}; Priority=High; Max-Age=0${securePart}`;
 }
 
 function buildOAuthStateCookie(state, req) {
-  return buildScopedCookie(OAUTH_STATE_COOKIE_NAME, state, req, "/api/auth/oauth", OAUTH_COOKIE_MAX_AGE_SECONDS);
+  return buildScopedCookie(OAUTH_STATE_COOKIE_NAME, state, req, "/api/auth/oauth", OAUTH_COOKIE_MAX_AGE_SECONDS, "Lax");
 }
 
 function buildOAuthCodeVerifierCookie(codeVerifier, req) {
-  return buildScopedCookie(OAUTH_CODE_VERIFIER_COOKIE_NAME, codeVerifier, req, "/api/auth/oauth", OAUTH_COOKIE_MAX_AGE_SECONDS);
+  return buildScopedCookie(OAUTH_CODE_VERIFIER_COOKIE_NAME, codeVerifier, req, "/api/auth/oauth", OAUTH_COOKIE_MAX_AGE_SECONDS, "Lax");
 }
 
 function buildClearOAuthStateCookie(req) {
-  return buildScopedClearCookie(OAUTH_STATE_COOKIE_NAME, req, "/api/auth/oauth");
+  return buildScopedClearCookie(OAUTH_STATE_COOKIE_NAME, req, "/api/auth/oauth", "Lax");
 }
 
 function buildClearOAuthCodeVerifierCookie(req) {
-  return buildScopedClearCookie(OAUTH_CODE_VERIFIER_COOKIE_NAME, req, "/api/auth/oauth");
+  return buildScopedClearCookie(OAUTH_CODE_VERIFIER_COOKIE_NAME, req, "/api/auth/oauth", "Lax");
 }
 
 function readOAuthStateFromRequest(req) {
