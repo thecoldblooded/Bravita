@@ -53,7 +53,13 @@ export default async function handler(req, res) {
     return sendJson(res, 405, { error: "Method not allowed" });
   }
 
-  if (!assertValidAuthPostRequest(req, res)) {
+  if (!assertValidAuthPostRequest(req, res, {
+    rateLimit: {
+      bucketKey: "auth:signup",
+      maxRequests: 3,
+      windowMs: 60 * 60 * 1000,
+    },
+  })) {
     return;
   }
 

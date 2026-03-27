@@ -1,4 +1,5 @@
 import {
+  assertAuthRateLimit,
   assertValidAuthPostRequest,
   buildClearRefreshCookie,
   buildRefreshCookie,
@@ -20,8 +21,23 @@ export default async function handler(req, res) {
     return sendJson(res, 405, { error: "Method not allowed" });
   }
 
-  if (req.method === "POST" && !assertValidAuthPostRequest(req, res)) {
-    logAuthDiagnostic("session_post_origin_rejected", req);
+  if (req.method === "POST" && !assertValidAuthPostRequest(req, res, {
+    rateLimit: {
+      bucketKey: "auth:session:post",
+      maxRequests: 12,
+      windowMs: 60 * 1000,
+    },
+  })) {
+    logAuthDiagnostic("session_post_origin_or_rate_limit_rejected", req);
+    return;
+  }
+
+  if (req.method === "GET" && !assertAuthRateLimit(req, res, {
+    bucketKey: "auth:session:get",
+    maxRequests: 30,
+    windowMs: 60 * 1000,
+  })) {
+    logAuthDiagnostic("session_get_rate_limit_rejected", req);
     return;
   }
 

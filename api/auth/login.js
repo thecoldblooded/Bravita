@@ -20,8 +20,14 @@ export default async function handler(req, res) {
     return sendJson(res, 405, { error: "Method not allowed" });
   }
 
-  if (!assertValidAuthPostRequest(req, res)) {
-    logAuthDiagnostic("login_origin_rejected", req);
+  if (!assertValidAuthPostRequest(req, res, {
+    rateLimit: {
+      bucketKey: "auth:login",
+      maxRequests: 5,
+      windowMs: 60 * 1000,
+    },
+  })) {
+    logAuthDiagnostic("login_origin_or_rate_limit_rejected", req);
     return;
   }
 

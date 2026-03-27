@@ -156,8 +156,33 @@ function extractLatestUserMessage(rawMessage: string): string {
     return userMessages[userMessages.length - 1] || firstChunk || normalized;
 }
 
+function supportDebugEnabled(): boolean {
+    return String(Deno.env.get("SUPPORT_EMAIL_DEBUG") || "false").toLowerCase() === "true";
+}
+
 function logSupportDebug(event: string, payload: Record<string, unknown> = {}) {
-    console.log(`[send-support-email][${new Date().toISOString()}] ${event}`, payload);
+    if (!supportDebugEnabled()) {
+        return;
+    }
+
+    const diagnostic = {
+        tag: "send-support-email",
+        level: "info",
+        event,
+        timestamp: new Date().toISOString(),
+        ...(payload && typeof payload === "object" ? payload : {}),
+    };
+
+    try {
+        console.error(JSON.stringify(diagnostic));
+    } catch {
+        console.error(JSON.stringify({
+            tag: "send-support-email",
+            level: "info",
+            event,
+            timestamp: new Date().toISOString(),
+        }));
+    }
 }
 
 function getCorsHeaders(req: Request) {

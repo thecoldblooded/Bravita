@@ -1,7 +1,7 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 
 const REFRESH_COOKIE_NAME = "bravita_refresh_token";
-const REFRESH_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
+const REFRESH_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
 const OAUTH_STATE_COOKIE_NAME = "bravita_oauth_state";
 const OAUTH_CODE_VERIFIER_COOKIE_NAME = "bravita_oauth_code_verifier";
 const OAUTH_COOKIE_MAX_AGE_SECONDS = 60 * 10;
@@ -9,7 +9,6 @@ const DEFAULT_SITE_URL = "https://bravita.com.tr";
 const PRODUCTION_ALLOWED_AUTH_ORIGINS = [
   "https://bravita.com.tr",
   "https://www.bravita.com.tr",
-  "https://bravita.vercel.app",
 ];
 const DEVELOPMENT_ONLY_ALLOWED_AUTH_ORIGINS = [
   "http://localhost:8080",
@@ -17,6 +16,10 @@ const DEVELOPMENT_ONLY_ALLOWED_AUTH_ORIGINS = [
 ];
 const INTERNAL_SERVER_ERROR_MESSAGE = "Internal server error";
 const MAX_INSPECTION_CHARS = Number(process.env.AUTH_MAX_INSPECTION_CHARS || 8192);
+const DEFAULT_AUTH_RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const DEFAULT_AUTH_RATE_LIMIT_MAX_REQUESTS = 10;
+const DEFAULT_AUTH_SESSION_READ_RATE_LIMIT_MAX_REQUESTS = 30;
+const AUTH_RATE_LIMIT_STATE = new Map();
 
 const SUSPICIOUS_REQUEST_SIGNATURES = Object.freeze([
   { code: "xss_script", regex: /<\s*script\b/i },
@@ -158,6 +161,161 @@ function normalizeHeaderValue(value) {
     return value.join(",");
   }
   return typeof value === "string" ? value : "";
+}
+
+function getConfiguredPositiveNumber(value, fallback, min, max) {
+  const parsed = Number.parseInt(String(value ?? ""), 10);
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+
+  return Math.min(max, Math.max(min, parsed));
+}
+
+function getAuthRateLimitWindowMs() {
+  return getConfiguredPositiveNumber(
+    process.env.AUTH_RATE_LIMIT_WINDOW_MS,
+    DEFAULT_AUTH_RATE_LIMIT_WINDOW_MS,
+    1000,
+    60 * 60 * 1000,
+  );
+}
+
+function getAuthRateLimitMaxRequests() {
+  return getConfiguredPositiveNumber(
+    process.env.AUTH_RATE_LIMIT_MAX_REQUESTS,
+    DEFAULT_AUTH_RATE_LIMIT_MAX_REQUESTS,
+    1,
+    500,
+  );
+}
+
+function getAuthSessionReadRateLimitMaxRequests() {
+  return getConfiguredPositiveNumber(
+    process.env.AUTH_SESSION_READ_RATE_LIMIT_MAX_REQUESTS,
+    DEFAULT_AUTH_SESSION_READ_RATE_LIMIT_MAX_REQUESTS,
+    1,
+    1000,
+  );
+}
+
+function resolveClientAddress(req) {
+  const forwardedFor = normalizeHeaderValue(req?.headers?.["x-forwarded-for"])
+    .split(",")[0]
+    ?.trim();
+  const realIp = normalizeHeaderValue(req?.headers?.["x-real-ip"]).trim();
+  const socketIp = typeof req?.socket?.remoteAddress === "string"
+    ? req.socket.remoteAddress.trim()
+    : "";
+
+  return (forwardedFor || realIp || socketIp || "unknown").slice(0, 128);
+}
+
+function writeServerDiagnostic(level, event, details = {}) {
+  const normalizedLevel = level === "warn" || level === "error" ? level : "info";
+  if (normalizedLevel === "info" && !authDebugEnabled()) {
+    return;
+  }
+
+  const timestamp = new Date().toISOString();
+  const payload = {
+    tag: "auth",
+    level: normalizedLevel,
+    event,
+    timestamp,
+    ...(details && typeof details === "object" && !Array.isArray(details) ? details : {}),
+  };
+
+  let line;
+  try {
+    line = JSON.stringify(payload);
+  } catch {
+    line = JSON.stringify({ tag: "auth", level: normalizedLevel, event, timestamp });
+  }
+
+  if (typeof process?.stderr?.write === "function") {
+    process.stderr.write(`${line}\n`);
+  }
+}
+
+function pruneAuthRateLimitState(now) {
+  if (AUTH_RATE_LIMIT_STATE.size < 512) {
+    return;
+  }
+
+  for (const [key, entry] of AUTH_RATE_LIMIT_STATE.entries()) {
+    if (!entry || entry.resetAt <= now) {
+      AUTH_RATE_LIMIT_STATE.delete(key);
+    }
+  }
+}
+
+function consumeAuthRateLimit(rateLimitKey, maxRequests, windowMs) {
+  const now = Date.now();
+  pruneAuthRateLimitState(now);
+
+  const existing = AUTH_RATE_LIMIT_STATE.get(rateLimitKey);
+  if (!existing || existing.resetAt <= now) {
+    const freshEntry = { count: 1, resetAt: now + windowMs };
+    AUTH_RATE_LIMIT_STATE.set(rateLimitKey, freshEntry);
+    return {
+      allowed: true,
+      remaining: Math.max(0, maxRequests - 1),
+      resetAt: freshEntry.resetAt,
+    };
+  }
+
+  if (existing.count >= maxRequests) {
+    return {
+      allowed: false,
+      remaining: 0,
+      resetAt: existing.resetAt,
+    };
+  }
+
+  existing.count += 1;
+  AUTH_RATE_LIMIT_STATE.set(rateLimitKey, existing);
+  return {
+    allowed: true,
+    remaining: Math.max(0, maxRequests - existing.count),
+    resetAt: existing.resetAt,
+  };
+}
+
+function assertAuthRateLimit(req, res, options = {}) {
+  const bucketKey = typeof options.bucketKey === "string" && options.bucketKey.trim().length > 0
+    ? options.bucketKey.trim()
+    : `auth:${req?.method ?? "unknown"}:${req?.url ?? "unknown"}`;
+  const fallbackMaxRequests = req?.method === "GET"
+    ? getAuthSessionReadRateLimitMaxRequests()
+    : getAuthRateLimitMaxRequests();
+  const maxRequests = getConfiguredPositiveNumber(options.maxRequests, fallbackMaxRequests, 1, 1000);
+  const windowMs = getConfiguredPositiveNumber(options.windowMs, getAuthRateLimitWindowMs(), 1000, 60 * 60 * 1000);
+  const rateLimitKey = `${bucketKey}:${resolveClientAddress(req)}`;
+  const result = consumeAuthRateLimit(rateLimitKey, maxRequests, windowMs);
+
+  if (typeof res?.setHeader === "function") {
+    res.setHeader("X-RateLimit-Limit", String(maxRequests));
+    res.setHeader("X-RateLimit-Remaining", String(result.remaining));
+  }
+
+  if (result.allowed) {
+    return true;
+  }
+
+  const retryAfterSeconds = Math.max(1, Math.ceil((result.resetAt - Date.now()) / 1000));
+  if (typeof res?.setHeader === "function") {
+    res.setHeader("Retry-After", String(retryAfterSeconds));
+  }
+
+  writeServerDiagnostic("warn", "auth_rate_limit_exceeded", {
+    bucketKey,
+    method: req?.method ?? null,
+    url: req?.url ?? null,
+    retryAfterSeconds,
+  });
+  sendJson(res, 429, { error: "Too many requests, try again later" });
+  return false;
 }
 
 function getInspectionCharLimit() {
@@ -386,7 +544,7 @@ function assertSafeAuthRequest(req, res) {
     return true;
   }
 
-  console.warn("[AUTH] suspicious_request_blocked", {
+  writeServerDiagnostic("warn", "suspicious_request_blocked", {
     path: req?.url ?? null,
     method: req?.method ?? null,
     detection: detection.code,
@@ -427,10 +585,7 @@ function logAuthDiagnostic(event, req, extra = {}) {
   const cookieSummary = summarizeCookieHeader(req);
   const forwardedFor = normalizeHeaderValue(req.headers["x-forwarded-for"]);
 
-  const payload = {
-    tag: "auth-debug",
-    event,
-    timestamp: new Date().toISOString(),
+  writeServerDiagnostic("info", event, {
     method: req.method ?? null,
     url: req.url ?? null,
     host: normalizeHeaderValue(req.headers.host) || null,
@@ -441,16 +596,10 @@ function logAuthDiagnostic(event, req, extra = {}) {
     forwardedForPresent: forwardedFor.length > 0,
     ...cookieSummary,
     ...extra,
-  };
-
-  try {
-    console.log(JSON.stringify(payload));
-  } catch {
-    console.log(`[auth-debug] ${event}`);
-  }
+  });
 }
 
-function assertValidAuthPostRequest(req, res) {
+function assertValidAuthPostRequest(req, res, options = {}) {
   if (!assertSafeAuthRequest(req, res)) {
     return false;
   }
@@ -459,7 +608,7 @@ function assertValidAuthPostRequest(req, res) {
   const allowedOrigins = loadAllowedAuthOrigins();
 
   if (!requestOrigin) {
-    console.warn("[AUTH] auth_post_forbidden_missing_origin", {
+    writeServerDiagnostic("warn", "auth_post_forbidden_missing_origin", {
       path: req.url ?? null,
       method: req.method ?? null,
       hasOriginHeader: Boolean(req.headers.origin),
@@ -470,17 +619,27 @@ function assertValidAuthPostRequest(req, res) {
   }
 
   if (!allowedOrigins.includes(requestOrigin)) {
-    console.warn("[AUTH] auth_post_forbidden_invalid_origin", {
+    writeServerDiagnostic("warn", "auth_post_forbidden_invalid_origin", {
       path: req.url ?? null,
       method: req.method ?? null,
       requestOrigin,
-      allowedOrigins,
+      allowedOriginsCount: allowedOrigins.length,
     });
     sendJson(res, 403, { error: "Forbidden: invalid origin" });
     return false;
   }
 
-  return true;
+  const rateLimitOptions = options?.rateLimit && typeof options.rateLimit === "object"
+    ? options.rateLimit
+    : options;
+
+  return assertAuthRateLimit(req, res, {
+    bucketKey: typeof rateLimitOptions?.bucketKey === "string" && rateLimitOptions.bucketKey.trim().length > 0
+      ? rateLimitOptions.bucketKey.trim()
+      : `auth:post:${req?.url ?? "unknown"}`,
+    maxRequests: rateLimitOptions?.maxRequests,
+    windowMs: rateLimitOptions?.windowMs,
+  });
 }
 
 function getSupabaseConfig() {
@@ -493,7 +652,7 @@ function getSupabaseConfig() {
   const anonKey = serverAnonKey || clientAnonKey;
 
   if (!url || !anonKey) {
-    console.error("[AUTH] supabase_config_missing", {
+    writeServerDiagnostic("error", "supabase_config_missing", {
       hasSupabaseUrl: typeof serverUrl === "string" && serverUrl.trim().length > 0,
       hasViteSupabaseUrl: typeof clientUrl === "string" && clientUrl.trim().length > 0,
       hasSupabaseAnonKey: typeof serverAnonKey === "string" && serverAnonKey.trim().length > 0,
@@ -506,7 +665,7 @@ function getSupabaseConfig() {
     // Validate URL once so downstream fetch failures are easier to diagnose.
     new URL(url);
   } catch {
-    console.error("[AUTH] supabase_url_invalid", {
+    writeServerDiagnostic("error", "supabase_url_invalid", {
       hasProtocol: typeof url === "string" ? /^https?:\/\//i.test(url) : false,
       urlPreview: typeof url === "string" ? `${url.slice(0, 32)}${url.length > 32 ? "..." : ""}` : null,
     });
@@ -566,22 +725,22 @@ function readRefreshTokenFromRequest(req) {
 
 function buildRefreshCookie(token, req) {
   const securePart = isSecureRequest(req) ? "; Secure" : "";
-  return `${REFRESH_COOKIE_NAME}=${encodeURIComponent(token)}; HttpOnly; Path=/api/auth; SameSite=Lax; Max-Age=${REFRESH_COOKIE_MAX_AGE_SECONDS}${securePart}`;
+  return `${REFRESH_COOKIE_NAME}=${encodeURIComponent(token)}; HttpOnly; Path=/api/auth; SameSite=Strict; Priority=High; Max-Age=${REFRESH_COOKIE_MAX_AGE_SECONDS}${securePart}`;
 }
 
 function buildClearRefreshCookie(req) {
   const securePart = isSecureRequest(req) ? "; Secure" : "";
-  return `${REFRESH_COOKIE_NAME}=; HttpOnly; Path=/api/auth; SameSite=Lax; Max-Age=0${securePart}`;
+  return `${REFRESH_COOKIE_NAME}=; HttpOnly; Path=/api/auth; SameSite=Strict; Priority=High; Max-Age=0${securePart}`;
 }
 
 function buildScopedCookie(name, value, req, path, maxAgeSeconds) {
   const securePart = isSecureRequest(req) ? "; Secure" : "";
-  return `${name}=${encodeURIComponent(value)}; HttpOnly; Path=${path}; SameSite=Lax; Max-Age=${maxAgeSeconds}${securePart}`;
+  return `${name}=${encodeURIComponent(value)}; HttpOnly; Path=${path}; SameSite=Strict; Priority=High; Max-Age=${maxAgeSeconds}${securePart}`;
 }
 
 function buildScopedClearCookie(name, req, path) {
   const securePart = isSecureRequest(req) ? "; Secure" : "";
-  return `${name}=; HttpOnly; Path=${path}; SameSite=Lax; Max-Age=0${securePart}`;
+  return `${name}=; HttpOnly; Path=${path}; SameSite=Strict; Priority=High; Max-Age=0${securePart}`;
 }
 
 function buildOAuthStateCookie(state, req) {
@@ -791,7 +950,7 @@ async function callSupabaseAuth(path, options = {}) {
       upstreamOrigin = null;
     }
 
-    console.error("[AUTH] supabase_fetch_failed", {
+    writeServerDiagnostic("error", "supabase_fetch_failed", {
       path,
       method,
       upstreamOrigin,
@@ -802,7 +961,7 @@ async function callSupabaseAuth(path, options = {}) {
   }
 
   const data = await response.json().catch((parseError) => {
-    console.error("[AUTH] supabase_response_parse_failed", {
+    writeServerDiagnostic("error", "supabase_response_parse_failed", {
       path,
       method,
       status: response.status,
@@ -881,8 +1040,7 @@ function sendInternalServerError(res, req, diagnosticEvent, error) {
     ? diagnosticEvent
     : "auth_internal_error";
 
-  console.error("[AUTH] internal_error", {
-    event,
+  writeServerDiagnostic("error", event, {
     method: req?.method ?? null,
     url: req?.url ?? null,
     errorName: error instanceof Error ? error.name : "UnknownError",
@@ -930,6 +1088,7 @@ export {
   sendInternalServerError,
   assertValidAuthPostRequest,
   assertSafeAuthRequest,
+  assertAuthRateLimit,
   logAuthDiagnostic,
   resolveSiteOrigin,
   shouldBypassCaptchaForRequest,
