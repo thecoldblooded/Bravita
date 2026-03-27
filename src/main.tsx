@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import { setWasmUrl } from "@lottiefiles/dotlottie-react";
 import wasmUrl from "@lottiefiles/dotlottie-web/dist/dotlottie-player.wasm?url";
+import heroShellLcpImageSrc from "@/assets/bravita-bottle1.webp";
 import App from "./App.tsx";
 import "./index.css";
 import "./i18n/config";
@@ -10,7 +11,7 @@ import { HelmetProvider } from "react-helmet-async";
 
 setWasmUrl(wasmUrl);
 
-const HERO_SHELL_LCP_IMAGE_SRC = "/src/assets/bravita-bottle1.webp";
+const HERO_SHELL_LCP_IMAGE_SRC = heroShellLcpImageSrc;
 const SEO_LOADER_GIF_SRC = "/bravita.gif";
 const MIN_SEO_LOADER_VISIBLE_MS = 2200;
 

@@ -1,5 +1,6 @@
 import { Clock, Thermometer, AlertTriangle, Baby } from "lucide-react";
 import HeroScrollVideo from "@/components/ui/scroll-animated-video";
+import bravitaBottlePoster from "@/assets/bravita-bottle1.webp";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTranslation } from "react-i18next";
 
@@ -14,7 +15,7 @@ const Usage = () => {
         subtitle={t('usage.video_subtitle')}
         meta="2025"
         media="/bravita-video.webm"
-        poster="/bravita-bottle1.webp"
+        poster={bravitaBottlePoster}
         mediaType="video"
         targetSize="fullscreen"
         scrollHeightVh={isMobile ? 120 : 200}
