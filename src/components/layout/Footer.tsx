@@ -20,7 +20,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { FreeVisitorCounter } from "@rundevelrun/free-visitor-counter";
 import { getLegalDocuments, getLegalLocale, type LegalDocumentKey } from "@/content/legalDocuments";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 // Lazy load heavy logos
 const bravitaLogo = new URL("@/assets/bravita-logo.webp", import.meta.url).href;
@@ -34,6 +34,8 @@ const isLegalDocumentKey = (value: string): value is LegalDocumentKey =>
 
 function Footer() {
   const { t, i18n } = useTranslation();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [isInView, setIsInView] = useState(false);
   const [activeLegalKey, setActiveLegalKey] = useState<LegalDocumentKey | null>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -121,6 +123,23 @@ function Footer() {
     { icon: <Twitter size={20} />, label: "X", href: "https://x.com/valcoilac" },
     { icon: <Linkedin size={20} />, label: "LinkedIn", href: "https://www.linkedin.com/company/valco-ilaç/" },
   ];
+
+  const handleHashLinkClick = (hash: string) => {
+    const isHomeRoute = location.pathname === "/";
+
+    if (isHomeRoute) {
+      const target = document.querySelector(hash);
+      if (target instanceof HTMLElement) {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+        if (window.location.hash !== hash) {
+          window.history.replaceState(null, "", `${location.pathname}${location.search}${hash}`);
+        }
+        return;
+      }
+    }
+
+    navigate({ pathname: "/", hash });
+  };
 
   return (
     <footer ref={footerRef} className="bg-[#2e241e] relative z-10 h-fit rounded-[3rem] overflow-hidden m-4 md:m-8 pb-24">
@@ -281,7 +300,7 @@ function Footer() {
                           disabled={isPlaceholderLink}
                           onClick={() => {
                             if (!isPlaceholderLink) {
-                              document.querySelector(link.href)?.scrollIntoView({ behavior: "smooth" });
+                              handleHashLinkClick(link.href);
                             }
                           }}
                           className="text-neutral-400 hover:text-bravita-orange transition-colors disabled:cursor-not-allowed disabled:opacity-60"

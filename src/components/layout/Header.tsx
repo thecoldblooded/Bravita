@@ -634,7 +634,7 @@ const Header = () => {
 
   const navItems = useMemo<HeaderNavItem[]>(
     () => [
-      { name: t("nav.home"), id: "home", url: "#hero", icon: Home, onClick: () => window.scrollTo({ top: 0, behavior: "smooth" }) },
+      { name: t("nav.home"), id: "home", url: "/", icon: Home, onClick: () => window.scrollTo({ top: 0, behavior: "smooth" }) },
       { name: t("nav.benefits"), id: "benefits", url: "#benefits", icon: Heart },
       { name: t("nav.ingredients"), id: "ingredients", url: "#ingredients", icon: List },
       { name: t("nav.usage"), id: "usage", url: "#usage", icon: HelpCircle },

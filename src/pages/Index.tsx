@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Hero from "@/components/landing/Hero";
 import ScrollReveal from "@/components/ui/scroll-reveal";
@@ -33,6 +34,7 @@ import { useTranslation } from "react-i18next";
 
 const Index = () => {
   const { t } = useTranslation();
+  const location = useLocation();
   const [shouldEagerLoadFooter, setShouldEagerLoadFooter] = useState(
     () => typeof window !== "undefined" && window.location.hash.startsWith("#legal:")
   );
@@ -88,6 +90,44 @@ const Index = () => {
       window.removeEventListener("hashchange", trackLegalHashIntent);
     };
   }, []);
+
+  useEffect(() => {
+    const hash = location.hash;
+
+    if (!hash || hash.startsWith("#legal:")) {
+      return;
+    }
+
+    let animationFrameId: number | null = null;
+    let retryTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    const scrollToHashTarget = () => {
+      const target = document.querySelector(hash);
+      if (!(target instanceof HTMLElement)) {
+        return false;
+      }
+
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      return true;
+    };
+
+    animationFrameId = window.requestAnimationFrame(() => {
+      if (!scrollToHashTarget()) {
+        retryTimeoutId = setTimeout(() => {
+          scrollToHashTarget();
+        }, 250);
+      }
+    });
+
+    return () => {
+      if (animationFrameId !== null) {
+        window.cancelAnimationFrame(animationFrameId);
+      }
+      if (retryTimeoutId) {
+        clearTimeout(retryTimeoutId);
+      }
+    };
+  }, [location.hash]);
 
   // Banner in Header handles incomplete profile notification
   // No auto-redirect needed
