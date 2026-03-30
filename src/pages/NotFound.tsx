@@ -25,7 +25,7 @@ const NotFound = () => {
       >
         {/* Lottie Animation */}
         <div className="flex justify-center overflow-hidden">
-          <div className="-my-12 min-h-[600px]">
+          <div className="-my-12 min-h-150">
             <Suspense
               fallback={<div aria-hidden="true" style={{ width: "600px", height: "600px" }} />}
             >
