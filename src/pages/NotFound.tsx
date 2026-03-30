@@ -1,7 +1,18 @@
+import { lazy, Suspense } from "react";
 import { m } from "framer-motion";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import notFoundAnimation from "@/assets/404-not-found.lottie";
 import bravitaLogo from "@/assets/bravita-logo.webp";
+
+const DotLottiePlayer = lazy(async () => {
+  const [{ DotLottieReact, setWasmUrl }, { default: wasmUrl }] = await Promise.all([
+    import("@lottiefiles/dotlottie-react"),
+    import("@lottiefiles/dotlottie-web/dist/dotlottie-player.wasm?url"),
+  ]);
+
+  setWasmUrl(wasmUrl);
+
+  return { default: DotLottieReact };
+});
 
 const NotFound = () => {
   return (
@@ -14,13 +25,17 @@ const NotFound = () => {
       >
         {/* Lottie Animation */}
         <div className="flex justify-center overflow-hidden">
-          <div className="-my-12">
-            <DotLottieReact
-              src={notFoundAnimation}
-              loop
-              autoplay
-              style={{ width: "600px", height: "600px" }}
-            />
+          <div className="-my-12 min-h-[600px]">
+            <Suspense
+              fallback={<div aria-hidden="true" style={{ width: "600px", height: "600px" }} />}
+            >
+              <DotLottiePlayer
+                src={notFoundAnimation}
+                loop
+                autoplay
+                style={{ width: "600px", height: "600px" }}
+              />
+            </Suspense>
           </div>
         </div>
 

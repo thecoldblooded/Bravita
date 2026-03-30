@@ -1,7 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import Header from "@/components/layout/Header";
 import Hero from "@/components/landing/Hero";
-import Testimonials from "@/components/landing/Testimonials";
 import ScrollReveal from "@/components/ui/scroll-reveal";
 import LazySection from "@/components/ui/lazy-section";
 
@@ -12,6 +11,7 @@ const Ingredients = lazy(() => import("@/components/landing/Ingredients"));
 const Usage = lazy(() => import("@/components/landing/Usage"));
 const About = lazy(() => import("@/components/landing/About"));
 const Faq = lazy(() => import("@/components/landing/Faq"));
+const Testimonials = lazy(() => import("@/components/landing/Testimonials"));
 const Footer = lazy(() => import("@/components/layout/Footer"));
 
 const bravitaGif = "/bravita.gif";
@@ -38,41 +38,41 @@ const Index = () => {
   );
 
   const canonicalUrl = "https://bravita.com.tr";
-  const pageTitle = "Bravita | Çocuklar İçin Sıvı Multivitamin";
+  const pageTitle = "Bravita | Çocuklar İçin Sıvı Multivitamin Takviyesi";
   const pageDescription = "Bravita, çocukların günlük gelişimini desteklemek için vitamin, mineral ve seçili besin öğeleri içeren sıvı takviye edici gıdadır.";
   const socialDescription = "Çocukların günlük gelişimini desteklemek için geliştirilen sıvı multivitamin ve mineral takviyesi.";
   const skipToContentLabel = t("accessibility.skip_to_content", "Ana içeriğe geç");
-  const structuredData = [
-    {
-      "@context": "https://schema.org",
-      "@type": "WebSite",
+  const websiteStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Bravita",
+    url: canonicalUrl,
+    inLanguage: "tr-TR",
+  };
+
+  const organizationStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Bravita",
+    url: canonicalUrl,
+    logo: `${canonicalUrl}/apple-touch-icon.png`,
+    email: "support@bravita.com.tr",
+    telephone: "+90 312 328 25 26",
+  };
+
+  const productStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: "Bravita Çocuklar İçin Sıvı Multivitamin",
+    description: pageDescription,
+    image: `${canonicalUrl}/og-image.webp`,
+    url: canonicalUrl,
+    category: "DietarySupplement",
+    brand: {
+      "@type": "Brand",
       name: "Bravita",
-      url: canonicalUrl,
-      inLanguage: "tr-TR",
     },
-    {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      name: "Bravita",
-      url: canonicalUrl,
-      logo: `${canonicalUrl}/apple-touch-icon.png`,
-      email: "support@bravita.com.tr",
-      telephone: "+90 312 328 25 26",
-    },
-    {
-      "@context": "https://schema.org",
-      "@type": "Product",
-      name: "Bravita Çocuklar İçin Sıvı Multivitamin",
-      description: pageDescription,
-      image: `${canonicalUrl}/og-image.webp`,
-      url: canonicalUrl,
-      category: "DietarySupplement",
-      brand: {
-        "@type": "Brand",
-        name: "Bravita",
-      },
-    },
-  ];
+  };
 
   useEffect(() => {
     const trackLegalHashIntent = () => {
@@ -113,7 +113,9 @@ const Index = () => {
         <meta name="twitter:description" content={socialDescription} />
         <meta name="twitter:image" content={`${canonicalUrl}/og-image.webp`} />
         <meta name="twitter:image:alt" content="Bravita çocuklar için sıvı multivitamin" />
-        <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
+        <script type="application/ld+json">{JSON.stringify(websiteStructuredData)}</script>
+        <script type="application/ld+json">{JSON.stringify(organizationStructuredData)}</script>
+        <script type="application/ld+json">{JSON.stringify(productStructuredData)}</script>
       </Helmet>
       <a
         href="#main-content"
@@ -165,7 +167,11 @@ const Index = () => {
           </Suspense>
         </LazySection>
 
-        <Testimonials />
+        <LazySection placeholder={<SectionFallback minHeight="110vh" />} rootMargin="200px 0px">
+          <Suspense fallback={<SectionFallback minHeight="110vh" />}>
+            <Testimonials />
+          </Suspense>
+        </LazySection>
 
         <LazySection id="faq" className="scroll-mt-25 w-full" placeholder={<SectionFallback minHeight="55vh" />} rootMargin="250px 0px">
           <Suspense fallback={<SectionFallback minHeight="55vh" />}>
