@@ -44,6 +44,64 @@ const Index = () => {
   const pageDescription = "Bravita, çocukların günlük gelişimini desteklemek için vitamin, mineral ve seçili besin öğeleri içeren sıvı takviye edici gıdadır.";
   const socialDescription = "Çocukların günlük gelişimini desteklemek için geliştirilen sıvı multivitamin ve mineral takviyesi.";
   const skipToContentLabel = t("accessibility.skip_to_content", "Ana içeriğe geç");
+  const rawFaqItems = t("about.faq.items", { returnObjects: true }) as unknown;
+  const faqItems = Array.isArray(rawFaqItems)
+    ? rawFaqItems.reduce<{ question: string; answer: string }[]>((accumulator, item) => {
+        if (typeof item === "object" && item !== null && "question" in item && "answer" in item) {
+          const { question, answer } = item;
+
+          if (typeof question === "string" && typeof answer === "string") {
+            accumulator.push({ question, answer });
+          }
+        }
+
+        return accumulator;
+      }, [])
+    : [];
+
+  const benefitItems = [
+    {
+      name: t("benefits.items.immune.title"),
+      description: t("benefits.items.immune.desc"),
+      url: `${canonicalUrl}#benefits`,
+    },
+    {
+      name: t("benefits.items.nervous.title"),
+      description: t("benefits.items.nervous.desc"),
+      url: `${canonicalUrl}#benefits`,
+    },
+    {
+      name: t("benefits.items.energy.title"),
+      description: t("benefits.items.energy.desc"),
+      url: `${canonicalUrl}#benefits`,
+    },
+    {
+      name: t("benefits.items.bone.title"),
+      description: t("benefits.items.bone.desc"),
+      url: `${canonicalUrl}#benefits`,
+    },
+    {
+      name: t("benefits.items.vision.title"),
+      description: t("benefits.items.vision.desc"),
+      url: `${canonicalUrl}#benefits`,
+    },
+    {
+      name: t("benefits.items.heart.title"),
+      description: t("benefits.items.heart.desc"),
+      url: `${canonicalUrl}#benefits`,
+    },
+  ];
+
+  const articleBody = [
+    t("hero.description"),
+    t("benefits.description"),
+    t("product.description"),
+    t("about.description"),
+    `${t("usage.dosage_child")}: ${t("usage.dosage_child_amount")}.`,
+    `${t("usage.dosage_adult")}: ${t("usage.dosage_adult_amount")}.`,
+    t("usage.shake"),
+  ].join(" ");
+
   const websiteStructuredData = {
     "@context": "https://schema.org",
     "@type": "WebSite",
@@ -75,6 +133,74 @@ const Index = () => {
       name: "Bravita",
     },
   };
+
+  const articleStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "@id": `${canonicalUrl}#article`,
+    headline: pageTitle,
+    description: pageDescription,
+    image: [`${canonicalUrl}/og-image.webp`],
+    inLanguage: "tr-TR",
+    mainEntityOfPage: canonicalUrl,
+    articleSection: benefitItems.map((item) => item.name),
+    articleBody,
+    author: {
+      "@type": "Organization",
+      name: "Bravita",
+      url: canonicalUrl,
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "Bravita",
+      url: canonicalUrl,
+      logo: {
+        "@type": "ImageObject",
+        url: `${canonicalUrl}/apple-touch-icon.png`,
+      },
+    },
+    about: {
+      "@type": "Thing",
+      name: "Çocuklar için sıvı multivitamin ve mineral takviyesi",
+    },
+    mainEntity: {
+      "@type": "Product",
+      name: "Bravita Çocuklar İçin Sıvı Multivitamin",
+      url: canonicalUrl,
+    },
+  };
+
+  const itemListStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "@id": `${canonicalUrl}#item-list`,
+    name: "Bravita öne çıkan faydaları",
+    itemListOrder: "https://schema.org/ItemListUnordered",
+    numberOfItems: benefitItems.length,
+    itemListElement: benefitItems.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      description: item.description,
+      url: item.url,
+    })),
+  };
+
+  const faqPageStructuredData = faqItems.length
+    ? {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "@id": `${canonicalUrl}#faq`,
+        mainEntity: faqItems.map((item) => ({
+          "@type": "Question",
+          name: item.question,
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: item.answer,
+          },
+        })),
+      }
+    : null;
 
   useEffect(() => {
     const trackLegalHashIntent = () => {
@@ -156,6 +282,11 @@ const Index = () => {
         <script type="application/ld+json">{JSON.stringify(websiteStructuredData)}</script>
         <script type="application/ld+json">{JSON.stringify(organizationStructuredData)}</script>
         <script type="application/ld+json">{JSON.stringify(productStructuredData)}</script>
+        <script type="application/ld+json">{JSON.stringify(articleStructuredData)}</script>
+        <script type="application/ld+json">{JSON.stringify(itemListStructuredData)}</script>
+        {faqPageStructuredData ? (
+          <script type="application/ld+json">{JSON.stringify(faqPageStructuredData)}</script>
+        ) : null}
       </Helmet>
       <a
         href="#main-content"
