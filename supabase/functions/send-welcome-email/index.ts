@@ -273,6 +273,16 @@ function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
     return diff === 0;
 }
 
+function timingSafeSecretEqual(providedSecret: string | null, expectedSecret: string | undefined): boolean {
+    if (!providedSecret || !expectedSecret) {
+        return false;
+    }
+
+    const providedBytes = new TextEncoder().encode(providedSecret);
+    const expectedBytes = new TextEncoder().encode(expectedSecret);
+    return timingSafeEqual(providedBytes, expectedBytes);
+}
+
 async function hmacSha256Hex(data: string, secret: string): Promise<string> {
     const key = await crypto.subtle.importKey(
         "raw",
@@ -444,7 +454,7 @@ serve(async (req: Request) => {
         }
 
         const secret = req.headers.get("x-bravita-secret");
-        if (secret !== APP_WEBHOOK_SECRET) {
+        if (!timingSafeSecretEqual(secret, APP_WEBHOOK_SECRET)) {
             return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: getCorsHeaders(req) });
         }
 

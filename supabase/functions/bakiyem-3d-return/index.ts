@@ -34,6 +34,7 @@ const MAX_LOGGED_VALUE_LENGTH = 240;
 const MAX_LOGGED_TOTAL_CHARS = 4000;
 const MAX_CALLBACK_KEYS_HARD_LIMIT = 80;
 const MAX_CALLBACK_TOTAL_CHARS_HARD_LIMIT = 12000;
+const SENSITIVE_LOG_KEY_PATTERN = /(card|kart|pan|cvv|cvc|password|passwd|secret|token|authorization|auth|hash|signature|email|e-?mail|phone|gsm|tel|iban|identity|tckn|ssn)/i;
 
 async function sha256Hex(input: string): Promise<string> {
   const bytes = new TextEncoder().encode(input);
@@ -144,7 +145,11 @@ function containsMerchantConfigHint(value: string): boolean {
   return /(üye\s*işyeri|uye\s*isyeri|merchant|bayi|dealer|isyeri|işyeri|terminal|acquirer)/i.test(value);
 }
 
-function safeSerializeForLog(value: unknown): unknown {
+function safeSerializeForLog(value: unknown, parentKey = ""): unknown {
+  if (SENSITIVE_LOG_KEY_PATTERN.test(parentKey)) {
+    return "[redacted]";
+  }
+
   if (value === null || value === undefined) return value;
   if (typeof value === "number" || typeof value === "boolean") return value;
 
@@ -160,14 +165,14 @@ function safeSerializeForLog(value: unknown): unknown {
   if (Array.isArray(value)) {
     return value
       .slice(0, MAX_LOGGED_CALLBACK_KEYS)
-      .map((item) => safeSerializeForLog(item));
+      .map((item) => safeSerializeForLog(item, parentKey));
   }
 
   if (typeof value === "object") {
     const record = value as Record<string, unknown>;
     const entries = Object.entries(record)
       .slice(0, MAX_LOGGED_CALLBACK_KEYS)
-      .map(([key, entryValue]) => [key, safeSerializeForLog(entryValue)] as const);
+      .map(([key, entryValue]) => [key, safeSerializeForLog(entryValue, key)] as const);
 
     return Object.fromEntries(entries);
   }

@@ -3,19 +3,19 @@
 # Admin/authenticated-only functions enforce verify_jwt at platform level.
 
 [auth]
-# pwned_password_protection_enabled = true
+pwned_password_protection_enabled = true
 
 [functions.send-order-email]
-verify_jwt = false
+verify_jwt = true
 
 [functions.send-support-email]
-verify_jwt = false
+verify_jwt = true
 
 [functions.send-welcome-email]
 verify_jwt = false
 
 [functions.send-test-email]
-verify_jwt = false
+verify_jwt = true
 
 [functions.sync-to-billionmail]
 verify_jwt = true
@@ -24,7 +24,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.bakiyem-init-3d]
-verify_jwt = false
+verify_jwt = true
 
 [functions.bakiyem-3d-return]
 verify_jwt = false
@@ -36,10 +36,22 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.bakiyem-tokenize-card]
-verify_jwt = false
+verify_jwt = true
 
 [functions.bakiyem-refund]
 verify_jwt = true
 
 [functions.payment-maintenance]
 verify_jwt = false
+
+[functions.verify-promo-code]
+verify_jwt = true
+
+[functions.create-support-ticket]
+verify_jwt = true
+
+[functions.create-bank-order]
+verify_jwt = true
+
+[functions.admin-rpc]
+verify_jwt = true

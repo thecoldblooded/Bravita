@@ -15,6 +15,7 @@ import signupHandler from "../../api/auth/signup.js";
 import setSessionHandler from "../../api/auth/set-session.js";
 import oauthGoogleStartHandler from "../../api/auth/oauth/google/start.js";
 import oauthCallbackHandler from "../../api/auth/oauth/callback.js";
+import visitorCounterHandler from "../../api/visitor-counter.js";
 
 function loadEnvFileOnce(filePath) {
     if (!existsSync(filePath)) {
@@ -85,6 +86,7 @@ const RATE_LIMIT_DEFAULTS = Object.freeze({
     "/api/auth/signup": Number(process.env.BFF_RATE_LIMIT_MAX_SIGNUP || 8),
     "/api/auth/recover": Number(process.env.BFF_RATE_LIMIT_MAX_RECOVER || 8),
     "/api/auth/resend": Number(process.env.BFF_RATE_LIMIT_MAX_RESEND || 8),
+    "/api/visitor-counter": Number(process.env.BFF_RATE_LIMIT_MAX_VISITOR_COUNTER || 30),
 });
 
 const rateLimitStore = new Map();
@@ -101,6 +103,7 @@ const routeHandlers = new Map([
     ["/api/auth/set-session", setSessionHandler],
     ["/api/auth/oauth/google/start", oauthGoogleStartHandler],
     ["/api/auth/oauth/callback", oauthCallbackHandler],
+    ["/api/visitor-counter", visitorCounterHandler],
 ]);
 
 function attachExpressLikeHelpers(res) {

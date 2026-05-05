@@ -18,7 +18,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useTranslation } from "react-i18next";
-import { FreeVisitorCounter } from "@rundevelrun/free-visitor-counter";
 import { getLegalDocuments, getLegalLocale, type LegalDocumentKey } from "@/content/legalDocuments";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
@@ -28,9 +27,40 @@ const valcoLogo = new URL("@/assets/valco-logo.webp", import.meta.url).href;
 
 const VISITOR_SESSION_KEY = "bravita_visitor_counted";
 const LEGAL_KEYS = ["terms", "privacy", "cookies", "legalNotice", "kvkk"] as const;
+let hasQueuedVisitorCountInRuntime = false;
+
+type VisitorCounterStats = {
+  total: number | null;
+  today: number | null;
+};
 
 const isLegalDocumentKey = (value: string): value is LegalDocumentKey =>
   (LEGAL_KEYS as readonly string[]).includes(value);
+
+const normalizeVisitorCount = (value: unknown): number | null => {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return Math.max(0, Math.trunc(value));
+  }
+
+  if (typeof value === "string" && value.trim()) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? Math.max(0, Math.trunc(parsed)) : null;
+  }
+
+  return null;
+};
+
+const formatVisitorCount = (count: number | null, locale: string) => {
+  if (count === null) {
+    return "--";
+  }
+
+  try {
+    return new Intl.NumberFormat(locale || "tr").format(count);
+  } catch {
+    return String(count);
+  }
+};
 
 function Footer() {
   const { t, i18n } = useTranslation();
@@ -39,6 +69,7 @@ function Footer() {
   const [isInView, setIsInView] = useState(false);
   const [activeLegalKey, setActiveLegalKey] = useState<LegalDocumentKey | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [visitorStats, setVisitorStats] = useState<VisitorCounterStats>({ total: null, today: null });
   const footerRef = useRef<HTMLElement>(null);
   const legalLocale = getLegalLocale(i18n.language);
   const legalDocuments = useMemo(() => getLegalDocuments(legalLocale), [legalLocale]);
@@ -60,6 +91,80 @@ function Footer() {
 
     observer.observe(footer);
     return () => observer.disconnect();
+  }, []);
+
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const hasAlreadyCountedVisit = () => {
+      try {
+        return window.sessionStorage.getItem(VISITOR_SESSION_KEY) === "true";
+      } catch {
+        return false;
+      }
+    };
+
+    const markVisitCounted = () => {
+      try {
+        window.sessionStorage.setItem(VISITOR_SESSION_KEY, "true");
+      } catch {
+        // Ignore unavailable storage; the server-side rate limit remains the fallback.
+      }
+    };
+
+    const loadVisitorCounter = async () => {
+      const shouldCountVisit = !hasAlreadyCountedVisit() && !hasQueuedVisitorCountInRuntime;
+
+      if (shouldCountVisit) {
+        hasQueuedVisitorCountInRuntime = true;
+      }
+
+      try {
+        const response = await fetch("/api/visitor-counter", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ countVisit: shouldCountVisit }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Visitor counter request failed");
+        }
+
+        const payload = await response.json();
+        if (shouldCountVisit) {
+          markVisitCounted();
+        }
+
+        if (isCancelled) {
+          return;
+        }
+
+        setVisitorStats({
+          total: normalizeVisitorCount(payload?.total),
+          today: normalizeVisitorCount(payload?.today),
+        });
+
+      } catch {
+        if (shouldCountVisit) {
+          hasQueuedVisitorCountInRuntime = false;
+        }
+
+        if (!isCancelled) {
+          setVisitorStats({ total: null, today: null });
+        }
+      }
+    };
+
+    void loadVisitorCounter();
+
+    return () => {
+      isCancelled = true;
+    };
   }, []);
 
 
@@ -439,13 +544,11 @@ function Footer() {
           <div className="flex items-center space-x-2 bg-neutral-800/50 px-4 py-2 rounded-full">
             <Users size={16} className="text-bravita-orange" />
             <span className="text-neutral-300 text-sm">
-              <FreeVisitorCounter
-                className="font-semibold text-white inline"
-                totalCountPrefix={`${t('footer.visitor_total')} `}
-                todayCountPrefix={`${t('footer.visitor_today')} `}
-                separator=" | "
-                showTotalFirst={true}
-              />
+              <span className="font-semibold text-white inline">
+                {t('footer.visitor_total')} {formatVisitorCount(visitorStats.total, i18n.language)}
+                {" | "}
+                {t('footer.visitor_today')} {formatVisitorCount(visitorStats.today, i18n.language)}
+              </span>
               {" "}{t('footer.visitor_count')}
             </span>
           </div>

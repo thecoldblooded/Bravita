@@ -26,6 +26,7 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { getFunctionAuthHeaders } from "@/lib/auth/functionAuth";
+import { createSupportTicket } from "@/lib/supportTickets";
 import Loader from "@/components/ui/Loader";
 import { Mail, User, MessageSquare, Tag } from "lucide-react";
 
@@ -66,18 +67,15 @@ export default function SupportForm() {
 
         setIsSubmitting(true);
         try {
-            // 1. Insert via secure RPC
-            const { data: rpcResult, error: dbError } = await supabase.rpc("create_support_ticket_v1", {
-                p_name: values.name,
-                p_email: values.email,
-                p_category: values.category,
-                p_subject: values.subject,
-                p_message: values.message,
-                p_user_id: null,
-            });
+            const ticket = await createSupportTicket({
+                name: values.name,
+                email: values.email,
+                category: values.category,
+                subject: values.subject,
+                message: values.message,
+                captchaToken,
+            }, "support:public_create_ticket");
 
-            if (dbError) throw dbError;
-            const ticket = Array.isArray(rpcResult) ? rpcResult[0] : rpcResult;
             if (!ticket?.id) {
                 throw new Error("Bilet oluşturuldu ancak ID alınamadı.");
             }

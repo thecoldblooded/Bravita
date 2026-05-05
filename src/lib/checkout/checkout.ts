@@ -1,5 +1,6 @@
 import { supabase, safeQuery } from "@/lib/supabase";
 import { Order } from "@/lib/admin/admin";
+import { getEdgeFunctionHeaders } from "@/lib/auth/edgeFunctionHeaders";
 import { getFunctionAuthHeaders } from "@/lib/auth/functionAuth";
 
 // Checkout response tipi
@@ -40,24 +41,17 @@ export interface CheckoutParams {
 export async function processCheckout(params: CheckoutParams): Promise<CheckoutResponse> {
     const { productSlug, quantity, promoCode } = params;
 
-    // Sunucu tarafındaki validate_checkout fonksiyonunu çağır
-    const { data, error } = await supabase.rpc("validate_checkout", {
-        p_product_slug: productSlug,
-        p_quantity: quantity,
-        p_promo_code: promoCode || null,
+    console.warn("processCheckout is deprecated; use createOrder or initiateCardPayment instead.", {
+        productSlug,
+        quantity,
+        hasPromoCode: Boolean(promoCode),
     });
 
-    if (error) {
-        console.error("Checkout RPC error:", error);
-        return {
-            success: false,
-            error: "RPC_ERROR",
-            message: error.message || "Sunucu hatası oluştu",
-        };
-    }
-
-    // Sunucudan gelen response'u döndür
-    return data as CheckoutResponse;
+    return {
+        success: false,
+        error: "DEPRECATED_CHECKOUT_FLOW",
+        message: "Bu ödeme akışı artık kullanılmıyor.",
+    };
 }
 
 /**
@@ -540,20 +534,48 @@ export async function createOrder(params: CreateOrderParams): Promise<CreateOrde
     }));
 
     try {
-        // Call the secure backend function
-        const { data, error } = await supabase.rpc("create_order", {
-            p_items: rpcItems,
-            p_shipping_address_id: shippingAddressId,
-            p_payment_method: paymentMethod,
-            p_promo_code: promoCode || null,
+        let orderHeaders = await getEdgeFunctionHeaders("checkout:createOrder");
+        let orderInvokeResult = await supabase.functions.invoke("create-bank-order", {
+            body: {
+                items: rpcItems,
+                shippingAddressId,
+                paymentMethod,
+                promoCode: promoCode || null,
+            },
+            headers: orderHeaders,
         });
 
+        if (orderInvokeResult.error) {
+            const extracted = await extractEdgeFunctionErrorMessage(orderInvokeResult.error);
+            if (isInvalidJwtAuthError(extracted)) {
+                orderHeaders = await getEdgeFunctionHeaders("checkout:createOrder:retry", { forceRefresh: true });
+                orderInvokeResult = await supabase.functions.invoke("create-bank-order", {
+                    body: {
+                        items: rpcItems,
+                        shippingAddressId,
+                        paymentMethod,
+                        promoCode: promoCode || null,
+                    },
+                    headers: orderHeaders,
+                });
+            }
+        }
+
+        const data = orderInvokeResult.data as {
+            success?: boolean;
+            order_id?: string;
+            bank_reference?: string;
+            message?: string;
+            error?: string;
+        } | null;
+        const error = orderInvokeResult.error;
+
         if (error) {
-            console.error("Order creation RPC error:", error);
+            console.error("Order creation function error:", error);
             return {
                 success: false,
                 message: error.message || "Sipariş oluşturulamadı (Sunucu hatası)",
-                error: "RPC_ERROR",
+                error: "FUNCTION_ERROR",
             };
         }
 
@@ -604,7 +626,7 @@ export async function createOrder(params: CreateOrderParams): Promise<CreateOrde
             success: true,
             orderId: data.order_id,
             bankReference: data.bank_reference,
-            message: data.message,
+            message: data.message || "Sipariş başarıyla oluşturuldu",
         };
     } catch (error) {
         console.error("Order creation exception:", error);
@@ -710,44 +732,56 @@ export async function validatePromoCode(code: string, totalAmount: number, netSu
     minOrderAmount?: number;
     maxDiscountAmount?: number | null;
 }> {
-    // Use RPC to verify promo code (bypass RLS)
-    const { data: result, error } = await supabase.rpc('verify_promo_code', { p_code: code });
+    const headers = await getEdgeFunctionHeaders("checkout:validatePromoCode");
+    const { data: result, error } = await supabase.functions.invoke('verify-promo-code', {
+        body: { code },
+        headers,
+    });
 
-    if (error || !result || !result.valid) {
+    const promoResult = result as {
+        valid?: boolean;
+        message?: string;
+        discount_type?: 'percentage' | 'fixed_amount';
+        discount_value?: number;
+        min_order_amount?: number;
+        max_discount_amount?: number | null;
+    } | null;
+
+    if (error || !promoResult || !promoResult.valid) {
         return {
             valid: false,
             discountAmount: 0,
-            message: result?.message || 'Promosyon kodu geçerli değil',
+            message: promoResult?.message || 'Promosyon kodu geçerli değil',
         };
     }
 
     // Check min order amount locally with the data from RPC (using Net Subtotal)
-    if (result.min_order_amount && netSubtotal < result.min_order_amount) {
+    if (promoResult.min_order_amount && netSubtotal < promoResult.min_order_amount) {
         return {
             valid: false,
             discountAmount: 0,
-            message: `Minimum sepet tutarı ₺${result.min_order_amount} olmalıdır (Ara Toplam)`,
+            message: `Minimum sepet tutarı ₺${promoResult.min_order_amount} olmalıdır (Ara Toplam)`,
         };
     }
 
     let discountAmount: number;
-    if (result.discount_type === 'percentage') {
+    if (promoResult.discount_type === 'percentage') {
         // Calculate based on Gross Total (Total including VAT)
-        discountAmount = (totalAmount * result.discount_value) / 100;
-        if (result.max_discount_amount && discountAmount > result.max_discount_amount) {
-            discountAmount = result.max_discount_amount;
+        discountAmount = (totalAmount * Number(promoResult.discount_value || 0)) / 100;
+        if (promoResult.max_discount_amount && discountAmount > promoResult.max_discount_amount) {
+            discountAmount = promoResult.max_discount_amount;
         }
     } else {
-        discountAmount = result.discount_value;
+        discountAmount = Number(promoResult.discount_value || 0);
     }
 
     return {
         valid: true,
         discountAmount,
         message: 'Promosyon kodu uygulandı',
-        type: result.discount_type,
-        value: result.discount_value,
-        minOrderAmount: result.min_order_amount || 0,
-        maxDiscountAmount: result.max_discount_amount || null
+        type: promoResult.discount_type,
+        value: promoResult.discount_value,
+        minOrderAmount: promoResult.min_order_amount || 0,
+        maxDiscountAmount: promoResult.max_discount_amount || null
     };
 }

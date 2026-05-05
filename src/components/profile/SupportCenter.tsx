@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
 import { getFunctionAuthHeaders } from "@/lib/auth/functionAuth";
+import { createSupportTicket } from "@/lib/supportTickets";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -176,17 +177,13 @@ export function SupportCenter() {
 
         setIsSubmitting(true);
         try {
-            const { data: rpcResult, error } = await supabase.rpc("create_support_ticket_v1", {
-                p_name: user.full_name || user.email || "Müşteri",
-                p_email: user.email || "",
-                p_category: formData.category,
-                p_subject: formData.subject,
-                p_message: formData.message,
-                p_user_id: user.id,
-            });
-
-            if (error) throw error;
-            const ticket = Array.isArray(rpcResult) ? rpcResult[0] : rpcResult;
+            const ticket = await createSupportTicket({
+                name: user.full_name || user.email || "Müşteri",
+                email: user.email || "",
+                category: formData.category,
+                subject: formData.subject,
+                message: formData.message,
+            }, "support:center_create_ticket");
             if (!ticket?.id) throw new Error("Ticket ID alınamadı.");
 
             toast.success(t("support.success_message"));

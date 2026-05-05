@@ -28,6 +28,9 @@ export default defineConfig(({ mode }) => {
         "/api/auth": {
           target: bffAuthTarget,
         },
+        "/api/visitor-counter": {
+          target: bffAuthTarget,
+        },
       },
     },
     plugins: [

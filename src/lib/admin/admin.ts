@@ -1,4 +1,5 @@
 import { supabase, getSessionSafe, safeQuery } from "@/lib/supabase";
+import { getEdgeFunctionHeaders } from "@/lib/auth/edgeFunctionHeaders";
 import { isBffAuthEnabled, refreshBffSession } from "@/lib/auth/bffAuth";
 import { getFunctionAuthHeaders } from "@/lib/auth/functionAuth";
 
@@ -41,6 +42,40 @@ async function extractEdgeFunctionErrorMessage(error: unknown): Promise<{ messag
     }
 
     return { status };
+}
+
+async function invokeAdminRpc<T>(
+    context: string,
+    body: Record<string, unknown>,
+): Promise<T> {
+    let headers = await getEdgeFunctionHeaders(context);
+    let result = await supabase.functions.invoke("admin-rpc", {
+        body,
+        headers,
+    });
+
+    if (result.error) {
+        const extracted = await extractEdgeFunctionErrorMessage(result.error);
+        if (extracted.status === 401) {
+            headers = await getEdgeFunctionHeaders(`${context}:retry`, { forceRefresh: true });
+            result = await supabase.functions.invoke("admin-rpc", {
+                body,
+                headers,
+            });
+        }
+    }
+
+    if (result.error) {
+        const extracted = await extractEdgeFunctionErrorMessage(result.error);
+        throw new Error(extracted.message || "Admin işlemi tamamlanamadı.");
+    }
+
+    const payload = result.data as { error?: string } | null;
+    if (payload?.error) {
+        throw new Error(payload.error);
+    }
+
+    return result.data as T;
 }
 
 // Order status types
@@ -411,16 +446,12 @@ export async function updateOrderStatus(
     // 3. Stock restoration (on cancellation)
     // 4. Order status history record
     // 5. Admin audit logging
-    const { error: rpcError } = await supabase.rpc("admin_update_order_status", {
-        p_order_id: orderId,
-        p_new_status: status,
-        p_note: note || null
+    await invokeAdminRpc<{ success: boolean }>("admin:updateOrderStatus", {
+        action: "updateOrderStatus",
+        orderId,
+        status,
+        note: note || null,
     });
-
-    if (rpcError) {
-        console.error("RPC Error (admin_update_order_status):", rpcError);
-        throw new Error(rpcError.message || "Sipariş durumu güncellenemedi.");
-    }
 }
 
 export async function voidCardPayment(orderId: string): Promise<CardVoidResult> {
@@ -682,13 +713,13 @@ export async function getOrderStatusHistory(orderId: string): Promise<OrderStatu
  * Get dashboard statistics using secure RPC
  */
 export async function getDashboardStats(startDate: Date, endDate: Date): Promise<DashboardStats> {
-    const { data, error } = await supabase
-        .rpc('get_dashboard_stats_v2', {
-            start_date: startDate.toISOString(),
-            end_date: endDate.toISOString()
-        });
+    const response = await invokeAdminRpc<{ success: boolean; data: DashboardStats }>("admin:getDashboardStats", {
+        action: "getDashboardStats",
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+    });
 
-    if (error) throw error;
+    const data = response.data;
 
     // Fill missing dates in daily_sales
     if (data && Array.isArray(data.daily_sales)) {
@@ -755,15 +786,11 @@ export async function getAdminUsers(): Promise<{ id: string; email: string; full
  * Set user as admin
  */
 export async function setUserAdmin(userId: string, isAdmin: boolean): Promise<void> {
-    const { error } = await supabase.rpc('sync_user_admin_status', {
-        p_user_id: userId,
-        p_is_admin: isAdmin
+    await invokeAdminRpc<{ success: boolean }>("admin:syncUserAdminStatus", {
+        action: "syncUserAdminStatus",
+        userId,
+        isAdmin,
     });
-
-    if (error) {
-        console.error("RPC Error (sync_user_admin_status):", error);
-        throw error;
-    }
 }
 
 /**

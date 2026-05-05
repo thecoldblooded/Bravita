@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { supabase, type UserProfile } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { getFunctionAuthHeaders } from "@/lib/auth/functionAuth";
+import { createSupportTicket } from "@/lib/supportTickets";
 import { toast } from "sonner";
 import {
     Form,
@@ -81,18 +82,14 @@ export function SupportForm({ onSuccess }: SupportFormProps) {
 
         setIsSubmitting(true);
         try {
-            const { data: result, error: dbError } = await supabase.rpc('create_support_ticket_v1', {
-                p_name: authUser ? (authUser.full_name || values.name) : values.name,
-                p_email: authUser ? (authUser.email || values.email) : values.email,
-                p_category: values.category,
-                p_subject: values.subject,
-                p_message: values.message,
-                p_user_id: authUser?.id || null
-            });
-
-            if (dbError) throw dbError;
-
-            const ticket = Array.isArray(result) ? result[0] : result;
+            const ticket = await createSupportTicket({
+                name: authUser ? (authUser.full_name || values.name) : values.name,
+                email: authUser ? (authUser.email || values.email) : values.email,
+                category: values.category,
+                subject: values.subject,
+                message: values.message,
+                captchaToken,
+            }, "support:profile_create_ticket");
 
             if (!ticket || !ticket.id) {
                 throw new Error("Bilet oluşturuldu ancak ID alınamadı.");
