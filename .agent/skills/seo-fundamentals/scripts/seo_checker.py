@@ -35,7 +35,8 @@ SKIP_DIRS = {
     'node_modules', '.next', 'dist', 'build', '.git', '.github',
     '__pycache__', '.vscode', '.idea', 'coverage', 'test', 'tests',
     '__tests__', 'spec', 'docs', 'documentation', 'examples', 'artifacts',
-    '.venv', 'venv', '_reports', 'email_templates', 'supabase'
+    '.venv', 'venv', '_reports', 'email_templates', 'supabase',
+    'playwright-report', 'test-results'
 }
 
 # Files to skip (not pages)

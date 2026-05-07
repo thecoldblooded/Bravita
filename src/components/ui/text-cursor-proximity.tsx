@@ -50,8 +50,9 @@ const Letter = ({
         const mvs: Record<string, MotionValue<string | number>> = {}
         Object.keys(styles).forEach((key) => {
             const styleKey = key as keyof CSSPropertiesWithValues
-            if (styles[styleKey]) {
-                mvs[key] = motionValue(styles[styleKey]!.from)
+            const config = styles[styleKey]
+            if (config) {
+                mvs[key] = motionValue<string | number>(config.from as string | number)
             }
         })
         return mvs
@@ -63,9 +64,16 @@ const Letter = ({
             Object.keys(styles).forEach((key) => {
                 const styleKey = key as keyof CSSPropertiesWithValues
                 const config = styles[styleKey]
-                if (config && styleMVs[key]) {
-                    const value = transform(latestProximity, [0, 1], [config.from, config.to])
-                    styleMVs[key].set(value)
+                const motionStyle = styleMVs[key]
+                if (config && motionStyle) {
+                    const value = transform(
+                        latestProximity,
+                        [0, 1],
+                        [config.from as string | number, config.to as string | number],
+                    )
+                    if (value !== undefined) {
+                        motionStyle.set(value as string | number)
+                    }
                 }
             })
         })
@@ -179,6 +187,7 @@ const TextCursorProximity = forwardRef<HTMLSpanElement, TextProps>(
 
             const handleTouchMove = (ev: TouchEvent) => {
                 const touch = ev.touches[0]
+                if (!touch) return
                 scheduleUpdate(touch.clientX, touch.clientY)
             }
 
@@ -192,21 +201,8 @@ const TextCursorProximity = forwardRef<HTMLSpanElement, TextProps>(
             }
         }, [containerRef, mouseX, mouseY])
 
-        return (
-            <span
-                ref={ref}
-                className={`${className} inline`}
-                onClick={onClick}
-                role={onClick ? "button" : undefined}
-                tabIndex={onClick ? 0 : undefined}
-                onKeyDown={(e) => {
-                    if (onClick && (e.key === "Enter" || e.key === " ")) {
-                        e.preventDefault();
-                        onClick(e as unknown as React.MouseEvent<HTMLSpanElement>);
-                    }
-                }}
-                {...props}
-            >
+        const content = (
+            <>
                 {words.map((word, wordIndex) => (
                     <span key={wordIndex} className="inline-block whitespace-nowrap">
                         {word.split("").map((letter, letterIndex) => (
@@ -227,6 +223,36 @@ const TextCursorProximity = forwardRef<HTMLSpanElement, TextProps>(
                     </span>
                 ))}
                 <span className="sr-only">{label}</span>
+            </>
+        )
+
+        if (onClick) {
+            return (
+                <button
+                    ref={ref as React.Ref<HTMLButtonElement>}
+                    type="button"
+                    className={`${className} inline cursor-pointer bg-transparent p-0 text-inherit border-0`}
+                    onClick={onClick}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            onClick(e as unknown as React.MouseEvent<HTMLButtonElement>);
+                        }
+                    }}
+                    {...props}
+                >
+                    {content}
+                </button>
+            )
+        }
+
+        return (
+            <span
+                ref={ref}
+                className={`${className} inline`}
+                {...props}
+            >
+                {content}
             </span>
         )
     }

@@ -1,4 +1,4 @@
-import type { UserProfile } from "./supabase";
+import type { UserProfile } from "../supabase";
 
 type CompletedProfileSyncCandidate = {
     email?: string | null;
@@ -37,13 +37,12 @@ const splitName = (fullName: string | null | undefined): { firstName?: string; l
         .map((part) => part.trim())
         .filter(Boolean);
 
-    if (parts.length === 0) {
-        return {};
-    }
+    const firstName = parts[0];
+    const lastName = parts.slice(1).join(" ") || "";
 
     return {
-        firstName: parts[0],
-        lastName: parts.slice(1).join(" ") || undefined,
+        ...(firstName ? { firstName } : {}),
+        ...(lastName ? { lastName } : {}),
     };
 };
 
@@ -73,8 +72,8 @@ export function buildBillionMailContactFromProfile(
 
     return {
         email: normalizedEmail,
-        first_name: firstName,
-        last_name: lastName,
+        ...(firstName ? { first_name: firstName } : {}),
+        ...(lastName ? { last_name: lastName } : {}),
         attributes: {
             user_type: profile.user_type,
             company_name: profile.company_name,

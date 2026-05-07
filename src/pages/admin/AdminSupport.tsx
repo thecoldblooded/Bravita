@@ -566,11 +566,12 @@ export default function AdminSupport() {
                                         </div>
                                     </div>
                                     {(() => {
-                                        const hasIdentityMismatch = parseConversation(selectedTicket.message).some(m =>
-                                            !m.isAdmin &&
-                                            m.header.includes('@') &&
-                                            m.header.split(' ')[0].toLowerCase() !== selectedTicket.email.toLowerCase()
-                                        );
+                                        const hasIdentityMismatch = parseConversation(selectedTicket.message).some(m => {
+                                            const authorIdentity = m.header.split(' ')[0]?.toLowerCase() ?? "";
+                                            return !m.isAdmin &&
+                                                m.header.includes('@') &&
+                                                authorIdentity !== selectedTicket.email.toLowerCase();
+                                        });
                                         return (
                                             <div className={cn(
                                                 "p-3 rounded-xl transition-colors",

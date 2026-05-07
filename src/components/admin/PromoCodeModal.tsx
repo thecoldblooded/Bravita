@@ -24,6 +24,12 @@ const promoSchema = z.object({
 
 type PromoFormValues = z.infer<typeof promoSchema>;
 
+const toOptionalNumber = (value: number | undefined) =>
+    typeof value === "number" && Number.isFinite(value) && value > 0 ? value : undefined;
+
+const toOptionalIsoDate = (value: string | undefined) =>
+    value ? new Date(value).toISOString() : undefined;
+
 interface PromoCodeModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -70,12 +76,40 @@ export function PromoCodeModal({ isOpen, onClose, onSave, promoCode }: PromoCode
     });
 
     const onSubmit = async (data: PromoFormValues) => {
-        await onSave({
-            ...data,
-            // Convert empty strings to null for optional dates if needed, or handle in backend
-            start_date: data.start_date ? new Date(data.start_date).toISOString() : undefined,
-            end_date: data.end_date ? new Date(data.end_date).toISOString() : undefined,
-        });
+        const minOrderAmount = toOptionalNumber(data.min_order_amount);
+        const maxDiscountAmount = toOptionalNumber(data.max_discount_amount);
+        const usageLimit = toOptionalNumber(data.usage_limit);
+        const startDate = toOptionalIsoDate(data.start_date);
+        const endDate = toOptionalIsoDate(data.end_date);
+
+        const payload: Partial<PromoCode> = {
+            code: data.code,
+            is_active: data.is_active,
+            discount_type: data.discount_type,
+            discount_value: data.discount_value,
+        };
+
+        if (typeof minOrderAmount === "number") {
+            payload.min_order_amount = minOrderAmount;
+        }
+
+        if (typeof maxDiscountAmount === "number") {
+            payload.max_discount_amount = maxDiscountAmount;
+        }
+
+        if (typeof usageLimit === "number") {
+            payload.usage_limit = usageLimit;
+        }
+
+        if (startDate) {
+            payload.start_date = startDate;
+        }
+
+        if (endDate) {
+            payload.end_date = endDate;
+        }
+
+        await onSave(payload);
         onClose();
     };
 

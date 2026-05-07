@@ -71,7 +71,7 @@ function TestimonialCard({
           >
             <SegmentedRevealText
               text={item.comment}
-              active={active}
+              {...(typeof active === "boolean" ? { active } : {})}
               once={compact}
               segmentSize={compact ? 1 : 2}
               blurAmount={10}

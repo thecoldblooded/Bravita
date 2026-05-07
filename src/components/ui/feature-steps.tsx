@@ -45,8 +45,9 @@ export function FeatureSteps({
     if (!container) return
 
     const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
+      (entries) => {
+        const entry = entries[0]
+        if (entry?.isIntersecting) {
           setIsInView(true)
           observer.disconnect()
         }
@@ -138,6 +139,16 @@ export function FeatureSteps({
           >
             {features.map((feature, index) => {
               const isActive = index === currentFeature
+              const motionProps = isScrollMode
+                ? {
+                    initial: { opacity: 0, y: 28, filter: "blur(10px)" },
+                    whileInView: { opacity: 1, y: 0, filter: "blur(0px)" },
+                    viewport: { once: true, amount: 0.35 },
+                  }
+                : {
+                    initial: { opacity: 0.3 },
+                    animate: { opacity: isActive ? 1 : 0.3 },
+                  }
 
               return (
                 <m.div
@@ -154,22 +165,7 @@ export function FeatureSteps({
                     isActive &&
                     "border-bravita-orange/30 bg-white/88 shadow-[0_24px_70px_-40px_rgba(236,119,44,0.35)]",
                   )}
-                  initial={
-                    isScrollMode
-                      ? { opacity: 0, y: 28, filter: "blur(10px)" }
-                      : { opacity: 0.3 }
-                  }
-                  whileInView={
-                    isScrollMode
-                      ? { opacity: 1, y: 0, filter: "blur(0px)" }
-                      : undefined
-                  }
-                  viewport={
-                    isScrollMode ? { once: true, amount: 0.35 } : undefined
-                  }
-                  animate={
-                    !isScrollMode ? { opacity: isActive ? 1 : 0.3 } : undefined
-                  }
+                  {...motionProps}
                   transition={{
                     duration: 0.55,
                     ease: [0.21, 0.47, 0.32, 0.98],
@@ -232,19 +228,26 @@ export function FeatureSteps({
               {!loadedImages.has(currentFeature) && (
                 <div className="absolute inset-0 animate-pulse bg-linear-to-br from-bravita-yellow/20 to-bravita-orange/20" />
               )}
-              {isInView && (
-                <img
-                  src={features[currentFeature].image}
-                  alt={features[currentFeature].step}
-                  loading="lazy"
-                  decoding="async"
-                  onLoad={() => handleImageLoad(currentFeature)}
-                  className={cn(
-                    "h-full w-full object-cover transition-opacity duration-300",
-                    loadedImages.has(currentFeature) ? "opacity-100" : "opacity-0",
-                  )}
-                />
-              )}
+              {(() => {
+                const activeFeature = features[currentFeature]
+                if (!isInView || !activeFeature) {
+                  return null
+                }
+
+                return (
+                  <img
+                    src={activeFeature.image}
+                    alt={activeFeature.step}
+                    loading="lazy"
+                    decoding="async"
+                    onLoad={() => handleImageLoad(currentFeature)}
+                    className={cn(
+                      "h-full w-full object-cover transition-opacity duration-300",
+                      loadedImages.has(currentFeature) ? "opacity-100" : "opacity-0",
+                    )}
+                  />
+                )
+              })()}
             </ShineBorder>
           </div>
         </div>

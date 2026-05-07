@@ -23,8 +23,10 @@ const BenefitDescription = ({ text }: { text: string }) => {
   } else if (hasDashList) {
     const parts = text.split(' ile ');
     if (parts.length > 1) {
-      ingredients = parts[0].split(' – ').map(s => s.trim());
-      mainText = parts[1];
+      const ingredientPart = parts[0] ?? "";
+      const mainTextPart = parts.slice(1).join(' ile ');
+      ingredients = ingredientPart.split(' – ').map(s => s.trim());
+      mainText = mainTextPart;
     }
   }
 

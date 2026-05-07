@@ -51,7 +51,10 @@ export function useProgressiveImageLoader({
       if (!isMounted || loadedRef.current.has(index)) return;
 
       try {
-        const img = await loadImage(urls[index], index);
+        const targetUrl = urls[index];
+        if (!targetUrl) return;
+
+        const img = await loadImage(targetUrl, index);
 
         if (!isMounted) return;
 

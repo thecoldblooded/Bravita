@@ -102,7 +102,10 @@ function parseJwtClaims(accessToken: string): JwtClaims | null {
     const parts = accessToken.split(".");
     if (parts.length < 3) return null;
 
-    const payload = decodeBase64Url(parts[1]);
+    const payloadPart = parts[1];
+    if (!payloadPart) return null;
+
+    const payload = decodeBase64Url(payloadPart);
     if (!payload) return null;
 
     try {
@@ -178,7 +181,10 @@ async function refreshAccessToken(context: string): Promise<{ accessToken: strin
     try {
         if (isBffAuthEnabled()) {
             const bffSession = await refreshBffSession();
-            const bffAccessToken = bffSession?.access_token?.trim() ?? "";
+            if (!bffSession) {
+                return { accessToken: "", userId: null, source: "bff_refresh_no_session" };
+            }
+            const bffAccessToken = bffSession.access_token?.trim() ?? "";
 
             if (!bffAccessToken) {
                 return { accessToken: "", userId: null, source: "bff_refresh_no_session" };

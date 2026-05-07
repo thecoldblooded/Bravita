@@ -268,7 +268,7 @@ async function extractEdgeFunctionErrorMessage(error: unknown): Promise<{ messag
             : undefined;
 
     const status = typeof response?.status === "number" ? response.status : undefined;
-    if (!response) return { status };
+    if (!response) return status === undefined ? {} : { status };
 
     const contentType = response.headers?.get?.("content-type") ?? "";
     try {
@@ -286,18 +286,25 @@ async function extractEdgeFunctionErrorMessage(error: unknown): Promise<{ messag
                     : undefined;
 
                 if (normalizedMessage || normalizedCode) {
-                    return { status, message: normalizedMessage, code: normalizedCode };
+                    return {
+                        ...(status === undefined ? {} : { status }),
+                        ...(normalizedMessage ? { message: normalizedMessage } : {}),
+                        ...(normalizedCode ? { code: normalizedCode } : {}),
+                    };
                 }
             }
         }
 
         const text = await response.clone().text().catch(() => "");
-        if (text.trim().length > 0) return { status, message: text.trim() };
+        if (text.trim().length > 0) return {
+            ...(status === undefined ? {} : { status }),
+            message: text.trim(),
+        };
     } catch {
         // Ignore parse errors - fall back to default message.
     }
 
-    return { status };
+    return status === undefined ? {} : { status };
 }
 
 function isInvalidJwtAuthError(extracted: { message?: string; status?: number }): boolean {
@@ -413,7 +420,7 @@ export async function initiateCardPayment(params: CardPaymentInitParams): Promis
                 success: false,
                 message: isAuthError ? "Oturum doğrulanamadı. Lütfen tekrar giriş yapıp yeniden deneyin." : (extracted.message || "Kart odeme baslatilamadi"),
                 error: isAuthError ? "AUTH_SESSION_REQUIRED" : "FUNCTION_ERROR",
-                code: extracted.code,
+                ...(extracted.code ? { code: extracted.code } : {}),
             };
         }
     }
@@ -429,15 +436,22 @@ export async function initiateCardPayment(params: CardPaymentInitParams): Promis
         code?: string;
     };
 
+    const resolvedRedirectUrl = data?.redirectUrl ?? data?.threeD?.redirectUrl ?? null;
+    const resolvedThreeD = data?.threeD?.redirectUrl
+        ? { redirectUrl: data.threeD.redirectUrl }
+        : data?.redirectUrl
+            ? { redirectUrl: data.redirectUrl }
+            : null;
+
     return {
         success: !!data?.success,
-        intentId: data?.intentId,
-        reused: !!data?.reused,
-        redirectUrl: data?.redirectUrl ?? data?.threeD?.redirectUrl ?? null,
-        threeD: data?.threeD || (data?.redirectUrl ? { redirectUrl: data.redirectUrl } : undefined),
-        message: data?.message,
-        error: data?.error,
-        code: data?.code,
+        ...(data?.intentId ? { intentId: data.intentId } : {}),
+        ...(data?.reused !== undefined ? { reused: !!data.reused } : {}),
+        ...(resolvedRedirectUrl !== null ? { redirectUrl: resolvedRedirectUrl } : {}),
+        ...(resolvedThreeD ? { threeD: resolvedThreeD } : {}),
+        ...(data?.message ? { message: data.message } : {}),
+        ...(data?.error ? { error: data.error } : {}),
+        ...(data?.code ? { code: data.code } : {}),
     };
 }
 
@@ -503,8 +517,8 @@ export async function tokenizeCardForPayment(params: CardTokenizeParams): Promis
     const data = invokeData as { success?: boolean; cardToken?: string; message?: string };
     return {
         success: !!data?.success,
-        cardToken: data?.cardToken,
-        message: data?.message,
+        ...(data?.cardToken ? { cardToken: data.cardToken } : {}),
+        ...(data?.message ? { message: data.message } : {}),
     };
 }
 
@@ -624,8 +638,8 @@ export async function createOrder(params: CreateOrderParams): Promise<CreateOrde
 
         return {
             success: true,
-            orderId: data.order_id,
-            bankReference: data.bank_reference,
+            ...(data.order_id ? { orderId: data.order_id } : {}),
+            ...(data.bank_reference ? { bankReference: data.bank_reference } : {}),
             message: data.message || "Sipariş başarıyla oluşturuldu",
         };
     } catch (error) {
@@ -779,8 +793,8 @@ export async function validatePromoCode(code: string, totalAmount: number, netSu
         valid: true,
         discountAmount,
         message: 'Promosyon kodu uygulandı',
-        type: promoResult.discount_type,
-        value: promoResult.discount_value,
+        ...(promoResult.discount_type ? { type: promoResult.discount_type } : {}),
+        ...(promoResult.discount_value !== undefined ? { value: promoResult.discount_value } : {}),
         minOrderAmount: promoResult.min_order_amount || 0,
         maxDiscountAmount: promoResult.max_discount_amount || null
     };

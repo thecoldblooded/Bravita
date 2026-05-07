@@ -74,6 +74,7 @@ export default function DashboardCharts({
     }));
 
     const topProducts = stats?.top_products ?? [];
+    const dailySales = stats?.daily_sales ?? [];
 
     return (
         <div className="space-y-6">
@@ -87,7 +88,7 @@ export default function DashboardCharts({
                     </h3>
                     <div className="h-64 md:h-72">
                         <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={stats?.daily_sales}>
+                            <AreaChart data={dailySales}>
                                 <defs>
                                     <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="5%" stopColor="#f97316" stopOpacity={0.15} />
@@ -205,7 +206,7 @@ export default function DashboardCharts({
                     </h3>
                     <div className="h-64 md:h-72">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={stats?.daily_sales}>
+                            <BarChart data={dailySales}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
                                 <XAxis
                                     dataKey="date"

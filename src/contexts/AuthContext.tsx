@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode, useCallback,
 import { Session } from "@supabase/supabase-js";
 import { supabase, UserProfile } from "@/lib/supabase";
 import { getBffRefreshDelayMs, getBffUnavailableErrorMessage, isBffAuthEnabled, refreshBffSession, restoreBffSession, toSupabaseSessionInput, setBffSessionFromClient } from "@/lib/auth/bffAuth";
+import { getInitialUserFromSession, hasAuthCallbackInUrl, normalizeSessionPhone } from "./authContextHelpers.ts";
 
 declare global {
   interface Window {
@@ -36,39 +37,32 @@ const getAuthDebugGlobal = (): AuthDebugGlobal => globalThis as AuthDebugGlobal;
 const isBffUnavailableAuthError = (error: unknown): boolean =>
   error instanceof Error && error.message === getBffUnavailableErrorMessage();
 
-const normalizeSessionPhone = (value: unknown): string | null => {
-  if (typeof value !== "string") {
-    return null;
-  }
-
-  const trimmed = value.trim();
-  if (!trimmed || !trimmed.startsWith("+")) {
-    return null;
-  }
-
-  const normalized = `+${trimmed.replace(/\D/g, "")}`;
-  return /^\+[0-9]{10,15}$/.test(normalized) ? normalized : null;
-};
-
-const hasAuthCallbackInUrl = () => {
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  const hash = window.location.hash;
-  const search = window.location.search;
-
-  return (
-    hash.includes("access_token=") ||
-    hash.includes("type=signup") ||
-    hash.includes("type=recovery") ||
-    search.includes("code=") ||
-    search.includes("type=signup") ||
-    search.includes("type=recovery")
-  );
-};
 
 const authContextInstanceId = `authctx_${Math.random().toString(36).slice(2, 10)}`;
+const E2E_AUTH_STORAGE_KEY = "bravita_e2e_auth";
+const E2E_AUTH_STATE_ENABLED =
+  import.meta.env.DEV && String(import.meta.env.VITE_E2E_AUTH_STATE ?? "false").toLowerCase() === "true";
+
+type E2EAuthState = {
+  session: Session;
+  user: UserProfile;
+};
+
+const readE2EAuthState = (): E2EAuthState | null => {
+  if (!E2E_AUTH_STATE_ENABLED || typeof window === "undefined") return null;
+
+  try {
+    const raw = window.localStorage.getItem(E2E_AUTH_STORAGE_KEY);
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw) as Partial<E2EAuthState>;
+    if (!parsed.session?.user?.id || !parsed.user?.id) return null;
+
+    return parsed as E2EAuthState;
+  } catch {
+    return null;
+  }
+};
 
 if (typeof window !== "undefined") {
   const debugGlobal = getAuthDebugGlobal();
@@ -81,47 +75,21 @@ if (typeof window !== "undefined") {
 
 }
 
-const getInitialUser = (session: Session | null) => {
-  if (!session?.user) return null;
-
-  // Trust only signed app_metadata for privilege hints.
-  const isAdminFromMetadata = !!session.user.app_metadata?.is_admin;
-  const isSuperAdminFromMetadata = !!session.user.app_metadata?.is_superadmin;
-  const metadataPhone = normalizeSessionPhone(session.user.user_metadata?.phone);
-  const authUserPhone = normalizeSessionPhone(session.user.phone);
-  const stubPhone = metadataPhone || authUserPhone || null;
-
-  // Create a minimal stub user - will be replaced by actual profile from DB
-  return {
-    id: session.user.id,
-    email: session.user.email || "",
-    full_name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || null,
-    phone: stubPhone,
-    profile_complete: false,
-    phone_verified: false,
-    user_type: "individual",
-    isStub: true,
-    is_admin: isAdminFromMetadata, // Trust signed session metadata instantly
-    is_superadmin: isSuperAdminFromMetadata,
-    company_name: null,
-    phone_verified_at: null,
-    oauth_provider: null,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  } as UserProfile;
-};
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const bffAuthEnabled = isBffAuthEnabled();
+  const e2eAuthState = readE2EAuthState();
 
   // Session persistence is intentionally disabled to reduce browser storage token exposure.
-  const initialSession: Session | null = null;
+  const initialSession: Session | null = e2eAuthState?.session ?? null;
   const [session, setSession] = useState<Session | null>(initialSession);
-  const [user, setUser] = useState<UserProfile | null>(() => getInitialUser(initialSession));
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasResolvedInitialAuth, setHasResolvedInitialAuth] = useState(false);
-  const [isBffBootstrapComplete, setIsBffBootstrapComplete] = useState(() => !bffAuthEnabled);
+  const [user, setUser] = useState<UserProfile | null>(() => e2eAuthState?.user ?? getInitialUserFromSession(initialSession));
+  const [isLoading, setIsLoading] = useState(() => !e2eAuthState);
+  const [hasResolvedInitialAuth, setHasResolvedInitialAuth] = useState(() => !!e2eAuthState);
+  const [isBffBootstrapComplete, setIsBffBootstrapComplete] = useState(() => !!e2eAuthState || !bffAuthEnabled);
   const [isSplashScreenActive, setIsSplashScreenActive] = useState(() => {
+    if (e2eAuthState) return false;
+
     // Auth callbacks should go straight to the React-managed screen flow.
     if (hasAuthCallbackInUrl()) {
       return false;
@@ -177,6 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [isSplashScreenActive]);
 
   const refreshUserProfile = useCallback(async (): Promise<UserProfile | null> => {
+    if (E2E_AUTH_STATE_ENABLED) return user;
     if (!session?.user?.id) return null;
 
     try {
@@ -215,10 +184,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     return null;
-  }, [session?.user?.id, setUserDebug]);
+  }, [session?.user?.id, setUserDebug, user]);
 
   const refreshSession = useCallback(async () => {
     try {
+      if (E2E_AUTH_STATE_ENABLED) {
+        setSession(initialSession);
+        return;
+      }
+
       if (bffAuthEnabled) {
         const bffSession = await refreshBffSession();
         if (!bffSession?.access_token) {
@@ -250,7 +224,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       console.error("Refresh session error:", error);
     }
-  }, [bffAuthEnabled, setUserDebug]);
+  }, [bffAuthEnabled, initialSession, setUserDebug]);
 
   const syncPendingProfile = useCallback(async (userId: string, profileData: { full_name?: string; phone?: string; street?: string; city?: string; postal_code?: string }) => {
     // Singleton guard to prevent duplicate syncs
@@ -318,6 +292,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Initialize session on mount
   // Consolidate initialization into a single atomic listener
   useEffect(() => {
+    if (E2E_AUTH_STATE_ENABLED) {
+      setHasResolvedInitialAuth(true);
+      setIsLoading(false);
+      setIsSplashScreenActive(false);
+      setIsBffBootstrapComplete(true);
+      return;
+    }
+
     let mounted = true;
 
     // Supabase fires INITIAL_SESSION immediately upon subscription
@@ -411,7 +393,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               if (exchangedSession?.user && mounted) {
                 setSession(exchangedSession);
 
-                const exchangedStub = getInitialUser(exchangedSession);
+                const exchangedStub = getInitialUserFromSession(exchangedSession);
                 if (exchangedStub) {
                   setUserDebug(exchangedStub);
                 }
@@ -516,7 +498,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             if (recoveredSession?.user) {
               setSession(recoveredSession);
-              const recoveredStub = getInitialUser(recoveredSession);
+              const recoveredStub = getInitialUserFromSession(recoveredSession);
               if (recoveredStub) {
                 setUserDebug(recoveredStub);
               }
@@ -567,7 +549,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (newSession?.user) {
         // OPTIMISTIC UPDATE: Unlock UI instantly using secure session metadata
         // This ensures the app is interactive in milliseconds even if DB is slow.
-        const initialStub = getInitialUser(newSession);
+        const initialStub = getInitialUserFromSession(newSession);
 
         setUserDebug(initialStub);
 
@@ -691,7 +673,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           if (!error && mounted) {
             setSession(data.session);
-            const bootstrapStub = getInitialUser(data.session);
+            const bootstrapStub = getInitialUserFromSession(data.session);
             if (bootstrapStub) {
               setUserDebug(bootstrapStub);
             }

@@ -42,8 +42,9 @@ const ScrollImageSequence = ({ className = "" }: ScrollImageSequenceProps) => {
     if (!container) return;
 
     const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !hasStartedLoading.current) {
+      (entries) => {
+        const entry = entries[0];
+        if (entry?.isIntersecting && !hasStartedLoading.current) {
           setIsInView(true);
           hasStartedLoading.current = true;
           observer.disconnect();
@@ -147,8 +148,15 @@ const ScrollImageSequence = ({ className = "" }: ScrollImageSequenceProps) => {
   // Load single image
   const loadImage = useCallback((index: number): Promise<HTMLImageElement> => {
     return new Promise((resolve, reject) => {
-      if (imagesRef.current[index]) {
-        resolve(imagesRef.current[index]!);
+      const existingImage = imagesRef.current[index];
+      if (existingImage) {
+        resolve(existingImage);
+        return;
+      }
+
+      const targetUrl = frameUrls[index];
+      if (!targetUrl) {
+        reject(new Error("FRAME_URL_MISSING"));
         return;
       }
 
@@ -159,7 +167,7 @@ const ScrollImageSequence = ({ className = "" }: ScrollImageSequenceProps) => {
         resolve(img);
       };
       img.onerror = reject;
-      img.src = frameUrls[index];
+      img.src = targetUrl;
     });
   }, []);
 

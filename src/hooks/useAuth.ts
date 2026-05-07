@@ -52,12 +52,18 @@ export function useAuthOperations() {
       };
 
       if (isBffAuthEnabled()) {
-        const signupData = await signupWithBff({
-          email: data.email,
-          password: data.password,
-          captchaToken: data.captchaToken,
-          profileData,
-        });
+        const signupData = data.captchaToken
+          ? await signupWithBff({
+              email: data.email,
+              password: data.password,
+              captchaToken: data.captchaToken,
+              profileData,
+            })
+          : await signupWithBff({
+              email: data.email,
+              password: data.password,
+              profileData,
+            });
 
         let bridgedSession = null;
         if (signupData?.session?.access_token) {
@@ -164,11 +170,16 @@ export function useAuthOperations() {
         return { user: sessionData.user, session: sessionData.session };
       }
 
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
-        options: data.captchaToken ? { captchaToken: data.captchaToken } : undefined,
-      });
+      const { data: authData, error: authError } = data.captchaToken
+        ? await supabase.auth.signInWithPassword({
+            email: data.email,
+            password: data.password,
+            options: { captchaToken: data.captchaToken },
+          })
+        : await supabase.auth.signInWithPassword({
+            email: data.email,
+            password: data.password,
+          });
 
       if (authError) throw authError;
 
@@ -225,11 +236,16 @@ export function useAuthOperations() {
         return { success: true };
       }
 
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email,
-        options: captchaToken ? { captchaToken } : undefined,
-      });
+      const { error } = captchaToken
+        ? await supabase.auth.resend({
+            type: 'signup',
+            email,
+            options: { captchaToken },
+          })
+        : await supabase.auth.resend({
+            type: 'signup',
+            email,
+          });
 
       if (error) throw error;
       return { success: true };
@@ -261,13 +277,16 @@ export function useAuthOperations() {
         if (sessionError) throw sessionError;
       } else {
         // Verify old password by attempting a sign in
-        const { error: verifyError } = await supabase.auth.signInWithPassword({
-          email: user.email,
-          password: oldPassword,
-          options: {
-            captchaToken: captchaToken
-          }
-        });
+        const { error: verifyError } = captchaToken
+          ? await supabase.auth.signInWithPassword({
+              email: user.email,
+              password: oldPassword,
+              options: { captchaToken },
+            })
+          : await supabase.auth.signInWithPassword({
+              email: user.email,
+              password: oldPassword,
+            });
 
         if (verifyError) {
           throw new Error("Mevcut şifreniz hatalı. Lütfen tekrar deneyin.");
@@ -301,10 +320,25 @@ export function useAuthOperations() {
         return { success: true };
       }
 
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      const resetOptions: {
+        redirectTo: string;
+        captchaToken?: string;
+      } = {
         redirectTo: `${window.location.origin}/update-password`,
-        captchaToken,
-      });
+      };
+
+      if (captchaToken) {
+        resetOptions.captchaToken = captchaToken;
+      }
+
+      const { error } = captchaToken
+        ? await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: `${window.location.origin}/update-password`,
+            captchaToken,
+          })
+        : await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: `${window.location.origin}/update-password`,
+          });
 
       if (error) throw error;
       return { success: true };

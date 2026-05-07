@@ -4,6 +4,11 @@ import { useTranslation } from "react-i18next";
 import { Cookie } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+const COOKIE_CONSENT_KEY = "cookie_consent:v1";
+const COOKIE_PREFERENCES_KEY = "cookie_preferences:v1";
+const LEGACY_COOKIE_CONSENT_KEY = "cookie_consent";
+const LEGACY_COOKIE_PREFERENCES_KEY = "cookie_preferences";
+
 type CookieState = {
     isVisible: boolean;
     showCustomize: boolean;
@@ -45,7 +50,7 @@ const CookieConsent = () => {
 
     useEffect(() => {
         // Check if user has already made a choice
-        const consent = localStorage.getItem("cookie_consent");
+        const consent = localStorage.getItem(COOKIE_CONSENT_KEY) ?? localStorage.getItem(LEGACY_COOKIE_CONSENT_KEY);
         if (!consent) {
             // Small delay for better UX
             const timer = setTimeout(() => dispatch({ type: 'SET_VISIBLE', payload: true }), 1000);
@@ -54,9 +59,9 @@ const CookieConsent = () => {
     }, []);
 
     const handleAccept = () => {
-        localStorage.setItem("cookie_consent", "accepted");
+        localStorage.setItem(COOKIE_CONSENT_KEY, "accepted");
         localStorage.setItem(
-            "cookie_preferences",
+            COOKIE_PREFERENCES_KEY,
             JSON.stringify({
                 necessary: true,
                 analytics: true,
@@ -64,6 +69,8 @@ const CookieConsent = () => {
                 marketing: true,
             })
         );
+        localStorage.removeItem(LEGACY_COOKIE_CONSENT_KEY);
+        localStorage.removeItem(LEGACY_COOKIE_PREFERENCES_KEY);
         dispatch({ type: 'HIDE' });
         window.dispatchEvent(new CustomEvent("cookie-consent-updated", { detail: { pending: false } }));
     };
@@ -71,8 +78,10 @@ const CookieConsent = () => {
     const handleReject = () => {
         // Keep this as a temporary dismissal only.
         // On next page load, banner should be shown again.
-        localStorage.removeItem("cookie_consent");
-        localStorage.removeItem("cookie_preferences");
+        localStorage.removeItem(COOKIE_CONSENT_KEY);
+        localStorage.removeItem(COOKIE_PREFERENCES_KEY);
+        localStorage.removeItem(LEGACY_COOKIE_CONSENT_KEY);
+        localStorage.removeItem(LEGACY_COOKIE_PREFERENCES_KEY);
         dispatch({ type: 'HIDE' });
         window.dispatchEvent(new CustomEvent("cookie-consent-updated", { detail: { pending: false } }));
     };
@@ -82,9 +91,9 @@ const CookieConsent = () => {
     };
 
     const handleSavePreferences = () => {
-        localStorage.setItem("cookie_consent", "customized");
+        localStorage.setItem(COOKIE_CONSENT_KEY, "customized");
         localStorage.setItem(
-            "cookie_preferences",
+            COOKIE_PREFERENCES_KEY,
             JSON.stringify({
                 necessary: true,
                 analytics: state.analyticsEnabled,
@@ -92,6 +101,8 @@ const CookieConsent = () => {
                 marketing: state.marketingEnabled,
             })
         );
+        localStorage.removeItem(LEGACY_COOKIE_CONSENT_KEY);
+        localStorage.removeItem(LEGACY_COOKIE_PREFERENCES_KEY);
         dispatch({ type: 'HIDE' });
         window.dispatchEvent(new CustomEvent("cookie-consent-updated", { detail: { pending: false } }));
     };

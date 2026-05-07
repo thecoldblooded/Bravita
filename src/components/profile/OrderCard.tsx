@@ -6,8 +6,10 @@ import { formatDateTime } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Order } from "@/types/order";
 
+const FALLBACK_STATUS_CONFIG = { labelKey: "profile.orders.status.pending", color: "bg-yellow-100 text-yellow-700", icon: <Clock className="w-4 h-4" /> };
+
 const STATUS_CONFIG: Record<string, { labelKey: string; color: string; icon: React.ReactNode }> = {
-    pending: { labelKey: "profile.orders.status.pending", color: "bg-yellow-100 text-yellow-700", icon: <Clock className="w-4 h-4" /> },
+    pending: FALLBACK_STATUS_CONFIG,
     processing: { labelKey: "profile.orders.status.processing", color: "bg-blue-100 text-blue-700", icon: <Package className="w-4 h-4" /> },
     preparing: { labelKey: "profile.orders.status.preparing", color: "bg-indigo-100 text-indigo-700", icon: <ClipboardList className="w-4 h-4" /> },
     shipped: { labelKey: "profile.orders.status.shipped", color: "bg-orange-100 text-orange-700", icon: <Truck className="w-4 h-4" /> },
@@ -23,7 +25,7 @@ interface OrderCardProps {
 
 export function OrderCard({ order, isOpen, onToggle }: OrderCardProps) {
     const { t } = useTranslation();
-    const statusConfig = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
+    const statusConfig = STATUS_CONFIG[order.status] ?? FALLBACK_STATUS_CONFIG;
     const itemCount = order.order_details.items.reduce((sum, item) => sum + item.quantity, 0);
 
     return (

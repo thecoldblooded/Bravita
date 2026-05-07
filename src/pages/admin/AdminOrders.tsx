@@ -43,15 +43,34 @@ function OrdersContent() {
             const maxVal = maxAmountRef.current?.value || "";
 
             const filters: Parameters<typeof getAllOrders>[0] = {
-                status: statusFilter || undefined,
-                search: searchVal || searchParams.get("highlight") || searchParams.get("search") || undefined,
-                startDate: startVal || undefined,
-                endDate: endVal || undefined,
-                minAmount: minVal ? parseFloat(minVal) : undefined,
-                maxAmount: maxVal ? parseFloat(maxVal) : undefined,
                 sortBy,
                 sortOrder
             };
+
+            if (statusFilter) {
+                filters.status = statusFilter;
+            }
+
+            const resolvedSearch = searchVal || searchParams.get("highlight") || searchParams.get("search") || "";
+            if (resolvedSearch) {
+                filters.search = resolvedSearch;
+            }
+
+            if (startVal) {
+                filters.startDate = startVal;
+            }
+
+            if (endVal) {
+                filters.endDate = endVal;
+            }
+
+            if (minVal) {
+                filters.minAmount = parseFloat(minVal);
+            }
+
+            if (maxVal) {
+                filters.maxAmount = parseFloat(maxVal);
+            }
 
             const data = await getAllOrders(filters);
             setOrders(data.orders);

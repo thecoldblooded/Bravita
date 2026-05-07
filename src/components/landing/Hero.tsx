@@ -464,10 +464,11 @@ const Hero = () => {
 
   const rainbowColors = ["#e86e25", "#dcb036", "#c8c641", "#a9d256", "#88d969", "#88d969", "#88d969"];
   const accentWord = t("hero.title_part2") || "";
+  const fallbackAccentColor = rainbowColors[0] ?? "#e86e25";
   const accentChars: AccentChar[] = accentWord.split("").map((char, index) => ({
     id: `${char}-${index}`,
     char,
-    color: rainbowColors[index % rainbowColors.length],
+    color: rainbowColors[index % rainbowColors.length] ?? fallbackAccentColor,
   }));
 
   return (

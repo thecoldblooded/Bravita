@@ -88,7 +88,16 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             {isMobileMenuOpen && (
                 <div
                     className="fixed inset-0 bg-black/50 z-45 md:hidden backdrop-blur-sm"
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Mobil menüyü kapat"
                     onClick={() => setIsMobileMenuOpen(false)}
+                    onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            setIsMobileMenuOpen(false);
+                        }
+                    }}
                 />
             )}
         </div>

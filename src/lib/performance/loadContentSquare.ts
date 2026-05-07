@@ -1,7 +1,9 @@
 const CONTENTSQUARE_SCRIPT_ID = "contentsquare-uxa-script";
 const CONTENTSQUARE_SCRIPT_URL = "https://t.contentsquare.net/uxa/294f4fa696437.js";
-const COOKIE_CONSENT_KEY = "cookie_consent";
-const COOKIE_PREFERENCES_KEY = "cookie_preferences";
+const COOKIE_CONSENT_KEY = "cookie_consent:v1";
+const COOKIE_PREFERENCES_KEY = "cookie_preferences:v1";
+const LEGACY_COOKIE_CONSENT_KEY = "cookie_consent";
+const LEGACY_COOKIE_PREFERENCES_KEY = "cookie_preferences";
 
 type CookiePreferences = {
   necessary?: boolean;
@@ -15,7 +17,7 @@ const hasAnalyticsConsent = (): boolean => {
     return false;
   }
 
-  const consentValue = localStorage.getItem(COOKIE_CONSENT_KEY);
+  const consentValue = localStorage.getItem(COOKIE_CONSENT_KEY) ?? localStorage.getItem(LEGACY_COOKIE_CONSENT_KEY);
   if (!consentValue) {
     return false;
   }
@@ -28,7 +30,7 @@ const hasAnalyticsConsent = (): boolean => {
     return false;
   }
 
-  const rawPreferences = localStorage.getItem(COOKIE_PREFERENCES_KEY);
+  const rawPreferences = localStorage.getItem(COOKIE_PREFERENCES_KEY) ?? localStorage.getItem(LEGACY_COOKIE_PREFERENCES_KEY);
   if (!rawPreferences) {
     return false;
   }
@@ -120,7 +122,12 @@ export const initializeConsentAwareAnalytics = (): (() => void) => {
   };
 
   const handleStorage = (event: StorageEvent) => {
-    if (event.key === COOKIE_CONSENT_KEY || event.key === COOKIE_PREFERENCES_KEY) {
+    if (
+      event.key === COOKIE_CONSENT_KEY ||
+      event.key === COOKIE_PREFERENCES_KEY ||
+      event.key === LEGACY_COOKIE_CONSENT_KEY ||
+      event.key === LEGACY_COOKIE_PREFERENCES_KEY
+    ) {
       tryLoadAnalytics();
     }
   };

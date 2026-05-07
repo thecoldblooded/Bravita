@@ -50,12 +50,16 @@ const ERROR_MAP: Record<string, string> = {
  * Falls back to original message if no translation found
  */
 export function translateError(
-    error: Error | string | null | undefined,
+    error: unknown,
     t: (key: string) => string
 ): string {
     if (!error) return t("errors.unknown");
 
-    const message = typeof error === "string" ? error : error.message;
+    const message = typeof error === "string"
+        ? error
+        : error instanceof Error
+            ? error.message
+            : String(error);
 
     // Check for exact match
     if (ERROR_MAP[message]) {
@@ -82,10 +86,14 @@ export function translateError(
  * Gets the i18n key for an error message
  * Useful when you need just the key, not the translated string
  */
-export function getErrorKey(error: Error | string | null | undefined): string {
+export function getErrorKey(error: unknown): string {
     if (!error) return "errors.unknown";
 
-    const message = typeof error === "string" ? error : error.message;
+    const message = typeof error === "string"
+        ? error
+        : error instanceof Error
+            ? error.message
+            : String(error);
 
     if (ERROR_MAP[message]) {
         return ERROR_MAP[message];

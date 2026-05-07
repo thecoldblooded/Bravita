@@ -32,6 +32,8 @@ import { m, AnimatePresence } from "framer-motion";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 // Action/Table Translations
+const DEFAULT_ACTION_INFO = { label: "Bilinmeyen İşlem", color: "bg-gray-100 text-gray-700 border-gray-200", icon: Activity };
+
 const ACTION_MAP: Record<string, { label: string; color: string; icon: LucideIcon }> = {
     "LOGIN": { label: "Sisteme Giriş", color: "bg-blue-100 text-blue-700 border-blue-200", icon: LogIn },
     "CREATE": { label: "Oluşturma", color: "bg-green-100 text-green-700 border-green-200", icon: PlusCircle },
@@ -60,19 +62,18 @@ const TABLE_MAP: Record<string, string> = {
 };
 
 const getActionInfo = (action: string) => {
-    // Try distinct match first
-    if (ACTION_MAP[action]) return ACTION_MAP[action];
+    const directMatch = ACTION_MAP[action];
+    if (directMatch) return directMatch;
 
-    // Try substring matching
     const upper = action.toUpperCase();
-    if (upper.includes("LOGIN") || upper.includes("AUTH")) return ACTION_MAP["LOGIN"];
-    if (upper.includes("CREATE") || upper.includes("INSERT") || upper.includes("ADD")) return ACTION_MAP["CREATE"];
-    if (upper.includes("APPROVE")) return ACTION_MAP["APPROVE"];
-    if (upper.includes("UPDATE") || upper.includes("EDIT")) return ACTION_MAP["UPDATE"];
-    if (upper.includes("STATUS")) return ACTION_MAP["STATUS"];
-    if (upper.includes("DELETE") || upper.includes("REMOVE") || upper.includes("REJECT") || upper.includes("CANCEL")) return ACTION_MAP["DELETE"];
+    if (upper.includes("LOGIN") || upper.includes("AUTH")) return ACTION_MAP["LOGIN"] ?? DEFAULT_ACTION_INFO;
+    if (upper.includes("CREATE") || upper.includes("INSERT") || upper.includes("ADD")) return ACTION_MAP["CREATE"] ?? DEFAULT_ACTION_INFO;
+    if (upper.includes("APPROVE")) return ACTION_MAP["APPROVE"] ?? DEFAULT_ACTION_INFO;
+    if (upper.includes("UPDATE") || upper.includes("EDIT")) return ACTION_MAP["UPDATE"] ?? DEFAULT_ACTION_INFO;
+    if (upper.includes("STATUS")) return ACTION_MAP["STATUS"] ?? DEFAULT_ACTION_INFO;
+    if (upper.includes("DELETE") || upper.includes("REMOVE") || upper.includes("REJECT") || upper.includes("CANCEL")) return ACTION_MAP["DELETE"] ?? DEFAULT_ACTION_INFO;
 
-    return { label: action, color: "bg-gray-100 text-gray-700 border-gray-200", icon: Activity };
+    return { ...DEFAULT_ACTION_INFO, label: action };
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -32,6 +32,7 @@ export const PromoCodeInput = ({
                     <Ticket className="w-4 h-4 text-neutral-400 group-focus-within:text-orange-500 transition-colors" />
                 </div>
                 <input
+                    data-testid="cart-promo-input"
                     type="text"
                     value={inputPromoCode}
                     onChange={(e) => {
@@ -47,6 +48,7 @@ export const PromoCodeInput = ({
             </div>
             {localAppliedPromo ? (
                 <Button
+                    data-testid="cart-remove-promo-button"
                     variant="outline"
                     onClick={() => {
                         setLocalAppliedPromo(null);
@@ -60,6 +62,7 @@ export const PromoCodeInput = ({
                 </Button>
             ) : (
                 <Button
+                    data-testid="cart-apply-promo-button"
                     variant="outline"
                     onClick={handleApplyPromoCode}
                     disabled={isApplyingPromo || !inputPromoCode}

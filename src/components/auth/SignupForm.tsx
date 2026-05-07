@@ -228,7 +228,7 @@ type EmailConfirmationViewProps = {
   onResend: () => Promise<void>;
   onBack: () => void;
   hcaptchaSiteKey: string;
-  captchaRef: RefObject<HCaptcha | null>;
+  captchaRef: RefObject<HCaptcha>;
   onTokenChange: (token: string | null) => void;
   requiresCaptcha: boolean;
   hasCaptchaToken: boolean;
@@ -303,7 +303,7 @@ function EmailConfirmationView({
 
 type CaptchaSectionProps = {
   siteKey: string;
-  captchaRef: RefObject<HCaptcha | null>;
+  captchaRef: RefObject<HCaptcha>;
   onTokenChange: (token: string | null) => void;
 };
 
@@ -407,9 +407,9 @@ type IndividualSignupContentProps = {
   isLoading: boolean;
   onSubmit: (data: IndividualSignupForm) => Promise<void>;
   onGoogleSignup: () => Promise<void>;
-  onSwitchToLogin?: () => void;
+  onSwitchToLogin: () => void;
   hcaptchaSiteKey: string;
-  captchaRef: RefObject<HCaptcha | null>;
+  captchaRef: RefObject<HCaptcha>;
   onTokenChange: (token: string | null) => void;
 };
 
@@ -754,7 +754,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
 
   const [uiState, dispatch] = useReducer(signupUiReducer, initialSignupUiState);
   const { showEmailConfirmation, registeredEmail, isResending, captchaToken } = uiState;
-  const captchaRef = useRef<HCaptcha>(null);
+  const captchaRef = useRef<HCaptcha>(null!);
 
   const HCAPTCHA_SITE_KEY = String(import.meta.env.VITE_HCAPTCHA_SITE_KEY ?? "").trim();
   const shouldBypassCaptcha = shouldBypassCaptchaForLocalDev();
@@ -780,13 +780,24 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
         return;
       }
 
-      await signupWithEmail({
+      const signupPayload = {
         email: data.email,
         password: data.password,
         phone: data.phone,
         fullName: data.fullName,
-        captchaToken: shouldBypassCaptcha ? undefined : (captchaToken ?? undefined),
-      });
+      } as {
+        email: string;
+        password: string;
+        phone: string;
+        fullName: string;
+        captchaToken?: string;
+      };
+
+      if (!shouldBypassCaptcha && captchaToken) {
+        signupPayload.captchaToken = captchaToken;
+      }
+
+      await signupWithEmail(signupPayload);
 
       localStorage.setItem("profile_in_progress", "true");
       localStorage.setItem("bravita_new_signup", "true");
@@ -854,6 +865,8 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
     );
   }
 
+  const handleSwitchToLogin = onSwitchToLogin ?? (() => undefined);
+
   return (
     <IndividualSignupContent
       t={t}
@@ -861,7 +874,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
       isLoading={isLoading}
       onSubmit={handleIndividualSignupSubmit}
       onGoogleSignup={handleGoogleSignup}
-      onSwitchToLogin={onSwitchToLogin}
+      onSwitchToLogin={handleSwitchToLogin}
       hcaptchaSiteKey={HCAPTCHA_SITE_KEY}
       captchaRef={captchaRef}
       onTokenChange={(token) => dispatch({ type: "SET_CAPTCHA_TOKEN", token })}

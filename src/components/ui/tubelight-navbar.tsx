@@ -22,7 +22,8 @@ interface NavBarProps {
 }
 
 export function NavBar({ items, className, activeTab: externalActiveTab, layoutId = "nav-lamp" }: NavBarProps) {
-    const [activeTab, setActiveTab] = useState(externalActiveTab || items[0].name)
+    const initialActiveTab = externalActiveTab ?? items[0]?.name ?? ""
+    const [activeTab, setActiveTab] = useState(initialActiveTab)
     const [isMobile, setIsMobile] = useState(false)
 
     // Sync from prop if changed (using render-time sync)

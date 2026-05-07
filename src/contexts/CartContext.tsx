@@ -47,13 +47,19 @@ interface CartContextType {
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
+const CART_STORAGE_KEY = "bravita_cart:v1";
+const LEGACY_CART_STORAGE_KEY = "bravita_cart";
+const PROMO_CODE_STORAGE_KEY = "bravita_promo_code:v1";
+const LEGACY_PROMO_CODE_STORAGE_KEY = "bravita_promo_code";
+const DISCOUNT_STORAGE_KEY = "bravita_discount_amount:v1";
+const LEGACY_DISCOUNT_STORAGE_KEY = "bravita_discount_amount";
 
 export function CartProvider({ children }: { children: ReactNode }) {
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [cartItems, setCartItems] = useState<CartItem[]>(() => {
         // Load from localStorage on init
         if (typeof window !== "undefined") {
-            const saved = localStorage.getItem("bravita_cart");
+            const saved = localStorage.getItem(CART_STORAGE_KEY) ?? localStorage.getItem(LEGACY_CART_STORAGE_KEY);
             if (saved) {
                 try {
                     return JSON.parse(saved);
@@ -67,7 +73,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     // Persist to localStorage
     useEffect(() => {
-        localStorage.setItem("bravita_cart", JSON.stringify(cartItems));
+        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
+        localStorage.removeItem(LEGACY_CART_STORAGE_KEY);
     }, [cartItems]);
 
     const openCart = () => setIsCartOpen(true);
@@ -104,14 +111,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     const [promoCode, setPromoCode] = useState<string | null>(() => {
         if (typeof window !== "undefined") {
-            return localStorage.getItem("bravita_promo_code");
+            return localStorage.getItem(PROMO_CODE_STORAGE_KEY) ?? localStorage.getItem(LEGACY_PROMO_CODE_STORAGE_KEY);
         }
         return null;
     });
 
     const [discountAmount, setDiscountAmount] = useState<number>(() => {
         if (typeof window !== "undefined") {
-            const saved = localStorage.getItem("bravita_discount_amount");
+            const saved = localStorage.getItem(DISCOUNT_STORAGE_KEY) ?? localStorage.getItem(LEGACY_DISCOUNT_STORAGE_KEY);
             return saved ? parseFloat(saved) : 0;
         }
         return 0;
@@ -120,12 +127,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
     // Persist promo info
     useEffect(() => {
         if (promoCode) {
-            localStorage.setItem("bravita_promo_code", promoCode);
+            localStorage.setItem(PROMO_CODE_STORAGE_KEY, promoCode);
         } else {
-            localStorage.removeItem("bravita_promo_code");
+            localStorage.removeItem(PROMO_CODE_STORAGE_KEY);
         }
 
-        localStorage.setItem("bravita_discount_amount", discountAmount.toString());
+        localStorage.setItem(DISCOUNT_STORAGE_KEY, discountAmount.toString());
+        localStorage.removeItem(LEGACY_PROMO_CODE_STORAGE_KEY);
+        localStorage.removeItem(LEGACY_DISCOUNT_STORAGE_KEY);
     }, [promoCode, discountAmount]);
 
     const applyPromoCode = useCallback((code: string, discount: number) => {

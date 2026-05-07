@@ -92,12 +92,25 @@ export function OrderHistory() {
         if (!user) return;
         dispatch({ type: 'SET_LOADING', payload: true });
         try {
-            const data = await getUserOrders(user.id, {
+            const filters: {
+                sortBy: "created_at" | "total";
+                sortOrder: "asc" | "desc";
+                minAmount?: number;
+                maxAmount?: number;
+            } = {
                 sortBy,
                 sortOrder,
-                minAmount: minAmount ? parseFloat(minAmount) : undefined,
-                maxAmount: maxAmount ? parseFloat(maxAmount) : undefined
-            });
+            };
+
+            if (minAmount) {
+                filters.minAmount = parseFloat(minAmount);
+            }
+
+            if (maxAmount) {
+                filters.maxAmount = parseFloat(maxAmount);
+            }
+
+            const data = await getUserOrders(user.id, filters);
             retryCountRef.current = 0;
             dispatch({ type: 'SET_ORDERS', payload: data as Order[] });
         } catch (err: unknown) {

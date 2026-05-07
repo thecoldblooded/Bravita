@@ -2,7 +2,7 @@ import { useEffect, useMemo, useReducer } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./dialog";
 import { useTranslation } from "react-i18next";
 import { PackageX, ShoppingCart, Sparkles } from "lucide-react";
-const bravitaGif = "/bravita.gif";
+import bravitaGif from "@/assets/optimized/bravita.gif";
 import { Button } from "./button";
 import { m, AnimatePresence, LazyMotion, domAnimation } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
@@ -207,6 +207,8 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
             return;
         }
 
+        const confirmedProductId = productId;
+
         dispatch({ type: 'SET_CHECKING_OUT', payload: true });
         try {
             clearCart();
@@ -215,7 +217,7 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
                 slug: "bravita-multivitamin",
                 quantity: quantity,
                 price: PRICING.UNIT_PRICE,
-                product_id: productId || undefined,
+                product_id: confirmedProductId,
             });
 
             if (localAppliedPromo) {
@@ -384,6 +386,7 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
                                     </AnimatePresence>
 
                                     <Button
+                                        data-testid="cart-checkout-button"
                                         disabled={quantity === 0 || isCheckingOut}
                                         onClick={handleCheckout}
                                         className={cn(

@@ -5,6 +5,28 @@
 
 ---
 
+## Verification Update: May 6, 2026
+
+The optimization report is partially implemented in the current codebase.
+
+Implemented:
+- `AuthModal.tsx` imports `src/assets/optimized/login-compressed.mp4`.
+- `UpdatePassword.tsx` imports `src/assets/optimized/login-compressed.mp4`.
+- `PeriodicGif.tsx` supports `videoSrc`.
+- Vite vendor chunk splitting is present.
+- Vercel cache headers for hashed assets and no-store HTML are present.
+
+Adjusted during the May 6 readiness pass:
+- `CartModal.tsx` now uses the optimized `src/assets/optimized/bravita.gif` instead of public `/bravita.gif`.
+
+Not fully present / needs follow-up:
+- `src/assets/optimized/Generated video 1-compressed.mp4` is not present.
+- `src/assets/optimized-frames/*` is not present; the active frame sequence is under `public/frames`.
+- `Usage.tsx` uses `/bravita-video.webm`, not the missing `Generated video 1-compressed.mp4`.
+- The original `src/assets/login.mp4` still exists in the repository, but it is not imported by app code.
+
+---
+
 ## ✅ Optimizations Completed
 
 ### 1. **Video and Media Compression** 

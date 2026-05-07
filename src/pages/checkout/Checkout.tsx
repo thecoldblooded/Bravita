@@ -22,11 +22,6 @@ import {
 import Header from "@/components/layout/Header";
 import { Helmet } from "react-helmet-async";
 
-const getSteps = (t: (key: string, options?: Record<string, unknown>) => string) => [
-    { id: 1, name: t("checkout.steps.delivery"), icon: MapPin },
-    { id: 2, name: t("checkout.steps.payment"), icon: CreditCard },
-    { id: 3, name: t("checkout.steps.summary"), icon: Package },
-];
 
 const PAYMENT_USE_TOKENIZATION = String(import.meta.env.VITE_PAYMENT_USE_TOKENIZATION ?? "false").toLowerCase() === "true";
 const PAYMENT_TOKENIZATION_REQUIRED = String(import.meta.env.VITE_PAYMENT_TOKENIZATION_REQUIRED ?? "false").toLowerCase() === "true";
@@ -49,7 +44,11 @@ interface CheckoutData {
 
 export default function Checkout() {
     const { t } = useTranslation();
-    const steps = getSteps(t);
+    const steps = [
+        { id: 1, name: t("checkout.steps.delivery"), icon: MapPin },
+        { id: 2, name: t("checkout.steps.payment"), icon: CreditCard },
+        { id: 3, name: t("checkout.steps.summary"), icon: Package },
+    ];
     const navigate = useNavigate();
     const location = useLocation();
     const { user, isAuthenticated } = useAuth();
@@ -209,13 +208,19 @@ export default function Checkout() {
                         return;
                     }
 
+                    const expMonth = expiryMatch[1];
                     const expYearRaw = expiryMatch[2];
+                    if (!expMonth || !expYearRaw) {
+                        toast.error(t("checkout.validation.expiry_invalid", "Kart son kullanma tarihi gecersiz"));
+                        return;
+                    }
+
                     const expYear = expYearRaw.length === 2 ? `20${expYearRaw}` : expYearRaw;
                     const tokenizeResult = await tokenizeCardForPayment({
                         customerCode: user.id,
                         cardHolderFullName: checkoutData.cardDetails.name.trim(),
                         cardNumber: checkoutData.cardDetails.number.replace(/\D/g, ""),
-                        expMonth: expiryMatch[1],
+                        expMonth,
                         expYear,
                         cvcNumber: checkoutData.cardDetails.cvv,
                     });
@@ -234,17 +239,26 @@ export default function Checkout() {
                     }
                 }
 
-                const cardInitResult = await initiateCardPayment({
+                const cardInitPayload: Parameters<typeof initiateCardPayment>[0] = {
                     shippingAddressId: checkoutData.addressId,
                     installmentNumber: 1,
                     items: cartItems.map((item) => ({
                         product_id: item.product_id || item.id,
                         quantity: item.quantity,
                     })),
-                    cardDetails: cardToken ? undefined : checkoutData.cardDetails,
-                    cardToken,
-                    promoCode: cartTotal.discount > 0 && typeof contextPromoCode === "string" ? contextPromoCode : undefined,
-                });
+                };
+
+                if (cardToken) {
+                    cardInitPayload.cardToken = cardToken;
+                } else {
+                    cardInitPayload.cardDetails = checkoutData.cardDetails;
+                }
+
+                if (cartTotal.discount > 0 && typeof contextPromoCode === "string") {
+                    cardInitPayload.promoCode = contextPromoCode;
+                }
+
+                const cardInitResult = await initiateCardPayment(cardInitPayload);
 
                 const threeDPayload = cardInitResult.threeD || (cardInitResult.redirectUrl ? { redirectUrl: cardInitResult.redirectUrl } : undefined);
 
@@ -314,7 +328,7 @@ export default function Checkout() {
                 return;
             }
 
-            const bankTransferResult = await createOrder({
+            const orderPayload: Parameters<typeof createOrder>[0] = {
                 userId: user.id,
                 items: cartItems,
                 shippingAddressId: checkoutData.addressId,
@@ -322,9 +336,14 @@ export default function Checkout() {
                 subtotal: cartTotal.subtotal,
                 vatAmount: cartTotal.vat,
                 total: cartTotal.total,
-                promoCode: cartTotal.discount > 0 && typeof contextPromoCode === "string" ? contextPromoCode : undefined,
                 discountAmount: cartTotal.discount,
-            });
+            };
+
+            if (cartTotal.discount > 0 && typeof contextPromoCode === "string") {
+                orderPayload.promoCode = contextPromoCode;
+            }
+
+            const bankTransferResult = await createOrder(orderPayload);
 
             if (bankTransferResult.success && bankTransferResult.orderId) {
                 setOrderPlaced(true);
@@ -433,7 +452,7 @@ export default function Checkout() {
                                 <PaymentMethodSelector
                                     selectedMethod={checkoutData.paymentMethod}
                                     installmentRates={installmentRates}
-                                    cardDetails={checkoutData.cardDetails}
+                                    {...(checkoutData.cardDetails ? { cardDetails: checkoutData.cardDetails } : {})}
                                     onMethodChange={(method) => setCheckoutData({ ...checkoutData, paymentMethod: method })}
                                     onCardDetailsChange={(details) => setCheckoutData({ ...checkoutData, cardDetails: details })}
                                 />
@@ -477,6 +496,7 @@ export default function Checkout() {
 
                     {currentStep < 3 ? (
                         <Button
+                            data-testid="checkout-next-button"
                             onClick={handleNext}
                             disabled={!canProceed()}
                             className="px-6 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white"
@@ -486,6 +506,7 @@ export default function Checkout() {
                         </Button>
                     ) : (
                         <Button
+                            data-testid="checkout-confirm-order-button"
                             onClick={handlePlaceOrder}
                             disabled={isProcessing || !canProceed() || isPurchaseBlocked}
                             className="px-8 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold"

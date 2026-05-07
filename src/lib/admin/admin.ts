@@ -12,7 +12,9 @@ async function extractEdgeFunctionErrorMessage(error: unknown): Promise<{ messag
             : undefined;
 
     const status = typeof response?.status === "number" ? response.status : undefined;
-    if (!response) return { status };
+    if (!response) {
+        return status === undefined ? {} : { status };
+    }
 
     const contentType = response.headers?.get?.("content-type") ?? "";
     try {
@@ -30,18 +32,27 @@ async function extractEdgeFunctionErrorMessage(error: unknown): Promise<{ messag
                     : undefined;
 
                 if (normalizedMessage || normalizedCode) {
-                    return { status, message: normalizedMessage, code: normalizedCode };
+                    return {
+                        ...(status === undefined ? {} : { status }),
+                        ...(normalizedMessage ? { message: normalizedMessage } : {}),
+                        ...(normalizedCode ? { code: normalizedCode } : {}),
+                    };
                 }
             }
         }
 
         const text = await response.clone().text().catch(() => "");
-        if (text.trim().length > 0) return { status, message: text.trim() };
+        if (text.trim().length > 0) {
+            return {
+                ...(status === undefined ? {} : { status }),
+                message: text.trim(),
+            };
+        }
     } catch {
         // Ignore parse errors - fall back to default message.
     }
 
-    return { status };
+    return status === undefined ? {} : { status };
 }
 
 async function invokeAdminRpc<T>(
@@ -256,60 +267,19 @@ export async function getSiteSettings(): Promise<SiteSettings> {
  * Update site settings
  */
 export async function updateSiteSettings(settings: SiteSettings): Promise<void> {
-    const { error } = await supabase
-        .from('site_settings')
-        .update({
-            ...settings,
-            updated_at: new Date().toISOString()
-        })
-        .eq('id', 1);
-
-    if (error) {
-        throw error;
-    }
-
-    // Also log this change
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-        await supabase.from('admin_audit_log').insert({
-            admin_user_id: user.id,
-            action: 'UPDATE_SETTINGS',
-            target_table: 'site_settings',
-            details: settings
-        });
-    }
+    await invokeAdminRpc<{ success: boolean }>("admin:updateSiteSettings", {
+        action: "updateSiteSettings",
+        settings,
+    });
 }
 
 /**
  * Confirm a bank transfer payment and advance order status
  */
 export async function confirmPayment(orderId: string): Promise<void> {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
-
-    // Start a transaction-like update
-    // 1. Update order payment status and order status
-    const { error: orderError } = await supabase
-        .from('orders')
-        .update({
-            payment_status: 'paid',
-            status: 'processing', // Automatically move to processing after payment
-            updated_at: new Date().toISOString()
-        })
-        .eq('id', orderId);
-
-    if (orderError) throw orderError;
-
-    // 2. Add history entry
-    await updateOrderStatus(orderId, 'processing', 'Ödeme havale ile alındı, onaylandı.');
-
-    // 3. Log the action
-    await supabase.from('admin_audit_log').insert({
-        admin_user_id: user.id,
-        action: 'CONFIRM_PAYMENT',
-        target_table: 'orders',
-        target_id: orderId,
-        details: { method: 'bank_transfer', new_status: 'preparing' }
+    await invokeAdminRpc<{ success: boolean }>("admin:confirmPayment", {
+        action: "confirmPayment",
+        orderId,
     });
 }
 
@@ -554,7 +524,7 @@ export async function voidCardPayment(orderId: string): Promise<CardVoidResult> 
         success,
         pending,
         message: data?.message || (success ? "Void başarılı" : (pending ? "Void manuel incelemeye alındı" : "Void başarısız")),
-        error: data?.error,
+        ...(data?.error ? { error: data.error } : {}),
     };
 }
 
@@ -667,7 +637,7 @@ export async function refundCardPayment(orderId: string, amountCents?: number): 
         success,
         pending,
         message: data?.message || (success ? "Refund başarılı" : (pending ? "Refund manuel incelemeye alındı" : "Refund başarısız")),
-        error: data?.error,
+        ...(data?.error ? { error: data.error } : {}),
     };
 }
 
@@ -679,20 +649,12 @@ export async function updateTrackingNumber(
     trackingNumber: string,
     shippingCompany?: string
 ): Promise<void> {
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) throw new Error("Not authenticated");
-
-    const { error } = await supabase
-        .from("orders")
-        .update({
-            tracking_number: trackingNumber,
-            shipping_company: shippingCompany || null,
-            updated_at: new Date().toISOString()
-        })
-        .eq("id", orderId);
-
-    if (error) throw error;
+    await invokeAdminRpc<{ success: boolean }>("admin:updateTrackingNumber", {
+        action: "updateTrackingNumber",
+        orderId,
+        trackingNumber,
+        shippingCompany: shippingCompany || "",
+    });
 }
 
 /**
@@ -840,29 +802,21 @@ export async function getProducts(): Promise<Product[]> {
  * Add new product
  */
 export async function addProduct(product: Omit<Product, "id" | "created_at" | "updated_at" | "reserved_stock">): Promise<Product> {
-    const { data, error } = await supabase
-        .from("products")
-        .insert({
-            ...product,
-            reserved_stock: 0
-        })
-        .select()
-        .single();
-
-    if (error) throw error;
-    return data;
+    const response = await invokeAdminRpc<{ success: boolean; data: Product }>("admin:addProduct", {
+        action: "addProduct",
+        product,
+    });
+    return response.data;
 }
 
 /**
  * Delete product
  */
 export async function deleteProduct(productId: string): Promise<void> {
-    const { error } = await supabase
-        .from("products")
-        .delete()
-        .eq("id", productId);
-
-    if (error) throw error;
+    await invokeAdminRpc<{ success: boolean }>("admin:deleteProduct", {
+        action: "deleteProduct",
+        productId,
+    });
 }
 
 /**
@@ -872,12 +826,11 @@ export async function updateProductStock(
     productId: string,
     newStock: number
 ): Promise<void> {
-    const { error } = await supabase
-        .from("products")
-        .update({ stock: newStock, updated_at: new Date().toISOString() })
-        .eq("id", productId);
-
-    if (error) throw error;
+    await invokeAdminRpc<{ success: boolean }>("admin:updateProductStock", {
+        action: "updateProductStock",
+        productId,
+        stock: newStock,
+    });
 }
 
 /**
@@ -887,12 +840,11 @@ export async function updateProduct(
     productId: string,
     updates: Partial<Omit<Product, "id" | "created_at" | "updated_at">>
 ): Promise<void> {
-    const { error } = await supabase
-        .from("products")
-        .update({ ...updates, updated_at: new Date().toISOString() })
-        .eq("id", productId);
-
-    if (error) throw error;
+    await invokeAdminRpc<{ success: boolean }>("admin:updateProduct", {
+        action: "updateProduct",
+        productId,
+        updates,
+    });
 }
 
 // Promo Code Types
@@ -926,46 +878,27 @@ export async function getPromoCodes(): Promise<PromoCode[]> {
 }
 
 export async function addPromoCode(promoCode: Omit<PromoCode, 'id' | 'usage_count'>): Promise<PromoCode> {
-    const { data, error } = await supabase
-        .from('promo_codes')
-        .insert(promoCode)
-        .select()
-        .single();
-
-    if (error) {
-        console.error('Error adding promo code:', error);
-        throw error;
-    }
-
-    return data;
+    const response = await invokeAdminRpc<{ success: boolean; data: PromoCode }>("admin:addPromoCode", {
+        action: "addPromoCode",
+        promoCode,
+    });
+    return response.data;
 }
 
 export async function updatePromoCode(id: string, updates: Partial<PromoCode>): Promise<PromoCode> {
-    const { data, error } = await supabase
-        .from('promo_codes')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-
-    if (error) {
-        console.error('Error updating promo code:', error);
-        throw error;
-    }
-
-    return data;
+    const response = await invokeAdminRpc<{ success: boolean; data: PromoCode }>("admin:updatePromoCode", {
+        action: "updatePromoCode",
+        promoCodeId: id,
+        updates,
+    });
+    return response.data;
 }
 
 export async function deletePromoCode(id: string): Promise<void> {
-    const { error } = await supabase
-        .from('promo_codes')
-        .delete()
-        .eq('id', id);
-
-    if (error) {
-        console.error('Error deleting promo code:', error);
-        throw error;
-    }
+    await invokeAdminRpc<{ success: boolean }>("admin:deletePromoCode", {
+        action: "deletePromoCode",
+        promoCodeId: id,
+    });
 }
 
 // Audit Logs

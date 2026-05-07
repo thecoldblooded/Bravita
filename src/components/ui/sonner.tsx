@@ -7,18 +7,23 @@ type ToasterProps = React.ComponentProps<typeof Sonner>;
 const DEFAULT_OFFSET = "calc(env(safe-area-inset-top, 0px) + 16px)";
 const TOAST_LAYER_CLASS = "z-[2147483647]";
 
+const TOAST_Z_INDEX = 2147483647;
+
 const Toaster = ({ className, toastOptions, ...props }: ToasterProps) => {
   const { theme = "system" } = useTheme();
+  const resolvedTheme: ToasterProps["theme"] = theme === "light" || theme === "dark" ? theme : "system";
 
   return (
     <Sonner
       {...props}
-      theme={theme as ToasterProps["theme"]}
+      theme={resolvedTheme}
       position="top-center"
       offset={DEFAULT_OFFSET}
       className={`toaster group ${TOAST_LAYER_CLASS}${className ? ` ${className}` : ""}`}
+      style={{ zIndex: TOAST_Z_INDEX, ...props.style }}
       toastOptions={{
         ...toastOptions,
+        style: { zIndex: TOAST_Z_INDEX, ...toastOptions?.style },
         classNames: {
           description: "group-[.toast]:text-muted-foreground",
           actionButton: "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",

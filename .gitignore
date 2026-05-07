@@ -11,6 +11,7 @@ node_modules
 dist
 dist-ssr
 *.local
+*.tsbuildinfo
 
 # Editor directories and files
 .vscode/*
@@ -26,6 +27,8 @@ dist-ssr
 # TestSprite
 testsprite_tests/
 testsprite_output_final.txt
+test-results/
+playwright-report/
 
 # Environment
 .env

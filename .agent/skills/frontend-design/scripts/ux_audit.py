@@ -707,8 +707,12 @@ class UXAuditor:
 
     def audit_directory(self, directory: str) -> None:
         extensions = {'.tsx', '.jsx', '.html', '.vue', '.svelte', '.css'}
+        skip_dirs = {
+            'node_modules', '.git', 'dist', 'build', '.next', 'artifacts', '_reports',
+            'playwright-report', 'test-results', '__pycache__', 'coverage'
+        }
         for root, dirs, files in os.walk(directory):
-            dirs[:] = [d for d in dirs if d not in {'node_modules', '.git', 'dist', 'build', '.next', 'artifacts', '_reports'}]
+            dirs[:] = [d for d in dirs if d not in skip_dirs]
             for file in files:
                 if Path(file).suffix in extensions:
                     self.audit_file(os.path.join(root, file))

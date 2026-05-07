@@ -34,7 +34,7 @@ type IndividualLoginForm = {
 
 type CaptchaSectionProps = {
   siteKey: string;
-  captchaRef: RefObject<HCaptcha | null>;
+  captchaRef: RefObject<HCaptcha>;
   onTokenChange: (token: string | null) => void;
 };
 
@@ -132,7 +132,7 @@ function GoogleLoginButton({ t, isLoading, onClick }: GoogleLoginButtonProps) {
 
 type SignupSwitchProps = {
   t: TranslateFn;
-  onSwitchToSignup?: () => void;
+  onSwitchToSignup: () => void;
 };
 
 function SignupSwitch({ t, onSwitchToSignup }: SignupSwitchProps) {
@@ -157,9 +157,9 @@ type IndividualLoginTabProps = {
   onSubmit: (data: IndividualLoginForm) => Promise<void>;
   onForgotPassword: () => Promise<void>;
   onGoogleLogin: () => Promise<void>;
-  onSwitchToSignup?: () => void;
+  onSwitchToSignup: () => void;
   hcaptchaSiteKey: string;
-  captchaRef: RefObject<HCaptcha | null>;
+  captchaRef: RefObject<HCaptcha>;
   onTokenChange: (token: string | null) => void;
 };
 
@@ -267,7 +267,7 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
   const { loginWithEmail, signupWithGoogle, resetPassword, isLoading } =
     useAuthOperations();
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  const captchaRef = useRef<HCaptcha>(null);
+  const captchaRef = useRef<HCaptcha>(null!);
 
   const HCAPTCHA_SITE_KEY = String(import.meta.env.VITE_HCAPTCHA_SITE_KEY ?? "").trim();
   const shouldBypassCaptcha = shouldBypassCaptchaForLocalDev();
@@ -292,11 +292,20 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
         return;
       }
 
-      await loginWithEmail({
+      const loginPayload = {
         email: data.email,
         password: data.password,
-        captchaToken: shouldBypassCaptcha ? undefined : (captchaToken ?? undefined),
-      });
+      } as {
+        email: string;
+        password: string;
+        captchaToken?: string;
+      };
+
+      if (!shouldBypassCaptcha && captchaToken) {
+        loginPayload.captchaToken = captchaToken;
+      }
+
+      await loginWithEmail(loginPayload);
       toast.success(t("auth.login_successful"));
 
       resetCaptchaState();
@@ -341,6 +350,8 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
     }
   };
 
+  const handleSwitchToSignup = onSwitchToSignup ?? (() => undefined);
+
   return (
     <IndividualLoginTab
       t={t}
@@ -349,7 +360,7 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
       onSubmit={handleIndividualLogin}
       onForgotPassword={handleForgotPassword}
       onGoogleLogin={handleGoogleLogin}
-      onSwitchToSignup={onSwitchToSignup}
+      onSwitchToSignup={handleSwitchToSignup}
       hcaptchaSiteKey={HCAPTCHA_SITE_KEY}
       captchaRef={captchaRef}
       onTokenChange={setCaptchaToken}

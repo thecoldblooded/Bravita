@@ -56,8 +56,9 @@ function normalizeBankCode(value: string): string {
     // Turn "VPS-1005" / "vps1005" -> "1005"
     const upper = trimmed.toUpperCase();
     const vpsCodeMatch = upper.match(/^VPS-?(\d{3,4})$/);
-    if (vpsCodeMatch) {
-        return vpsCodeMatch[1];
+    const vpsCode = vpsCodeMatch?.[1];
+    if (vpsCode) {
+        return vpsCode;
     }
 
     return upper;

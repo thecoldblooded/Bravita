@@ -77,7 +77,10 @@ export function ChangePasswordModal({ children, open, onOpenChange }: ChangePass
     };
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
+        <Dialog
+            {...(typeof open === "boolean" ? { open } : {})}
+            {...(onOpenChange ? { onOpenChange } : {})}
+        >
             {children && <DialogTrigger asChild>{children}</DialogTrigger>}
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>

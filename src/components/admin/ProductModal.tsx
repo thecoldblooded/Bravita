@@ -15,53 +15,55 @@ interface ProductModalProps {
     product?: Product | null;
 }
 
+interface ProductFormData {
+    name: string;
+    slug: string;
+    price: number;
+    original_price: number | undefined;
+    stock: number;
+    max_quantity_per_order: number;
+    description: string;
+    image_url: string;
+    is_active: boolean;
+}
+
+const createInitialFormData = (product?: Product | null): ProductFormData => ({
+    name: product?.name ?? "",
+    slug: product?.slug ?? "",
+    price: product?.price ?? 0,
+    original_price: product?.original_price,
+    stock: product?.stock ?? 0,
+    max_quantity_per_order: product?.max_quantity_per_order ?? 10,
+    description: product?.description ?? "",
+    image_url: product?.image_url ?? "",
+    is_active: product?.is_active ?? true,
+});
+
+const buildProductPayload = (formData: ProductFormData): Partial<Product> => ({
+    name: formData.name,
+    slug: formData.slug,
+    price: formData.price,
+    ...(typeof formData.original_price === "number" ? { original_price: formData.original_price } : {}),
+    stock: formData.stock,
+    max_quantity_per_order: formData.max_quantity_per_order,
+    ...(formData.description.trim().length > 0 ? { description: formData.description.trim() } : {}),
+    ...(formData.image_url.trim().length > 0 ? { image_url: formData.image_url.trim() } : {}),
+    is_active: formData.is_active,
+});
+
 export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalProps) {
     const [isLoading, setIsLoading] = useState(false);
     const { theme } = useAdminTheme();
     const isDark = theme === "dark";
-    const [formData, setFormData] = useState<Partial<Product>>({
-        name: "",
-        slug: "",
-        price: 0,
-        original_price: undefined,
-        stock: 0,
-        max_quantity_per_order: 10,
-        description: "",
-        image_url: "",
-        is_active: true,
-    });
+    const [formData, setFormData] = useState<ProductFormData>(createInitialFormData());
 
     useEffect(() => {
         if (isOpen) {
-            if (product) {
-                setFormData({
-                    name: product.name,
-                    slug: product.slug,
-                    price: product.price,
-                    original_price: product.original_price,
-                    stock: product.stock,
-                    max_quantity_per_order: product.max_quantity_per_order,
-                    description: product.description || "",
-                    image_url: product.image_url || "",
-                    is_active: product.is_active,
-                });
-            } else {
-                setFormData({
-                    name: "",
-                    slug: "",
-                    price: 0,
-                    original_price: undefined,
-                    stock: 0,
-                    max_quantity_per_order: 10,
-                    description: "",
-                    image_url: "",
-                    is_active: true,
-                });
-            }
+            setFormData(createInitialFormData(product));
         }
     }, [isOpen, product]);
 
-    const handleChange = <K extends keyof Product>(field: K, value: Product[K]) => {
+    const handleChange = <K extends keyof ProductFormData>(field: K, value: ProductFormData[K]) => {
         setFormData(prev => ({ ...prev, [field]: value }));
     };
 
@@ -89,7 +91,7 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
         e.preventDefault();
         setIsLoading(true);
         try {
-            await onSave(formData);
+            await onSave(buildProductPayload(formData));
             onClose();
         } catch {
             // Error is handled upstream or ignored for non-critical failures

@@ -95,8 +95,8 @@ const VideoMedia = ({
     autoPlay
 }: {
     mediaType: string;
-    media?: VideoLike;
-    poster?: string;
+    media: VideoLike | undefined;
+    poster: string | undefined;
     muted: boolean;
     loop: boolean;
     playsInline: boolean;

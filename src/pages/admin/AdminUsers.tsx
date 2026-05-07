@@ -117,6 +117,10 @@ function UsersContent() {
                 return;
             }
             const user = results[0];
+            if (!user) {
+                toast.error("Kullanıcı bulunamadı");
+                return;
+            }
             if (user.is_admin) {
                 toast.error("Bu kullanıcı zaten admin");
                 return;

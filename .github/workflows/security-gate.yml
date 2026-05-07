@@ -142,15 +142,30 @@ jobs:
         run: npm audit --audit-level=high
 
       - name: Run Security Checklist (Static)
-        run: python .agent/scripts/checklist.py .
+        run: npm run checklist
 
 
       - name: Lint
         run: npm run lint
-
+ 
+      - name: Typecheck
+        run: npm run typecheck
+ 
+      - name: Strict typecheck
+        run: npm run typecheck:strict
+ 
+      - name: Unit tests
+        run: npm test
+ 
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+ 
+      - name: E2E tests
+        run: npm run test:e2e
+ 
       - name: React Doctor
-        run: npx react-doctor@latest . -y --offline
-
+        run: npm run react-doctor
+ 
       - name: Build
         run: npm run build
 

@@ -163,7 +163,7 @@ function AdminOrderDetailContent() {
             setOrder({
                 ...order,
                 status: newStatus,
-                cancellation_reason: note,
+                cancellation_reason: note || null,
                 payment_status: cardPaymentReversalSucceeded ? "refunded" : order.payment_status,
             });
             const newHistory = await getOrderStatusHistory(orderId);

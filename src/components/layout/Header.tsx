@@ -15,6 +15,8 @@ import usFlag from "flag-icons/flags/4x3/us.svg";
 
 const AuthModal = lazy(() => import("@/components/auth/AuthModal").then((module) => ({ default: module.AuthModal })));
 const CartModal = lazy(() => import("@/components/ui/CartModal").then((module) => ({ default: module.CartModal })));
+const COOKIE_CONSENT_KEY = "cookie_consent:v1";
+const LEGACY_COOKIE_CONSENT_KEY = "cookie_consent";
 
 type HeaderNavItem = {
   name: string;
@@ -203,7 +205,7 @@ function useCookieConsentPending() {
   useEffect(() => {
     const readPendingConsent = () => {
       try {
-        return !localStorage.getItem("cookie_consent");
+        return !localStorage.getItem(COOKIE_CONSENT_KEY) && !localStorage.getItem(LEGACY_COOKIE_CONSENT_KEY);
       } catch {
         return false;
       }
@@ -214,7 +216,7 @@ function useCookieConsentPending() {
     };
 
     const handleStorage = (event: StorageEvent) => {
-      if (event.key === "cookie_consent") {
+      if (event.key === COOKIE_CONSENT_KEY || event.key === LEGACY_COOKIE_CONSENT_KEY) {
         syncPendingConsent();
       }
     };
@@ -360,6 +362,7 @@ const HeaderActionButtons = memo(({
       {isUserReady || !isAuthenticated ? (
         <button
           type="button"
+          data-testid="header-buy-button"
           onClick={onBuyClick}
           disabled={isProfileCompletionBlocked}
           className={cn(
@@ -382,6 +385,7 @@ const HeaderActionButtons = memo(({
 
       {!isAuthenticated && (
         <m.button
+          data-testid="header-login-button"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={(event) => {
