@@ -108,7 +108,8 @@ function jsonResponse(body: unknown, status = 200) {
 }
 
 async function seedAuthenticatedUser(page: Page) {
-  await page.addInitScript(({ session, user }) => {
+  await page.context().addInitScript(({ session, user }) => {
+    (window as Window & { __BRAVITA_E2E_AUTH_ENABLED?: boolean }).__BRAVITA_E2E_AUTH_ENABLED = true;
     window.localStorage.setItem("bravita_e2e_auth", JSON.stringify({ session, user }));
     window.localStorage.setItem("cookie_consent:v1", "accepted");
     window.localStorage.setItem("cookie_preferences:v1", JSON.stringify({

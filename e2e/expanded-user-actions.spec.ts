@@ -133,7 +133,8 @@ function jsonResponse(body: unknown, status = 200) {
 }
 
 async function seedAuthenticatedUser(page: Page) {
-  await page.addInitScript(({ session, user }) => {
+  await page.context().addInitScript(({ session, user }) => {
+    (window as Window & { __BRAVITA_E2E_AUTH_ENABLED?: boolean }).__BRAVITA_E2E_AUTH_ENABLED = true;
     window.localStorage.setItem("bravita_e2e_auth", JSON.stringify({ session, user }));
     window.localStorage.setItem("cookie_consent:v1", "accepted");
     window.localStorage.setItem("cookie_preferences:v1", JSON.stringify({
@@ -469,7 +470,7 @@ test.describe("Bravita expanded E2E user operations", () => {
     await expect(page.getByRole("heading", { name: /Gizlilik|Privacy/i })).toBeVisible();
 
     await page.goto("/kullanim-kosullari");
-    await expect(page.getByRole("heading", { name: /Kullanım|Terms/i })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: /Kullanım Koşulları|Terms of Service/i })).toBeVisible();
 
     await page.goto("/3d-redirect?intentId=e2e-invalid");
     await expect(page.getByRole("heading", { name: /3D Yönlendirme Hatası/i })).toBeVisible();
