@@ -113,7 +113,7 @@ function getCorsHeaders(req: Request) {
 
     return {
         "Access-Control-Allow-Origin": allowedOrigin,
-        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-custom-header, x-bravita-secret",
+        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-custom-header, x-bravita-secret, x-user-jwt",
         "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
         "Access-Control-Expose-Headers": "Content-Length, X-JSON",
         "Vary": "Origin",
