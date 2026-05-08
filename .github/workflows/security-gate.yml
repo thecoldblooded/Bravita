@@ -7,6 +7,9 @@ on:
       - main
       - master
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
 jobs:
   security-gate:
     runs-on: ubuntu-latest
@@ -17,10 +20,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
@@ -49,11 +52,6 @@ jobs:
             done
           done
 
-      - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
-        with:
-          version: 2.76.9
-
       - name: Configure npm fetch retry behavior
         run: |
           npm config set fetch-retries 5
@@ -78,6 +76,9 @@ jobs:
             sleep $((attempt * 10))
             attempt=$((attempt + 1))
           done
+
+      - name: Add local npm binaries to PATH
+        run: echo "$GITHUB_WORKSPACE/node_modules/.bin" >> "$GITHUB_PATH"
 
       - name: Diagnose Supabase CLI and Docker
         run: |
@@ -165,7 +166,7 @@ jobs:
  
       - name: Upload Playwright diagnostics
         if: ${{ always() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-diagnostics-${{ github.run_id }}
           path: |
@@ -397,7 +398,7 @@ jobs:
 
       - name: Upload Supabase drift evidence artifacts
         if: ${{ always() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: supabase-drift-evidence-${{ github.run_id }}-${{ github.run_attempt }}
           if-no-files-found: warn
