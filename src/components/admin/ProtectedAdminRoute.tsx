@@ -1,5 +1,7 @@
 import { Navigate, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { shouldWaitForAuthoritativeProfile } from "@/contexts/authContextHelpers";
 import Loader from "@/components/ui/Loader";
 
 interface ProtectedAdminRouteProps {
@@ -8,9 +10,17 @@ interface ProtectedAdminRouteProps {
 }
 
 export const ProtectedAdminRoute = ({ children, requireSuperAdmin = false }: ProtectedAdminRouteProps) => {
-    const { isAuthenticated, isAdmin, isSuperAdmin, isLoading, hasResolvedInitialAuth } = useAuth();
+    const { isAuthenticated, isAdmin, isSuperAdmin, isLoading, hasResolvedInitialAuth, user, refreshUserProfile } = useAuth();
     const location = useLocation();
-    if (isLoading || !hasResolvedInitialAuth) {
+    const isWaitingForProfile = shouldWaitForAuthoritativeProfile(isAuthenticated, user);
+
+    useEffect(() => {
+        if (isWaitingForProfile) {
+            void refreshUserProfile();
+        }
+    }, [isWaitingForProfile, refreshUserProfile]);
+
+    if (isLoading || !hasResolvedInitialAuth || isWaitingForProfile) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-[#FFFBF7]">
                 <Loader />

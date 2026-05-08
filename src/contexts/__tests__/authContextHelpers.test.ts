@@ -1,6 +1,8 @@
 import {
   getInitialUserFromSession,
   hasAuthCallbackInUrl,
+  isAuthUiPending,
+  shouldWaitForAuthoritativeProfile,
   normalizeSessionPhone,
 } from "../authContextHelpers.ts";
 
@@ -78,5 +80,20 @@ describe("getInitialUserFromSession", () => {
 
   it("session yoksa null döner", () => {
     expect(getInitialUserFromSession(null)).toBeNull();
+  });
+});
+
+describe("admin auth resolution helpers", () => {
+  it("auth restore tamamlanmadan logged-out UI kararini bekletir", () => {
+    expect(isAuthUiPending(false, false)).toBe(true);
+    expect(isAuthUiPending(true, true)).toBe(true);
+    expect(isAuthUiPending(false, true)).toBe(false);
+  });
+
+  it("yetki kararini stub profil yerine authoritative profile gelene kadar bekletir", () => {
+    expect(shouldWaitForAuthoritativeProfile(true, { isStub: true })).toBe(true);
+    expect(shouldWaitForAuthoritativeProfile(true, null)).toBe(true);
+    expect(shouldWaitForAuthoritativeProfile(true, { isStub: false })).toBe(false);
+    expect(shouldWaitForAuthoritativeProfile(false, { isStub: true })).toBe(false);
   });
 });

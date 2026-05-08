@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { m, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
+import { isAuthUiPending, isStubUserProfile } from "@/contexts/authContextHelpers";
 import { UserMenu } from "@/components/auth/UserMenu";
 import { IncompleteProfileBanner } from "@/components/common/IncompleteProfileBanner";
 import { useCart } from "@/contexts/CartContext";
@@ -337,6 +338,7 @@ LanguageToggleButton.displayName = "LanguageToggleButton";
 interface HeaderActionButtonsProps {
   isScrolled: boolean;
   isAuthenticated: boolean;
+  isAuthPending: boolean;
   isUserReady: boolean;
   isProfileCompletionBlocked: boolean;
   buyLabel: string;
@@ -349,6 +351,7 @@ interface HeaderActionButtonsProps {
 const HeaderActionButtons = memo(({
   isScrolled,
   isAuthenticated,
+  isAuthPending,
   isUserReady,
   isProfileCompletionBlocked,
   buyLabel,
@@ -357,6 +360,19 @@ const HeaderActionButtons = memo(({
   onBuyClick,
   onOpenAuthModal,
 }: HeaderActionButtonsProps) => {
+  if (isAuthPending) {
+    return (
+      <div className="flex items-center gap-2 md:gap-4" aria-hidden="true">
+        <div
+          className={cn(
+            "h-10 w-24 rounded-full animate-pulse",
+            isScrolled ? "bg-orange-100/70" : "bg-white/55",
+          )}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-center gap-2 md:gap-4">
       {isUserReady || !isAuthenticated ? (
@@ -420,6 +436,7 @@ interface HeaderPrimaryBarProps {
   currentFlagAlt: string;
   languageToggleLabel: string;
   isAuthenticated: boolean;
+  isAuthPending: boolean;
   isUserReady: boolean;
   isProfileCompletionBlocked: boolean;
   buyLabel: string;
@@ -441,6 +458,7 @@ const HeaderPrimaryBar = memo(({
   currentFlagAlt,
   languageToggleLabel,
   isAuthenticated,
+  isAuthPending,
   isUserReady,
   isProfileCompletionBlocked,
   buyLabel,
@@ -479,6 +497,7 @@ const HeaderPrimaryBar = memo(({
           <HeaderActionButtons
             isScrolled={isScrolled}
             isAuthenticated={isAuthenticated}
+            isAuthPending={isAuthPending}
             isUserReady={isUserReady}
             isProfileCompletionBlocked={isProfileCompletionBlocked}
             buyLabel={buyLabel}
@@ -604,6 +623,7 @@ function HeaderFloatingActions({
 
 interface HeaderModalsProps {
   isAuthenticated: boolean;
+  isAuthPending: boolean;
   authModalOpen: boolean;
   isCartOpen: boolean;
   onAuthModalChange: (open: boolean) => void;
@@ -612,6 +632,7 @@ interface HeaderModalsProps {
 
 function HeaderModals({
   isAuthenticated,
+  isAuthPending,
   authModalOpen,
   isCartOpen,
   onAuthModalChange,
@@ -619,7 +640,7 @@ function HeaderModals({
 }: HeaderModalsProps) {
   return (
     <Suspense fallback={null}>
-      {!isAuthenticated && <AuthModal open={authModalOpen} onOpenChange={onAuthModalChange} defaultTab="login" />}
+      {!isAuthPending && !isAuthenticated && <AuthModal open={authModalOpen} onOpenChange={onAuthModalChange} defaultTab="login" />}
 
       <CartModal open={isCartOpen} onOpenChange={onCartModalChange} />
     </Suspense>
@@ -629,7 +650,7 @@ function HeaderModals({
 const Header = () => {
   const { t, i18n } = useTranslation();
   const location = useLocation();
-  const { isAuthenticated, user, refreshUserProfile } = useAuth();
+  const { isAuthenticated, user, isLoading, hasResolvedInitialAuth, refreshUserProfile } = useAuth();
   const { isCartOpen, openCart, setIsCartOpen } = useCart();
 
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -658,8 +679,9 @@ const Header = () => {
   const isLegalRoute = normalizedPathname === "/gizlilik-politikasi" || normalizedPathname === "/kullanim-kosullari";
   const isLegalHash = normalizedPathname === "/" && location.hash.startsWith("#legal:");
   const hideNavigation = isProfilePage || isCheckoutPage || isLegalRoute || isLegalHash;
-  const isUserReady = isAuthenticated && !!user;
-  const isStubUser = (user as { isStub?: boolean } | null)?.isStub === true;
+  const isAuthPending = isAuthUiPending(isLoading, hasResolvedInitialAuth);
+  const isUserReady = !isAuthPending && isAuthenticated && !!user;
+  const isStubUser = isStubUserProfile(user);
   const isProfileCompletionBlocked = isAuthenticated && !!user && !isStubUser && !user.profile_complete;
 
   const activeName = navItems.find((item) => item.id === activeTab)?.name || navItems[0]?.name || "";
@@ -695,8 +717,12 @@ const Header = () => {
       return;
     }
 
+    if (isAuthPending) {
+      return;
+    }
+
     setAuthModalOpen(true);
-  }, [isAuthenticated, user, isStubUser, refreshUserProfile, openCart]);
+  }, [isAuthenticated, isAuthPending, user, isStubUser, refreshUserProfile, openCart]);
 
   return (
     <>
@@ -710,6 +736,7 @@ const Header = () => {
         currentFlagAlt={currentFlagAlt}
         languageToggleLabel={languageToggleLabel}
         isAuthenticated={isAuthenticated}
+        isAuthPending={isAuthPending}
         isUserReady={isUserReady}
         isProfileCompletionBlocked={isProfileCompletionBlocked}
         buyLabel={t("nav.buy")}
@@ -737,6 +764,7 @@ const Header = () => {
 
       <HeaderModals
         isAuthenticated={isAuthenticated}
+        isAuthPending={isAuthPending}
         authModalOpen={authModalOpen}
         isCartOpen={isCartOpen}
         onAuthModalChange={setAuthModalOpen}

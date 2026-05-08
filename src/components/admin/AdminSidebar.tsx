@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { LayoutDashboard, Package, Users, LogOut, ChevronRight, Tags, Ticket, Home, Sun, Moon, Shield, LifeBuoy, Mail, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAuthOperations } from "@/hooks/useAuth";
 import { useAdminTheme } from "@/contexts/AdminThemeContext";
 import { supabase } from "@/lib/supabase";
 import { m, AnimatePresence } from "framer-motion";
@@ -23,6 +24,7 @@ export function AdminSidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: AdminSid
     const location = useLocation();
     const navigate = useNavigate();
     const { user, isSuperAdmin } = useAuth();
+    const { logout } = useAuthOperations();
     const { theme, toggleTheme } = useAdminTheme();
     const [unreadCount, setUnreadCount] = useState(0);
     const [unreadSupportCount, setUnreadSupportCount] = useState(0);
@@ -104,8 +106,8 @@ export function AdminSidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: AdminSid
     }, [location.pathname]);
 
     const handleLogout = async () => {
-        await supabase.auth.signOut();
-        window.location.href = "https://bravita.com.tr";
+        await logout();
+        window.location.href = "/";
     };
 
     const displayedUnreadCount = location.pathname.startsWith('/admin/orders') ? 0 : unreadCount;

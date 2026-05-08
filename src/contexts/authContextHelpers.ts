@@ -66,3 +66,17 @@ export const getInitialUserFromSession = (session: Session | null): UserProfile 
     updated_at: timestamp,
   };
 };
+
+export const isStubUserProfile = (
+  user: Pick<UserProfile, "isStub"> | null | undefined,
+): boolean => user?.isStub === true;
+
+export const shouldWaitForAuthoritativeProfile = (
+  isAuthenticated: boolean,
+  user: Pick<UserProfile, "isStub"> | null | undefined,
+): boolean => isAuthenticated && (!user || isStubUserProfile(user));
+
+export const isAuthUiPending = (
+  isLoading: boolean,
+  hasResolvedInitialAuth: boolean,
+): boolean => isLoading || !hasResolvedInitialAuth;

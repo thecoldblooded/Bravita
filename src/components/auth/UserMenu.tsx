@@ -59,7 +59,7 @@ MenuItem.displayName = "MenuItem";
 export function UserMenu() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user, session, isAdmin } = useAuth();
+  const { user, session, isAdmin, isSuperAdmin } = useAuth();
   const { logout, isLoading } = useAuthOperations();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -82,12 +82,12 @@ export function UserMenu() {
 
   const menuItems = useMemo(() => [
     // Admin Panel - only visible for admin users
-    ...(isAdmin ? [{ icon: <Shield className="w-4 h-4" />, label: t("auth.admin_panel", "Admin Panel"), path: "/admin", isAdmin: true }] : []),
+    ...(isAdmin || isSuperAdmin ? [{ icon: <Shield className="w-4 h-4" />, label: t("auth.admin_panel", "Admin Panel"), path: "/admin", isAdmin: true }] : []),
     { icon: <User className="w-4 h-4" />, label: t("auth.profile"), path: "/profile?tab=profile" },
     { icon: <MapPin className="w-4 h-4" />, label: t("auth.addresses"), path: "/profile?tab=addresses" },
     { icon: <ShoppingBag className="w-4 h-4" />, label: t("auth.my_orders"), path: "/profile?tab=orders" },
     { icon: <Settings className="w-4 h-4" />, label: t("auth.settings"), path: "/profile?tab=settings" },
-  ], [isAdmin, t]);
+  ], [isAdmin, isSuperAdmin, t]);
   const handleLogout = async () => {
     // Close menu immediately for instant feedback
     setIsOpen(false);
