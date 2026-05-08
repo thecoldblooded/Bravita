@@ -314,6 +314,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [refreshUserProfile]);
 
+  const syncPendingProfileRef = useRef(syncPendingProfile);
+
+  useEffect(() => {
+    syncPendingProfileRef.current = syncPendingProfile;
+  }, [syncPendingProfile]);
+
   // Initialize session on mount
   // Consolidate initialization into a single atomic listener
   useEffect(() => {
@@ -667,7 +673,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (pendingProfile && mounted) {
             try {
               const profileData = JSON.parse(pendingProfile);
-              await syncPendingProfile(newSession.user.id, profileData);
+              await syncPendingProfileRef.current(newSession.user.id, profileData);
             } catch (pErr) {
               console.error("Pending profile sync error:", pErr);
             }
@@ -778,7 +784,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       subscription.unsubscribe();
       clearTimeout(safetyTimer);
     };
-  }, [bffAuthEnabled, setUserDebug, syncPendingProfile]); // Initialize listener once; avoid resubscribe race on session updates.
+  }, [bffAuthEnabled, setUserDebug]); // Initialize listener once; avoid resubscribe race on session updates.
 
   const activeUserId = session?.user?.id;
   const activeSessionExpiry = session?.expires_at ?? null;

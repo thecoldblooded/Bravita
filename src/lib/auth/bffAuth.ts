@@ -1,5 +1,6 @@
 const BFF_AUTH_ENABLED = String(import.meta.env.VITE_USE_BFF_AUTH ?? "true").toLowerCase() === "true";
 const BFF_UNAVAILABLE_ERROR_MESSAGE = "BFF_AUTH_UNAVAILABLE";
+const BFF_SESSION_RESTORE_CACHE_MS = 1500;
 
 export interface BffSessionPayload {
   access_token: string;
@@ -22,6 +23,8 @@ export interface BffSignupRequest {
 }
 
 const BFF_SUPABASE_REFRESH_TOKEN_PLACEHOLDER = "bff-cookie-managed-refresh-token";
+let restoreBffSessionInFlight: Promise<BffSessionPayload | null> | null = null;
+let restoreBffSessionCache: { payload: BffSessionPayload | null; expiresAt: number } | null = null;
 
 export function toSupabaseSessionInput(sessionPayload: BffSessionPayload) {
   return {
@@ -179,10 +182,34 @@ export async function setBffSessionFromClient(access_token: string, refresh_toke
 }
 
 export async function restoreBffSession() {
-  return authRequest<BffSessionPayload>("/api/auth/session", {
+  const now = Date.now();
+  if (restoreBffSessionCache && restoreBffSessionCache.expiresAt > now) {
+    return restoreBffSessionCache.payload;
+  }
+
+  if (restoreBffSessionInFlight) {
+    return restoreBffSessionInFlight;
+  }
+
+  restoreBffSessionInFlight = authRequest<BffSessionPayload>("/api/auth/session", {
     method: "GET",
     ignoreUnauthorized: true,
+  }).then((payload) => {
+    restoreBffSessionCache = {
+      payload,
+      expiresAt: Date.now() + BFF_SESSION_RESTORE_CACHE_MS,
+    };
+    return payload;
+  }).finally(() => {
+    restoreBffSessionInFlight = null;
   });
+
+  return restoreBffSessionInFlight;
+}
+
+export function __resetBffSessionRestoreCacheForTests() {
+  restoreBffSessionInFlight = null;
+  restoreBffSessionCache = null;
 }
 
 export async function logoutBffSession() {
