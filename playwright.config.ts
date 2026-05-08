@@ -20,10 +20,12 @@ export default defineConfig({
     video: "retain-on-failure",
   },
   webServer: {
-    command: `npm run dev:vite -- --host 127.0.0.1 --port ${PORT}`,
+    command: process.env.CI
+      ? `npm run build && npm run preview -- --host 127.0.0.1 --port ${PORT}`
+      : `npm run dev:vite -- --host 127.0.0.1 --port ${PORT}`,
     url: BASE_URL,
     reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
+    timeout: 180_000,
     env: {
       ...process.env,
       VITE_E2E_AUTH_STATE: "true",
