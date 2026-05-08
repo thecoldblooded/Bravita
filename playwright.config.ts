@@ -6,7 +6,7 @@ const SCREENSHOT_MODE = process.env.E2E_SCREENSHOTS === "on" ? "on" : "only-on-f
 const E2E_SUPABASE_URL = process.env.VITE_SUPABASE_URL ?? "https://bravita-e2e.supabase.co";
 const E2E_SUPABASE_ANON_KEY =
   process.env.VITE_SUPABASE_ANON_KEY ??
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJicmF2aXRhLWUyZSIsInJlZiI6ImJyYXZpdGEtZTJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyMjU2MDAsImV4cCI6MTkyNDk5MjAwMH0.e2e-placeholder-signature";
+  "anon-public-e2e-placeholder";
 
 export default defineConfig({
   testDir: "./e2e",
