@@ -1,4 +1,4 @@
-export const AWAITING_PAYMENT_HTML = `<!DOCTYPE html>
+﻿export const AWAITING_PAYMENT_HTML = `<!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
@@ -6,11 +6,11 @@ export const AWAITING_PAYMENT_HTML = `<!DOCTYPE html>
     <title>Ödeme Bekleniyor</title>
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #FFFBF7 !important; color: #1F2937 !important; font-family: 'Baloo 2', 'Nunito', sans-serif; }
+        body { background-color: #FFFBF7 !important; color: #1F2937 !important; font-family: 'Baloo 2', 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
         .item-row td { border-bottom: 1px solid #F3F4F6; padding: 16px 0; }
     </style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #FFFBF7;">
+<body style="margin: 0; padding: 0; background-color: #FFFBF7; font-family: 'Baloo 2', 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
     <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #FFFBF7;">
         <tr>
             <td align="center" style="padding: 20px 0;">
@@ -75,10 +75,10 @@ export const ORDER_CONFIRMATION_HTML = `<!DOCTYPE html>
     <title>Siparişiniz Onaylandı</title>
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #FFFBF7 !important; color: #1F2937 !important; font-family: 'Baloo 2', 'Nunito', sans-serif; }
+        body { background-color: #FFFBF7 !important; color: #1F2937 !important; font-family: 'Baloo 2', 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
     </style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #FFFBF7;">
+<body style="margin: 0; padding: 0; background-color: #FFFBF7; font-family: 'Baloo 2', 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
     <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #FFFBF7;">
         <tr>
             <td align="center" style="padding: 20px 0;">
@@ -143,10 +143,10 @@ export const SHIPPED_HTML = `<!DOCTYPE html>
     <title>Siparişiniz Kargoya Verildi</title>
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #FFFBF7 !important; color: #1F2937 !important; font-family: 'Baloo 2', 'Nunito', sans-serif; }
+        body { background-color: #FFFBF7 !important; color: #1F2937 !important; font-family: 'Baloo 2', 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
     </style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #FFFBF7;">
+<body style="margin: 0; padding: 0; background-color: #FFFBF7; font-family: 'Baloo 2', 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
     <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #FFFBF7;">
         <tr>
             <td align="center" style="padding: 20px 0;">
@@ -194,7 +194,7 @@ export const DELIVERED_HTML = `<!DOCTYPE html>
         body {
             background-color: #FFFBF7 !important;
             color: #1F2937 !important;
-            font-family: 'Baloo 2', 'Nunito', sans-serif;
+            font-family: 'Baloo 2', 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
         @media only screen and (max-width: 600px) {
             .container {
@@ -208,7 +208,7 @@ export const DELIVERED_HTML = `<!DOCTYPE html>
     </style>
 </head>
 <body
-    style="margin: 0; padding: 0; background-color: #FFFBF7; font-family: 'Baloo 2', 'Nunito', sans-serif;">
+    style="margin: 0; padding: 0; background-color: #FFFBF7; font-family: 'Baloo 2', 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
     <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #FFFBF7;">
         <tr>
             <td align="center" style="padding: 40px 0;">
@@ -248,7 +248,7 @@ export const DELIVERED_HTML = `<!DOCTYPE html>
                                 <tr>
                                     <td align="center" style="border-radius: 50px; background-color: #F97316;">
                                         <a href="{{SITE_URL}}/account/orders/{{ORDER_ID}}"
-                                            style="display: inline-block; padding: 16px 48px; font-family: 'Baloo 2', 'Nunito', sans-serif; font-size: 16px; color: #ffffff; text-decoration: none; font-weight: 600; border-radius: 50px; background-color: #F97316; border: 1px solid #F97316;">
+                                            style="display: inline-block; padding: 16px 48px; font-family: 'Baloo 2', 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 16px; color: #ffffff; text-decoration: none; font-weight: 600; border-radius: 50px; background-color: #F97316; border: 1px solid #F97316;">
                                             Siparişi Görüntüle
                                         </a>
                                     </td>
@@ -281,10 +281,10 @@ export const CANCELLED_HTML = `<!DOCTYPE html>
     <title>Siparişiniz İptal Edildi</title>
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #FFFBF7 !important; color: #1F2937 !important; font-family: 'Baloo 2', 'Nunito', sans-serif; }
+        body { background-color: #FFFBF7 !important; color: #1F2937 !important; font-family: 'Baloo 2', 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
     </style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #FFFBF7;">
+<body style="margin: 0; padding: 0; background-color: #FFFBF7; font-family: 'Baloo 2', 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
     <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #FFFBF7;">
         <tr>
             <td align="center" style="padding: 20px 0;">
@@ -319,10 +319,10 @@ export const PROCESSING_HTML = `<!DOCTYPE html>
     <title>Siparişiniz İşleniyor</title>
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #FFFBF7 !important; color: #1F2937 !important; font-family: 'Baloo 2', 'Nunito', sans-serif; }
+        body { background-color: #FFFBF7 !important; color: #1F2937 !important; font-family: 'Baloo 2', 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
     </style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #FFFBF7;">
+<body style="margin: 0; padding: 0; background-color: #FFFBF7; font-family: 'Baloo 2', 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
     <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #FFFBF7;">
         <tr>
             <td align="center" style="padding: 20px 0;">
@@ -356,10 +356,10 @@ export const PREPARING_HTML = `<!DOCTYPE html>
     <title>Siparişiniz Hazırlanıyor</title>
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #FFFBF7 !important; color: #1F2937 !important; font-family: 'Baloo 2', 'Nunito', sans-serif; }
+        body { background-color: #FFFBF7 !important; color: #1F2937 !important; font-family: 'Baloo 2', 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
     </style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #FFFBF7;">
+<body style="margin: 0; padding: 0; background-color: #FFFBF7; font-family: 'Baloo 2', 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
     <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #FFFBF7;">
         <tr>
             <td align="center" style="padding: 20px 0;">
@@ -384,3 +384,4 @@ export const PREPARING_HTML = `<!DOCTYPE html>
     </table>
 </body>
 </html>`;
+

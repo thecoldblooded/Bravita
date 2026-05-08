@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 /// <reference path="./types.d.ts" />
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -114,7 +114,7 @@ const WELCOME_HTML = `<!DOCTYPE html>
         body {
             background-color: #FFFBF7 !important;
             color: #1F2937 !important;
-            font-family: 'Baloo 2', 'Nunito', sans-serif;
+            font-family: 'Baloo 2', 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
             padding: 0;
             -webkit-font-smoothing: antialiased;
@@ -140,7 +140,7 @@ const WELCOME_HTML = `<!DOCTYPE html>
     </style>
 </head>
 
-<body style="margin: 0; padding: 0; background-color: #FFFBF7;">
+<body style="margin: 0; padding: 0; background-color: #FFFBF7; font-family: 'Baloo 2', 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
 
     <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #FFFBF7;">
         <tr>
@@ -189,7 +189,7 @@ const WELCOME_HTML = `<!DOCTYPE html>
                                 <tr>
                                     <td align="center" style="border-radius: 50px; background-color: #F97316;">
                                         <a href="https://www.bravita.com.tr/shop" class="button"
-                                            style="display: inline-block; padding: 16px 48px; font-family: sans-serif; font-size: 16px; color: #ffffff; text-decoration: none; font-weight: 600; border-radius: 50px; background-color: #F97316; border: 1px solid #F97316;">
+                                            style="display: inline-block; padding: 16px 48px; font-family: 'Baloo 2', 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 16px; color: #ffffff; text-decoration: none; font-weight: 600; border-radius: 50px; background-color: #F97316; border: 1px solid #F97316;">
                                             Bravita'yı Keşfet
                                         </a>
                                     </td>
@@ -579,3 +579,4 @@ serve(async (req: Request) => {
         });
     }
 });
+

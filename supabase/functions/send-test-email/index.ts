@@ -7,6 +7,7 @@ import { fetchTemplateBundle, renderTemplate } from "../_shared/email-renderer.t
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const APP_WEBHOOK_SECRET = (Deno.env.get("APP_WEBHOOK_SECRET") ?? "").trim();
 
 const ALLOWED_ORIGINS = [
     'https://bravita.com.tr',
@@ -44,13 +45,34 @@ function extractUserJwt(req: Request): string | null {
     return null;
 }
 
+function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
+    if (a.length !== b.length) return false;
+
+    let diff = 0;
+    for (let i = 0; i < a.length; i += 1) {
+        diff |= a[i] ^ b[i];
+    }
+
+    return diff === 0;
+}
+
+function isMatchingInternalSecret(providedSecret: string): boolean {
+    if (!APP_WEBHOOK_SECRET || !providedSecret) {
+        return false;
+    }
+
+    const expectedBytes = new TextEncoder().encode(APP_WEBHOOK_SECRET);
+    const providedBytes = new TextEncoder().encode(providedSecret);
+    return timingSafeEqual(expectedBytes, providedBytes);
+}
+
 function getCorsHeaders(req: Request) {
     const origin = req.headers.get('Origin') || '';
     const allowedOrigin = isAllowedOrigin(origin) ? origin : ALLOWED_ORIGINS[0];
 
     return {
         "Access-Control-Allow-Origin": allowedOrigin,
-        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-user-jwt",
+        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-user-jwt, x-bravita-secret",
         "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
         "Vary": "Origin",
     };
@@ -84,22 +106,27 @@ serve(async (req: Request) => {
 
         const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-        // 1. Verify Superadmin
-        const token = extractUserJwt(req);
-        if (!token) throw new Error("Unauthorized");
+        // 1. Verify Superadmin or internal webhook secret
+        const internalSecret = (req.headers.get("x-bravita-secret") ?? "").trim();
+        const isInternalRequest = isMatchingInternalSecret(internalSecret);
 
-        const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+        if (!isInternalRequest) {
+            const token = extractUserJwt(req);
+            if (!token) throw new Error("Unauthorized");
 
-        if (authError || !user) throw new Error("Unauthorized");
+            const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
-        const { data: profile } = await supabase
-            .from("profiles")
-            .select("is_superadmin")
-            .eq("id", user.id)
-            .single();
+            if (authError || !user) throw new Error("Unauthorized");
 
-        if (!profile?.is_superadmin) {
-            throw new Error("Forbidden: Superadmin only");
+            const { data: profile } = await supabase
+                .from("profiles")
+                .select("is_superadmin")
+                .eq("id", user.id)
+                .single();
+
+            if (!profile?.is_superadmin) {
+                throw new Error("Forbidden: Superadmin only");
+            }
         }
 
         // 2. Parse Body

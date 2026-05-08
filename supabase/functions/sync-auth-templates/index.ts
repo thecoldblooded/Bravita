@@ -13,6 +13,7 @@ const SUPABASE_MANAGEMENT_ACCESS_TOKEN = Deno.env.get("MANAGEMENT_ACCESS_TOKEN")
 const SUPABASE_PROJECT_REF = Deno.env.get("PROJECT_REF")
     || Deno.env.get("SUPABASE_PROJECT_REF")
     || deriveProjectRef(SUPABASE_URL);
+const APP_WEBHOOK_SECRET = (Deno.env.get("APP_WEBHOOK_SECRET") ?? "").trim();
 
 const ALLOWED_ORIGINS = [
     "https://bravita.com.tr",
@@ -97,10 +98,31 @@ function getCorsHeaders(req: Request) {
 
     return {
         "Access-Control-Allow-Origin": allowedOrigin,
-        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-user-jwt, x-idempotency-key",
+        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-user-jwt, x-idempotency-key, x-bravita-secret",
         "Access-Control-Allow-Methods": "POST, OPTIONS",
         "Vary": "Origin",
     };
+}
+
+function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
+    if (a.length !== b.length) return false;
+
+    let diff = 0;
+    for (let i = 0; i < a.length; i += 1) {
+        diff |= a[i] ^ b[i];
+    }
+
+    return diff === 0;
+}
+
+function isMatchingInternalSecret(providedSecret: string): boolean {
+    if (!APP_WEBHOOK_SECRET || !providedSecret) {
+        return false;
+    }
+
+    const expectedBytes = new TextEncoder().encode(APP_WEBHOOK_SECRET);
+    const providedBytes = new TextEncoder().encode(providedSecret);
+    return timingSafeEqual(expectedBytes, providedBytes);
 }
 
 function jsonResponse(req: Request, payload: unknown, status: number): Response {
@@ -684,33 +706,58 @@ serve(async (req: Request) => {
         dryRun = normalizeDryRun(body.dry_run);
         idempotencyKey = normalizeIdempotencyKey(req.headers.get("x-idempotency-key"));
 
-        const token = extractUserJwt(req);
-        if (!token) {
-            throw httpError(401, "UNAUTHORIZED", "Missing auth token");
-        }
+        const internalSecret = (req.headers.get("x-bravita-secret") ?? "").trim();
+        const isInternalRequest = isMatchingInternalSecret(internalSecret);
 
         supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-        const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-        if (authError || !user) {
-            throw httpError(401, "UNAUTHORIZED", "Invalid auth token");
-        }
+        if (isInternalRequest) {
+            const { data: internalActor, error: internalActorError } = await supabase
+                .from("profiles")
+                .select("id, email")
+                .eq("is_superadmin", true)
+                .limit(1)
+                .maybeSingle();
 
-        actorId = String(user.id);
-        actorEmail = normalizeEmail(user.email);
+            if (internalActorError) {
+                throw httpError(500, "INTERNAL_ACTOR_LOOKUP_FAILED", "Internal sync actor lookup failed", {
+                    details: internalActorError.message,
+                });
+            }
 
-        const { data: profile, error: profileError } = await supabase
-            .from("profiles")
-            .select("is_superadmin")
-            .eq("id", actorId)
-            .maybeSingle();
+            if (!internalActor?.id) {
+                throw httpError(500, "INTERNAL_ACTOR_LOOKUP_FAILED", "No superadmin profile available for internal auth template sync");
+            }
 
-        if (profileError) {
-            throw httpError(500, "PROFILE_LOOKUP_FAILED", "Profile lookup failed");
-        }
+            actorId = String(internalActor.id);
+            actorEmail = normalizeEmail(internalActor.email);
+        } else {
+            const token = extractUserJwt(req);
+            if (!token) {
+                throw httpError(401, "UNAUTHORIZED", "Missing auth token");
+            }
 
-        if (!profile?.is_superadmin) {
-            throw httpError(403, "FORBIDDEN", "Superadmin access required");
+            const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+            if (authError || !user) {
+                throw httpError(401, "UNAUTHORIZED", "Invalid auth token");
+            }
+
+            actorId = String(user.id);
+            actorEmail = normalizeEmail(user.email);
+
+            const { data: profile, error: profileError } = await supabase
+                .from("profiles")
+                .select("is_superadmin")
+                .eq("id", actorId)
+                .maybeSingle();
+
+            if (profileError) {
+                throw httpError(500, "PROFILE_LOOKUP_FAILED", "Profile lookup failed");
+            }
+
+            if (!profile?.is_superadmin) {
+                throw httpError(403, "FORBIDDEN", "Superadmin access required");
+            }
         }
 
         payloadHash = await sha256Hex(stableStringify({
