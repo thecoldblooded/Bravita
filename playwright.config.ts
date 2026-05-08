@@ -3,6 +3,10 @@ import { defineConfig, devices } from "@playwright/test";
 const PORT = Number(process.env.E2E_PORT ?? 4173);
 const BASE_URL = process.env.E2E_BASE_URL ?? `http://127.0.0.1:${PORT}`;
 const SCREENSHOT_MODE = process.env.E2E_SCREENSHOTS === "on" ? "on" : "only-on-failure";
+const E2E_SUPABASE_URL = process.env.VITE_SUPABASE_URL ?? "https://bravita-e2e.supabase.co";
+const E2E_SUPABASE_ANON_KEY =
+  process.env.VITE_SUPABASE_ANON_KEY ??
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJicmF2aXRhLWUyZSIsInJlZiI6ImJyYXZpdGEtZTJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyMjU2MDAsImV4cCI6MTkyNDk5MjAwMH0.e2e-placeholder-signature";
 
 export default defineConfig({
   testDir: "./e2e",
@@ -29,6 +33,8 @@ export default defineConfig({
     env: {
       ...process.env,
       VITE_E2E_AUTH_STATE: "true",
+      VITE_SUPABASE_URL: E2E_SUPABASE_URL,
+      VITE_SUPABASE_ANON_KEY: E2E_SUPABASE_ANON_KEY,
       VITE_USE_BFF_AUTH: "false",
     },
   },
