@@ -318,6 +318,17 @@
     -moz-osx-font-smoothing: grayscale;
     touch-action: auto;
   }
+
+  :root {
+    --bravita-notification-z-index: 2147483647;
+  }
+
+  .toaster,
+  [data-sonner-toaster],
+  [data-sonner-toast],
+  [data-radix-toast-viewport] {
+    z-index: var(--bravita-notification-z-index) !important;
+  }
 }
 
 @layer utilities {

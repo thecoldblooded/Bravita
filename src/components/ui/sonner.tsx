@@ -20,10 +20,10 @@ const Toaster = ({ className, toastOptions, ...props }: ToasterProps) => {
       position="top-center"
       offset={DEFAULT_OFFSET}
       className={`toaster group ${TOAST_LAYER_CLASS}${className ? ` ${className}` : ""}`}
-      style={{ zIndex: TOAST_Z_INDEX, ...props.style }}
+      style={{ ...props.style, zIndex: TOAST_Z_INDEX }}
       toastOptions={{
         ...toastOptions,
-        style: { zIndex: TOAST_Z_INDEX, ...toastOptions?.style },
+        style: { ...toastOptions?.style, zIndex: TOAST_Z_INDEX },
         classNames: {
           description: "group-[.toast]:text-muted-foreground",
           actionButton: "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
