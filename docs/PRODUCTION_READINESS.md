@@ -1,6 +1,6 @@
 # Bravita Production Readiness Runbook
 
-Last reviewed: 2026-05-07
+Last reviewed: 2026-05-08
 
 ## 1. Authority And Scope
 
@@ -9,7 +9,7 @@ This is the authoritative production runbook for the current Bravita release pro
 Operational rules for this repository:
 
 - Remote Supabase migration history is canonical.
-- Local migration filenames in this checkout are documentation and implementation inputs, but they are **not** the source of truth where late-stage version mismatches already exist.
+- Local migration filenames in this checkout must match the remote Supabase migration ledger.
 - Do not perform blind migration repair from this checkout.
 - Use this runbook instead of the legacy emergency guide in [`docs/DEPLOYMENT_GUIDE.md`](docs/DEPLOYMENT_GUIDE.md).
 
@@ -20,16 +20,16 @@ User-approved exclusions for the current hardening sprint:
 
 ## 2. Supabase Migration Posture
 
-Supabase MCP `list_migrations` and local `npm run supabase:migration:list` agree through `20260227210300`.
+Supabase MCP `list_migrations` and local `npm run supabase:migration:list` agree through the current migration ledger.
 
-The current remote database has the same late-stage migration names under different versions:
+The late-stage filename drift was reconciled on 2026-05-08 by renaming local files to the remote Supabase versions:
 
-| Concern | Local file | Remote Supabase history |
+| Concern | Canonical local file | Remote Supabase history |
 | --- | --- | --- |
-| Installment rates anon grant | `20260304000000_grant_anon_installment_rates.sql` | `20260304201615_grant_anon_installment_rates` |
-| Stock before/after audit | `20260304112000_add_stock_before_after_audit_log.sql` | `20260304112036_add_stock_before_after_audit_log` |
-| Dashboard stats v2 | `20260305120000_create_dashboard_stats_v2.sql` | `20260305122116_create_dashboard_stats_v2` |
-| Security definer RPC lockdown | `20260505120000_lock_down_security_definer_rpcs.sql` | `20260505072001_lock_down_security_definer_rpcs` |
+| Installment rates anon grant | `20260304201615_grant_anon_installment_rates.sql` | `20260304201615_grant_anon_installment_rates` |
+| Stock before/after audit | `20260304112036_add_stock_before_after_audit_log.sql` | `20260304112036_add_stock_before_after_audit_log` |
+| Dashboard stats v2 | `20260305122116_create_dashboard_stats_v2.sql` | `20260305122116_create_dashboard_stats_v2` |
+| Security definer RPC lockdown | `20260505072001_lock_down_security_definer_rpcs.sql` | `20260505072001_lock_down_security_definer_rpcs` |
 
 ### Canonical-History Decision
 
@@ -37,7 +37,7 @@ The current remote database has the same late-stage migration names under differ
 
 ### Safe Operator Behavior
 
-Until a dedicated reconciliation sprint finishes:
+For future schema work:
 
 1. Treat the remote Supabase migration ledger as the production source of truth.
 2. Do not rename remote history manually.
@@ -45,10 +45,10 @@ Until a dedicated reconciliation sprint finishes:
 4. Before any schema change:
    - run `npm run supabase:migration:list`
    - run `npm run supabase:drift:check`
-   - confirm the intended migration does not rely on unresolved local/remote filename equivalence
+   - confirm local filenames and remote versions are aligned
 5. Record every production schema change in release notes with both:
    - the remote migration version actually present in Supabase
-   - the local file used as implementation context, if different
+   - the local migration file committed for that version
 
 ### Drift Interpretation
 
