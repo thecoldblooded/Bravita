@@ -25,6 +25,14 @@ const isAuthCallbackRequest = () => {
   );
 };
 
+const shouldBypassSeoShell = () => {
+  const isLocalHost = ["127.0.0.1", "localhost"].includes(window.location.hostname);
+  const e2eFlag = (window as Window & { __BRAVITA_E2E_AUTH_ENABLED?: boolean }).__BRAVITA_E2E_AUTH_ENABLED === true;
+  const hasE2EAuthState = !!window.localStorage.getItem("bravita_e2e_auth");
+
+  return isLocalHost && (e2eFlag || hasE2EAuthState);
+};
+
 // Prevent zoom on Safari/iOS
 document.addEventListener('gesturestart', function (e) {
   e.preventDefault();
@@ -163,7 +171,7 @@ const scheduleSeoShellDismiss = () => {
 };
 
 const revealAppWhenReady = async () => {
-  if (isAuthCallbackRequest()) {
+  if (isAuthCallbackRequest() || shouldBypassSeoShell()) {
     markAppReady();
     return;
   }
