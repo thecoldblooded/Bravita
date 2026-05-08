@@ -1,4 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
+import { installPageDiagnostics } from "./support/diagnostics";
 
 const E2E_USER_ID = "00000000-0000-4000-8000-000000000001";
 const E2E_ADDRESS_ID = "00000000-0000-4000-8000-000000000101";
@@ -374,6 +375,19 @@ async function goToCheckoutWithSeededCart(page: Page, options: MockOptions = {})
 }
 
 test.describe("Bravita expanded E2E user operations", () => {
+  let cleanupDiagnostics: (() => Promise<void>) | null = null;
+
+  test.beforeEach(async ({ page }, testInfo) => {
+    cleanupDiagnostics = await installPageDiagnostics(page, testInfo);
+  });
+
+  test.afterEach(async () => {
+    if (cleanupDiagnostics) {
+      await cleanupDiagnostics();
+      cleanupDiagnostics = null;
+    }
+  });
+
   test("cart enforces quantity limits and reports invalid promo codes", async ({ page }) => {
     await startAuthenticatedMockedPage(page, { invalidPromo: true });
     await page.goto("/");

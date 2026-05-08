@@ -1,6 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
+import { installPageDiagnostics } from "./support/diagnostics";
 
 const E2E_USER_ID = "00000000-0000-4000-8000-000000000001";
 const E2E_ADDRESS_ID = "00000000-0000-4000-8000-000000000101";
@@ -317,9 +318,19 @@ function readDotEnv() {
 }
 
 test.describe("Bravita E2E full operational journey", () => {
-  test.beforeEach(async ({ page }) => {
+  let cleanupDiagnostics: (() => Promise<void>) | null = null;
+
+  test.beforeEach(async ({ page }, testInfo) => {
     await mockSupabase(page);
     await seedAuthenticatedUser(page);
+    cleanupDiagnostics = await installPageDiagnostics(page, testInfo);
+  });
+
+  test.afterEach(async () => {
+    if (cleanupDiagnostics) {
+      await cleanupDiagnostics();
+      cleanupDiagnostics = null;
+    }
   });
 
   test("authenticated customer completes storefront, cart, checkout, order and profile journey", async ({ page }) => {
