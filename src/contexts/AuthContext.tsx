@@ -43,6 +43,17 @@ const authContextInstanceId = `authctx_${Math.random().toString(36).slice(2, 10)
 const E2E_AUTH_STORAGE_KEY = "bravita_e2e_auth";
 const isLocalE2EHost = () =>
   typeof window !== "undefined" && ["127.0.0.1", "localhost"].includes(window.location.hostname);
+const hasStoredE2EAuthState = () => {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  try {
+    return !!window.localStorage.getItem(E2E_AUTH_STORAGE_KEY);
+  } catch {
+    return false;
+  }
+};
 const hasExplicitE2EAuthFlag = () => {
   if (String(import.meta.env.VITE_E2E_AUTH_STATE ?? "false").toLowerCase() === "true") {
     return true;
@@ -54,7 +65,8 @@ const hasExplicitE2EAuthFlag = () => {
 
   return window.__BRAVITA_E2E_AUTH_ENABLED === true;
 };
-const E2E_AUTH_STATE_ENABLED = hasExplicitE2EAuthFlag() && (import.meta.env.DEV || isLocalE2EHost());
+const E2E_AUTH_STATE_ENABLED =
+  (import.meta.env.DEV || isLocalE2EHost()) && (hasExplicitE2EAuthFlag() || hasStoredE2EAuthState());
 
 type E2EAuthState = {
   session: Session;
