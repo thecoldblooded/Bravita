@@ -5,7 +5,7 @@ import {
 } from "../bffAuth";
 
 const sessionPayload: BffSessionPayload = {
-  access_token: "access-token",
+  access_token: "x",
   expires_at: 1_800_000_000,
   expires_in: 3600,
   token_type: "bearer",
