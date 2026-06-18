@@ -35,8 +35,8 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [
       ViteImageOptimizer({
-        test: /\.(jpe?g|png|gif|tiff|webp|svg|avif)$/i,
-        exclude: undefined,
+        test: /\.(jpe?g|png|tiff|webp|svg|avif)$/i,
+        exclude: /\.gif$/i,
         include: undefined,
         includePublic: true,
         logStats: true,
@@ -66,10 +66,10 @@ export default defineConfig(({ mode }) => {
           quality: 85,
         },
         webp: {
-          lossless: true,
+          quality: 80,
         },
         avif: {
-          lossless: true,
+          quality: 70,
         },
       }),
       tailwindcss(),

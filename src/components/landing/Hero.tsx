@@ -285,6 +285,7 @@ function HeroMainContent({ t, containerRef, bottleRef, accentChars, ingredients 
                 alt="Bravita Sıvı Takviye"
                 loading="eager"
                 decoding="async"
+                fetchPriority="high"
                 className="w-45 md:w-65 lg:w-[320px] h-auto max-h-[75vh] object-contain relative z-10 drop-shadow-2xl"
               />
 

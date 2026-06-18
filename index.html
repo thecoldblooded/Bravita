@@ -71,8 +71,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
-  <link rel="preload" as="image" href="/src/assets/bravita-bottle1.webp" fetchpriority="high" />
-  <link rel="preload" as="image" href="/bravita.gif" fetchpriority="high" />
+  <!-- Remove incorrect preload; use Vite's asset handling -->
+  <!-- <link rel="preload" as="image" href="/src/assets/bravita-bottle1.webp" fetchpriority="high" /> -->
+  <!-- Remove GIF preload – non‑critical -->
+  <!-- <link rel="preload" as="image" href="/bravita.gif" fetchpriority="high" /> -->
+  <!-- Load Google Fonts (blocking) -->
   <link rel="stylesheet"
     href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" />
 
