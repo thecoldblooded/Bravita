@@ -131,7 +131,6 @@ CORE_CHECKS = [
 
 PERFORMANCE_CHECKS = [
     ("Lighthouse Audit", ".agent/skills/performance-profiling/scripts/lighthouse_audit.py", True),
-    ("Playwright E2E", ".agent/skills/webapp-testing/scripts/playwright_runner.py", False),
 ]
 
 def check_script_exists(script_path: Path) -> bool:

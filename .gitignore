@@ -28,7 +28,6 @@ dist-ssr
 testsprite_tests/
 testsprite_output_final.txt
 test-results/
-playwright-report/
 
 # Environment
 .env

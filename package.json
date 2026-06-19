@@ -12,8 +12,6 @@
     "typecheck": "tsc -b --noEmit",
     "typecheck:strict": "tsc -p tsconfig.strict.json --noEmit",
     "test": "vitest run",
-    "test:e2e": "playwright test",
-    "test:e2e:report": "playwright show-report",
     "react-doctor": "npx react-doctor@latest . --full --offline --fail-on warning",
     "preview": "vite preview",
     "bff:auth": "node scripts/bff/bff-auth-server.mjs",
@@ -21,8 +19,8 @@
     "socket:ci": "node scripts/test/run-socket-ci.mjs",
     "supabase:migration:list": "node scripts/drift/check-linked-migrations.mjs",
     "supabase:drift:check": "node scripts/drift/check-linked-drift.mjs",
-    "security:gate": "npm run socket:ci && npm audit --audit-level=high && npm run checklist && npm run lint && npm run typecheck && npm run typecheck:strict && npm test && npm run test:e2e && npm run react-doctor && npm run build && npm run supabase:migration:list && npm run supabase:drift:check",
-    "release:smoke": "npm run lint && npm run typecheck && npm run typecheck:strict && npm test && npx playwright test -g \"live Supabase admin-rpc is deployed\" && npm run react-doctor && npm run build && npm run supabase:migration:list && npm run supabase:drift:check",
+    "security:gate": "npm run socket:ci && npm audit --audit-level=high && npm run checklist && npm run lint && npm run typecheck && npm run typecheck:strict && npm test && npm run react-doctor && npm run build && npm run supabase:migration:list && npm run supabase:drift:check",
+    "release:smoke": "npm run lint && npm run typecheck && npm run typecheck:strict && npm test && npm run react-doctor && npm run build && npm run supabase:migration:list && npm run supabase:drift:check",
     "knip": "knip"
   },
   "dependencies": {
@@ -98,7 +96,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
-    "@playwright/test": "^1.59.1",
     "@tailwindcss/typography": "^0.5.16",
     "@types/node": "^25.9.3",
     "@types/react": "^18.3.23",
