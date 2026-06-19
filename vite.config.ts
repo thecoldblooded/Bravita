@@ -2,7 +2,6 @@ import { defineConfig, ViteDevServer, loadEnv } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import svgr from "vite-plugin-svgr";
-import { componentTagger } from "lovable-tagger";
 import tailwindcss from "@tailwindcss/vite";
 import type { IncomingMessage, ServerResponse } from "http";
 import { ViteImageOptimizer } from "vite-plugin-image-optimizer";
@@ -75,7 +74,6 @@ export default defineConfig(({ mode }) => {
       tailwindcss(),
       react(),
       svgr(),
-      mode === "development" && componentTagger(),
       // Custom plugin to handle route-specific HTML entry points in dev
       {
         name: "route-specific-html-fallbacks",
