@@ -40,6 +40,36 @@ export function decideRequestGateAction(input) {
     const url = toAbsoluteUrl(input);
     const inspected = new Set();
 
+    // Also check headers if this is a Request object
+    if (typeof Request !== "undefined" && input instanceof Request) {
+        const candidates = [
+            input.headers.get('user-agent'),
+            input.headers.get('referer'),
+            input.headers.get('origin'),
+            input.headers.get('x-forwarded-host'),
+            input.headers.get('x-forwarded-for'),
+            input.headers.get('cookie'),
+        ].filter(v => v && typeof v === 'string');
+
+        for (const candidate of candidates) {
+            const normalizedCandidate = candidate.trim();
+            if (!normalizedCandidate || inspected.has(normalizedCandidate)) {
+                continue;
+            }
+            inspected.add(normalizedCandidate);
+            const detection = detectSuspiciousValue(normalizedCandidate);
+            if (detection) {
+                return {
+                    block: true,
+                    detection,
+                    href: url.toString(),
+                    pathname: url.pathname,
+                    search: url.search,
+                };
+            }
+        }
+    }
+
     for (const candidate of buildInspectionCandidates(url)) {
         const normalizedCandidate = typeof candidate === "string" ? candidate.trim() : "";
         if (!normalizedCandidate || inspected.has(normalizedCandidate)) {
