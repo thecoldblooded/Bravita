@@ -51,9 +51,9 @@ export function TableSkeleton({
                 {/* Table Header */}
                 <div className={`border-b ${tableHeaderBg} px-6 py-4`}>
                     <div className="flex gap-4">
-                        {[...Array(columns)].map(() => (
+                        {[...Array(columns)].map((_, i) => (
                             <Skeleton
-                                key={crypto.randomUUID()}
+                                key={i}
                                 className={`h-4 ${skeletonClass}`}
                                 style={{ width: `${100 / columns}%` }}
                             />
@@ -62,15 +62,15 @@ export function TableSkeleton({
                 </div>
 
                 {/* Table Rows */}
-                {[...Array(rows)].map(() => (
+                {[...Array(rows)].map((_, i) => (
                     <div
-                        key={crypto.randomUUID()}
+                        key={i}
                         className={`border-b last:border-b-0 px-6 py-4 ${rowBorder}`}
                     >
                         <div className="flex gap-4 items-center">
-                            {[...Array(columns)].map(() => (
+                            {[...Array(columns)].map((_, i) => (
                                 <Skeleton
-                                    key={crypto.randomUUID()}
+                                    key={i}
                                     className={`h-5 ${skeletonClass}`}
                                     style={{ width: `${100 / columns}%` }}
                                 />

@@ -21,9 +21,10 @@ const LazySection = ({
 }: LazySectionProps) => {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const [isVisible, setIsVisible] = useState(() => typeof window !== "undefined" && !("IntersectionObserver" in window));
+  const hasIntersected = useRef(isVisible);
 
   useEffect(() => {
-    if (isVisible && once) {
+    if (hasIntersected.current && once) {
       return;
     }
 
@@ -43,6 +44,7 @@ const LazySection = ({
         }
 
         if (entry.isIntersecting) {
+          hasIntersected.current = true;
           setIsVisible(true);
           if (once) {
             observer.disconnect();
@@ -51,6 +53,7 @@ const LazySection = ({
         }
 
         if (!once) {
+          hasIntersected.current = false;
           setIsVisible(false);
         }
       },
@@ -62,7 +65,7 @@ const LazySection = ({
     return () => {
       observer.disconnect();
     };
-  }, [isVisible, once, rootMargin, threshold]);
+  }, [once, rootMargin, threshold]);
 
   return <div ref={hostRef} id={id} className={className}>{isVisible ? children : placeholder}</div>;
 };

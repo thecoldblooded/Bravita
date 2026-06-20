@@ -164,12 +164,16 @@ function ProductsContent() {
     }, []);
 
     useEffect(() => {
+        let timerId: NodeJS.Timeout | number | undefined;
         const urlHighlight = searchParams.get("highlight") || searchParams.get("search");
         if (urlHighlight) {
             dispatch({ type: 'SET_HIGH_ID', payload: urlHighlight });
-            setTimeout(() => dispatch({ type: 'SET_HIGH_ID', payload: null }), 5000);
+            timerId = setTimeout(() => dispatch({ type: 'SET_HIGH_ID', payload: null }), 5000);
         }
         loadProducts();
+        return () => {
+            if (timerId) clearTimeout(timerId);
+        };
     }, [loadProducts, searchParams]);
 
     useEffect(() => {

@@ -10,6 +10,20 @@ CREATE TABLE IF NOT EXISTS public.promo_code_attempts (
 CREATE INDEX IF NOT EXISTS idx_promo_attempts_timestamp ON public.promo_code_attempts (attempt_timestamp);
 CREATE INDEX IF NOT EXISTS idx_promo_attempts_user ON public.promo_code_attempts (user_id);
 
+-- Enable Row Level Security
+ALTER TABLE public.promo_code_attempts ENABLE ROW LEVEL SECURITY;
+
+-- Only the verify_promo_code function (SECURITY DEFINER) can insert attempts
+-- Admins can view attempts for monitoring
+CREATE POLICY "Admins can view promo code attempts" ON public.promo_code_attempts
+    FOR SELECT USING (
+        EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_superadmin = true)
+    );
+
+-- Service role can insert attempts (used by the SECURITY DEFINER function)
+CREATE POLICY "Service role can insert promo code attempts" ON public.promo_code_attempts
+    FOR INSERT TO service_role WITH CHECK (true);
+
 -- Updated verify_promo_code with rate limiting
 CREATE OR REPLACE FUNCTION public.verify_promo_code(p_code text)
  RETURNS jsonb

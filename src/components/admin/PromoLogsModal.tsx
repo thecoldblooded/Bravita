@@ -39,11 +39,19 @@ export function PromoLogsModal({ isOpen, onClose, promoId, promoCode }: PromoLog
     const { theme } = useAdminTheme();
     const isDark = theme === "dark";
 
+    const [prevPromoId, setPrevPromoId] = useState<string | null>(null);
+    const [prevIsOpen, setPrevIsOpen] = useState(false);
+    if (promoId !== prevPromoId || isOpen !== prevIsOpen) {
+        setPrevPromoId(promoId);
+        setPrevIsOpen(isOpen);
+        if (!isOpen || !promoId) {
+            setLogs([]);
+        }
+    }
+
     useEffect(() => {
         if (isOpen && promoId) {
             loadLogs(promoId);
-        } else {
-            setLogs([]); // Clear logs when closed or no ID
         }
     }, [isOpen, promoId]);
 

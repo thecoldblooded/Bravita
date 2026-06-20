@@ -251,3 +251,4 @@ BEGIN
         INSERT INTO public.site_settings (id) VALUES (1) ON CONFLICT DO NOTHING;
     END IF;
 END $$;
+ALTER TABLE public.site_settings ENABLE ROW LEVEL SECURITY;

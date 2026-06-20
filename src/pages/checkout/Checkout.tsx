@@ -23,8 +23,8 @@ import Header from "@/components/layout/Header";
 import { Helmet } from "react-helmet-async";
 
 
-const PAYMENT_USE_TOKENIZATION = String(import.meta.env.VITE_PAYMENT_USE_TOKENIZATION ?? "false").toLowerCase() === "true";
-const PAYMENT_TOKENIZATION_REQUIRED = String(import.meta.env.VITE_PAYMENT_TOKENIZATION_REQUIRED ?? "false").toLowerCase() === "true";
+const PAYMENT_USE_CARD_STORAGE = String(import.meta.env.VITE_PAYMENT_USE_CARD_STORAGE ?? "false").toLowerCase() === "true";
+const PAYMENT_CARD_STORAGE_REQUIRED = String(import.meta.env.VITE_PAYMENT_CARD_STORAGE_REQUIRED ?? "false").toLowerCase() === "true";
 const PRE_3D_FAILURE_CODES = new Set([
     "PaymentDealer.CheckCardInfo.InvalidCardInfo",
     "PaymentDealer.Fraud.BuyerBlocked",
@@ -201,7 +201,7 @@ export default function Checkout() {
                 }
 
                 let cardToken: string | undefined;
-                if (PAYMENT_USE_TOKENIZATION) {
+                if (PAYMENT_USE_CARD_STORAGE) {
                     const expiryMatch = /^(\d{2})\/(\d{2}|\d{4})$/.exec(checkoutData.cardDetails.expiry.trim());
                     if (!expiryMatch) {
                         toast.error(t("checkout.validation.expiry_invalid", "Kart son kullanma tarihi gecersiz"));
@@ -227,7 +227,7 @@ export default function Checkout() {
 
                     if (tokenizeResult.success && tokenizeResult.cardToken) {
                         cardToken = tokenizeResult.cardToken;
-                    } else if (PAYMENT_TOKENIZATION_REQUIRED) {
+                    } else if (PAYMENT_CARD_STORAGE_REQUIRED) {
                         if (tokenizeResult.error === "AUTH_SESSION_REQUIRED") {
                             toast.error(t("checkout.validation.session_expired", "Oturumunuzun süresi doldu. Lütfen tekrar giriş yapın."));
                             await supabase.auth.signOut();

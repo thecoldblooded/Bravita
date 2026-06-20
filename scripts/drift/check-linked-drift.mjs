@@ -475,6 +475,10 @@ async function main() {
     }
 
     if (exitCode !== 0) {
+        if (stderr.includes("Cannot connect to the Docker daemon") || stderr.includes("docker daemon is not running") || stderr.includes("Docker Desktop is a prerequisite")) {
+            console.warn("⚠️ Docker daemon is unreachable. Skipping database drift check.");
+            process.exit(0);
+        }
         console.error(`supabase db diff failed with exit code ${exitCode}`);
         process.exit(exitCode);
     }
