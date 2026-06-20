@@ -14,4 +14,19 @@ CREATE TABLE IF NOT EXISTS promo_codes (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_promo_codes_code ON promo_codes(code);;
+CREATE INDEX IF NOT EXISTS idx_promo_codes_code ON promo_codes(code);
+
+-- Enable Row Level Security
+ALTER TABLE promo_codes ENABLE ROW LEVEL SECURITY;
+
+-- Admin users can manage promo codes
+CREATE POLICY "Admins can manage promo codes" ON promo_codes
+    FOR ALL USING (
+        EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_superadmin = true)
+    );
+
+-- Authenticated users can view active promo codes (for validation)
+CREATE POLICY "Authenticated users can view active promo codes" ON promo_codes
+    FOR SELECT USING (
+        is_active = true AND auth.uid() IS NOT NULL
+    );

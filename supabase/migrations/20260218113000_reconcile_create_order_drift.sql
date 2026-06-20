@@ -2,6 +2,7 @@
 -- Source: GitHub Actions drift output (public schema diff)
 
 SET check_function_bodies = off;
+
 CREATE OR REPLACE FUNCTION public.create_order(p_items jsonb, p_shipping_address_id uuid, p_payment_method text, p_promo_code text DEFAULT NULL::text)
  RETURNS jsonb
  LANGUAGE plpgsql

@@ -103,4 +103,4 @@ USING (public.is_superadmin_user());
 CREATE POLICY "Admins insert audit logs"
 ON admin_audit_log FOR INSERT
 TO authenticated
-WITH CHECK (public.is_admin_user());;
+WITH CHECK (public.is_admin_user());

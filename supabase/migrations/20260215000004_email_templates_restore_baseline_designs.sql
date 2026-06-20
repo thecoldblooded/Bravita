@@ -9,6 +9,7 @@
 -- - confirmation fallback line where relevant
 
 BEGIN;
+
 WITH payload (
   slug,
   name,
@@ -876,4 +877,5 @@ SET
   updated_at = timezone('utc'::text, now())
 FROM payload p
 WHERE et.slug = p.slug;
+
 COMMIT;

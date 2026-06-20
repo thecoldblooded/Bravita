@@ -26,4 +26,4 @@ USING (
   (SELECT is_admin FROM profiles WHERE id = auth.uid()) = true 
   OR 
   (SELECT is_superadmin FROM profiles WHERE id = auth.uid()) = true
-);;
+);

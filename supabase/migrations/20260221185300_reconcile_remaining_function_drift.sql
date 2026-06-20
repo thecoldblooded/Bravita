@@ -1,4 +1,5 @@
 set check_function_bodies = off;
+
 CREATE OR REPLACE FUNCTION public.admin_update_order_status(p_order_id uuid, p_new_status text, p_note text DEFAULT NULL::text)
  RETURNS boolean
  LANGUAGE plpgsql
@@ -92,7 +93,9 @@ BEGIN
 
     RETURN FOUND;
 END;
-$function$;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.get_dashboard_stats(start_date timestamp with time zone, end_date timestamp with time zone)
  RETURNS json
  LANGUAGE plpgsql
@@ -150,7 +153,9 @@ BEGIN
         'daily_sales', COALESCE(daily_sales, '[]'::json)
     );
 END;
-$function$;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.handle_new_order_promo()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -192,7 +197,9 @@ BEGIN
 
   RETURN NEW;
 END;
-$function$;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.handle_updated_at()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -203,7 +210,9 @@ BEGIN
     NEW.updated_at = timezone('utc'::text, now());
     RETURN NEW;
 END;
-$function$;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.is_admin_user()
  RETURNS boolean
  LANGUAGE plpgsql
@@ -216,7 +225,9 @@ BEGIN
         WHERE id = (SELECT auth.uid()) AND (is_admin = true OR is_superadmin = true)
     );
 END;
-$function$;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.is_admin_user(user_id uuid)
  RETURNS boolean
  LANGUAGE plpgsql
@@ -234,7 +245,9 @@ BEGIN
 
   RETURN COALESCE(admin_status, false);
 END;
-$function$;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.is_superadmin_user()
  RETURNS boolean
  LANGUAGE sql
@@ -247,7 +260,9 @@ AS $function$
     WHERE id = auth.uid()
       AND is_superadmin = true
   );
-$function$;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.prune_expired_otp_codes()
  RETURNS void
  LANGUAGE plpgsql
@@ -256,7 +271,9 @@ AS $function$
 BEGIN
     DELETE FROM public.otp_codes WHERE expires_at < now();
 END;
-$function$;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.validate_checkout(p_product_slug text, p_quantity integer, p_promo_code text DEFAULT NULL::text)
  RETURNS json
  LANGUAGE plpgsql
@@ -384,4 +401,8 @@ EXCEPTION
             'message', 'İşlem sırasında bir hata oluştu. Lütfen tekrar deneyin.'
         );
 END;
-$function$;
+$function$
+;
+
+
+

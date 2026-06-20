@@ -26,7 +26,7 @@ ALTER FUNCTION public.admin_set_user_admin(uuid, boolean) SET search_path = publ
 ALTER FUNCTION public.sanitize_search_input(text) SET search_path = public;
 ALTER FUNCTION public.is_admin_user() SET search_path = public;
 ALTER FUNCTION public.is_admin_user(uuid) SET search_path = public;
-ALTER FUNCTION public.is_admin() SET search_path = public;
+
 ALTER FUNCTION public.admin_update_order_status(uuid, text, text) SET search_path = public;
 ALTER FUNCTION public.admin_get_all_orders(text, integer, integer) SET search_path = public;
 ALTER FUNCTION public.manage_inventory() SET search_path = public;

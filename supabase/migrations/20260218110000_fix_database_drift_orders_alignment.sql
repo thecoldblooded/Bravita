@@ -2,6 +2,7 @@
 -- Created: 2026-02-18 10:30:00
 
 BEGIN;
+
 -- Add missing columns to orders table for drift alignment and legacy function support
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS promo_code TEXT;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS bank_reference TEXT;
@@ -11,6 +12,7 @@ ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS unit_price DECIMAL(10,2);
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS subtotal DECIMAL(10,2);
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS vat_amount DECIMAL(10,2);
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS total DECIMAL(10,2);
+
 -- Update create_order function to populate new columns
 CREATE OR REPLACE FUNCTION public.create_order(
     p_items JSONB,
@@ -255,4 +257,5 @@ EXCEPTION WHEN OTHERS THEN
     );
 END;
 $$;
+
 COMMIT;
