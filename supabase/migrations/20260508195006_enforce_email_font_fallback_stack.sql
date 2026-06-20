@@ -69,4 +69,4 @@ BEGIN
         'i'
     )
     WHERE content_html !~* 'fonts\.googleapis\.com/css2\?family=Baloo\+2';
-END $$;
+END $$;;

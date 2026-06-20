@@ -1,5 +1,4 @@
 BEGIN;
-
 CREATE TABLE IF NOT EXISTS public.auth_template_sync_idempotency (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     actor_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -11,32 +10,25 @@ CREATE TABLE IF NOT EXISTS public.auth_template_sync_idempotency (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-
 CREATE UNIQUE INDEX IF NOT EXISTS idx_auth_template_sync_idempotency_actor_key
 ON public.auth_template_sync_idempotency (actor_id, idempotency_key);
-
 CREATE INDEX IF NOT EXISTS idx_auth_template_sync_idempotency_actor_created
 ON public.auth_template_sync_idempotency (actor_id, created_at DESC);
-
 CREATE INDEX IF NOT EXISTS idx_auth_template_sync_idempotency_created
 ON public.auth_template_sync_idempotency (created_at DESC);
-
 ALTER TABLE public.auth_template_sync_idempotency ENABLE ROW LEVEL SECURITY;
-
 DROP POLICY IF EXISTS "System can insert auth template sync idempotency" ON public.auth_template_sync_idempotency;
 CREATE POLICY "System can insert auth template sync idempotency"
 ON public.auth_template_sync_idempotency
 FOR INSERT
 TO service_role
 WITH CHECK (TRUE);
-
 DROP POLICY IF EXISTS "System can read auth template sync idempotency" ON public.auth_template_sync_idempotency;
 CREATE POLICY "System can read auth template sync idempotency"
 ON public.auth_template_sync_idempotency
 FOR SELECT
 TO service_role
 USING (TRUE);
-
 DROP POLICY IF EXISTS "System can update auth template sync idempotency" ON public.auth_template_sync_idempotency;
 CREATE POLICY "System can update auth template sync idempotency"
 ON public.auth_template_sync_idempotency
@@ -44,7 +36,6 @@ FOR UPDATE
 TO service_role
 USING (TRUE)
 WITH CHECK (TRUE);
-
 DO $$
 BEGIN
     IF to_regprocedure('public.handle_updated_at()') IS NOT NULL THEN
@@ -62,5 +53,4 @@ BEGIN
     END IF;
 END
 $$;
-
 COMMIT;

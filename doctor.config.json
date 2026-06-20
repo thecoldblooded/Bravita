@@ -38,6 +38,7 @@
       "react-doctor/no-usememo-simple-expression",
       "react-doctor/no-mutable-in-deps",
       "react-doctor/supabase-rls-policy-risk",
+      "react-doctor/supabase-table-missing-rls",
       "react-doctor/no-adjust-state-on-prop-change",
       "react-doctor/build-pipeline-secret-boundary",
       "react-doctor/artifact-baas-authority-surface",

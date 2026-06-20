@@ -10,7 +10,7 @@ CREATE POLICY "Profiles are viewable by owners and admins" ON public.profiles
 FOR SELECT USING (
     id = (select auth.uid()) 
     OR 
-    (select public.is_admin_user())
+    (select public.is_admin())
 );
 
 -- 2. Users can insert their own profile
@@ -24,7 +24,7 @@ CREATE POLICY "Profiles are updatable by owners and admins" ON public.profiles
 FOR UPDATE USING (
     id = (select auth.uid()) 
     OR 
-    (select public.is_admin_user())
+    (select public.is_admin())
 );
 
 -- Fix for multiple_permissive_policies on promo_codes
@@ -34,7 +34,7 @@ DROP POLICY IF EXISTS "Public can view active promo codes" ON public.promo_codes
 
 CREATE POLICY "Viewable by admins or public if active" ON public.promo_codes
 FOR SELECT USING (
-    (select public.is_admin_user())
+    (select public.is_admin())
     OR 
     (is_active = true)
 );

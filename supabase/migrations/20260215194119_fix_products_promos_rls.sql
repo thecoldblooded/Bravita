@@ -60,4 +60,4 @@ CREATE POLICY "Admins manage promo codes"
 ON promo_codes FOR ALL
 TO authenticated
 USING (public.is_admin_user())
-WITH CHECK (public.is_admin_user());
+WITH CHECK (public.is_admin_user());;

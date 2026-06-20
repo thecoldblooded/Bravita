@@ -216,7 +216,6 @@ BEGIN
     );
 END;
 $function$;
-
 CREATE OR REPLACE FUNCTION public.handle_new_order_promo()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -283,7 +282,6 @@ BEGIN
   RETURN NEW;
 END;
 $function$;
-
 DROP TRIGGER IF EXISTS trigger_handle_promo_usage ON public.orders;
 CREATE TRIGGER trigger_handle_promo_usage
 AFTER INSERT ON public.orders

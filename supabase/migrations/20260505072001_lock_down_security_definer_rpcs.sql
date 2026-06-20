@@ -352,4 +352,4 @@ BEGIN
 END;
 $$;
 
-COMMIT;
+COMMIT;;

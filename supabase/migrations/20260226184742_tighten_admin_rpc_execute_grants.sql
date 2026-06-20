@@ -1,6 +1,3 @@
--- B3: Tighten EXECUTE grants for admin/helper RPC functions.
--- Goal: fail closed for anonymous/public role while preserving authenticated admin flows.
-
 BEGIN;
 
 DO $$
@@ -41,4 +38,4 @@ BEGIN
 END;
 $$;
 
-COMMIT;
+COMMIT;;

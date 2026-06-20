@@ -83,4 +83,4 @@ WITH CHECK (public.is_admin_user());
 CREATE POLICY "Admins delete promo codes"
 ON public.promo_codes FOR DELETE
 TO authenticated
-USING (public.is_admin_user());
+USING (public.is_admin_user());;

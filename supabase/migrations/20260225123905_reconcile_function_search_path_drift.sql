@@ -272,4 +272,4 @@ BEGIN
     DELETE FROM public.otp_codes WHERE expires_at < now();
 END;
 $function$
-;
+;;

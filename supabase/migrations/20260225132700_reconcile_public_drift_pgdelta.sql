@@ -267,4 +267,3 @@ COMMENT ON COLUMN public.orders.payment_method IS 'credit_card or bank_transfer'
 COMMENT ON COLUMN public.orders.payment_status IS 'pending, paid, failed';
 COMMENT ON COLUMN public.orders.tracking_number IS 'Cargo tracking number';
 COMMENT ON COLUMN public.site_settings.vat_rate IS 'Default VAT rate percentage';
-

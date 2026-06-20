@@ -588,4 +588,4 @@ FOR INSERT
 TO authenticated
 WITH CHECK ((user_id = (SELECT auth.uid() AS uid)));
 
-COMMIT;
+COMMIT;;
