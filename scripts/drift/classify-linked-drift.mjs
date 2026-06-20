@@ -48,10 +48,19 @@ function removeFunctionBlocks(sqlText) {
     return sqlText.replace(/CREATE\s+OR\s+REPLACE\s+FUNCTION[\s\S]*?AS\s+(\$[A-Za-z0-9_]*\$|\$\$)[\s\S]*?\1\s*;/gim, "");
 }
 
+function removeMetadataAndPermissions(sqlText) {
+    return sqlText
+        .replace(/GRANT\s+[^;]+;/gim, "")
+        .replace(/REVOKE\s+[^;]+;/gim, "")
+        .replace(/ALTER\s+FUNCTION\s+[^;]+;/gim, "")
+        .replace(/ALTER\s+[A-Za-z0-9_.]+\s+[^;]*?\s+OWNER\s+TO\s+[^;]+;/gim, "");
+}
+
 function hasNonFunctionExecutableSql(sqlText) {
     const withoutPreamble = removeAllowedPreamble(sqlText);
     const withoutFunctions = removeFunctionBlocks(withoutPreamble);
-    const cleaned = stripComments(withoutFunctions).replace(/\s+/g, "").trim();
+    const withoutMetadata = removeMetadataAndPermissions(withoutFunctions);
+    const cleaned = stripComments(withoutMetadata).replace(/\s+/g, "").trim();
     return cleaned.length > 0;
 }
 
@@ -71,11 +80,12 @@ export function classifyLinkedDrift({ driftSql, remoteDumpSql = "" }) {
     };
 
     const driftWithoutPreamble = removeAllowedPreamble(normalizedDrift);
-    const driftContentWithoutComments = stripComments(driftWithoutPreamble).trim();
+    const driftWithoutMetadata = removeMetadataAndPermissions(driftWithoutPreamble);
+    const driftContentWithoutComments = stripComments(driftWithoutMetadata).trim();
 
     if (driftContentWithoutComments.length === 0) {
         result.classification = "no_drift";
-        result.summary = "drift.sql boş veya yalnızca yorum satırları içeriyor.";
+        result.summary = "drift.sql boş veya yalnızca yorum satırları/yetkilendirme/yardımcı ifadeler içeriyor.";
         return result;
     }
 
