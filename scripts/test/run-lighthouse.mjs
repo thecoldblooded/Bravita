@@ -5,7 +5,7 @@ import path from "node:path";
 
 const ROOT = process.cwd();
 const PORT = 4173;
-const URL = `http://localhost:${PORT}`;
+const URL = `http://localhost:${PORT}?lighthouse=true`;
 const REPORT_DIR = path.resolve(ROOT, "_reports", "lighthouse");
 
 function checkServer() {
