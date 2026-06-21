@@ -32,6 +32,18 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
+    preview: {
+      host: "0.0.0.0",
+      port: 4173,
+      proxy: {
+        "/api/auth": {
+          target: bffAuthTarget,
+        },
+        "/api/visitor-counter": {
+          target: bffAuthTarget,
+        },
+      },
+    },
     plugins: [
       ViteImageOptimizer({
         test: /\.(jpe?g|png|tiff|webp|svg|avif)$/i,
@@ -127,7 +139,6 @@ export default defineConfig(({ mode }) => {
             // UI libraries  
             "vendor-ui": ["@radix-ui/react-dialog", "@radix-ui/react-dropdown-menu", "@radix-ui/react-select"],
             // Heavy dependencies
-            "vendor-charts": ["recharts"],
             "vendor-animation": ["gsap", "framer-motion", "motion"],
             // External integrations
             "vendor-external": ["@supabase/supabase-js", "@hcaptcha/react-hcaptcha"],

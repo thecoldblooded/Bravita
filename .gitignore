@@ -71,3 +71,4 @@ performance-optimization.md
 # Sensitive local secrets
 client_secrets.json
 mcp_settings.json
+remote_dump.sql

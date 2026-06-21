@@ -9,7 +9,7 @@ import Index from "./pages/Index";
 import "@/i18n/config"; // Ensure i18n is initialized
 import UnderConstruction from "@/components/common/UnderConstruction";
 import { initializeConsentAwareAnalytics } from "@/lib/performance/loadContentSquare";
-import periodicAlpacaGif from "@/assets/alpaca.gif";
+import periodicAlpacaWebp from "@/assets/alpaca.webp";
 import { ImageWithFallback } from "@/components/common/ImageWithFallback";
 import WelcomeAnimation from "@/components/common/WelcomeAnimation";
 
@@ -48,7 +48,7 @@ const EmailPreview = lazy(() => import("./pages/email/EmailPreview"));
  */
 const MAINTENANCE_MODE = false;
 
-const PERIODIC_IMAGE_URL = periodicAlpacaGif;
+const PERIODIC_IMAGE_URL = periodicAlpacaWebp;
 
 const queryClient = new QueryClient();
 

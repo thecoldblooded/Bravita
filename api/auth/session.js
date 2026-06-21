@@ -50,10 +50,10 @@ export default async function handler(req, res) {
 
     if (!refreshToken) {
       logAuthDiagnostic("session_no_refresh_cookie", req, {
-        status: 401,
+        status: 200,
       });
       res.setHeader("Set-Cookie", buildClearRefreshCookie(req));
-      return sendJson(res, 401, { error: "No active session" });
+      return sendJson(res, 200, null);
     }
 
     // Rotate refresh token on each session bootstrap to reduce token replay window.

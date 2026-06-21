@@ -56,11 +56,94 @@ async function runCommand(cmd, args, stdio = "inherit") {
     });
 }
 
+function loadEnv() {
+    const envCandidates = [
+        path.resolve(ROOT, ".env.local"),
+        path.resolve(ROOT, ".env"),
+    ];
+    for (const envPath of envCandidates) {
+        if (fs.existsSync(envPath)) {
+            const content = fs.readFileSync(envPath, "utf8");
+            for (const line of content.split(/\r?\n/)) {
+                const trimmed = line.trim();
+                if (!trimmed || trimmed.startsWith("#")) continue;
+                const match = trimmed.match(/^(?:export\s+)?([\w.-]+)\s*=\s*(.*)$/);
+                if (match) {
+                    let val = match[2].trim();
+                    if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+                        val = val.slice(1, -1);
+                    }
+                    if (process.env[match[1]] === undefined) {
+                        process.env[match[1]] = val;
+                    }
+                }
+            }
+            break;
+        }
+    }
+}
+
+function checkBffHealth(port) {
+    return new Promise((resolve) => {
+        const req = http.get(`http://127.0.0.1:${port}/healthz`, (res) => {
+            let data = "";
+            res.on("data", (chunk) => { data += chunk; });
+            res.on("end", () => {
+                try {
+                    const parsed = JSON.parse(data);
+                    resolve(parsed && parsed.ok === true && parsed.service === "bff-auth");
+                } catch {
+                    resolve(false);
+                }
+            });
+        });
+        req.on("error", () => resolve(false));
+        req.end();
+    });
+}
+
+async function waitForBff(port, timeoutMs = 15000) {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+        if (await checkBffHealth(port)) {
+            return true;
+        }
+        await new Promise((r) => setTimeout(r, 200));
+    }
+    return false;
+}
+
 async function main() {
+    loadEnv();
+    const bffPort = Number(process.env.BFF_AUTH_PORT || 3901);
+    
+    console.log(`Checking if BFF auth server is already running on port ${bffPort}...`);
+    let isBffRunning = await checkBffHealth(bffPort);
+    let bffProcess = null;
+
+    if (!isBffRunning) {
+        console.log(`Starting BFF auth server on port ${bffPort}...`);
+        const { command: bffCmd, commandArgs: bffArgs } = buildPlatformCommand("node", ["scripts/bff/bff-auth-server.mjs"]);
+        bffProcess = spawn(bffCmd, bffArgs, {
+            stdio: "ignore",
+            env: process.env
+        });
+        isBffRunning = await waitForBff(bffPort);
+        if (!isBffRunning) {
+            console.error("BFF auth server failed to start. Aborting.");
+            if (bffProcess) bffProcess.kill("SIGTERM");
+            process.exit(1);
+        }
+        console.log("BFF auth server started successfully.");
+    } else {
+        console.log("BFF auth server is already running.");
+    }
+
     console.log("Starting production build before Lighthouse audit...");
     const buildCode = await runCommand("npm", ["run", "build"]);
     if (buildCode !== 0) {
         console.error("Build failed. Aborting Lighthouse audit.");
+        if (bffProcess) bffProcess.kill("SIGTERM");
         process.exit(1);
     }
 
@@ -79,6 +162,7 @@ async function main() {
     if (!isServerUp) {
         console.error("Preview server failed to start in time. Aborting.");
         serverProcess.kill("SIGTERM");
+        if (bffProcess) bffProcess.kill("SIGTERM");
         process.exit(1);
     }
 
@@ -102,8 +186,9 @@ async function main() {
         console.error("Failed to run Lighthouse command:", err);
     }
 
-    // Stop preview server
+    // Stop servers
     serverProcess.kill("SIGTERM");
+    if (bffProcess) bffProcess.kill("SIGTERM");
 
     if (lighthouseCode !== 0) {
         console.error("Lighthouse audit process exited with error.");

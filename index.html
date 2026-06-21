@@ -75,9 +75,11 @@
   <!-- <link rel="preload" as="image" href="/src/assets/bravita-bottle1.webp" fetchpriority="high" /> -->
   <!-- Remove GIF preload – non‑critical -->
   <!-- <link rel="preload" as="image" href="/bravita.gif" fetchpriority="high" /> -->
-  <!-- Load Google Fonts (blocking) -->
-  <link rel="stylesheet"
-    href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" />
+  <!-- Load Google Fonts (non-blocking fallback) -->
+  <noscript>
+    <link rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" />
+  </noscript>
 
   <link rel="icon" type="image/x-icon" href="/favicon.ico" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -793,7 +795,7 @@
   <div class="seo-shell-loader" aria-hidden="true">
     <div class="seo-shell-loader__panel" role="status" aria-live="polite" aria-label="Yükleniyor">
       <div class="seo-shell-loader__media">
-        <img src="/bravita.gif" alt="Bravita yükleniyor animasyonu" loading="eager" fetchpriority="high"
+        <img src="/bravita.webp" alt="Bravita yükleniyor animasyonu" loading="eager" fetchpriority="high"
           decoding="sync" />
       </div>
       <span class="seo-shell-loader__label">Yükleniyor</span>
