@@ -19,8 +19,9 @@
     "socket:ci": "node scripts/test/run-socket-ci.mjs",
     "supabase:migration:list": "node scripts/drift/check-linked-migrations.mjs",
     "supabase:drift:check": "node scripts/drift/check-linked-drift.mjs",
-    "security:gate": "npm run socket:ci && npm audit --audit-level=high && npm run checklist && npm run lint && npm run typecheck && npm run typecheck:strict && npm test && npm run react-doctor && npm run build && npm run supabase:migration:list && npm run supabase:drift:check",
-    "release:smoke": "npm run lint && npm run typecheck && npm run typecheck:strict && npm test && npm run react-doctor && npm run build && npm run supabase:migration:list && npm run supabase:drift:check",
+    "lighthouse": "node scripts/test/run-lighthouse.mjs",
+    "security:gate": "npm run socket:ci && npm audit --audit-level=high && npm run checklist && npm run lint && npm run typecheck && npm run typecheck:strict && npm test && npm run react-doctor && npm run build && npm run supabase:migration:list && npm run supabase:drift:check && npm run lighthouse",
+    "release:smoke": "npm run lint && npm run typecheck && npm run typecheck:strict && npm test && npm run react-doctor && npm run build && npm run supabase:migration:list && npm run supabase:drift:check && npm run lighthouse",
     "knip": "knip"
   },
   "dependencies": {
@@ -92,6 +93,7 @@
     "globals": "^17.3.0",
     "jsdom": "^28.1.0",
     "knip": "^6.17.1",
+    "lighthouse": "^12.8.2",
     "postcss": "^8.5.14",
     "sharp": "^0.34.5",
     "supabase": "^2.84.4",
