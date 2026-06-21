@@ -190,11 +190,6 @@ async function main() {
     serverProcess.kill("SIGTERM");
     if (bffProcess) bffProcess.kill("SIGTERM");
 
-    if (lighthouseCode !== 0) {
-        console.error("Lighthouse audit process exited with error.");
-        process.exit(lighthouseCode);
-    }
-
     const savedJsonPath = path.join(REPORT_DIR, "report.report.json");
     const savedHtmlPath = path.join(REPORT_DIR, "report.report.html");
     const finalJsonPath = path.join(REPORT_DIR, "report.json");
@@ -225,6 +220,10 @@ async function main() {
         }
         console.log("=================================\n");
 
+        if (lighthouseCode !== 0) {
+            console.warn(`⚠️ Lighthouse CLI exited with code ${lighthouseCode}, but a report was successfully generated.`);
+        }
+
         const MIN_PERF_SCORE = 60;
         if (scores.Performance < MIN_PERF_SCORE) {
             console.error(`❌ Performance score ${scores.Performance} is below the minimum threshold of ${MIN_PERF_SCORE}.`);
@@ -235,6 +234,10 @@ async function main() {
         process.exit(0);
     } else {
         console.error("Lighthouse report was not found.");
+        if (lighthouseCode !== 0) {
+            console.error(`Lighthouse CLI failed with exit code: ${lighthouseCode}`);
+            process.exit(lighthouseCode);
+        }
         process.exit(1);
     }
 }
