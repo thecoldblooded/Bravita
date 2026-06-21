@@ -4,6 +4,8 @@ import { m } from "framer-motion";
 import TextCursorProximity from "@/components/ui/text-cursor-proximity";
 import { useTranslation } from "react-i18next";
 import bravitaBottle1 from "@/assets/bravita-bottle1.webp";
+import bravitaBottle1Sm from "@/assets/bravita-bottle1-sm.webp";
+import bravitaBottle1Md from "@/assets/bravita-bottle1-md.webp";
 
 // Import from src so Vite includes the asset in the bundle and resolves the correct URL.
 const HERO_LCP_IMAGE_SRC = bravitaBottle1;
@@ -282,10 +284,14 @@ function HeroMainContent({ t, containerRef, bottleRef, accentChars, ingredients 
             <div className="relative animate-float">
               <img
                 src={HERO_LCP_IMAGE_SRC}
+                srcSet={`${bravitaBottle1Sm} 320w, ${bravitaBottle1Md} 640w, ${bravitaBottle1} 800w`}
+                sizes="(max-width: 768px) 100px, 320px"
                 alt="Bravita Sıvı Takviye"
                 loading="eager"
                 decoding="async"
                 fetchPriority="high"
+                width={320}
+                height={566}
                 className="w-45 md:w-65 lg:w-[320px] h-auto max-h-[75vh] object-contain relative z-10 drop-shadow-2xl"
               />
 

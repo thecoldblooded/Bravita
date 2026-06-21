@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-const bravitaGif = "/bravita.gif";
+const bravitaGif = "/bravita.webp";
 
 export const ImageWithFallback = () => {
     const [error, setError] = useState(false);

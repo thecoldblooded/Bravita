@@ -1,4 +1,4 @@
-const bravitaGif = "/bravita.gif";
+const bravitaGif = "/bravita.webp";
 
 /**
  * Under Construction Page

@@ -786,7 +786,7 @@
 
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <script src="/seo-shell-boot.js"></script>
+  <script src="/seo-shell-boot.js" defer></script>
 </head>
 
 <body>
@@ -796,7 +796,7 @@
     <div class="seo-shell-loader__panel" role="status" aria-live="polite" aria-label="Yükleniyor">
       <div class="seo-shell-loader__media">
         <img src="/bravita.webp" alt="Bravita yükleniyor animasyonu" loading="eager" fetchpriority="high"
-          decoding="sync" />
+          decoding="sync" width="128" height="128" />
       </div>
       <span class="seo-shell-loader__label">Yükleniyor</span>
     </div>
@@ -861,8 +861,11 @@
           <div class="seo-hero__visual" aria-hidden="true">
             <div class="seo-hero__glow"></div>
             <div class="seo-bottle-meta">150ml</div>
-            <img src="/src/assets/bravita-bottle1.webp" alt="Bravita Sıvı Takviye" class="seo-bottle" loading="eager"
-              fetchpriority="high" decoding="async" />
+            <img src="/src/assets/bravita-bottle1.webp"
+              srcset="/src/assets/bravita-bottle1-sm.webp 320w, /src/assets/bravita-bottle1-md.webp 640w, /src/assets/bravita-bottle1.webp 800w"
+              sizes="(max-width: 768px) 100px, 320px"
+              alt="Bravita Sıvı Takviye" class="seo-bottle" loading="eager"
+              fetchpriority="high" decoding="async" width="320" height="566" />
             <div class="seo-flavor-card">
               <span>Tutti Frutti & Vanilya</span>
               <strong>Tadı Harika!</strong>
@@ -940,7 +943,7 @@
 
   <div id="root" data-app-root></div>
 
-  <script src="/console-noise-filter.js"></script>
+  <script src="/console-noise-filter.js" defer></script>
   <script type="module" src="/src/main.tsx"></script>
 </body>
 

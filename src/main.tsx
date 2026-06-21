@@ -1,5 +1,6 @@
 import { createRoot } from "react-dom/client";
 import heroShellLcpImageSrc from "@/assets/bravita-bottle1.webp";
+import heroShellLcpImageSrcSm from "@/assets/bravita-bottle1-sm.webp";
 import App from "./App.tsx";
 import "./index.css";
 import "./i18n/config";
@@ -7,8 +8,13 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { CartProvider } from "./contexts/CartContext";
 import { HelmetProvider } from "react-helmet-async";
 
-const HERO_SHELL_LCP_IMAGE_SRC = heroShellLcpImageSrc;
-const SEO_LOADER_GIF_SRC = "/bravita.gif";
+const getHeroLcpImageSrc = () => {
+  if (typeof window === "undefined") return heroShellLcpImageSrc;
+  const isMobile = window.innerWidth <= 768;
+  return isMobile ? heroShellLcpImageSrcSm : heroShellLcpImageSrc;
+};
+
+const SEO_LOADER_GIF_SRC = "/bravita.webp";
 const MIN_SEO_LOADER_VISIBLE_MS = 2200;
 
 const isAuthCallbackRequest = () => {
@@ -149,7 +155,7 @@ const waitForImageReadiness = (src: string) =>
 const waitForVisualReadiness = async () => {
   const tasks = [
     waitForFontReadiness(),
-    waitForImageReadiness(HERO_SHELL_LCP_IMAGE_SRC),
+    waitForImageReadiness(getHeroLcpImageSrc()),
   ];
 
   if (!isAuthCallbackRequest()) {
