@@ -69,6 +69,20 @@ jobs:
 
           supabase link --project-ref "$SUPABASE_PROJECT_REF"
 
+      - name: Pre-pull Supabase edge runtime with retry
+        run: |
+          set -euo pipefail
+          image="public.ecr.aws/supabase/edge-runtime:v1.74.1"
+          for attempt in 1 2 3 4 5; do
+            echo "Pull attempt $attempt for $image"
+            if docker pull "$image"; then
+              exit 0
+            fi
+            sleep $((attempt * 15))
+          done
+          echo "Failed to pull $image after multiple attempts"
+          exit 1
+
       - name: Run release smoke gate
         env:
           CI: true

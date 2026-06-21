@@ -175,7 +175,8 @@ async function main() {
         URL,
         "--output=json,html",
         `--output-path=${reportFilePrefix}`,
-        "--chrome-flags=--headless --no-sandbox --disable-gpu",
+        "--throttling-method=provided",
+        "--chrome-flags=--headless=new --no-sandbox --disable-dev-shm-usage",
         "--only-categories=performance,accessibility,best-practices,seo"
     ];
 

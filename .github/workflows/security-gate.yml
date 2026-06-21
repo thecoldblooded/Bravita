@@ -234,6 +234,21 @@ jobs:
             echo "Current linked ref (masked): ${REF:0:6}*** (len=${#REF})"
           fi
 
+      - name: Pre-pull Supabase edge runtime with retry
+        if: ${{ env.SKIP_SUPABASE != 'true' && env.SKIP_DRIFT != 'true' }}
+        run: |
+          set -euo pipefail
+          image="public.ecr.aws/supabase/edge-runtime:v1.74.1"
+          for attempt in 1 2 3 4 5; do
+            echo "Pull attempt $attempt for $image"
+            if docker pull "$image"; then
+              exit 0
+            fi
+            sleep $((attempt * 15))
+          done
+          echo "Failed to pull $image after multiple attempts"
+          exit 1
+
       - name: Check linked migrations
         if: ${{ env.SKIP_SUPABASE != 'true' && env.SKIP_DRIFT != 'true' }}
         timeout-minutes: 12
