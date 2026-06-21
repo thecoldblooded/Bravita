@@ -710,15 +710,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
           }
         } catch (error) {
-          if (isBffUnavailableAuthError(error)) {
-            if (mounted) {
-              setSession(null);
-              setUserDebug(null);
-              setIsLoading(false);
-              setIsSplashScreenActive(false);
-            }
-          } else {
-            console.error("BFF bootstrap restore error:", error);
+          console.error("BFF bootstrap restore error:", error);
+          if (mounted) {
+            setSession(null);
+            setUserDebug(null);
+            setIsLoading(false);
+            setIsSplashScreenActive(false);
           }
         } finally {
           if (mounted) {
