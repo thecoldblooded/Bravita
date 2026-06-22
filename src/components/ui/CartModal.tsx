@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useReducer } from "react";
+import { useEffect, useMemo, useReducer, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./dialog";
 import { useTranslation } from "react-i18next";
 import { PackageX, ShoppingCart, Sparkles } from "lucide-react";
+const bravitaVideo = "/bravita-optimized.mp4";
 const bravitaGif = "/bravita.webp";
 import { Button } from "./button";
 import { m, AnimatePresence, LazyMotion, domAnimation } from "framer-motion";
@@ -67,6 +68,7 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
     const navigate = useNavigate();
     const { user, isAuthenticated, refreshUserProfile } = useAuth();
     const { addToCart, clearCart, applyPromoCode, removePromoCode, promoCode: contextPromoCode, settings } = useCart();
+    const [videoError, setVideoError] = useState(false);
 
     const [state, dispatch] = useReducer(cartReducer, {
         quantity: 1,
@@ -264,8 +266,22 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
                                         repeat: Infinity,
                                         ease: "easeInOut"
                                     }}
+                                    className="w-20 h-20 flex items-center justify-center overflow-hidden rounded-full bg-white"
                                 >
-                                    <img src={bravitaGif} alt="Loading" className="w-20 h-20" />
+                                    {!videoError ? (
+                                        <video
+                                            src={bravitaVideo}
+                                            autoPlay
+                                            loop
+                                            muted
+                                            playsInline
+                                            preload="auto"
+                                            className="w-full h-full object-contain"
+                                            onError={() => setVideoError(true)}
+                                        />
+                                    ) : (
+                                        <img src={bravitaGif} alt="Loading" className="w-full h-full object-contain" />
+                                    )}
                                 </m.div>
                                 <p className="text-neutral-500 font-medium animate-pulse">{t("common.calculating_price", "Güncel fiyat hesaplanıyor...")}</p>
                             </div>
@@ -407,7 +423,20 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
 
                                         {isCheckingOut ? (
                                             <>
-                                                <img src={bravitaGif} alt="Loading" className="w-6 h-6" />
+                                                {!videoError ? (
+                                                    <video
+                                                        src={bravitaVideo}
+                                                        autoPlay
+                                                        loop
+                                                        muted
+                                                        playsInline
+                                                        preload="auto"
+                                                        className="w-6 h-6 object-contain rounded-full"
+                                                        onError={() => setVideoError(true)}
+                                                    />
+                                                ) : (
+                                                    <img src={bravitaGif} alt="Loading" className="w-6 h-6 object-contain" />
+                                                )}
                                                 <span className="relative z-20">İşleniyor...</span>
                                             </>
                                         ) : (

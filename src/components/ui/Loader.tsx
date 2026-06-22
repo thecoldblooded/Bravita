@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { cn } from "@/lib/utils";
+const bravitaVideo = "/bravita-optimized.mp4";
 const bravitaGif = "/bravita.webp";
 
 interface LoaderProps {
@@ -8,6 +10,8 @@ interface LoaderProps {
 }
 
 export default function Loader({ size = "240px", noMargin = false, className }: LoaderProps) {
+  const [videoError, setVideoError] = useState(false);
+
   return (
     <div
       className={cn("flex w-full items-center justify-center", noMargin ? "m-0" : "my-8", className)}
@@ -22,13 +26,26 @@ export default function Loader({ size = "240px", noMargin = false, className }: 
         )}
         style={{ width: size, height: size }}
       >
-        <img
-          src={bravitaGif}
-          alt="Bravita Loader"
-          loading="eager"
-          decoding="async"
-          className="h-[88%] w-[88%] object-contain"
-        />
+        {!videoError ? (
+          <video
+            src={bravitaVideo}
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="auto"
+            className="h-[88%] w-[88%] object-contain"
+            onError={() => setVideoError(true)}
+          />
+        ) : (
+          <img
+            src={bravitaGif}
+            alt="Bravita Loader"
+            loading="eager"
+            decoding="async"
+            className="h-[88%] w-[88%] object-contain"
+          />
+        )}
         <span className="pointer-events-none absolute inset-0 bg-white/10" />
       </div>
     </div>

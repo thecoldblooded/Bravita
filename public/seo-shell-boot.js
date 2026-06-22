@@ -30,10 +30,4 @@
     } else {
         root.classList.add("seo-shell-skip");
     }
-
-    // Load Google Fonts asynchronously to eliminate render-blocking resource
-    var link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = "https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap";
-    document.head.appendChild(link);
 })();

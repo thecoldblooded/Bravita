@@ -47,7 +47,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       ViteImageOptimizer({
         test: /\.(jpe?g|png|tiff|webp|svg|avif)$/i,
-        exclude: /\.gif$/i,
+        exclude: /(bravita\.webp|\.gif)$/i,
         include: undefined,
         includePublic: true,
         logStats: true,

@@ -15,6 +15,7 @@ const getHeroLcpImageSrc = () => {
 };
 
 const SEO_LOADER_GIF_SRC = "/bravita.webp";
+const SEO_LOADER_VIDEO_SRC = "/bravita-optimized.mp4";
 const MIN_SEO_LOADER_VISIBLE_MS = 2200;
 
 const isAuthCallbackRequest = () => {
@@ -152,6 +153,33 @@ const waitForImageReadiness = (src: string) =>
     }
   });
 
+const waitForVideoReadiness = (src: string) =>
+  new Promise<void>((resolve) => {
+    const video = document.createElement("video");
+    let settled = false;
+
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      resolve();
+    };
+
+    const timeoutId = globalThis.setTimeout(finish, 2000);
+
+    video.oncanplaythrough = () => {
+      globalThis.clearTimeout(timeoutId);
+      finish();
+    };
+
+    video.onerror = () => {
+      globalThis.clearTimeout(timeoutId);
+      finish();
+    };
+
+    video.src = src;
+    video.load();
+  });
+
 const waitForVisualReadiness = async () => {
   const tasks = [
     waitForFontReadiness(),
@@ -160,6 +188,7 @@ const waitForVisualReadiness = async () => {
 
   if (!isAuthCallbackRequest()) {
     tasks.push(waitForImageReadiness(SEO_LOADER_GIF_SRC));
+    tasks.push(waitForVideoReadiness(SEO_LOADER_VIDEO_SRC));
   }
 
   await Promise.all(tasks);

@@ -75,11 +75,9 @@
   <!-- <link rel="preload" as="image" href="/src/assets/bravita-bottle1.webp" fetchpriority="high" /> -->
   <!-- Remove GIF preload – non‑critical -->
   <!-- <link rel="preload" as="image" href="/bravita.gif" fetchpriority="high" /> -->
-  <!-- Load Google Fonts (non-blocking fallback) -->
-  <noscript>
-    <link rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" />
-  </noscript>
+  <!-- Google Fonts – loaded directly to prevent FOUT on production -->
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" />
 
   <link rel="icon" type="image/x-icon" href="/favicon.ico" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -211,7 +209,8 @@
       justify-content: center;
     }
 
-    .seo-shell-loader__media img {
+    .seo-shell-loader__media img,
+    .seo-shell-loader__media video {
       width: 100%;
       height: 100%;
       object-fit: contain;
@@ -795,8 +794,31 @@
   <div class="seo-shell-loader" aria-hidden="true">
     <div class="seo-shell-loader__panel" role="status" aria-live="polite" aria-label="Yükleniyor">
       <div class="seo-shell-loader__media">
-        <img src="/bravita.webp" alt="Bravita yükleniyor animasyonu" loading="eager" fetchpriority="high"
-          decoding="sync" width="128" height="128" />
+        <video
+          id="seo-loader-video"
+          autoplay
+          loop
+          muted
+          playsinline
+          webkit-playsinline
+          preload="auto"
+          width="128"
+          height="128"
+          onerror="this.style.display='none'; var fallback = document.getElementById('seo-loader-fallback'); if (fallback) fallback.style.display='block';"
+        >
+          <source src="/bravita-optimized.mp4" type="video/mp4" />
+        </video>
+        <img
+          id="seo-loader-fallback"
+          src="/bravita.webp"
+          alt="Bravita yükleniyor animasyonu"
+          style="display: none;"
+          loading="eager"
+          fetchpriority="high"
+          decoding="sync"
+          width="128"
+          height="128"
+        />
       </div>
       <span class="seo-shell-loader__label">Yükleniyor</span>
     </div>
