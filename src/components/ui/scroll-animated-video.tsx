@@ -241,7 +241,8 @@ const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
 
             if (cancelled) return;
 
-            if (smoothScroll) {
+            const isMobileDevice = window.matchMedia("(hover: none)").matches || window.innerWidth < 1024;
+            if (smoothScroll && !isMobileDevice) {
                 const try1 = await import("lenis").catch(() => null);
                 Lenis = try1?.default || (try1 as any)?.Lenis || try1;
                 if (Lenis) {

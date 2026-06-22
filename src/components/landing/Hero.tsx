@@ -37,40 +37,58 @@ interface HeroBackgroundVisualsProps {
 }
 
 function HeroBackgroundVisuals({ safeStars, stars, target }: HeroBackgroundVisualsProps) {
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 1024;
+
   return (
     <>
       <div className="absolute inset-0 z-0 pointer-events-none">
         <svg viewBox="0 0 1000 1000" preserveAspectRatio="none" className="w-full h-full">
-          <defs>
-            {safeStars.map((star) => (
-              <linearGradient
-                key={`comet-grad-${star.id}`}
-                id={`comet-grad-${star.id}`}
-                gradientUnits="userSpaceOnUse"
-                x1={star.start[0]}
-                y1={star.start[1]}
-                x2={target[0]}
-                y2={target[1]}
-              >
-                <stop offset="0" stopColor="#f97316" stopOpacity="0">
-                  <animate attributeName="offset" values="-0.6; 0.9" dur="2.5s" begin={`${star.delay}s`} repeatCount="indefinite" />
-                </stop>
-                <stop offset="0" stopColor="#f97316" stopOpacity="0.4">
-                  <animate attributeName="offset" values="-0.3; 1.1" dur="2.5s" begin={`${star.delay}s`} repeatCount="indefinite" />
-                </stop>
-                <stop offset="0" stopColor="#f97316" stopOpacity="1">
-                  <animate attributeName="offset" values="0; 1.3" dur="2.5s" begin={`${star.delay}s`} repeatCount="indefinite" />
-                </stop>
-                <stop offset="0" stopColor="#f97316" stopOpacity="0">
-                  <animate attributeName="offset" values="0.01; 1.31" dur="2.5s" begin={`${star.delay}s`} repeatCount="indefinite" />
-                </stop>
-              </linearGradient>
-            ))}
-          </defs>
+          {!isMobile && (
+            <defs>
+              {safeStars.map((star) => (
+                <linearGradient
+                  key={`comet-grad-${star.id}`}
+                  id={`comet-grad-${star.id}`}
+                  gradientUnits="userSpaceOnUse"
+                  x1={star.start[0]}
+                  y1={star.start[1]}
+                  x2={target[0]}
+                  y2={target[1]}
+                >
+                  <stop offset="0" stopColor="#f97316" stopOpacity="0">
+                    <animate attributeName="offset" values="-0.6; 0.9" dur="2.5s" begin={`${star.delay}s`} repeatCount="indefinite" />
+                  </stop>
+                  <stop offset="0" stopColor="#f97316" stopOpacity="0.4">
+                    <animate attributeName="offset" values="-0.3; 1.1" dur="2.5s" begin={`${star.delay}s`} repeatCount="indefinite" />
+                  </stop>
+                  <stop offset="0" stopColor="#f97316" stopOpacity="1">
+                    <animate attributeName="offset" values="0; 1.3" dur="2.5s" begin={`${star.delay}s`} repeatCount="indefinite" />
+                  </stop>
+                  <stop offset="0" stopColor="#f97316" stopOpacity="0">
+                    <animate attributeName="offset" values="0.01; 1.31" dur="2.5s" begin={`${star.delay}s`} repeatCount="indefinite" />
+                  </stop>
+                </linearGradient>
+              ))}
+            </defs>
+          )}
 
           {safeStars.map((star) => {
             const controlX = (star.start[0] + target[0]) / 2;
             const controlY = (star.start[1] + target[1]) / 2 + (star.start[1] > 500 ? -20 : 20);
+            const pathD = `M ${star.start[0]} ${star.start[1]} Q ${controlX} ${controlY} ${target[0]} ${target[1]}`;
+
+            if (isMobile) {
+              return (
+                <g key={`group-${star.id}`}>
+                  <path
+                    stroke="rgba(249, 115, 22, 0.04)"
+                    strokeWidth="0.5"
+                    fill="none"
+                    d={pathD}
+                  />
+                </g>
+              );
+            }
 
             return (
               <g key={`group-${star.id}`}>
@@ -78,14 +96,12 @@ function HeroBackgroundVisuals({ safeStars, stars, target }: HeroBackgroundVisua
                   stroke="rgba(249, 115, 22, 0.1)"
                   strokeWidth="0.5"
                   fill="none"
-                  initial={{
-                    d: `M ${star.start[0]} ${star.start[1]} Q ${controlX} ${controlY} ${target[0]} ${target[1]}`,
-                  }}
+                  initial={{ d: pathD }}
                   animate={{
                     d: [
-                      `M ${star.start[0]} ${star.start[1]} Q ${controlX} ${controlY} ${target[0]} ${target[1]}`,
+                      pathD,
                       `M ${star.start[0]} ${star.start[1] - star.floatAmount} Q ${controlX} ${controlY - star.floatAmount / 2} ${target[0]} ${target[1]}`,
-                      `M ${star.start[0]} ${star.start[1]} Q ${controlX} ${controlY} ${target[0]} ${target[1]}`,
+                      pathD,
                     ],
                   }}
                   transition={{
@@ -101,14 +117,12 @@ function HeroBackgroundVisuals({ safeStars, stars, target }: HeroBackgroundVisua
                   strokeWidth="1.5"
                   strokeLinecap="round"
                   fill="none"
-                  initial={{
-                    d: `M ${star.start[0]} ${star.start[1]} Q ${controlX} ${controlY} ${target[0]} ${target[1]}`,
-                  }}
+                  initial={{ d: pathD }}
                   animate={{
                     d: [
-                      `M ${star.start[0]} ${star.start[1]} Q ${controlX} ${controlY} ${target[0]} ${target[1]}`,
+                      pathD,
                       `M ${star.start[0]} ${star.start[1] - star.floatAmount} Q ${controlX} ${controlY - star.floatAmount / 2} ${target[0]} ${target[1]}`,
-                      `M ${star.start[0]} ${star.start[1]} Q ${controlX} ${controlY} ${target[0]} ${target[1]}`,
+                      pathD,
                     ],
                   }}
                   transition={{

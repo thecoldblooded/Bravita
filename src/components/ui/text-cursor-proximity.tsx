@@ -1,6 +1,6 @@
 "use client"
 
-import React, { CSSProperties, forwardRef, useEffect, useMemo, useRef, useCallback } from "react"
+import React, { CSSProperties, forwardRef, useEffect, useMemo, useRef, useCallback, useState } from "react"
 import { m, useMotionValue, transform, motionValue, MotionValue } from "framer-motion"
 
 // Helper type that makes all properties of CSSProperties accept number | string
@@ -157,9 +157,24 @@ const TextCursorProximity = forwardRef<HTMLSpanElement, TextProps>(
         const mouseX = useMotionValue(0)
         const mouseY = useMotionValue(0)
         const words = label.split(" ")
+        const [isMobile, setIsMobile] = useState(true)
+
+        useEffect(() => {
+            const checkMobile = () => {
+                setIsMobile(
+                    window.innerWidth < 1024 ||
+                    window.matchMedia("(hover: none)").matches
+                )
+            }
+            checkMobile()
+            window.addEventListener("resize", checkMobile)
+            return () => window.removeEventListener("resize", checkMobile)
+        }, [])
 
         // Track mouse position relative to container using MotionValues with throttle
         useEffect(() => {
+            if (isMobile) return
+
             let rafId: number | null = null
             let lastX = 0
             let lastY = 0
@@ -199,9 +214,11 @@ const TextCursorProximity = forwardRef<HTMLSpanElement, TextProps>(
                 window.removeEventListener("touchmove", handleTouchMove)
                 if (rafId) cancelAnimationFrame(rafId)
             }
-        }, [containerRef, mouseX, mouseY])
+        }, [containerRef, mouseX, mouseY, isMobile])
 
-        const content = (
+        const content = isMobile ? (
+            <>{label}</>
+        ) : (
             <>
                 {words.map((word, wordIndex) => (
                     <span key={wordIndex} className="inline-block whitespace-nowrap">

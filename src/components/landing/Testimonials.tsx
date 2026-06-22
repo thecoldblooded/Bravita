@@ -98,6 +98,10 @@ function VantaBackground() {
 
   const initVanta = useCallback(() => {
     if (!vantaRef.current || vantaEffect.current) return;
+
+    // Do not initialize on mobile/tablet (screen width < 1025px)
+    if (window.innerWidth < 1025) return;
+
     vantaEffect.current = FOG({
       el: vantaRef.current,
       THREE,
@@ -122,8 +126,22 @@ function VantaBackground() {
   }, []);
 
   useEffect(() => {
-    initVanta();
+    const handleResize = () => {
+      if (window.innerWidth < 1025) {
+        if (vantaEffect.current) {
+          vantaEffect.current.destroy();
+          vantaEffect.current = null;
+        }
+      } else {
+        initVanta();
+      }
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+
     return () => {
+      window.removeEventListener("resize", handleResize);
       if (vantaEffect.current) {
         vantaEffect.current.destroy();
         vantaEffect.current = null;
