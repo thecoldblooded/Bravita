@@ -139,7 +139,8 @@ export default defineConfig(({ mode }) => {
                 id.includes("react") ||
                 id.includes("react-dom") ||
                 id.includes("react-router-dom") ||
-                id.includes("react-helmet-async")
+                id.includes("react-helmet-async") ||
+                id.includes("scheduler")
               ) {
                 return "vendor-react";
               }

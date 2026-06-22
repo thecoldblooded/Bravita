@@ -14,6 +14,8 @@
   <link rel="alternate" hreflang="tr" href="https://bravita.com.tr" />
   <link rel="alternate" hreflang="en" href="https://bravita.com.tr" />
   <link rel="alternate" hreflang="x-default" href="https://bravita.com.tr" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#f97316" />
 
   <meta property="og:title" content="Bravita | Çocuklar İçin Sıvı Multivitamin Takviyesi" />
   <meta property="og:description"
@@ -129,20 +131,32 @@
 
     .skip-link {
       position: absolute;
-      left: 16px;
-      top: -56px;
-      z-index: 10000;
-      background: #f97316;
-      color: #fff;
-      padding: 12px 16px;
-      border-radius: 999px;
-      text-decoration: none;
-      font-weight: 800;
-      transition: top 0.2s ease;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
     }
 
     .skip-link:focus {
+      position: fixed;
       top: 16px;
+      left: 16px;
+      width: auto;
+      height: auto;
+      padding: 12px 16px;
+      overflow: visible;
+      clip: auto;
+      white-space: normal;
+      background: #f97316;
+      color: #fff;
+      z-index: 10000;
+      border-radius: 999px;
+      font-weight: 800;
+      text-decoration: none;
     }
 
     #seo-shell {
@@ -860,9 +874,8 @@
           src="/bravita.webp"
           alt="Bravita yükleniyor animasyonu"
           style="display: none;"
-          loading="eager"
-          fetchpriority="high"
-          decoding="sync"
+          loading="lazy"
+          decoding="async"
           width="128"
           height="128"
         />
@@ -995,14 +1008,18 @@
             <h2 id="marka-bilgi-baslik">Bravita ve kurumsal bilgiler</h2>
             <p>
               Bravita, ürün ve marka iletişimini tek bir çatı altında sunarak kullanıcıların resmi bilgilere hızlı
-              şekilde
-              ulaşmasını amaçlar. Çocukların sağlıklı gelişim yolculuğuna modern, sade ve güven veren bir dijital
-              deneyimle
-              eşlik eder.
+              şekilde ulaşmasını amaçlar. Çocukların sağlıklı gelişim yolculuğuna modern, sade ve güven veren bir dijital
+              deneyimle eşlik eder. Formülümüzdeki tüm bileşenler gıda kodeksine ve resmi standartlara tam uyumludur.
+            </p>
+            <p>
+              Ürünümüz T.C. Tarım ve Orman Bakanlığı onaylı ve ruhsatlı tesislerde en yüksek hijyen standartlarında üretilmektedir.
+              Detaylı bilgi almak ve gıda takviyeleri standartlarını incelemek için <a href="https://www.tarimorman.gov.tr" target="_blank" rel="noopener noreferrer">Tarım ve Orman Bakanlığı</a> resmi web sitesini ziyaret edebilirsiniz. Güncel duyurularımız ve sağlıklı yaşam paylaşımlarımız için bizi sosyal mecralarda takip edebilirsiniz.
             </p>
             <div class="seo-legal-links">
               <a href="/gizlilik-politikasi">Gizlilik Politikası</a>
               <a href="/kullanim-kosullari">Kullanım Koşulları</a>
+              <a href="https://instagram.com/bravitatr" target="_blank" rel="noopener noreferrer">Instagram</a>
+              <a href="https://x.com/bravitatr" target="_blank" rel="noopener noreferrer">Twitter / X</a>
             </div>
           </section>
         </div>
