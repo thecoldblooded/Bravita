@@ -5,7 +5,7 @@ import path from "node:path";
 
 const ROOT = process.cwd();
 const PORT = 4173;
-const URL = `http://localhost:${PORT}?lighthouse=true`;
+const URL = `http://127.0.0.1:${PORT}?lighthouse=true`;
 const REPORT_DIR = path.resolve(ROOT, "_reports", "lighthouse");
 
 function checkServer() {
@@ -148,7 +148,15 @@ async function main() {
     }
 
     console.log("Starting preview server...");
-    const { command, commandArgs } = buildPlatformCommand("npx", ["vite", "preview", "--port", String(PORT), "--strictPort"]);
+    const { command, commandArgs } = buildPlatformCommand("npx", [
+        "vite",
+        "preview",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        String(PORT),
+        "--strictPort"
+    ]);
     const serverProcess = spawn(command, commandArgs, {
         stdio: ["ignore", "pipe", "pipe"],
         env: process.env
@@ -176,7 +184,7 @@ async function main() {
         "--output=json,html",
         `--output-path=${reportFilePrefix}`,
         "--throttling-method=provided",
-        "--chrome-flags=--headless=new --no-sandbox --disable-dev-shm-usage",
+        "--chrome-flags=--headless=new --no-sandbox --disable-dev-shm-usage --disable-gpu",
         "--only-categories=performance,accessibility,best-practices,seo"
     ];
 

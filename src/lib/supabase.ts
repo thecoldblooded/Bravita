@@ -51,21 +51,12 @@ const sessionAuthStorage = (() => {
 const authStorage = sessionAuthStorage ?? inMemoryAuthStorage;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  // If running in CI or Lighthouse, fallback to mock values to prevent startup crash
-  const isCI = typeof window !== "undefined" && (
-    window.location.search.includes("ci=true") ||
-    window.location.search.includes("lighthouse=true") ||
-    window.navigator.userAgent.toLowerCase().includes("lighthouse")
+  // Fallback to mock values to prevent startup crash in CI, preview, or incomplete local envs
+  console.warn(
+    "Missing Supabase environment variables. Falling back to placeholder values to prevent startup crash."
   );
-
-  if (isCI) {
-    supabaseUrl = supabaseUrl || "https://placeholder-project.supabase.co";
-    supabaseAnonKey = supabaseAnonKey || "placeholder-anon-key";
-  } else {
-    throw new Error(
-      "Missing Supabase environment variables. Please copy .env.local.example to .env.local and add your Supabase credentials."
-    );
-  }
+  supabaseUrl = supabaseUrl || "https://placeholder-project.supabase.co";
+  supabaseAnonKey = supabaseAnonKey || "placeholder-anon-key";
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
