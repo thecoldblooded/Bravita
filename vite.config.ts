@@ -135,39 +135,12 @@ export default defineConfig(({ mode }) => {
         output: {
           manualChunks(id) {
             if (id.includes("node_modules")) {
-              if (
-                id.includes("react") ||
-                id.includes("react-dom") ||
-                id.includes("react-router-dom") ||
-                id.includes("react-helmet-async") ||
-                id.includes("scheduler")
-              ) {
-                return "vendor-react";
+              const parts = id.toString().split("node_modules/");
+              const pathParts = parts[parts.length - 1].split("/");
+              if (pathParts[0].startsWith("@")) {
+                return `${pathParts[0].replace("@", "")}-${pathParts[1]}`;
               }
-              if (id.includes("@supabase")) {
-                return "vendor-supabase";
-              }
-              if (id.includes("framer-motion") || id.includes("gsap")) {
-                return "vendor-animation";
-              }
-              if (id.includes("three") || id.includes("vanta")) {
-                return "vendor-graphics";
-              }
-              if (id.includes("recharts") || id.includes("d3")) {
-                return "vendor-charts";
-              }
-              if (id.includes("lucide-react")) {
-                return "vendor-icons";
-              }
-              if (
-                id.includes("@radix-ui") ||
-                id.includes("class-variance-authority") ||
-                id.includes("tailwind-merge") ||
-                id.includes("clsx")
-              ) {
-                return "vendor-ui-core";
-              }
-              return "vendor-others";
+              return pathParts[0];
             }
           },
         },
