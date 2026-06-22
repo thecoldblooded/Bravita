@@ -96,6 +96,7 @@
     "postcss": "^8.5.14",
     "sharp": "^0.34.5",
     "supabase": "^2.84.4",
+    "svgo": "^4.0.1",
     "tailwindcss": "^4.1.18",
     "tar": "^7.5.10",
     "typescript": "^5.9.3",
