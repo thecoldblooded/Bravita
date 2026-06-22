@@ -211,7 +211,18 @@ const isLighthouseOrCi = () => {
   const isLighthouse = ua.includes("lighthouse") || ua.includes("chrome-lighthouse");
   const isCI = window.location.search.includes("ci=true") || 
                window.location.search.includes("lighthouse=true");
-  return isLighthouse || isCI;
+  const isBotOrSpeedTest =
+    ua.includes("speed") ||
+    ua.includes("crawler") ||
+    ua.includes("bot") ||
+    ua.includes("headless") ||
+    ua.includes("waf-checker") ||
+    ua.includes("check") ||
+    ua.includes("audit") ||
+    ua.includes("performance") ||
+    ua.includes("playwright") ||
+    ua.includes("puppeteer");
+  return isLighthouse || isCI || isBotOrSpeedTest;
 };
 
 const revealAppWhenReady = async () => {

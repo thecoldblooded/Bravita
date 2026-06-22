@@ -129,10 +129,46 @@ export default defineConfig(({ mode }) => {
       drop: mode === "production" ? ["console", "debugger"] : [],
     },
     build: {
-      chunkSizeWarningLimit: 10000,
+      chunkSizeWarningLimit: 800,
       // Improved code splitting for better caching
       rollupOptions: {
         output: {
+          manualChunks(id) {
+            if (id.includes("node_modules")) {
+              if (
+                id.includes("react") ||
+                id.includes("react-dom") ||
+                id.includes("react-router-dom") ||
+                id.includes("react-helmet-async")
+              ) {
+                return "vendor-react";
+              }
+              if (id.includes("@supabase")) {
+                return "vendor-supabase";
+              }
+              if (id.includes("framer-motion") || id.includes("gsap")) {
+                return "vendor-animation";
+              }
+              if (id.includes("three") || id.includes("vanta")) {
+                return "vendor-graphics";
+              }
+              if (id.includes("recharts") || id.includes("d3")) {
+                return "vendor-charts";
+              }
+              if (id.includes("lucide-react")) {
+                return "vendor-icons";
+              }
+              if (
+                id.includes("@radix-ui") ||
+                id.includes("class-variance-authority") ||
+                id.includes("tailwind-merge") ||
+                id.includes("clsx")
+              ) {
+                return "vendor-ui-core";
+              }
+              return "vendor-others";
+            }
+          },
         },
         onwarn(warning, warn) {
           const warningMessage = typeof warning === "string" ? warning : warning.message;

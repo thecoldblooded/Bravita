@@ -455,6 +455,64 @@ serve(async (req: Request) => {
             });
         }
 
+        // 3.6 Trigger Webhook (Send order details to n8n)
+        if (type === "order_confirmation") {
+            try {
+                const webhookUrl = Deno.env.get("WEBHOOK_URL") || "https://n8n.umutdogan.space/webhook-test/bravita";
+                const address = order.shipping_address;
+                const addressString = address
+                    ? `${address.street}, ${address.district || ""}, ${address.city} ${address.postal_code || ""}`
+                    : "Adres bilgisi bulunamadı";
+
+                const webhookBody = {
+                    event: "new_order_confirmed",
+                    order_id: order.id,
+                    order_number: order.id.substring(0, 8).toUpperCase(),
+                    date: order.created_at,
+                    payment_method: order.payment_method === "credit_card" ? "Kredi Kartı" : "Havale / EFT",
+                    payment_status: order.payment_status,
+                    customer: {
+                        full_name: order.user.full_name || "Müşterimiz",
+                        email: order.user.email,
+                        phone: order.user.phone || address?.phone || ""
+                    },
+                    shipping_address: {
+                        street: address?.street || "",
+                        district: address?.district || "",
+                        city: address?.city || "",
+                        postal_code: address?.postal_code || "",
+                        full_address: addressString
+                    },
+                    order_details: {
+                        items: (order.order_details?.items || []).map((item: any) => ({
+                            product_name: item.product_name,
+                            quantity: item.quantity,
+                            unit_price: item.unit_price,
+                            subtotal: item.subtotal
+                        })),
+                        subtotal: order.order_details?.subtotal || 0,
+                        discount: order.order_details?.discount || 0,
+                        vat_amount: order.order_details?.vat_amount || 0,
+                        shipping_cost: order.order_details?.shipping_cost || 0,
+                        total: order.order_details?.total || 0,
+                        promo_code: order.order_details?.promo_code || null,
+                        bank_reference: order.order_details?.bank_reference || null
+                    },
+                    timestamp: new Date().toISOString()
+                };
+
+                await fetch(webhookUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(webhookBody)
+                }).catch((err) => {
+                    console.error("Webhook fetch failed:", err);
+                });
+            } catch (webhookErr) {
+                console.error("Webhook processing failed:", webhookErr);
+            }
+        }
+
         if (type !== "order_confirmation" && order.user.order_notifications === false) {
             return new Response(JSON.stringify({ message: "User disabled notifications", skipped: true }), {
                 headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
@@ -567,7 +625,7 @@ async function fetchOrderData(supabase: any, order_id: string) {
         .select(`
             *,
             shipping_address:addresses(*),
-            user:profiles(id, email, full_name, order_notifications, is_admin)
+            user:profiles(id, email, full_name, phone, order_notifications, is_admin)
         `)
         .eq("id", order_id)
         .single();

@@ -639,35 +639,7 @@ export async function createOrder(params: CreateOrderParams): Promise<CreateOrde
             // Email hatası sipariş başarısını etkilemesin.
         }
 
-        // Webhook: yeni siparişi n8n'e bildir (fire and forget)
-        try {
-            const webhookUrl = "https://n8n.umutdogan.space/webhook-test/bravita";
-            const webhookBody = {
-                event: "new_order",
-                order_id: data.order_id,
-                bank_reference: data.bank_reference,
-                payment_method: paymentMethod,
-                items: rpcItems.map((item, idx) => ({
-                    product_id: item.product_id,
-                    product_name: items[idx]?.name,
-                    quantity: item.quantity,
-                    unit_price: items[idx]?.price,
-                })),
-                subtotal,
-                vat_amount: vatAmount,
-                total,
-                promo_code: promoCode || null,
-                shipping_address_id: shippingAddressId,
-                timestamp: new Date().toISOString(),
-            };
-            fetch(webhookUrl, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(webhookBody),
-            }).catch(() => { });
-        } catch {
-            // Webhook hatası sipariş başarısını etkilemesin.
-        }
+
 
         return {
             success: true,
