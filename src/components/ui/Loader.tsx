@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 const bravitaVideo = "/bravita-optimized.mp4";
 const bravitaGif = "/bravita.webp";
@@ -11,6 +11,29 @@ interface LoaderProps {
 
 export default function Loader({ size = "240px", noMargin = false, className }: LoaderProps) {
   const [videoError, setVideoError] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (videoError || !videoRef.current) return;
+    const video = videoRef.current;
+
+    // Check if autoplay is blocked
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {
+        setVideoError(true);
+      });
+    }
+
+    // Backup timeout for stalled/blocked playback
+    const timeout = setTimeout(() => {
+      if (video.paused || video.currentTime === 0) {
+        setVideoError(true);
+      }
+    }, 1200);
+
+    return () => clearTimeout(timeout);
+  }, [videoError]);
 
   return (
     <div
@@ -28,6 +51,7 @@ export default function Loader({ size = "240px", noMargin = false, className }: 
       >
         {!videoError ? (
           <video
+            ref={videoRef}
             src={bravitaVideo}
             autoPlay
             loop

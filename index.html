@@ -865,9 +865,8 @@
           preload="auto"
           width="128"
           height="128"
-          onerror="this.style.display='none'; var fallback = document.getElementById('seo-loader-fallback'); if (fallback) fallback.style.display='block';"
         >
-          <source src="/bravita-optimized.mp4" type="video/mp4" />
+          <source src="/bravita-optimized.mp4" type="video/mp4" onerror="var video = document.getElementById('seo-loader-video'); if (video) video.style.display='none'; var fallback = document.getElementById('seo-loader-fallback'); if (fallback) fallback.style.display='block';" />
         </video>
         <img
           id="seo-loader-fallback"
@@ -879,6 +878,31 @@
           width="128"
           height="128"
         />
+        <script>
+          (function() {
+            var video = document.getElementById('seo-loader-video');
+            var fallback = document.getElementById('seo-loader-fallback');
+            if (video && fallback) {
+              video.addEventListener('error', function() {
+                video.style.display = 'none';
+                fallback.style.display = 'block';
+              });
+              var playPromise = video.play();
+              if (playPromise !== undefined) {
+                playPromise.catch(function() {
+                  video.style.display = 'none';
+                  fallback.style.display = 'block';
+                });
+              }
+              setTimeout(function() {
+                if (video.paused || video.currentTime === 0) {
+                  video.style.display = 'none';
+                  fallback.style.display = 'block';
+                }
+              }, 1200);
+            }
+          })();
+        </script>
       </div>
       <span class="seo-shell-loader__label">Yükleniyor</span>
     </div>
