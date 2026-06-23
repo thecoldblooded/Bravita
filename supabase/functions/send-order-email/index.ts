@@ -458,7 +458,7 @@ serve(async (req: Request) => {
         // 3.6 Trigger Webhook (Send order details to n8n)
         if (type === "order_confirmation") {
             try {
-                const webhookUrl = Deno.env.get("WEBHOOK_URL_SIPARIS") || "https://n8n.umutdogan.space/webhook-test/bravita-siparis";
+                const webhookUrl = Deno.env.get("WEBHOOK_URL_SIPARIS");
                 const address = order.shipping_address;
                 const addressString = address
                     ? `${address.street}, ${address.district || ""}, ${address.city} ${address.postal_code || ""}`

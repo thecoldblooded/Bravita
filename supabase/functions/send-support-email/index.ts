@@ -775,13 +775,13 @@ function parseConversation(rawMessage: string): ConversationMessage[] {
 
 async function triggerSupportWebhook(type: string, ticket: any) {
     try {
-        const webhookUrl = Deno.env.get("WEBHOOK_URL_SORU") || "https://n8n.umutdogan.space/webhook-test/bravita-soru";
+        const webhookUrl = Deno.env.get("WEBHOOK_URL_SORU");
         const conversation = parseConversation(ticket.message || "");
-        
+
         let kimden: any = {};
         let mevcutMesaj = "";
         let oncekiMesajlar: any[] = [];
-        
+
         const isRegistered = !!ticket.user_id;
         const kullaniciTuru = isRegistered ? "Kayıtlı Kullanıcı" : "Kayıtsız Kullanıcı";
 
@@ -803,7 +803,7 @@ async function triggerSupportWebhook(type: string, ticket: any) {
                 user_id: ticket.user_id || null,
             };
             mevcutMesaj = latestMsg ? latestMsg.text : (ticket.message || "");
-            
+
             const previousSubset = conversation.slice(0, -1);
             oncekiMesajlar = previousSubset.slice(-3).map(msg => ({
                 sender: msg.isAdmin ? "Admin" : `${kullaniciTuru} (${ticket.name})`,
