@@ -606,6 +606,16 @@ serve(async (req: Request) => {
             });
         }
 
+        // Trigger Webhook for Support Questions (Non-blocking)
+        if (
+            normalizedType === "user_replied" ||
+            (normalizedType === "ticket_created" && !isAdmin)
+        ) {
+            triggerSupportWebhook(normalizedType, ticket).catch((err) => {
+                console.error("Support Webhook execution error:", err);
+            });
+        }
+
         const SUPPORT_EMAIL = Deno.env.get("SUPPORT_EMAIL_NOTIFY") || "support@bravita.com.tr";
 
         // 4. Prepare Email Content
@@ -731,6 +741,111 @@ serve(async (req: Request) => {
         });
     }
 });
+
+interface ConversationMessage {
+    text: string;
+    header: string;
+    isAdmin: boolean;
+}
+
+function parseConversation(rawMessage: string): ConversationMessage[] {
+    if (!rawMessage) return [];
+    const parts = rawMessage.split(/\n\n--- (.*?) ---\n/);
+    const messages: ConversationMessage[] = [];
+    if (parts[0]) {
+        messages.push({
+            text: parts[0].trim(),
+            isAdmin: false,
+            header: "Orijinal Talep"
+        });
+    }
+    for (let i = 1; i < parts.length; i += 2) {
+        const header = parts[i];
+        const text = parts[i + 1];
+        if (header && text) {
+            messages.push({
+                text: text.trim(),
+                header: header.trim(),
+                isAdmin: header.toLowerCase().includes("admin") || header.toLowerCase().includes("yanıtlandı")
+            });
+        }
+    }
+    return messages;
+}
+
+async function triggerSupportWebhook(type: string, ticket: any) {
+    try {
+        const webhookUrl = Deno.env.get("WEBHOOK_URL_SORU") || "https://n8n.umutdogan.space/webhook-test/bravita-soru";
+        const conversation = parseConversation(ticket.message || "");
+        
+        let kimden: any = {};
+        let mevcutMesaj = "";
+        let oncekiMesajlar: any[] = [];
+        
+        const isRegistered = !!ticket.user_id;
+        const kullaniciTuru = isRegistered ? "Kayıtlı Kullanıcı" : "Kayıtsız Kullanıcı";
+
+        if (type === "ticket_created") {
+            kimden = {
+                isim: ticket.name || "Ziyaretçi",
+                eposta: ticket.email || "",
+                kullanici_turu: kullaniciTuru,
+                user_id: ticket.user_id || null,
+            };
+            mevcutMesaj = ticket.message || "";
+            oncekiMesajlar = [];
+        } else if (type === "user_replied") {
+            const latestMsg = conversation.length > 0 ? conversation[conversation.length - 1] : null;
+            kimden = {
+                isim: ticket.name || "Ziyaretçi",
+                eposta: ticket.email || "",
+                kullanici_turu: kullaniciTuru,
+                user_id: ticket.user_id || null,
+            };
+            mevcutMesaj = latestMsg ? latestMsg.text : (ticket.message || "");
+            
+            const previousSubset = conversation.slice(0, -1);
+            oncekiMesajlar = previousSubset.slice(-3).map(msg => ({
+                sender: msg.isAdmin ? "Admin" : `${kullaniciTuru} (${ticket.name})`,
+                message: msg.text,
+                date_info: msg.header,
+            }));
+        }
+
+        const payload = {
+            event: type,
+            ne_zaman: new Date().toISOString(),
+            kimden,
+            mevcut_mesaj: mevcutMesaj,
+            onceki_mesajlar: oncekiMesajlar,
+            ticket_detaylari: {
+                id: ticket.id,
+                subject: ticket.subject,
+                category: ticket.category,
+                status: ticket.status,
+                created_at: ticket.created_at,
+                updated_at: ticket.updated_at,
+            },
+        };
+
+        console.log(`Triggering webhook ${webhookUrl} for event ${type}`);
+        const res = await fetch(webhookUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+            console.error(`Webhook trigger returned status: ${res.status}`);
+        } else {
+            console.log(`Webhook triggered successfully for ticket: ${ticket.id}`);
+        }
+    } catch (err) {
+        console.error("Error triggering support webhook:", err);
+    }
+}
 
 /**
  * Prepares support email content using database templates.
