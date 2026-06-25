@@ -683,7 +683,7 @@ export default function AdminSupport() {
                 </Dialog>
 
                 <AlertDialog open={isCloseDialogOpen} onOpenChange={setIsCloseDialogOpen}>
-                    <AlertDialogContent className="bg-card border-border z-101 max-w-md">
+                    <AlertDialogContent className="bg-card border-border max-w-md">
                         <AlertDialogHeader>
                             <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4 mx-auto">
                                 <AlertCircle className="w-6 h-6 text-destructive" />
