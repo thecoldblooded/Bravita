@@ -841,16 +841,26 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
   const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null);
 
   const getOrCreateRecaptchaVerifier = (): RecaptchaVerifier => {
+    // Always clear previous verifier to avoid stale state
     if (recaptchaVerifierRef.current) {
-      return recaptchaVerifierRef.current;
+      try {
+        recaptchaVerifierRef.current.clear();
+      } catch {
+        // ignore clear errors
+      }
+      recaptchaVerifierRef.current = null;
     }
 
-    let container = document.getElementById("recaptcha-container");
-    if (!container) {
-      container = document.createElement("div");
-      container.id = "recaptcha-container";
-      document.body.appendChild(container);
+    // Remove old container if it exists
+    const oldContainer = document.getElementById("recaptcha-container");
+    if (oldContainer) {
+      oldContainer.remove();
     }
+
+    // Create a fresh container
+    const container = document.createElement("div");
+    container.id = "recaptcha-container";
+    document.body.appendChild(container);
 
     const verifier = new RecaptchaVerifier(auth, "recaptcha-container", {
       size: "invisible",
@@ -859,6 +869,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
       },
       "expired-callback": () => {
         toast.error("reCAPTCHA süresi doldu. Lütfen tekrar deneyin.");
+        recaptchaVerifierRef.current = null;
       },
     });
 
@@ -890,8 +901,26 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
       setOtpSent(true);
       setCountdown(180); // 3 mins
       toast.success("Doğrulama kodu SMS ile gönderildi.");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Bir hata oluştu.";
+    } catch (err: unknown) {
+      // Provide more specific error messages based on Firebase error codes
+      const firebaseError = err as { code?: string; message?: string };
+      let message = "SMS gönderilemedi. Lütfen tekrar deneyin.";
+      
+      if (firebaseError.code === "auth/network-request-failed") {
+        message = "Ağ bağlantısı hatası. İnternet bağlantınızı kontrol edip tekrar deneyin.";
+      } else if (firebaseError.code === "auth/too-many-requests") {
+        message = "Çok fazla istek gönderildi. Lütfen biraz bekleyip tekrar deneyin.";
+      } else if (firebaseError.code === "auth/invalid-phone-number") {
+        message = "Geçersiz telefon numarası. Lütfen kontrol edip tekrar deneyin.";
+      } else if (firebaseError.code === "auth/quota-exceeded") {
+        message = "SMS kotası doldu. Lütfen daha sonra tekrar deneyin.";
+      } else if (firebaseError.code === "auth/captcha-check-failed") {
+        message = "reCAPTCHA doğrulaması başarısız. Sayfayı yenileyip tekrar deneyin.";
+      } else if (err instanceof Error) {
+        message = err.message;
+      }
+      
+      console.error("Firebase Phone Auth Error:", firebaseError.code, err);
       toast.error(message);
       
       // Clear reCAPTCHA on failure to allow retry
