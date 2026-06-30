@@ -19,6 +19,7 @@ export interface BffSignupRequest {
   email: string;
   password: string;
   captchaToken?: string;
+  phoneVerificationToken?: string;
   profileData: Record<string, unknown>;
 }
 
@@ -217,6 +218,17 @@ export async function logoutBffSession() {
     method: "POST",
     body: "{}",
     ignoreUnauthorized: true,
+  });
+}
+
+export async function updateProfileWithBff(payload: {
+  full_name: string;
+  phone: string;
+  phoneVerificationToken?: string;
+}) {
+  return authRequest<{ success: boolean; profile: any }>("/api/auth/update-profile", {
+    method: "POST",
+    body: JSON.stringify(payload),
   });
 }
 

@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
+import { updateProfileWithBff } from "@/lib/auth/bffAuth";
 import Loader from "@/components/ui/Loader";
 import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
@@ -24,6 +25,82 @@ export function ProfileInfo() {
     const [isSaving, setIsSaving] = useState(false);
     const hasInitialized = useRef(false);
     const hasUserEdited = useRef(false);
+
+    const [otpSent, setOtpSent] = useState(false);
+    const [phoneVerified, setPhoneVerified] = useState(false);
+    const [otpCode, setOtpCode] = useState("");
+    const [verificationToken, setVerificationToken] = useState("");
+    const [isSendingOtp, setIsSendingOtp] = useState(false);
+    const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+    const [countdown, setCountdown] = useState(0);
+
+    const isPhoneChanged = formData.phone !== (user?.phone || "");
+
+    useEffect(() => {
+        if (countdown <= 0) return;
+        const timer = setInterval(() => {
+            setCountdown((prev) => prev - 1);
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [countdown]);
+
+    const handleSendOtp = async () => {
+        if (!formData.phone || !isValidPhoneNumber(formData.phone)) {
+            toast.error(t("auth.validation.phone_invalid"));
+            return;
+        }
+
+        setIsSendingOtp(true);
+        try {
+            const response = await fetch("/api/auth/send-otp", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ phone: formData.phone }),
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || "OTP gönderimi başarısız.");
+            }
+
+            setOtpSent(true);
+            setCountdown(180);
+            toast.success("Doğrulama kodu WhatsApp ile gönderildi.");
+        } catch (err: any) {
+            toast.error(err.message || "Bir hata oluştu.");
+        } finally {
+            setIsSendingOtp(false);
+        }
+    };
+
+    const handleVerifyOtp = async () => {
+        if (!otpCode || otpCode.length !== 6) {
+            toast.error("Lütfen 6 haneli doğrulama kodunu girin.");
+            return;
+        }
+
+        setIsVerifyingOtp(true);
+        try {
+            const response = await fetch("/api/auth/verify-otp", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ phone: formData.phone, code: otpCode }),
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || "Kod doğrulanamadı.");
+            }
+
+            setPhoneVerified(true);
+            setVerificationToken(data.token);
+            toast.success("Telefon numaranız başarıyla doğrulandı.");
+        } catch (err: any) {
+            toast.error(err.message || "Bir hata oluştu.");
+        } finally {
+            setIsVerifyingOtp(false);
+        }
+    };
 
     useEffect(() => {
         if (!user) return;
@@ -88,30 +165,32 @@ export function ProfileInfo() {
             return;
         }
 
+        if (isPhoneChanged && !phoneVerified) {
+            toast.error("Lütfen önce yeni telefon numaranızı WhatsApp ile doğrulayın.");
+            return;
+        }
+
         setIsSaving(true);
         try {
-            const { data, error } = await supabase
-                .from("profiles")
-                .update({
-                    full_name: formData.full_name,
-                    phone: formData.phone,
-                    updated_at: new Date().toISOString(),
-                })
-                .eq("id", user.id)
-                .select();
+            const updatePayload = {
+                full_name: formData.full_name,
+                phone: formData.phone,
+                ...(isPhoneChanged ? { phoneVerificationToken: verificationToken } : {})
+            };
 
-            if (error) {
-                console.error("Supabase error details:", {
-                    message: error.message,
-                    code: error.code,
-                    details: error.details,
-                    hint: error.hint,
-                });
-                throw error;
+            const result = await updateProfileWithBff(updatePayload);
+            if (!result?.success) {
+                throw new Error("Profil güncellenemedi.");
             }
 
             await refreshUserProfile();
             toast.success(t("profile.info.save_success"));
+            
+            // Reset verification state on success
+            setOtpSent(false);
+            setPhoneVerified(false);
+            setOtpCode("");
+            setVerificationToken("");
         } catch (error) {
             toast.error(t("profile.info.save_error"));
         } finally {
@@ -161,25 +240,81 @@ export function ProfileInfo() {
 
                 <div className="space-y-2">
                     <Label htmlFor="phone">{t("profile.info.phone_label")}</Label>
-                    <PhoneInput
-                        international
-                        countryCallingCodeEditable={false}
-                        defaultCountry="TR"
-                        placeholder={t("profile.info.phone_placeholder")}
-                        value={formData.phone}
-                        onChange={(value) => {
-                            hasUserEdited.current = true;
-                            setFormData({ ...formData, phone: value || "" });
-                        }}
-                        disabled={isSaving}
-                        className="flex h-10 rounded-md border border-gray-300 bg-white px-3 py-2 text-base ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    />
+                    <div className="flex gap-2">
+                        <PhoneInput
+                            id="phone"
+                            international
+                            countryCallingCodeEditable={false}
+                            defaultCountry="TR"
+                            placeholder={t("profile.info.phone_placeholder")}
+                            value={formData.phone}
+                            onChange={(value) => {
+                                hasUserEdited.current = true;
+                                setFormData({ ...formData, phone: value || "" });
+                            }}
+                            disabled={isSaving || (isPhoneChanged && phoneVerified)}
+                            className="flex h-10 rounded-md border border-gray-300 bg-white px-3 py-2 text-base ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 flex-1"
+                        />
+                        {isPhoneChanged && (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={handleSendOtp}
+                                disabled={isSaving || isSendingOtp || phoneVerified || countdown > 0}
+                                className="h-10 text-xs px-3 border-orange-200 text-orange-700 hover:bg-orange-50 shrink-0"
+                            >
+                                {isSendingOtp ? (
+                                    <Loader size="1rem" noMargin />
+                                ) : countdown > 0 ? (
+                                    `${countdown}s`
+                                ) : otpSent ? (
+                                    "Tekrar Gönder"
+                                ) : (
+                                    "Yeni Numarayı Doğrula"
+                                )}
+                            </Button>
+                        )}
+                    </div>
                 </div>
+
+                {isPhoneChanged && otpSent && !phoneVerified && (
+                    <div className="bg-orange-50/50 p-4 rounded-xl border border-orange-100/50 space-y-3">
+                        <Label className="text-sm font-medium text-gray-700">Doğrulama Kodu</Label>
+                        <div className="flex gap-2">
+                            <Input
+                                type="text"
+                                maxLength={6}
+                                placeholder="6 Haneli Kod"
+                                value={otpCode}
+                                onChange={(e) => setOtpCode(e.target.value.replace(/[^0-9]/g, ""))}
+                                disabled={isSaving || isVerifyingOtp}
+                                className="flex-1 text-center font-semibold tracking-widest text-lg"
+                            />
+                            <Button
+                                type="button"
+                                onClick={handleVerifyOtp}
+                                disabled={isSaving || isVerifyingOtp || otpCode.length !== 6}
+                                className="bg-orange-500 hover:bg-orange-600 text-white shrink-0"
+                            >
+                                {isVerifyingOtp ? <Loader size="1rem" noMargin /> : "Doğrula"}
+                            </Button>
+                        </div>
+                        <p className="text-[11px] text-gray-500">
+                            Yeni telefonunuza gönderilen 6 haneli doğrulama kodunu giriniz.
+                        </p>
+                    </div>
+                )}
+
+                {isPhoneChanged && phoneVerified && (
+                    <div className="bg-green-50 text-green-700 border border-green-200 px-3 py-2 rounded-lg text-xs font-semibold flex items-center justify-between">
+                        <span>Yeni Telefon Numarası Doğrulandı ✓</span>
+                    </div>
+                )}
 
                 <div className="pt-4 flex justify-end">
                     <Button
                         type="submit"
-                        disabled={isSaving}
+                        disabled={isSaving || (isPhoneChanged && !phoneVerified)}
                         className="bg-orange-500 hover:bg-orange-600 text-white min-w-30"
                     >
                         {isSaving ? (

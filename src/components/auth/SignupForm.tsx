@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useRef, lazy, Suspense, type RefObject } from "react";
+import { useEffect, useReducer, useRef, lazy, Suspense, useState, type RefObject } from "react";
 import type HCaptcha from "@hcaptcha/react-hcaptcha";
 const HCaptchaComponent = lazy(() => import("@hcaptcha/react-hcaptcha"));
 import { useTranslation } from "react-i18next";
@@ -411,6 +411,15 @@ type IndividualSignupContentProps = {
   hcaptchaSiteKey: string;
   captchaRef: RefObject<HCaptcha>;
   onTokenChange: (token: string | null) => void;
+  otpSent: boolean;
+  phoneVerified: boolean;
+  otpCode: string;
+  setOtpCode: (val: string) => void;
+  countdown: number;
+  isSendingOtp: boolean;
+  isVerifyingOtp: boolean;
+  onSendOtp: () => Promise<void>;
+  onVerifyOtp: () => Promise<void>;
 };
 
 function IndividualSignupContent({
@@ -423,6 +432,15 @@ function IndividualSignupContent({
   hcaptchaSiteKey,
   captchaRef,
   onTokenChange,
+  otpSent,
+  phoneVerified,
+  otpCode,
+  setOtpCode,
+  countdown,
+  isSendingOtp,
+  isVerifyingOtp,
+  onSendOtp,
+  onVerifyOtp,
 }: IndividualSignupContentProps) {
   const hasAcceptedAll =
     form.watch("agreeTerms") && form.watch("agreePrivacy") && form.watch("agreeKvkk");
@@ -476,22 +494,75 @@ function IndividualSignupContent({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>{t("auth.phone")} *</FormLabel>
-                <FormControl>
-                  <PhoneInput
-                    international
-                    countryCallingCodeEditable={false}
-                    defaultCountry="TR"
-                    placeholder={t("auth.phone_placeholder")}
-                    value={field.value}
-                    onChange={field.onChange}
-                    disabled={isLoading}
-                    className="flex h-10 rounded-md border border-gray-300 bg-white px-3 py-2 text-base ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                </FormControl>
+                <div className="flex gap-2">
+                  <FormControl className="flex-1">
+                    <PhoneInput
+                      international
+                      countryCallingCodeEditable={false}
+                      defaultCountry="TR"
+                      placeholder={t("auth.phone_placeholder")}
+                      value={field.value}
+                      onChange={field.onChange}
+                      disabled={isLoading || phoneVerified}
+                      className="flex h-10 rounded-md border border-gray-300 bg-white px-3 py-2 text-base ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 flex-1"
+                    />
+                  </FormControl>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onSendOtp}
+                    disabled={isLoading || isSendingOtp || phoneVerified || !field.value || countdown > 0}
+                    className="h-10 text-xs px-3 border-orange-200 text-orange-700 hover:bg-orange-50 shrink-0"
+                  >
+                    {isSendingOtp ? (
+                      <Loader size="1rem" noMargin />
+                    ) : countdown > 0 ? (
+                      `${countdown}s`
+                    ) : otpSent ? (
+                      "Tekrar Gönder"
+                    ) : (
+                      "Kodu Gönder"
+                    )}
+                  </Button>
+                </div>
                 <FormMessage />
               </FormItem>
             )}
           />
+
+          {otpSent && !phoneVerified && (
+            <div className="bg-orange-50/50 p-4 rounded-xl border border-orange-100/50 space-y-3">
+              <FormLabel className="text-sm font-medium text-gray-700">Doğrulama Kodu</FormLabel>
+              <div className="flex gap-2">
+                <Input
+                  type="text"
+                  maxLength={6}
+                  placeholder="6 Haneli Kod"
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value.replace(/[^0-9]/g, ""))}
+                  disabled={isLoading || isVerifyingOtp}
+                  className="flex-1 text-center font-semibold tracking-widest text-lg"
+                />
+                <Button
+                  type="button"
+                  onClick={onVerifyOtp}
+                  disabled={isLoading || isVerifyingOtp || otpCode.length !== 6}
+                  className="bg-orange-500 hover:bg-orange-600 text-white shrink-0"
+                >
+                  {isVerifyingOtp ? <Loader size="1rem" noMargin /> : "Doğrula"}
+                </Button>
+              </div>
+              <p className="text-[11px] text-gray-500">
+                Telefonunuza Whatsapp üzerinden gönderdiğimiz 6 haneli kodu giriniz.
+              </p>
+            </div>
+          )}
+
+          {phoneVerified && (
+            <div className="bg-green-50 text-green-700 border border-green-200 px-3 py-2 rounded-lg text-xs font-semibold flex items-center justify-between">
+              <span>Telefon Numarası Doğrulandı ✓</span>
+            </div>
+          )}
 
           <FormField
             control={form.control}
@@ -648,7 +719,7 @@ function IndividualSignupContent({
             onTokenChange={onTokenChange}
           />
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button type="submit" className="w-full" disabled={isLoading || !phoneVerified}>
             {isLoading ? <Loader size="1.25rem" noMargin /> : t("auth.signup")}
           </Button>
         </form>
@@ -756,6 +827,82 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
   const { showEmailConfirmation, registeredEmail, isResending, captchaToken } = uiState;
   const captchaRef = useRef<HCaptcha>(null!);
 
+  const [otpSent, setOtpSent] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [verificationToken, setVerificationToken] = useState("");
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const timer = setInterval(() => {
+      setCountdown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [countdown]);
+
+  const handleSendOtp = async () => {
+    const phone = individualForm.getValues("phone");
+    if (!phone || !isValidPhoneNumber(phone)) {
+      toast.error(t("auth.validation.phone_invalid"));
+      return;
+    }
+
+    setIsSendingOtp(true);
+    try {
+      const response = await fetch("/api/auth/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "OTP gönderimi başarısız.");
+      }
+
+      setOtpSent(true);
+      setCountdown(180); // 3 mins
+      toast.success("Doğrulama kodu WhatsApp ile gönderildi.");
+    } catch (err: any) {
+      toast.error(err.message || "Bir hata oluştu.");
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    const phone = individualForm.getValues("phone");
+    if (!otpCode || otpCode.length !== 6) {
+      toast.error("Lütfen 6 haneli doğrulama kodunu girin.");
+      return;
+    }
+
+    setIsVerifyingOtp(true);
+    try {
+      const response = await fetch("/api/auth/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, code: otpCode }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Kod doğrulanamadı.");
+      }
+
+      setPhoneVerified(true);
+      setVerificationToken(data.token);
+      toast.success("Telefon numaranız başarıyla doğrulandı.");
+    } catch (err: any) {
+      toast.error(err.message || "Bir hata oluştu.");
+    } finally {
+      setIsVerifyingOtp(false);
+    }
+  };
+
   const HCAPTCHA_SITE_KEY = String(import.meta.env.VITE_HCAPTCHA_SITE_KEY ?? "").trim();
   const shouldBypassCaptcha = shouldBypassCaptchaForLocalDev();
 
@@ -780,17 +927,24 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
         return;
       }
 
+      if (!phoneVerified) {
+        toast.error("Lütfen önce telefon numaranızı WhatsApp ile doğrulayın.");
+        return;
+      }
+
       const signupPayload = {
         email: data.email,
         password: data.password,
         phone: data.phone,
         fullName: data.fullName,
+        phoneVerificationToken: verificationToken,
       } as {
         email: string;
         password: string;
         phone: string;
         fullName: string;
         captchaToken?: string;
+        phoneVerificationToken?: string;
       };
 
       if (!shouldBypassCaptcha && captchaToken) {
@@ -878,6 +1032,15 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
       hcaptchaSiteKey={HCAPTCHA_SITE_KEY}
       captchaRef={captchaRef}
       onTokenChange={(token) => dispatch({ type: "SET_CAPTCHA_TOKEN", token })}
+      otpSent={otpSent}
+      phoneVerified={phoneVerified}
+      otpCode={otpCode}
+      setOtpCode={setOtpCode}
+      countdown={countdown}
+      isSendingOtp={isSendingOtp}
+      isVerifyingOtp={isVerifyingOtp}
+      onSendOtp={handleSendOtp}
+      onVerifyOtp={handleVerifyOtp}
     />
   );
 }

@@ -745,3 +745,16 @@
     transform: translate(0, 0) scale(1);
   }
 }
+
+[data-radix-portal] {
+  z-index: 99999 !important;
+}
+
+[data-sonner-toaster],
+.sonner-toaster,
+section[data-sonner-toaster],
+section.sonner-toaster,
+ol[data-sonner-toaster],
+li[data-sonner-toast] {
+  z-index: 2147483647 !important;
+}

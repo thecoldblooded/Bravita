@@ -8,6 +8,7 @@ import {
   sendJson,
   sendInternalServerError,
   shouldBypassCaptchaForRequest,
+  verifyPhoneToken,
 } from "./_shared.js";
 
 function normalizeOptionalString(value, maxLength) {
@@ -71,10 +72,25 @@ export default async function handler(req, res) {
     const parsedCaptchaToken = rawCaptchaToken.length > 0 ? rawCaptchaToken : undefined;
     const captchaToken = shouldBypassCaptchaForRequest(req) ? undefined : parsedCaptchaToken;
     const profileData = normalizeSignupProfileData(body.profileData);
+    const phoneVerificationToken = typeof body.phoneVerificationToken === "string" ? body.phoneVerificationToken.trim() : "";
+    const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 
     if (!email || !password) {
       return sendJson(res, 400, { error: "Email and password are required" });
     }
+
+    if (!profileData.phone) {
+      return sendJson(res, 400, { error: "Telefon numarası gereklidir." });
+    }
+
+    const verifiedPayload = verifyPhoneToken(phoneVerificationToken, supabaseAnonKey);
+    if (!verifiedPayload || verifiedPayload.phone !== profileData.phone) {
+      return sendJson(res, 400, { error: "Lütfen önce telefon numaranızı WhatsApp ile doğrulayın." });
+    }
+
+    // Set verified flags in user profile metadata
+    profileData.phone_verified = true;
+    profileData.phone_verified_at = new Date().toISOString();
 
     const signupPayload = {
       email,

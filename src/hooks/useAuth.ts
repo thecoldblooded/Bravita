@@ -19,6 +19,7 @@ export interface SignupData {
   phone: string;
   fullName?: string;
   captchaToken?: string;
+  phoneVerificationToken?: string;
 }
 
 export interface LoginData {
@@ -52,18 +53,13 @@ export function useAuthOperations() {
       };
 
       if (isBffAuthEnabled()) {
-        const signupData = data.captchaToken
-          ? await signupWithBff({
-              email: data.email,
-              password: data.password,
-              captchaToken: data.captchaToken,
-              profileData,
-            })
-          : await signupWithBff({
-              email: data.email,
-              password: data.password,
-              profileData,
-            });
+        const signupData = await signupWithBff({
+          email: data.email,
+          password: data.password,
+          captchaToken: data.captchaToken,
+          phoneVerificationToken: data.phoneVerificationToken,
+          profileData,
+        });
 
         let bridgedSession = null;
         if (signupData?.session?.access_token) {

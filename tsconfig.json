@@ -24,6 +24,7 @@
   "exclude": [
     "supabase/functions",
     "node_modules",
-    "dist"
+    "dist",
+    "bravita-video"
   ]
 }

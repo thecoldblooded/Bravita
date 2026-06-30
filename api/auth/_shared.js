@@ -1,4 +1,4 @@
-import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes, timingSafeEqual, createHmac } from "node:crypto";
 
 const REFRESH_COOKIE_NAME = "bravita_refresh_token";
 const REFRESH_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
@@ -1058,6 +1058,31 @@ function sendInternalServerError(res, req, diagnosticEvent, error) {
   return sendJson(res, 500, { error: INTERNAL_SERVER_ERROR_MESSAGE });
 }
 
+function signPhoneToken(phone, secret) {
+  const payload = { phone, verified: true, timestamp: Date.now() };
+  const serialized = JSON.stringify(payload);
+  const signature = createHmac("sha256", secret).update(serialized).digest("hex");
+  return `${Buffer.from(serialized).toString("base64")}.${signature}`;
+}
+
+function verifyPhoneToken(token, secret) {
+  try {
+    const [base64Payload, signature] = token.split(".");
+    const serialized = Buffer.from(base64Payload, "base64").toString("utf8");
+    const expectedSignature = createHmac("sha256", secret).update(serialized).digest("hex");
+    if (signature === expectedSignature) {
+      const parsed = JSON.parse(serialized);
+      // Valid for 10 minutes
+      if (Date.now() - parsed.timestamp < 10 * 60 * 1000) {
+        return parsed;
+      }
+    }
+  } catch {
+    // Ignore errors
+  }
+  return null;
+}
+
 export {
   REFRESH_COOKIE_NAME,
   OAUTH_STATE_COOKIE_NAME,
@@ -1095,4 +1120,6 @@ export {
   resolveSiteOrigin,
   shouldBypassCaptchaForRequest,
   detectSuspiciousValue,
+  signPhoneToken,
+  verifyPhoneToken,
 };

@@ -16,6 +16,9 @@ import setSessionHandler from "../../api/auth/set-session.js";
 import oauthGoogleStartHandler from "../../api/auth/oauth/google/start.js";
 import oauthCallbackHandler from "../../api/auth/oauth/callback.js";
 import visitorCounterHandler from "../../api/visitor-counter.js";
+import sendOtpHandler from "../../api/auth/send-otp.js";
+import verifyOtpHandler from "../../api/auth/verify-otp.js";
+import updateProfileHandler from "../../api/auth/update-profile.js";
 
 function loadEnvFileOnce(filePath) {
     if (!existsSync(filePath)) {
@@ -62,9 +65,7 @@ const localEnvCandidates = [
 ];
 
 for (const envPath of localEnvCandidates) {
-    if (loadEnvFileOnce(envPath)) {
-        break;
-    }
+    loadEnvFileOnce(envPath);
 }
 
 if (!process.env.SUPABASE_URL && process.env.VITE_SUPABASE_URL) {
@@ -87,6 +88,8 @@ const RATE_LIMIT_DEFAULTS = Object.freeze({
     "/api/auth/recover": Number(process.env.BFF_RATE_LIMIT_MAX_RECOVER || 8),
     "/api/auth/resend": Number(process.env.BFF_RATE_LIMIT_MAX_RESEND || 8),
     "/api/visitor-counter": Number(process.env.BFF_RATE_LIMIT_MAX_VISITOR_COUNTER || 30),
+    "/api/auth/send-otp": 3,
+    "/api/auth/verify-otp": 5,
 });
 
 const rateLimitStore = new Map();
@@ -104,6 +107,9 @@ const routeHandlers = new Map([
     ["/api/auth/oauth/google/start", oauthGoogleStartHandler],
     ["/api/auth/oauth/callback", oauthCallbackHandler],
     ["/api/visitor-counter", visitorCounterHandler],
+    ["/api/auth/send-otp", sendOtpHandler],
+    ["/api/auth/verify-otp", verifyOtpHandler],
+    ["/api/auth/update-profile", updateProfileHandler],
 ]);
 
 function attachExpressLikeHelpers(res) {
@@ -225,6 +231,13 @@ function getRateLimitIdentifier(pathname, body) {
         || pathname === "/api/auth/resend"
     ) {
         return normalizeRateLimitIdentifier(body.email);
+    }
+
+    if (
+        pathname === "/api/auth/send-otp"
+        || pathname === "/api/auth/verify-otp"
+    ) {
+        return normalizeRateLimitIdentifier(body.phone);
     }
 
     return "";
