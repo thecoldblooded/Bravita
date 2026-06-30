@@ -16,10 +16,8 @@ import setSessionHandler from "../../api/auth/set-session.js";
 import oauthGoogleStartHandler from "../../api/auth/oauth/google/start.js";
 import oauthCallbackHandler from "../../api/auth/oauth/callback.js";
 import visitorCounterHandler from "../../api/visitor-counter.js";
-import sendOtpHandler from "../../api/auth/send-otp.js";
-import verifyOtpHandler from "../../api/auth/verify-otp.js";
+import verifyFirebaseTokenHandler from "../../api/auth/verify-firebase-token.js";
 import updateProfileHandler from "../../api/auth/update-profile.js";
-import resetWhatsappSessionHandler from "../../api/auth/reset-whatsapp-session.js";
 
 function loadEnvFileOnce(filePath) {
     if (!existsSync(filePath)) {
@@ -89,8 +87,7 @@ const RATE_LIMIT_DEFAULTS = Object.freeze({
     "/api/auth/recover": Number(process.env.BFF_RATE_LIMIT_MAX_RECOVER || 8),
     "/api/auth/resend": Number(process.env.BFF_RATE_LIMIT_MAX_RESEND || 8),
     "/api/visitor-counter": Number(process.env.BFF_RATE_LIMIT_MAX_VISITOR_COUNTER || 30),
-    "/api/auth/send-otp": 3,
-    "/api/auth/verify-otp": 5,
+    "/api/auth/verify-firebase-token": 5,
 });
 
 const rateLimitStore = new Map();
@@ -108,10 +105,8 @@ const routeHandlers = new Map([
     ["/api/auth/oauth/google/start", oauthGoogleStartHandler],
     ["/api/auth/oauth/callback", oauthCallbackHandler],
     ["/api/visitor-counter", visitorCounterHandler],
-    ["/api/auth/send-otp", sendOtpHandler],
-    ["/api/auth/verify-otp", verifyOtpHandler],
+    ["/api/auth/verify-firebase-token", verifyFirebaseTokenHandler],
     ["/api/auth/update-profile", updateProfileHandler],
-    ["/api/auth/reset-whatsapp-session", resetWhatsappSessionHandler],
 ]);
 
 function attachExpressLikeHelpers(res) {

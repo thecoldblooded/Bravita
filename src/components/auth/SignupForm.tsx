@@ -24,6 +24,8 @@ import "react-phone-number-input/style.css";
 import { Mail, RefreshCw } from "lucide-react";
 import { translateError } from "@/lib/errorTranslator";
 import { PasswordStrengthIndicator } from "./PasswordStrengthIndicator";
+import { auth } from "@/lib/firebase";
+import { RecaptchaVerifier, signInWithPhoneNumber, type ConfirmationResult } from "firebase/auth";
 
 interface SignupFormProps {
   onSuccess?: () => void;
@@ -834,6 +836,35 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [countdown, setCountdown] = useState(0);
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+
+  const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null);
+
+  const getOrCreateRecaptchaVerifier = (): RecaptchaVerifier => {
+    if (recaptchaVerifierRef.current) {
+      return recaptchaVerifierRef.current;
+    }
+
+    let container = document.getElementById("recaptcha-container");
+    if (!container) {
+      container = document.createElement("div");
+      container.id = "recaptcha-container";
+      document.body.appendChild(container);
+    }
+
+    const verifier = new RecaptchaVerifier(auth, "recaptcha-container", {
+      size: "invisible",
+      callback: () => {
+        // reCAPTCHA solved
+      },
+      "expired-callback": () => {
+        toast.error("reCAPTCHA süresi doldu. Lütfen tekrar deneyin.");
+      },
+    });
+
+    recaptchaVerifierRef.current = verifier;
+    return verifier;
+  };
 
   useEffect(() => {
     if (countdown <= 0) return;
@@ -852,23 +883,26 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
 
     setIsSendingOtp(true);
     try {
-      const response = await fetch("/api/auth/send-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "OTP gönderimi başarısız.");
-      }
+      const verifier = getOrCreateRecaptchaVerifier();
+      const confirmation = await signInWithPhoneNumber(auth, phone, verifier);
+      setConfirmationResult(confirmation);
 
       setOtpSent(true);
       setCountdown(180); // 3 mins
-      toast.success("Doğrulama kodu WhatsApp ile gönderildi.");
+      toast.success("Doğrulama kodu SMS ile gönderildi.");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Bir hata oluştu.";
       toast.error(message);
+      
+      // Clear reCAPTCHA on failure to allow retry
+      if (recaptchaVerifierRef.current) {
+        try {
+          recaptchaVerifierRef.current.clear();
+          recaptchaVerifierRef.current = null;
+        } catch {
+          // ignore
+        }
+      }
     } finally {
       setIsSendingOtp(false);
     }
@@ -881,12 +915,20 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
       return;
     }
 
+    if (!confirmationResult) {
+      toast.error("Lütfen önce doğrulama kodu isteyin.");
+      return;
+    }
+
     setIsVerifyingOtp(true);
     try {
-      const response = await fetch("/api/auth/verify-otp", {
+      const credential = await confirmationResult.confirm(otpCode);
+      const firebaseToken = await credential.user.getIdToken();
+
+      const response = await fetch("/api/auth/verify-firebase-token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, code: otpCode }),
+        body: JSON.stringify({ phone, firebaseToken }),
       });
 
       const data = await response.json();
