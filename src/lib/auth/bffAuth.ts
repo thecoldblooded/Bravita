@@ -226,7 +226,7 @@ export async function updateProfileWithBff(payload: {
   phone: string;
   phoneVerificationToken?: string;
 }) {
-  return authRequest<{ success: boolean; profile: any }>("/api/auth/update-profile", {
+  return authRequest<{ success: boolean; profile: unknown }>("/api/auth/update-profile", {
     method: "POST",
     body: JSON.stringify(payload),
   });

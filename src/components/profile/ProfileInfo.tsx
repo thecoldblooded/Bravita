@@ -66,8 +66,9 @@ export function ProfileInfo() {
             setOtpSent(true);
             setCountdown(180);
             toast.success("Doğrulama kodu WhatsApp ile gönderildi.");
-        } catch (err: any) {
-            toast.error(err.message || "Bir hata oluştu.");
+        } catch (err) {
+            const message = err instanceof Error ? err.message : "Bir hata oluştu.";
+            toast.error(message);
         } finally {
             setIsSendingOtp(false);
         }
@@ -95,8 +96,9 @@ export function ProfileInfo() {
             setPhoneVerified(true);
             setVerificationToken(data.token);
             toast.success("Telefon numaranız başarıyla doğrulandı.");
-        } catch (err: any) {
-            toast.error(err.message || "Bir hata oluştu.");
+        } catch (err) {
+            const message = err instanceof Error ? err.message : "Bir hata oluştu.";
+            toast.error(message);
         } finally {
             setIsVerifyingOtp(false);
         }
