@@ -1,5 +1,5 @@
 import { createHash, randomInt } from "node:crypto";
-import { assertValidAuthPostRequest, parseRequestBody, sendJson, sendInternalServerError } from "./_shared.js";
+import { assertValidAuthPostRequest, parseRequestBody, sendJson, sendInternalServerError, getOpenwaSessionId } from "./_shared.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -71,7 +71,7 @@ export default async function handler(req, res) {
     // Make direct HTTP request to OpenWA API to send WhatsApp message
     const openwaUrl = process.env.OPENWA_API_URL;
     const openwaKey = process.env.OPENWA_API_KEY;
-    const sessionName = process.env.OPENWA_SESSION_NAME || "bravita-new";
+    const sessionId = await getOpenwaSessionId("bravita-new");
 
     if (!openwaUrl || !openwaKey) {
       throw new Error("Missing OpenWA API configuration");
@@ -81,7 +81,7 @@ export default async function handler(req, res) {
     const chatId = `${sanitizedPhone}@c.us`;
     const messageText = `Bravita kayıt kodunuz: ${otp}\nBu kod 3 dakika geçerlidir.`;
 
-    const openwaResponse = await fetch(`${openwaUrl}/sessions/${sessionName}/messages/send-text`, {
+    const openwaResponse = await fetch(`${openwaUrl}/sessions/${sessionId}/messages/send-text`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

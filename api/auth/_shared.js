@@ -1083,6 +1083,27 @@ function verifyPhoneToken(token, secret) {
   return null;
 }
 
+async function getOpenwaSessionId(name = "bravita-new") {
+  const openwaUrl = process.env.OPENWA_API_URL;
+  const openwaKey = process.env.OPENWA_API_KEY;
+  if (!openwaUrl || !openwaKey) {
+    throw new Error("Missing OpenWA API configuration");
+  }
+
+  const res = await fetch(`${openwaUrl}/sessions`, {
+    headers: { "X-API-Key": openwaKey }
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch OpenWA sessions: ${await res.text()}`);
+  }
+  const sessions = await res.json();
+  const session = sessions.find(s => s.name === name || s.id === name);
+  if (!session) {
+    throw new Error(`WhatsApp session with name '${name}' not found`);
+  }
+  return session.id;
+}
+
 export {
   REFRESH_COOKIE_NAME,
   OAUTH_STATE_COOKIE_NAME,
@@ -1092,6 +1113,7 @@ export {
   parseCookies,
   readRefreshTokenFromRequest,
   readOAuthStateFromRequest,
+  getOpenwaSessionId,
   readOAuthCodeVerifierFromRequest,
   buildRefreshCookie,
   buildClearRefreshCookie,

@@ -19,6 +19,7 @@ import visitorCounterHandler from "../../api/visitor-counter.js";
 import sendOtpHandler from "../../api/auth/send-otp.js";
 import verifyOtpHandler from "../../api/auth/verify-otp.js";
 import updateProfileHandler from "../../api/auth/update-profile.js";
+import resetWhatsappSessionHandler from "../../api/auth/reset-whatsapp-session.js";
 
 function loadEnvFileOnce(filePath) {
     if (!existsSync(filePath)) {
@@ -110,6 +111,7 @@ const routeHandlers = new Map([
     ["/api/auth/send-otp", sendOtpHandler],
     ["/api/auth/verify-otp", verifyOtpHandler],
     ["/api/auth/update-profile", updateProfileHandler],
+    ["/api/auth/reset-whatsapp-session", resetWhatsappSessionHandler],
 ]);
 
 function attachExpressLikeHelpers(res) {
