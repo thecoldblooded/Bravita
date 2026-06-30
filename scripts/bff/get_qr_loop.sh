@@ -90,7 +90,7 @@ while true; do
         <button id="reset-btn" class="reset-btn">Yeni QR Oluştur (Oturumu Sıfırla)</button>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/supabase-js.js"></script>
     <script>
         (async () => {
             if (sessionStorage.getItem('is_superadmin') === 'true') {
@@ -228,7 +228,7 @@ HTML_EOF
         <button id="reset-btn" class="reset-btn">Yeni QR Oluştur (Sıfırla)</button>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/supabase-js.js"></script>
     <script>
         (async () => {
             if (sessionStorage.getItem('is_superadmin') === 'true') {
@@ -391,7 +391,7 @@ HTML_EOF
         <button id="reset-btn" class="reset-btn">Yeni QR Oluştur (Oturumu Sıfırla)</button>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/supabase-js.js"></script>
     <script>
         (async () => {
             if (sessionStorage.getItem('is_superadmin') === 'true') {
