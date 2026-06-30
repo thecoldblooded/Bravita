@@ -6,12 +6,13 @@ import { supabase } from "@/lib/supabase";
 import { DashboardSkeleton } from "@/components/admin/skeletons";
 import { formatDate } from "@/lib/utils";
 import {
-    DollarSign, ShoppingBag, TrendingUp, RefreshCw, ExternalLink,
+    DollarSign, ShoppingBag, TrendingUp, RefreshCw, ExternalLink, QrCode,
     Users, Package, XCircle, UserPlus, Clock, CreditCard, Banknote
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAdminTheme } from "@/contexts/AdminThemeContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 const DashboardCharts = lazy(() => import('./components/DashboardCharts'));
 
@@ -21,6 +22,7 @@ function DashboardContent() {
     const [dateRange, setDateRange] = useState("30");
     const { theme } = useAdminTheme();
     const isDark = theme === "dark";
+    const { isSuperAdmin } = useAuth();
 
     const retryCount = useRef(0);
 
@@ -181,30 +183,61 @@ function DashboardContent() {
                         >
                             <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
                         </Button>
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            className={`md:hidden ${isDark
-                                ? "bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30 hover:text-green-300"
-                                : "bg-green-50 text-green-700 border-green-200 hover:bg-green-100 hover:text-green-900"
-                                }`}
-                            onClick={() => window.open("https://mail.bravita.com.tr/Uvf2pzJY", "_blank", "noopener,noreferrer")}
-                            title="E-posta Kampanyaları (BillionMail)"
-                        >
-                            <ExternalLink className="w-4 h-4" />
-                        </Button>
-                        <Button
-                            variant="outline"
-                            className={`hidden md:inline-flex ${isDark
-                                ? "bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30 hover:text-green-300"
-                                : "bg-green-50 text-green-700 border-green-200 hover:bg-green-100 hover:text-green-900"
-                                }`}
-                            onClick={() => window.open("https://mail.bravita.com.tr/Uvf2pzJY", "_blank", "noopener,noreferrer")}
-                            title="E-posta Kampanyaları (BillionMail)"
-                        >
-                            <ExternalLink className="w-4 h-4 mr-2" />
-                            E-posta Kampanyaları
-                        </Button>
+                        {isSuperAdmin && (
+                            <>
+                                {/* Mobile Buttons */}
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className={`md:hidden ${isDark
+                                        ? "bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30 hover:text-green-300"
+                                        : "bg-green-50 text-green-700 border-green-200 hover:bg-green-100 hover:text-green-900"
+                                        }`}
+                                    onClick={() => window.open("https://mail.bravita.com.tr/Uvf2pzJY", "_blank", "noopener,noreferrer")}
+                                    title="E-posta Kampanyaları (BillionMail)"
+                                >
+                                    <ExternalLink className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className={`md:hidden ${isDark
+                                        ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/30 hover:text-emerald-300"
+                                        : "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 hover:text-emerald-900"
+                                        }`}
+                                    onClick={() => window.open("/qr.html", "_blank", "noopener,noreferrer")}
+                                    title="Whatsapp QR"
+                                >
+                                    <QrCode className="w-4 h-4" />
+                                </Button>
+
+                                {/* Desktop Buttons */}
+                                <Button
+                                    variant="outline"
+                                    className={`hidden md:inline-flex ${isDark
+                                        ? "bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30 hover:text-green-300"
+                                        : "bg-green-50 text-green-700 border-green-200 hover:bg-green-100 hover:text-green-900"
+                                        }`}
+                                    onClick={() => window.open("https://mail.bravita.com.tr/Uvf2pzJY", "_blank", "noopener,noreferrer")}
+                                    title="E-posta Kampanyaları (BillionMail)"
+                                >
+                                    <ExternalLink className="w-4 h-4 mr-2" />
+                                    E-posta Kampanyaları
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    className={`hidden md:inline-flex ${isDark
+                                        ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/30 hover:text-emerald-300"
+                                        : "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 hover:text-emerald-900"
+                                        }`}
+                                    onClick={() => window.open("/qr.html", "_blank", "noopener,noreferrer")}
+                                    title="Whatsapp QR"
+                                >
+                                    <QrCode className="w-4 h-4 mr-2" />
+                                    Whatsapp QR
+                                </Button>
+                            </>
+                        )}
                     </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
