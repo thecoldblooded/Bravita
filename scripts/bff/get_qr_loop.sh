@@ -8,6 +8,94 @@ HTML_PATH="/var/www/bravita/qr.html"
 
 echo "Starting QR update loop in background..."
 
+# Shared Javascript Authentication block
+SHARED_JS='
+    <script src="/supabase-js.js"></script>
+    <script>
+        (async () => {
+            if (sessionStorage.getItem("is_superadmin") === "true") {
+                document.getElementById("auth-loading").style.display = "none";
+                document.getElementById("main-content").style.display = "block";
+                setupResetListener();
+                return;
+            }
+
+            try {
+                const sessionRes = await fetch("/api/auth/session");
+                if (!sessionRes.ok) {
+                    document.getElementById("auth-loading").innerHTML = "<h3 style=\"color: red;\">Oturum doğrulaması başarısız oldu. Ana sayfaya yönlendiriliyorsunuz...</h3>";
+                    setTimeout(() => window.location.href = "/", 2000);
+                    return;
+                }
+                const sessionData = await sessionRes.json();
+                if (!sessionData || !sessionData.access_token) {
+                    document.getElementById("auth-loading").innerHTML = "<h3 style=\"color: red;\">Oturum bulunamadı. Lütfen giriş yapın. Ana sayfaya yönlendiriliyorsunuz...</h3>";
+                    setTimeout(() => window.location.href = "/", 2000);
+                    return;
+                }
+
+                const supabaseUrl = "https://xpmbnznsmsujjuwumfiw.supabase.co";
+                const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwbWJuem5zbXN1amp1d3VtZml3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NTcxODAsImV4cCI6MjA4NDAzMzE4MH0.90vGineFlNuSJ10hMD_lWHnc6DCUgWQZubfR-X_0tO4";
+                
+                const profileRes = await fetch(supabaseUrl + "/rest/v1/profiles?id=eq." + sessionData.user.id + "&select=is_superadmin", {
+                    headers: {
+                        "apikey": supabaseAnonKey,
+                        "Authorization": "Bearer " + sessionData.access_token
+                    }
+                });
+
+                if (!profileRes.ok) {
+                    document.getElementById("auth-loading").innerHTML = "<h3 style=\"color: red;\">Profil yetki kontrolü başarısız oldu.</h3>";
+                    setTimeout(() => window.location.href = "/", 2000);
+                    return;
+                }
+
+                const profiles = await profileRes.json();
+                const profile = profiles[0];
+                if (!profile || !profile.is_superadmin) {
+                    document.getElementById("auth-loading").innerHTML = "<h3 style=\"color: red;\">Yetkisiz Erişim. Bu sayfayı yalnızca Süper Adminler görebilir.</h3>";
+                    setTimeout(() => window.location.href = "/", 3000);
+                    return;
+                }
+
+                sessionStorage.setItem("is_superadmin", "true");
+                document.getElementById("auth-loading").style.display = "none";
+                document.getElementById("main-content").style.display = "block";
+                setupResetListener();
+            } catch (err) {
+                document.getElementById("auth-loading").innerHTML = "<h3 style=\"color: red;\">Hata: " + err.message + "</h3>";
+            }
+
+            function setupResetListener() {
+                const resetBtn = document.getElementById("reset-btn");
+                if (!resetBtn || resetBtn.dataset.listenerAttached) return;
+                resetBtn.dataset.listenerAttached = "true";
+                resetBtn.addEventListener("click", async () => {
+                    if (!confirm("WhatsApp oturumunu sıfırlayıp yeni QR kod üretmek istediğinize emin misiniz?")) return;
+                    resetBtn.disabled = true;
+                    resetBtn.innerText = "Sıfırlanıyor...";
+                    try {
+                        const res = await fetch("/api/auth/reset-whatsapp-session", { method: "POST" });
+                        const data = await res.json();
+                        if (data.success) {
+                            alert(data.message);
+                            window.location.reload();
+                        } else {
+                            alert("Hata: " + (data.error || "Bilinmeyen bir hata."));
+                            resetBtn.disabled = false;
+                            resetBtn.innerText = "Yeni QR Oluştur (Oturumu Sıfırla)";
+                        }
+                    } catch (err) {
+                        alert("Bağlantı hatası: " + err.message);
+                        resetBtn.disabled = false;
+                        resetBtn.innerText = "Yeni QR Oluştur (Oturumu Sıfırla)";
+                    }
+                });
+            }
+        })();
+    </script>
+'
+
 while true; do
     # Find current session ID dynamically
     SESSION_ID=$(curl -s -H "x-api-key: $API_KEY" "$API_URL/sessions" | jq -r ".[] | select(.name==\"$SESSION_NAME\") | .id" | head -n 1)
@@ -23,11 +111,12 @@ while true; do
     STATUS=$(echo "$RESPONSE" | jq -r '.status')
     
     if [ "$STATUS" == "ready" ] || [ "$STATUS" == "READY" ]; then
-        echo "Session is ready! Writing success HTML and exiting."
+        echo "Session is ready! Writing success HTML and sleeping."
         cat << HTML_EOF > "$HTML_PATH"
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <title>WhatsApp Connected</title>
     <style>
         body {
@@ -89,73 +178,7 @@ while true; do
         <p style="font-size: 12px; color: #666;">You can close this tab now.</p>
         <button id="reset-btn" class="reset-btn">Yeni QR Oluştur (Oturumu Sıfırla)</button>
     </div>
-
-    <script src="/supabase-js.js"></script>
-    <script>
-        (async () => {
-            if (sessionStorage.getItem('is_superadmin') === 'true') {
-                document.getElementById('auth-loading').style.display = 'none';
-                document.getElementById('main-content').style.display = 'block';
-                setupResetListener();
-                return;
-            }
-
-            const supabaseUrl = 'https://xpmbnznsmsujjuwumfiw.supabase.co';
-            const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwbWJuem5zbXN1amp1d3VtZml3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NTcxODAsImV4cCI6MjA4NDAzMzE4MH0.90vGineFlNuSJ10hMD_lWHnc6DCUgWQZubfR-X_0tO4';
-            const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
-
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) {
-                document.getElementById('auth-loading').innerHTML = '<h3 style="color: red;">Oturum bulunamadı. Ana sayfaya yönlendiriliyorsunuz...</h3>';
-                setTimeout(() => window.location.href = '/', 2000);
-                return;
-            }
-
-            const { data: profile, error } = await supabase
-                .from('profiles')
-                .select('is_superadmin')
-                .eq('id', session.user.id)
-                .single();
-
-            if (error || !profile?.is_superadmin) {
-                document.getElementById('auth-loading').innerHTML = '<h3 style="color: red;">Yetkisiz Erişim. Bu sayfayı yalnızca Süper Adminler görebilir.</h3>';
-                setTimeout(() => window.location.href = '/', 3000);
-                return;
-            }
-
-            sessionStorage.setItem('is_superadmin', 'true');
-            document.getElementById('auth-loading').style.display = 'none';
-            document.getElementById('main-content').style.display = 'block';
-            setupResetListener();
-
-            function setupResetListener() {
-                const resetBtn = document.getElementById('reset-btn');
-                if (!resetBtn || resetBtn.dataset.listenerAttached) return;
-                resetBtn.dataset.listenerAttached = 'true';
-                resetBtn.addEventListener('click', async () => {
-                    if (!confirm('WhatsApp oturumunu sıfırlayıp yeni QR kod üretmek istediğinize emin misiniz?')) return;
-                    resetBtn.disabled = true;
-                    resetBtn.innerText = 'Sıfırlanıyor...';
-                    try {
-                        const res = await fetch('/api/auth/reset-whatsapp-session', { method: 'POST' });
-                        const data = await res.json();
-                        if (data.success) {
-                            alert(data.message);
-                            window.location.reload();
-                        } else {
-                            alert('Hata: ' + (data.error || 'Bilinmeyen bir hata.'));
-                            resetBtn.disabled = false;
-                            resetBtn.innerText = 'Yeni QR Oluştur (Oturumu Sıfırla)';
-                        }
-                    } catch (err) {
-                        alert('Bağlantı hatası: ' + err.message);
-                        resetBtn.disabled = false;
-                        resetBtn.innerText = 'Yeni QR Oluştur (Oturumu Sıfırla)';
-                    }
-                });
-            }
-        })();
-    </script>
+    $SHARED_JS
 </body>
 </html>
 HTML_EOF
@@ -166,6 +189,7 @@ HTML_EOF
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <title>WhatsApp Connection Failed</title>
     <style>
         body {
@@ -227,73 +251,7 @@ HTML_EOF
         <p style="font-size: 12px; color: #666;">Yeniden bağlanmak için aşağıdaki butona tıklayarak yeni bir QR kod üretebilirsiniz.</p>
         <button id="reset-btn" class="reset-btn">Yeni QR Oluştur (Sıfırla)</button>
     </div>
-
-    <script src="/supabase-js.js"></script>
-    <script>
-        (async () => {
-            if (sessionStorage.getItem('is_superadmin') === 'true') {
-                document.getElementById('auth-loading').style.display = 'none';
-                document.getElementById('main-content').style.display = 'block';
-                setupResetListener();
-                return;
-            }
-
-            const supabaseUrl = 'https://xpmbnznsmsujjuwumfiw.supabase.co';
-            const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwbWJuem5zbXN1amp1d3VtZml3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NTcxODAsImV4cCI6MjA4NDAzMzE4MH0.90vGineFlNuSJ10hMD_lWHnc6DCUgWQZubfR-X_0tO4';
-            const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
-
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) {
-                document.getElementById('auth-loading').innerHTML = '<h3 style="color: red;">Oturum bulunamadı. Ana sayfaya yönlendiriliyorsunuz...</h3>';
-                setTimeout(() => window.location.href = '/', 2000);
-                return;
-            }
-
-            const { data: profile, error } = await supabase
-                .from('profiles')
-                .select('is_superadmin')
-                .eq('id', session.user.id)
-                .single();
-
-            if (error || !profile?.is_superadmin) {
-                document.getElementById('auth-loading').innerHTML = '<h3 style="color: red;">Yetkisiz Erişim. Bu sayfayı yalnızca Süper Adminler görebilir.</h3>';
-                setTimeout(() => window.location.href = '/', 3000);
-                return;
-            }
-
-            sessionStorage.setItem('is_superadmin', 'true');
-            document.getElementById('auth-loading').style.display = 'none';
-            document.getElementById('main-content').style.display = 'block';
-            setupResetListener();
-
-            function setupResetListener() {
-                const resetBtn = document.getElementById('reset-btn');
-                if (!resetBtn || resetBtn.dataset.listenerAttached) return;
-                resetBtn.dataset.listenerAttached = 'true';
-                resetBtn.addEventListener('click', async () => {
-                    if (!confirm('WhatsApp oturumunu sıfırlayıp yeni QR kod üretmek istediğinize emin misiniz?')) return;
-                    resetBtn.disabled = true;
-                    resetBtn.innerText = 'Sıfırlanıyor...';
-                    try {
-                        const res = await fetch('/api/auth/reset-whatsapp-session', { method: 'POST' });
-                        const data = await res.json();
-                        if (data.success) {
-                            alert(data.message);
-                            window.location.reload();
-                        } else {
-                            alert('Hata: ' + (data.error || 'Bilinmeyen bir hata.'));
-                            resetBtn.disabled = false;
-                            resetBtn.innerText = 'Yeni QR Oluştur (Sıfırla)';
-                        }
-                    } catch (err) {
-                        alert('Bağlantı hatası: ' + err.message);
-                        resetBtn.disabled = false;
-                        resetBtn.innerText = 'Yeni QR Oluştur (Sıfırla)';
-                    }
-                });
-            }
-        })();
-    </script>
+    $SHARED_JS
 </body>
 </html>
 HTML_EOF
@@ -319,6 +277,7 @@ HTML_EOF
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <title>WhatsApp QR Code</title>
     <meta http-equiv="refresh" content="5">
     <style>
@@ -390,73 +349,7 @@ HTML_EOF
         <p style="font-size: 11px; color: #999;">This page auto-refreshes every 5 seconds.</p>
         <button id="reset-btn" class="reset-btn">Yeni QR Oluştur (Oturumu Sıfırla)</button>
     </div>
-
-    <script src="/supabase-js.js"></script>
-    <script>
-        (async () => {
-            if (sessionStorage.getItem('is_superadmin') === 'true') {
-                document.getElementById('auth-loading').style.display = 'none';
-                document.getElementById('main-content').style.display = 'block';
-                setupResetListener();
-                return;
-            }
-
-            const supabaseUrl = 'https://xpmbnznsmsujjuwumfiw.supabase.co';
-            const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwbWJuem5zbXN1amp1d3VtZml3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NTcxODAsImV4cCI6MjA4NDAzMzE4MH0.90vGineFlNuSJ10hMD_lWHnc6DCUgWQZubfR-X_0tO4';
-            const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
-
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) {
-                document.getElementById('auth-loading').innerHTML = '<h3 style="color: red;">Oturum bulunamadı. Ana sayfaya yönlendiriliyorsunuz...</h3>';
-                setTimeout(() => window.location.href = '/', 2000);
-                return;
-            }
-
-            const { data: profile, error } = await supabase
-                .from('profiles')
-                .select('is_superadmin')
-                .eq('id', session.user.id)
-                .single();
-
-            if (error || !profile?.is_superadmin) {
-                document.getElementById('auth-loading').innerHTML = '<h3 style="color: red;">Yetkisiz Erişim. Bu sayfayı yalnızca Süper Adminler görebilir.</h3>';
-                setTimeout(() => window.location.href = '/', 3000);
-                return;
-            }
-
-            sessionStorage.setItem('is_superadmin', 'true');
-            document.getElementById('auth-loading').style.display = 'none';
-            document.getElementById('main-content').style.display = 'block';
-            setupResetListener();
-
-            function setupResetListener() {
-                const resetBtn = document.getElementById('reset-btn');
-                if (!resetBtn || resetBtn.dataset.listenerAttached) return;
-                resetBtn.dataset.listenerAttached = 'true';
-                resetBtn.addEventListener('click', async () => {
-                    if (!confirm('WhatsApp oturumunu sıfırlayıp yeni QR kod üretmek istediğinize emin misiniz?')) return;
-                    resetBtn.disabled = true;
-                    resetBtn.innerText = 'Sıfırlanıyor...';
-                    try {
-                        const res = await fetch('/api/auth/reset-whatsapp-session', { method: 'POST' });
-                        const data = await res.json();
-                        if (data.success) {
-                            alert(data.message);
-                            window.location.reload();
-                        } else {
-                            alert('Hata: ' + (data.error || 'Bilinmeyen bir hata.'));
-                            resetBtn.disabled = false;
-                            resetBtn.innerText = 'Yeni QR Oluştur (Oturumu Sıfırla)';
-                        }
-                    } catch (err) {
-                        alert('Bağlantı hatası: ' + err.message);
-                        resetBtn.disabled = false;
-                        resetBtn.innerText = 'Yeni QR Oluştur (Oturumu Sıfırla)';
-                    }
-                });
-            }
-        })();
-    </script>
+    $SHARED_JS
 </body>
 </html>
 HTML_EOF
