@@ -75,3 +75,7 @@ remote_dump.sql
 
 # Video module build files
 bravita-video/
+
+# Graphify output directory
+graphify-out/
+
