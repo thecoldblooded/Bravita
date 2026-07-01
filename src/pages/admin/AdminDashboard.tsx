@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { DashboardSkeleton } from "@/components/admin/skeletons";
 import { formatDate } from "@/lib/utils";
 import {
-    DollarSign, ShoppingBag, TrendingUp, RefreshCw, ExternalLink,
+    DollarSign, ShoppingBag, TrendingUp, RefreshCw, ExternalLink, QrCode,
     Users, Package, XCircle, UserPlus, Clock, CreditCard, Banknote
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -198,6 +198,18 @@ function DashboardContent() {
                                 >
                                     <ExternalLink className="w-4 h-4" />
                                 </Button>
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className={`md:hidden ${isDark
+                                        ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/30 hover:text-emerald-300"
+                                        : "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 hover:text-emerald-900"
+                                        }`}
+                                    onClick={() => window.open("https://wa.umutdogan.space", "_blank", "noopener,noreferrer")}
+                                    title="Whatsapp Girişi"
+                                >
+                                    <QrCode className="w-4 h-4" />
+                                </Button>
 
                                 {/* Desktop Buttons */}
                                 <Button
@@ -211,6 +223,18 @@ function DashboardContent() {
                                 >
                                     <ExternalLink className="w-4 h-4 mr-2" />
                                     E-posta Kampanyaları
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    className={`hidden md:inline-flex ${isDark
+                                        ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/30 hover:text-emerald-300"
+                                        : "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 hover:text-emerald-900"
+                                        }`}
+                                    onClick={() => window.open("https://wa.umutdogan.space", "_blank", "noopener,noreferrer")}
+                                    title="Whatsapp Girişi"
+                                >
+                                    <QrCode className="w-4 h-4 mr-2" />
+                                    Whatsapp Girişi
                                 </Button>
                             </>
                         )}
