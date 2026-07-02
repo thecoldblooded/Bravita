@@ -69,29 +69,37 @@ const BravitaLogo = memo(({ isScrolled }: { isScrolled: boolean }) => {
         isScrolled ? "scale-[0.85] lg:scale-[0.8]" : "scale-100",
       )}
     >
-      {letters.map((letter, index) => (
-        <m.span
-          key={letter.id}
-          className={cn(letter.color, letter.rotate, "relative inline-block origin-bottom")}
-          style={{
-            WebkitTextStroke: "2px black",
-            paintOrder: "stroke fill",
-            textShadow: "2px 2px 0px rgba(0,0,0,0.1)",
-            scaleX: 0.75,
-            marginLeft: `${letter.spacing}em`,
-          }}
-          animate={activeAnimation ? { y: [0, -12, 0], scale: [1, 1.05, 1] } : undefined}
-          transition={activeAnimation ? {
-            duration: 1,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: index * 0.5,
-            repeatDelay: (letters.length - 1) * 0.5,
-          } : undefined}
-        >
-          {letter.char === "i" ? <span className="relative inline-block">i</span> : letter.char}
-        </m.span>
-      ))}
+      {letters.map((letter, index) => {
+        const animationProps = activeAnimation
+          ? {
+              animate: { y: [0, -12, 0], scale: [1, 1.05, 1] },
+              transition: {
+                duration: 1,
+                repeat: Infinity,
+                ease: "easeInOut" as const,
+                delay: index * 0.5,
+                repeatDelay: (letters.length - 1) * 0.5,
+              },
+            }
+          : {};
+
+        return (
+          <m.span
+            key={letter.id}
+            className={cn(letter.color, letter.rotate, "relative inline-block origin-bottom")}
+            style={{
+              WebkitTextStroke: "2px black",
+              paintOrder: "stroke fill",
+              textShadow: "2px 2px 0px rgba(0,0,0,0.1)",
+              scaleX: 0.75,
+              marginLeft: `${letter.spacing}em`,
+            }}
+            {...animationProps}
+          >
+            {letter.char === "i" ? <span className="relative inline-block">i</span> : letter.char}
+          </m.span>
+        );
+      })}
     </div>
   );
 });
