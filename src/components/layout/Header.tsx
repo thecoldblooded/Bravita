@@ -85,7 +85,6 @@ const BravitaLogo = memo(({ isScrolled }: { isScrolled: boolean }) => {
 
         return (
           <m.span
-            key={letter.id}
             className={cn(letter.color, letter.rotate, "relative inline-block origin-bottom")}
             style={{
               WebkitTextStroke: "2px black",
@@ -95,6 +94,7 @@ const BravitaLogo = memo(({ isScrolled }: { isScrolled: boolean }) => {
               marginLeft: `${letter.spacing}em`,
             }}
             {...animationProps}
+            key={letter.id}
           >
             {letter.char === "i" ? <span className="relative inline-block">i</span> : letter.char}
           </m.span>

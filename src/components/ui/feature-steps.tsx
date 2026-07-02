@@ -152,7 +152,6 @@ export function FeatureSteps({
 
               return (
                 <m.div
-                  key={feature.step}
                   ref={(node) => {
                     itemRefs.current[index] = node
                   }}
@@ -168,8 +167,9 @@ export function FeatureSteps({
                   {...motionProps}
                   transition={{
                     duration: 0.55,
-                    ease: [0.21, 0.47, 0.32, 0.98],
+                    ease: "easeOut",
                   }}
+                  key={feature.step}
                 >
                   <div
                     className={cn(
