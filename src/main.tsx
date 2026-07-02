@@ -155,6 +155,12 @@ const waitForImageReadiness = (src: string) =>
 
 const waitForVideoReadiness = (src: string) =>
   new Promise<void>((resolve) => {
+    const isMobile = typeof window !== "undefined" && (window.innerWidth < 1024 || window.matchMedia("(hover: none)").matches);
+    if (isMobile) {
+      resolve();
+      return;
+    }
+
     const video = document.createElement("video");
     let settled = false;
 

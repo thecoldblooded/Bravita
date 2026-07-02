@@ -216,6 +216,26 @@ const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
         (async () => {
             const isMobile = window.matchMedia("(max-width: 768px)").matches;
             const isSmallMobile = window.matchMedia("(max-width: 425px)").matches;
+            const isMobileDevice = window.matchMedia("(hover: none)").matches || window.innerWidth < 1024;
+
+            // Mobile: skip GSAP/Lenis entirely — just show video natively
+            // This avoids ~200KB of JS parse/execute that blocks the main thread
+            if (isMobileDevice) {
+                const container = containerRef.current;
+                if (container) {
+                    container.style.width = "100vw";
+                    container.style.height = "56.25vw";
+                    container.style.borderRadius = "0";
+                    container.style.maxHeight = "100vh";
+                }
+                // Try to play video
+                const videoEl = container?.querySelector("video") as HTMLVideoElement | null;
+                if (videoEl) {
+                    videoEl.play().catch(() => { /* ignore */ });
+                }
+                return;
+            }
+
             const gsapPkg = await import("gsap");
             gsap = gsapPkg.gsap || gsapPkg.default || gsapPkg;
 
@@ -241,7 +261,7 @@ const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
 
             if (cancelled) return;
 
-            const isMobileDevice = window.matchMedia("(hover: none)").matches || window.innerWidth < 1024;
+            // Re-check or use the outer scoped isMobileDevice variable
             if (smoothScroll && !isMobileDevice) {
                 const try1 = await import("lenis").catch(() => null);
                 Lenis = try1?.default || (try1 as any)?.Lenis || try1;

@@ -41,6 +41,28 @@ function HeroBackgroundVisuals({ safeStars, stars, target }: HeroBackgroundVisua
 
   return (
     <>
+      {/* Mobile-optimized: CSS-only keyframe styles */}
+      {isMobile && (
+        <style>{`
+          @keyframes hero-star-float {
+            0%, 100% { transform: translate(-50%, -50%) translateY(0); }
+            50% { transform: translate(-50%, -50%) translateY(-10px); }
+          }
+          @keyframes hero-comet-pulse {
+            0%, 100% { opacity: 0.03; }
+            50% { opacity: 0.08; }
+          }
+          .hero-star-mobile {
+            animation: hero-star-float var(--float-dur, 6s) ease-in-out infinite;
+            animation-delay: var(--float-delay, 0s);
+          }
+          .hero-comet-mobile {
+            animation: hero-comet-pulse var(--pulse-dur, 4s) ease-in-out infinite;
+            animation-delay: var(--pulse-delay, 0s);
+          }
+        `}</style>
+      )}
+
       <div className="absolute inset-0 z-0 pointer-events-none">
         <svg viewBox="0 0 1000 1000" preserveAspectRatio="none" className="w-full h-full">
           {!isMobile && (
@@ -78,13 +100,19 @@ function HeroBackgroundVisuals({ safeStars, stars, target }: HeroBackgroundVisua
             const pathD = `M ${star.start[0]} ${star.start[1]} Q ${controlX} ${controlY} ${target[0]} ${target[1]}`;
 
             if (isMobile) {
+              // CSS-only subtle pulse on the comet trail
               return (
                 <g key={`group-${star.id}`}>
                   <path
-                    stroke="rgba(249, 115, 22, 0.04)"
+                    className="hero-comet-mobile"
+                    stroke="rgba(249, 115, 22, 0.06)"
                     strokeWidth="0.5"
                     fill="none"
                     d={pathD}
+                    style={{
+                      "--pulse-dur": `${star.duration}s`,
+                      "--pulse-delay": `${star.delay}s`,
+                    } as React.CSSProperties}
                   />
                 </g>
               );
@@ -139,44 +167,77 @@ function HeroBackgroundVisuals({ safeStars, stars, target }: HeroBackgroundVisua
       </div>
 
       <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden">
-        {stars.map((star) => (
-          <div
-            key={`star-dom-wrapper-${star.id}`}
-            className="absolute flex items-center justify-center transform -translate-x-1/2 -translate-y-1/2"
-            style={{
-              left: `${star.start[0] / 10}%`,
-              top: `${star.start[1] / 10}%`,
-              width: `${star.size}px`,
-              height: `${star.size}px`,
-            }}
-          >
-            <m.div
-              className="relative w-full h-full flex items-center justify-center pointer-events-auto group"
-              style={{ willChange: "transform" }}
-              animate={{
-                y: [0, -star.floatAmount, 0],
-              }}
-              transition={{
-                duration: star.duration,
-                repeat: Infinity,
-                delay: star.delay,
-                ease: "easeInOut",
+        {stars.map((star) => {
+          if (isMobile) {
+            // CSS-only float animation — no Framer Motion JS loops
+            return (
+              <div
+                key={`star-dom-wrapper-${star.id}`}
+                className="absolute flex items-center justify-center hero-star-mobile"
+                style={{
+                  left: `${star.start[0] / 10}%`,
+                  top: `${star.start[1] / 10}%`,
+                  width: `${star.size}px`,
+                  height: `${star.size}px`,
+                  "--float-dur": `${star.duration}s`,
+                  "--float-delay": `${star.delay}s`,
+                } as React.CSSProperties}
+              >
+                <Star
+                  className="absolute inset-0 text-orange-300 fill-orange-50"
+                  style={{ width: "100%", height: "100%" }}
+                  strokeWidth={1.5}
+                />
+                <span
+                  className="relative z-10 text-[8.5px] sm:text-[10px] font-bold text-orange-950 leading-tight text-center px-4 select-none"
+                  style={{ backfaceVisibility: "hidden", transform: "translateZ(0)", WebkitFontSmoothing: "antialiased" }}
+                >
+                  {star.name}
+                </span>
+              </div>
+            );
+          }
+
+          // Desktop: full Framer Motion float
+          return (
+            <div
+              key={`star-dom-wrapper-${star.id}`}
+              className="absolute flex items-center justify-center transform -translate-x-1/2 -translate-y-1/2"
+              style={{
+                left: `${star.start[0] / 10}%`,
+                top: `${star.start[1] / 10}%`,
+                width: `${star.size}px`,
+                height: `${star.size}px`,
               }}
             >
-              <Star
-                className="absolute inset-0 text-orange-300 fill-orange-50 group-hover:scale-105 transition-transform duration-500"
-                style={{ width: "100%", height: "100%" }}
-                strokeWidth={1.5}
-              />
-              <span
-                className="relative z-10 text-[8.5px] sm:text-[10px] font-bold text-orange-950 leading-tight text-center px-4 select-none"
-                style={{ backfaceVisibility: "hidden", transform: "translateZ(0)", WebkitFontSmoothing: "antialiased" }}
+              <m.div
+                className="relative w-full h-full flex items-center justify-center pointer-events-auto group"
+                style={{ willChange: "transform" }}
+                animate={{
+                  y: [0, -star.floatAmount, 0],
+                }}
+                transition={{
+                  duration: star.duration,
+                  repeat: Infinity,
+                  delay: star.delay,
+                  ease: "easeInOut",
+                }}
               >
-                {star.name}
-              </span>
-            </m.div>
-          </div>
-        ))}
+                <Star
+                  className="absolute inset-0 text-orange-300 fill-orange-50 group-hover:scale-105 transition-transform duration-500"
+                  style={{ width: "100%", height: "100%" }}
+                  strokeWidth={1.5}
+                />
+                <span
+                  className="relative z-10 text-[8.5px] sm:text-[10px] font-bold text-orange-950 leading-tight text-center px-4 select-none"
+                  style={{ backfaceVisibility: "hidden", transform: "translateZ(0)", WebkitFontSmoothing: "antialiased" }}
+                >
+                  {star.name}
+                </span>
+              </m.div>
+            </div>
+          );
+        })}
       </div>
 
       <div className="absolute inset-0 overflow-hidden pointer-events-none">

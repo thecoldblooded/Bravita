@@ -7,8 +7,6 @@ import {
 } from "framer-motion";
 import { Quote } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import * as THREE from "three";
-import FOG from "vanta/dist/vanta.fog.min";
 
 import ScrollReveal from "@/components/ui/scroll-reveal";
 import SegmentedRevealText from "@/components/ui/segmented-reveal-text";
@@ -94,46 +92,62 @@ function TestimonialCard({
 
 function VantaBackground() {
   const vantaRef = useRef<HTMLDivElement>(null);
-  const vantaEffect = useRef<ReturnType<typeof FOG> | null>(null);
-
-  const initVanta = useCallback(() => {
-    if (!vantaRef.current || vantaEffect.current) return;
-
-    // Do not initialize on mobile/tablet (screen width < 1025px)
-    if (window.innerWidth < 1025) return;
-
-    vantaEffect.current = FOG({
-      el: vantaRef.current,
-      THREE,
-      mouseControls: true,
-      touchControls: false,
-      gyroControls: false,
-      minHeight: 200,
-      minWidth: 200,
-      highlightColor: 0x0,
-      midtoneColor: 0xec772c,
-      lowlightColor: 0x3d1c0a,
-      baseColor: 0x1a0f0a,
-      blurFactor: 0.5,
-      speed: 0.5,
-      zoom: 1.0,
-    });
-
-    const canvas = vantaRef.current.querySelector("canvas");
-    if (canvas instanceof HTMLCanvasElement) {
-      canvas.style.pointerEvents = "none";
-    }
-  }, []);
+  const vantaEffect = useRef<any>(null);
 
   useEffect(() => {
+    let active = true;
+    let effectInstance: any = null;
+
+    const initVanta = async () => {
+      if (window.innerWidth < 1025 || !vantaRef.current) return;
+
+      try {
+        // Dynamic import to prevent loading 600KB+ Three.js on mobile
+        const THREE = await import("three");
+        const vantaModule = await import("vanta/dist/vanta.fog.min");
+        const FOG = (vantaModule.default || vantaModule) as any;
+
+        if (!active || !vantaRef.current || effectInstance) return;
+
+        effectInstance = FOG({
+          el: vantaRef.current,
+          THREE,
+          mouseControls: true,
+          touchControls: false,
+          gyroControls: false,
+          minHeight: 200,
+          minWidth: 200,
+          highlightColor: 0x0,
+          midtoneColor: 0xec772c,
+          lowlightColor: 0x3d1c0a,
+          baseColor: 0x1a0f0a,
+          blurFactor: 0.5,
+          speed: 0.5,
+          zoom: 1.0,
+        });
+
+        vantaEffect.current = effectInstance;
+
+        const canvas = vantaRef.current.querySelector("canvas");
+        if (canvas instanceof HTMLCanvasElement) {
+          canvas.style.pointerEvents = "none";
+        }
+      } catch (err) {
+        console.error("Vanta initialization failed:", err);
+      }
+    };
+
     const handleResize = () => {
       if (window.innerWidth < 1025) {
-        if (vantaEffect.current) {
-          vantaEffect.current.destroy();
+        if (effectInstance) {
+          effectInstance.destroy();
+          effectInstance = null;
           vantaEffect.current = null;
         }
       } else {
-        initVanta();
+        if (!effectInstance) {
+          initVanta();
+        }
       }
     };
 
@@ -141,13 +155,15 @@ function VantaBackground() {
     window.addEventListener("resize", handleResize);
 
     return () => {
+      active = false;
       window.removeEventListener("resize", handleResize);
-      if (vantaEffect.current) {
-        vantaEffect.current.destroy();
+      if (effectInstance) {
+        effectInstance.destroy();
+        effectInstance = null;
         vantaEffect.current = null;
       }
     };
-  }, [initVanta]);
+  }, []);
 
   return (
     <div

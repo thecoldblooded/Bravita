@@ -34,11 +34,16 @@ export const BackgroundGradientAnimation = ({
     containerClassName?: string;
 }) => {
     const interactiveRef = useRef<HTMLDivElement>(null);
+    const curXRef = useRef(0);
+    const curYRef = useRef(0);
+    const tgXRef = useRef(0);
+    const tgYRef = useRef(0);
 
-    const [curX, setCurX] = useState(0);
-    const [curY, setCurY] = useState(0);
-    const [tgX, setTgX] = useState(0);
-    const [tgY, setTgY] = useState(0);
+    // Detect mobile once on mount — no re-renders needed
+    const [isMobile] = useState(
+        () => typeof window !== "undefined" && (window.innerWidth < 1024 || window.matchMedia("(hover: none)").matches)
+    );
+
     useEffect(() => {
         document.body.style.setProperty(
             "--gradient-background-start",
@@ -58,23 +63,22 @@ export const BackgroundGradientAnimation = ({
         document.body.style.setProperty("--blending-value", blendingValue);
     }, [gradientBackgroundStart, gradientBackgroundEnd, firstColor, secondColor, thirdColor, fourthColor, fifthColor, pointerColor, size, blendingValue]);
 
+    // Desktop-only: rAF loop for interactive cursor tracking using refs (no setState)
     useEffect(() => {
+        if (isMobile) return;
+
         let animationFrameId: number;
 
         function move() {
-            if (!interactiveRef.current) return;
+            if (!interactiveRef.current) {
+                animationFrameId = requestAnimationFrame(move);
+                return;
+            }
 
-            setCurX((prevCurX) => {
-                const newX = prevCurX + (tgX - prevCurX) / 20;
-                setCurY((prevCurY) => {
-                    const newY = prevCurY + (tgY - prevCurY) / 20;
-                    if (interactiveRef.current) {
-                        interactiveRef.current.style.transform = `translate(${Math.round(newX)}px, ${Math.round(newY)}px)`;
-                    }
-                    return newY;
-                });
-                return newX;
-            });
+            curXRef.current += (tgXRef.current - curXRef.current) / 20;
+            curYRef.current += (tgYRef.current - curYRef.current) / 20;
+
+            interactiveRef.current.style.transform = `translate(${Math.round(curXRef.current)}px, ${Math.round(curYRef.current)}px)`;
 
             animationFrameId = requestAnimationFrame(move);
         }
@@ -85,23 +89,53 @@ export const BackgroundGradientAnimation = ({
                 cancelAnimationFrame(animationFrameId);
             }
         };
-    }, [tgX, tgY]);
+    }, [isMobile]);
 
     const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
         if (interactiveRef.current) {
             const rect = interactiveRef.current.getBoundingClientRect();
-            setTgX(event.clientX - rect.left);
-            setTgY(event.clientY - rect.top);
+            tgXRef.current = event.clientX - rect.left;
+            tgYRef.current = event.clientY - rect.top;
         }
     };
 
     const [isSafari, setIsSafari] = useState(false);
     useEffect(() => {
+        if (isMobile) return;
         const checkSafari = () => /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
         const result = checkSafari();
         queueMicrotask(() => setIsSafari(result));
-    }, []);
+    }, [isMobile]);
 
+    // Mobile: render a simple static gradient — no blur, no rAF, no SVG filters
+    if (isMobile) {
+        return (
+            <div
+                className={cn(
+                    "h-screen w-screen relative overflow-hidden top-0 left-0",
+                    containerClassName
+                )}
+                style={{
+                    background: `linear-gradient(135deg, ${gradientBackgroundStart} 0%, ${gradientBackgroundEnd} 100%)`,
+                }}
+            >
+                <div className={cn("", className)}>{children}</div>
+                {/* Static soft gradient orbs — CSS only, no JS animation */}
+                <div className="absolute inset-0 opacity-30 pointer-events-none">
+                    <div
+                        className="absolute w-[60%] h-[60%] top-[10%] left-[15%] rounded-full"
+                        style={{ background: `radial-gradient(circle, rgba(${firstColor}, 0.5) 0%, transparent 70%)` }}
+                    />
+                    <div
+                        className="absolute w-[50%] h-[50%] bottom-[10%] right-[10%] rounded-full"
+                        style={{ background: `radial-gradient(circle, rgba(${secondColor}, 0.4) 0%, transparent 70%)` }}
+                    />
+                </div>
+            </div>
+        );
+    }
+
+    // Desktop: full animated gradient with interactive cursor
     return (
         <div
             className={cn(
