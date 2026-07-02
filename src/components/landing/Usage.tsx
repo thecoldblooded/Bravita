@@ -3,31 +3,122 @@ import HeroScrollVideo from "@/components/ui/scroll-animated-video";
 import bravitaBottlePoster from "@/assets/bravita-bottle1.webp";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTranslation } from "react-i18next";
+import { cn } from "@/lib/utils";
+import { useRef, useState } from "react";
+import { useScroll, useMotionValueEvent } from "framer-motion";
 
 const Usage = () => {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const [currentFrame, setCurrentFrame] = useState(1);
+  const [overlayOpacity, setOverlayOpacity] = useState(0);
+
+  // Track the scroll of the entire Usage section
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start end", "end start"]
+  });
+
+  // Map the scroll progress (0 to 1) to frame numbers (1 to 43) and overlay opacity
+  useMotionValueEvent(scrollYProgress, "change", (latest) => {
+    if (!isMobile) return;
+
+    // 1. Frame Animation: map progress from 0.01 (as it enters the viewport bottom) to 0.38
+    const startProgress = 0.125;
+    const endProgress = 0.38;
+
+    let activePercent = 0;
+    if (latest > startProgress) {
+      activePercent = Math.min(1, (latest - startProgress) / (endProgress - startProgress));
+    }
+
+    const totalFrames = 43;
+    const frameIndex = Math.min(
+      totalFrames,
+      Math.max(1, Math.floor(activePercent * totalFrames))
+    );
+    setCurrentFrame(frameIndex);
+
+    // 2. Dynamic Overlay Fade: starts at 0.22 (as cards rise up) and reaches full opacity (0.25) at 0.50
+    const overlayStart = 0.22;
+    const overlayEnd = 0.50;
+    let opacityVal = 0;
+    if (latest > overlayStart) {
+      const overlayPercent = Math.min(1, (latest - overlayStart) / (overlayEnd - overlayStart));
+      opacityVal = overlayPercent * 0.25; // max 25% opacity
+    }
+    setOverlayOpacity(opacityVal);
+  });
+
+  // Helper to format frame number to 3-digit string (e.g. 1 -> "001", 42 -> "042")
+  const formatFrameNum = (num: number) => {
+    return String(num).padStart(3, "0");
+  };
+
+  // Active frame image source path
+  const frameSrc = `/frames-usage/ezgif-frame-${formatFrameNum(currentFrame)}.webp`;
 
   return (
-    <section className="bg-transparent pb-20 md:pb-32">
-      <HeroScrollVideo
-        title="Bravita"
-        subtitle={t('usage.video_subtitle')}
-        meta="2025"
-        media="/bravita-video.webm"
-        poster={bravitaBottlePoster}
-        mediaType="video"
-        targetSize="fullscreen"
-        scrollHeightVh={isMobile ? 120 : 200}
-        overlay={{}}
-      />
+    <section ref={sectionRef} className="bg-transparent pb-20 md:pb-32 relative">
+      {isMobile ? (
+        <>
+          {/* Sticky container for mobile image banner to enable parallax scroll-over */}
+          <div className="sticky top-0 h-[50vh] w-full z-0 overflow-hidden pointer-events-none bg-[#fff9f2]">
+            <div className="w-full h-full relative flex items-center justify-center">
+              <img
+                src={frameSrc}
+                alt="Bravita"
+                className="w-full h-full object-cover"
+              />
+              {/* Invisible preloader image to load the next frame in advance to prevent flickering */}
+              <link
+                rel="prefetch"
+                as="image"
+                href={`/frames-usage/ezgif-frame-${formatFrameNum(Math.min(43, currentFrame + 1))}.webp`}
+              />
+              <link
+                rel="prefetch"
+                as="image"
+                href={`/frames-usage/ezgif-frame-${formatFrameNum(Math.max(1, currentFrame - 1))}.webp`}
+              />
+              {/* Dynamic black overlay that fades in up to 25% (opacity 0.25) as content scrolls over */}
+              <div
+                className="absolute inset-0 bg-black transition-opacity duration-75 z-10"
+                style={{ opacity: overlayOpacity }}
+              />
+            </div>
+          </div>
+          {/* Taller spacer to keep the image visible longer before scroll-over starts */}
+          <div className="h-[30vh] pointer-events-none" />
+        </>
+      ) : (
+        <>
+          <HeroScrollVideo
+            title="Bravita"
+            subtitle={t('usage.video_subtitle')}
+            meta="2025"
+            media="/bravita-video.webm"
+            poster={bravitaBottlePoster}
+            mediaType="video"
+            targetSize="fullscreen"
+            scrollHeightVh={200}
+            overlay={{}}
+          />
+          <div className="container mx-auto px-4 mt-[-100vh] md:mt-[-115vh] relative z-10 pointer-events-none">
+            <div style={{ height: "10vh" }}></div>
+          </div>
+        </>
+      )}
 
-      <div className="container mx-auto px-4 mt-[-100vh] md:mt-[-115vh] relative z-10 pointer-events-none">
-        {/* Spacer to push content below the scroll height */}
-        <div style={{ height: "10vh" }}></div>
-      </div>
-
-      <div id="usage-content" className="container mx-auto px-4 relative z-10 scroll-mt-32">
+      {/* Content wrapper - overlapping the sticky media/image */}
+      <div
+        id="usage-content"
+        className={cn(
+          "container mx-auto px-4 relative z-10 scroll-mt-32",
+          isMobile ? "mt-[-20vh] pt-4" : ""
+        )}
+      >
         <div className="bg-white/90 backdrop-blur-xl rounded-[2.5rem] shadow-2xl border border-white/50 p-6 md:p-12 max-w-7xl mx-auto">
           <div className="text-center mb-12">
             <span className="text-bravita-orange font-bold tracking-wider text-sm uppercase mb-2 block">

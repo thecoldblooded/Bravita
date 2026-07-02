@@ -3,7 +3,7 @@ import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { m } from "framer-motion";
 import loginVideo from "@/assets/optimized/login-compressed.mp4";
-import bravitaLogo from "@/assets/bravita-logo.png";
+import bravitaLogo from "@/assets/bravita-logo.webp";
 import {
   Dialog,
   DialogContent,

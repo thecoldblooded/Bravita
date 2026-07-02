@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { LoadingSkeleton } from "./loading-skeleton";
+import { useScroll, useMotionValueEvent } from "framer-motion";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Register GSAP plugins
 gsap.registerPlugin(ScrollTrigger);
@@ -27,6 +29,8 @@ const ScrollImageSequence = ({ className = "" }: ScrollImageSequenceProps) => {
   const [isFirstFrameReady, setIsFirstFrameReady] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [isInView, setIsInView] = useState(false);
+  const isMobile = useIsMobile();
+  const [mobileFrame, setMobileFrame] = useState(1);
 
   // Keep images in a ref to avoid re-renders during loading
   const imagesRef = useRef<(HTMLImageElement | null)[]>(new Array(frameCount).fill(null));
@@ -35,6 +39,32 @@ const ScrollImageSequence = ({ className = "" }: ScrollImageSequenceProps) => {
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
   const dimensionsRef = useRef({ displayWidth: 0, displayHeight: 0 });
   const hasStartedLoading = useRef(false);
+
+  // Mobile-only: Track scroll progress of the container
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start end", "end start"]
+  });
+
+  // Mobile-only scroll frame calculation
+  useMotionValueEvent(scrollYProgress, "change", (latest) => {
+    if (!isMobile) return;
+    
+    // Map the scroll progress from 0.15 (enters view) to 0.75 (leaves view)
+    const startProgress = 0.15;
+    const endProgress = 0.75;
+    
+    let activePercent = 0;
+    if (latest > startProgress) {
+      activePercent = Math.min(1, (latest - startProgress) / (endProgress - startProgress));
+    }
+    
+    const frameIndex = Math.min(
+      frameCount,
+      Math.max(1, Math.floor(activePercent * frameCount))
+    );
+    setMobileFrame(frameIndex);
+  });
 
   // Intersection Observer to detect when component is near viewport
   useEffect(() => {
@@ -173,7 +203,7 @@ const ScrollImageSequence = ({ className = "" }: ScrollImageSequenceProps) => {
 
   // Combined setup and loading effect - only runs when in view
   useEffect(() => {
-    if (!isInView) return; // Don't start until in view
+    if (!isInView || isMobile) return; // Skip GSAP/Loading effect on mobile
 
     const canvas = canvasRef.current;
     const container = containerRef.current;
@@ -285,25 +315,42 @@ const ScrollImageSequence = ({ className = "" }: ScrollImageSequenceProps) => {
       tween?.kill();
       ScrollTrigger.getAll().forEach(st => st.kill());
     };
-  }, [isInView, setCanvasSize, drawFrame, findNearestLoadedFrame, loadImage]);
+  }, [isInView, isMobile, setCanvasSize, drawFrame, findNearestLoadedFrame, loadImage]);
+
+  // Mobile image source formatting (e.g. `/frames/ezgif-frame-042.webp`)
+  const mobileFrameSrc = `/frames/ezgif-frame-${String(mobileFrame).padStart(3, '0')}.webp`;
 
   return (
-    <div ref={containerRef} className={`relative ${className}`}>
+    <div ref={containerRef} className={`relative flex items-center justify-center ${className}`}>
       {/* Glow effect behind the bottle */}
       <div className="absolute inset-0 bg-linear-to-br from-bravita-yellow/40 to-bravita-orange/40 rounded-full blur-3xl scale-90" />
 
-      {/* Canvas for image sequence */}
-      <canvas
-        ref={canvasRef}
-        className="relative z-10"
-        style={{
-          opacity: isFirstFrameReady ? 1 : 0,
-          transition: "opacity 0.5s ease-out",
-        }}
-      />
+      {isMobile ? (
+        // Mobile lightweight responsive image - completely bypasses Canvas/GSAP overhead
+        <div className="relative w-full aspect-16/9 flex items-center justify-center z-10">
+          <img
+            src={mobileFrameSrc}
+            alt="Bravita Bottle Sequence"
+            className="w-full h-full object-contain max-h-[40vh]"
+          />
+          {/* Mobile frame prefetching for smooth animation without flicker */}
+          <link rel="prefetch" as="image" href={`/frames/ezgif-frame-${String(Math.min(frameCount, mobileFrame + 1)).padStart(3, '0')}.webp`} />
+          <link rel="prefetch" as="image" href={`/frames/ezgif-frame-${String(Math.max(1, mobileFrame - 1)).padStart(3, '0')}.webp`} />
+        </div>
+      ) : (
+        // Desktop Canvas with GSAP
+        <canvas
+          ref={canvasRef}
+          className="relative z-10"
+          style={{
+            opacity: isFirstFrameReady ? 1 : 0,
+            transition: "opacity 0.5s ease-out",
+          }}
+        />
+      )}
 
-      {/* Loading skeleton with progress */}
-      {!isFirstFrameReady && (
+      {/* Loading skeleton with progress (desktop only) */}
+      {!isMobile && !isFirstFrameReady && (
         <LoadingSkeleton
           className="absolute inset-0 z-10"
           progress={loadingProgress}
@@ -311,8 +358,8 @@ const ScrollImageSequence = ({ className = "" }: ScrollImageSequenceProps) => {
         />
       )}
 
-      {/* Subtle loading indicator when not fully loaded but first frame is shown */}
-      {isFirstFrameReady && !isReady && (
+      {/* Subtle loading indicator when not fully loaded but first frame is shown (desktop only) */}
+      {!isMobile && isFirstFrameReady && !isReady && (
         <div className="absolute bottom-4 right-4 z-20 flex items-center gap-2 bg-black/30 backdrop-blur-sm rounded-full px-3 py-1.5">
           <div className="w-2 h-2 rounded-full bg-bravita-orange animate-pulse" />
           <span className="text-xs text-white/80">{Math.round(loadingProgress)}%</span>

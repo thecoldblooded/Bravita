@@ -189,7 +189,7 @@ function HeroBackgroundVisuals({ safeStars, stars, target }: HeroBackgroundVisua
                   strokeWidth={1.5}
                 />
                 <span
-                  className="relative z-10 text-[8.5px] sm:text-[10px] font-bold text-orange-950 leading-tight text-center px-4 select-none"
+                  className="relative z-10 text-[11.5px] sm:text-[13px] font-bold text-orange-950 leading-tight text-center px-2 select-none"
                   style={{ backfaceVisibility: "hidden", transform: "translateZ(0)", WebkitFontSmoothing: "antialiased" }}
                 >
                   {star.name}
@@ -257,9 +257,10 @@ interface HeroMainContentProps {
   bottleRef: RefObject<HTMLDivElement>;
   accentChars: AccentChar[];
   ingredients: string[];
+  isLG: boolean;
 }
 
-function HeroMainContent({ t, containerRef, bottleRef, accentChars, ingredients }: HeroMainContentProps) {
+function HeroMainContent({ t, containerRef, bottleRef, accentChars, ingredients, isLG }: HeroMainContentProps) {
   return (
     <div className="container mx-auto px-4 lg:px-12 relative z-20 w-full">
       <div className="grid lg:grid-cols-2 gap-8 items-center">
@@ -273,48 +274,62 @@ function HeroMainContent({ t, containerRef, bottleRef, accentChars, ingredients 
             className="text-4xl md:text-[84px] font-black text-[#2D334A] mb-8 leading-[1.05] tracking-tight animate-fade-in-up min-h-35 md:min-h-45"
             style={{ animationDelay: "0.2s" }}
           >
-            <TextCursorProximity
-              key={t("hero.title_part1")}
-              label={t("hero.title_part1")}
-              containerRef={containerRef}
-              className="inline-block mr-4"
-              styles={{
-                transform: { from: "scale(1) translateY(0px)", to: "scale(1.4) translateY(-20px)" },
-                color: { from: "#2D334A", to: "#ea580c" },
-              }}
-              falloff="gaussian"
-              radius={100}
-            />
+            {isLG ? (
+              <span className="inline-block mr-4 text-[#2D334A]">{t("hero.title_part1")}</span>
+            ) : (
+              <TextCursorProximity
+                key={t("hero.title_part1")}
+                label={t("hero.title_part1")}
+                containerRef={containerRef}
+                className="inline-block mr-4"
+                styles={{
+                  transform: { from: "scale(1) translateY(0px)", to: "scale(1.4) translateY(-20px)" },
+                  color: { from: "#2D334A", to: "#ea580c" },
+                }}
+                falloff="gaussian"
+                radius={100}
+              />
+            )}
             <br className="hidden md:block" />
             <span className="inline-flex flex-wrap justify-center lg:justify-start">
-              {accentChars.map((item) => (
-                <TextCursorProximity
-                  key={item.id}
-                  label={item.char}
-                  containerRef={containerRef}
-                  className="inline-block"
-                  styles={{
-                    transform: { from: "scale(1) translateY(0px)", to: "scale(1.4) translateY(-20px)" },
-                    color: { from: item.color, to: "#ea580c" },
-                  }}
-                  falloff="gaussian"
-                  radius={100}
-                />
-              ))}
+              {accentChars.map((item) => 
+                isLG ? (
+                  <span key={item.id} className="inline-block" style={{ color: item.color }}>
+                    {item.char}
+                  </span>
+                ) : (
+                  <TextCursorProximity
+                    key={item.id}
+                    label={item.char}
+                    containerRef={containerRef}
+                    className="inline-block"
+                    styles={{
+                      transform: { from: "scale(1) translateY(0px)", to: "scale(1.4) translateY(-20px)" },
+                      color: { from: item.color, to: "#ea580c" },
+                    }}
+                    falloff="gaussian"
+                    radius={100}
+                  />
+                )
+              )}
             </span>
             <br />
-            <TextCursorProximity
-              key={t("hero.title_part3")}
-              label={t("hero.title_part3")}
-              containerRef={containerRef}
-              className="inline-block"
-              styles={{
-                transform: { from: "scale(1) translateY(0px)", to: "scale(1.4) translateY(-20px)" },
-                color: { from: "#2D334A", to: "#ea580c" },
-              }}
-              falloff="gaussian"
-              radius={100}
-            />
+            {isLG ? (
+              <span className="inline-block text-[#2D334A]">{t("hero.title_part3")}</span>
+            ) : (
+              <TextCursorProximity
+                key={t("hero.title_part3")}
+                label={t("hero.title_part3")}
+                containerRef={containerRef}
+                className="inline-block"
+                styles={{
+                  transform: { from: "scale(1) translateY(0px)", to: "scale(1.4) translateY(-20px)" },
+                  color: { from: "#2D334A", to: "#ea580c" },
+                }}
+                falloff="gaussian"
+                radius={100}
+              />
+            )}
           </h1>
 
           <p
@@ -364,7 +379,6 @@ function HeroMainContent({ t, containerRef, bottleRef, accentChars, ingredients 
                 alt="Bravita Sıvı Takviye"
                 loading="eager"
                 decoding="async"
-                fetchPriority="high"
                 width={320}
                 height={566}
                 className="w-45 md:w-65 lg:w-[320px] h-auto max-h-[75vh] object-contain relative z-10 drop-shadow-2xl"
@@ -469,7 +483,7 @@ const Hero = () => {
       delay: 0,
       duration: 6,
       size: 119,
-      mobileSize: 50,
+      mobileSize: 100,
       floatAmount: 15,
     },
     {
@@ -480,7 +494,7 @@ const Hero = () => {
       delay: 0.5,
       duration: 7,
       size: 85,
-      mobileSize: 50,
+      mobileSize: 100,
       floatAmount: 20,
     },
     {
@@ -491,7 +505,7 @@ const Hero = () => {
       delay: 1,
       duration: 5.5,
       size: 102,
-      mobileSize: 50,
+      mobileSize: 100,
       floatAmount: 12,
     },
     {
@@ -502,7 +516,7 @@ const Hero = () => {
       delay: 1.5,
       duration: 8,
       size: 94,
-      mobileSize: 50,
+      mobileSize: 100,
       floatAmount: 18,
     },
     {
@@ -513,7 +527,7 @@ const Hero = () => {
       delay: 1.2,
       duration: 7.5,
       size: 106,
-      mobileSize: 50,
+      mobileSize: 100,
       floatAmount: 16,
     },
     {
@@ -524,7 +538,7 @@ const Hero = () => {
       delay: 2,
       duration: 6.5,
       size: 111,
-      mobileSize: 50,
+      mobileSize: 100,
       floatAmount: 14,
     },
   ];
@@ -562,6 +576,7 @@ const Hero = () => {
         bottleRef={bottleRef}
         accentChars={accentChars}
         ingredients={ingredients}
+        isLG={isLG}
       />
       <HeroWaveDivider />
     </section>
