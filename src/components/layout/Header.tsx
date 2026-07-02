@@ -35,7 +35,20 @@ type ScrollState = {
 
 type I18nApi = ReturnType<typeof useTranslation>["i18n"];
 
-const BravitaLogo = ({ isScrolled }: { isScrolled: boolean }) => {
+import { useIsMobile } from "@/hooks/use-mobile";
+
+const BravitaLogo = memo(({ isScrolled }: { isScrolled: boolean }) => {
+  const isMobile = useIsMobile();
+  const [activeAnimation, setActiveAnimation] = useState(false);
+
+  useEffect(() => {
+    // Delay animation trigger by 10 seconds to keep initial page load performant
+    const timer = setTimeout(() => {
+      setActiveAnimation(true);
+    }, 10000);
+    return () => clearTimeout(timer);
+  }, []);
+
   const letters = useMemo(
     () => [
       { id: "b", char: "B", color: "text-[#EE4036]", rotate: "-rotate-3", spacing: 0 },
@@ -67,21 +80,21 @@ const BravitaLogo = ({ isScrolled }: { isScrolled: boolean }) => {
             scaleX: 0.75,
             marginLeft: `${letter.spacing}em`,
           }}
-          animate={{ y: [0, -12, 0], scale: [1, 1.05, 1] }}
-          transition={{
+          animate={activeAnimation ? { y: [0, -12, 0], scale: [1, 1.05, 1] } : undefined}
+          transition={activeAnimation ? {
             duration: 1,
             repeat: Infinity,
             ease: "easeInOut",
             delay: index * 0.5,
             repeatDelay: (letters.length - 1) * 0.5,
-          }}
+          } : undefined}
         >
           {letter.char === "i" ? <span className="relative inline-block">i</span> : letter.char}
         </m.span>
       ))}
     </div>
   );
-};
+});
 
 function useHeaderScrollState(navItems: HeaderNavItem[]): ScrollState {
   const [scrollState, setScrollState] = useState<ScrollState>({

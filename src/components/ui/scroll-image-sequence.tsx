@@ -31,6 +31,7 @@ const ScrollImageSequence = ({ className = "" }: ScrollImageSequenceProps) => {
   const [isInView, setIsInView] = useState(false);
   const isMobile = useIsMobile();
   const [mobileFrame, setMobileFrame] = useState(1);
+  const frameIdRef = useRef<number | null>(null);
 
   // Keep images in a ref to avoid re-renders during loading
   const imagesRef = useRef<(HTMLImageElement | null)[]>(new Array(frameCount).fill(null));
@@ -50,20 +51,26 @@ const ScrollImageSequence = ({ className = "" }: ScrollImageSequenceProps) => {
   useMotionValueEvent(scrollYProgress, "change", (latest) => {
     if (!isMobile) return;
     
-    // Map the scroll progress from 0.15 (enters view) to 0.75 (leaves view)
-    const startProgress = 0.15;
-    const endProgress = 0.75;
-    
-    let activePercent = 0;
-    if (latest > startProgress) {
-      activePercent = Math.min(1, (latest - startProgress) / (endProgress - startProgress));
+    if (frameIdRef.current !== null) {
+      cancelAnimationFrame(frameIdRef.current);
     }
-    
-    const frameIndex = Math.min(
-      frameCount,
-      Math.max(1, Math.floor(activePercent * frameCount))
-    );
-    setMobileFrame(frameIndex);
+
+    frameIdRef.current = requestAnimationFrame(() => {
+      // Map the scroll progress from 0.15 (enters view) to 0.75 (leaves view)
+      const startProgress = 0.15;
+      const endProgress = 0.75;
+      
+      let activePercent = 0;
+      if (latest > startProgress) {
+        activePercent = Math.min(1, (latest - startProgress) / (endProgress - startProgress));
+      }
+      
+      const frameIndex = Math.min(
+        frameCount,
+        Math.max(1, Math.floor(activePercent * frameCount))
+      );
+      setMobileFrame(frameIndex);
+    });
   });
 
   // Intersection Observer to detect when component is near viewport

@@ -13,6 +13,7 @@ const Usage = () => {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [currentFrame, setCurrentFrame] = useState(1);
   const [overlayOpacity, setOverlayOpacity] = useState(0);
+  const frameIdRef = useRef<number | null>(null);
 
   // Track the scroll of the entire Usage section
   const { scrollYProgress } = useScroll({
@@ -23,32 +24,38 @@ const Usage = () => {
   // Map the scroll progress (0 to 1) to frame numbers (1 to 43) and overlay opacity
   useMotionValueEvent(scrollYProgress, "change", (latest) => {
     if (!isMobile) return;
-
-    // 1. Frame Animation: map progress from 0.01 (as it enters the viewport bottom) to 0.38
-    const startProgress = 0.125;
-    const endProgress = 0.38;
-
-    let activePercent = 0;
-    if (latest > startProgress) {
-      activePercent = Math.min(1, (latest - startProgress) / (endProgress - startProgress));
+    
+    if (frameIdRef.current !== null) {
+      cancelAnimationFrame(frameIdRef.current);
     }
 
-    const totalFrames = 43;
-    const frameIndex = Math.min(
-      totalFrames,
-      Math.max(1, Math.floor(activePercent * totalFrames))
-    );
-    setCurrentFrame(frameIndex);
+    frameIdRef.current = requestAnimationFrame(() => {
+      // 1. Frame Animation: map progress from 0.01 (as it enters the viewport bottom) to 0.38
+      const startProgress = 0.125;
+      const endProgress = 0.38;
+      
+      let activePercent = 0;
+      if (latest > startProgress) {
+        activePercent = Math.min(1, (latest - startProgress) / (endProgress - startProgress));
+      }
+      
+      const totalFrames = 43;
+      const frameIndex = Math.min(
+        totalFrames,
+        Math.max(1, Math.floor(activePercent * totalFrames))
+      );
+      setCurrentFrame(frameIndex);
 
-    // 2. Dynamic Overlay Fade: starts at 0.22 (as cards rise up) and reaches full opacity (0.25) at 0.50
-    const overlayStart = 0.22;
-    const overlayEnd = 0.50;
-    let opacityVal = 0;
-    if (latest > overlayStart) {
-      const overlayPercent = Math.min(1, (latest - overlayStart) / (overlayEnd - overlayStart));
-      opacityVal = overlayPercent * 0.25; // max 25% opacity
-    }
-    setOverlayOpacity(opacityVal);
+      // 2. Dynamic Overlay Fade: starts at 0.22 (as cards rise up) and reaches full opacity (0.25) at 0.50
+      const overlayStart = 0.22;
+      const overlayEnd = 0.50;
+      let opacityVal = 0;
+      if (latest > overlayStart) {
+        const overlayPercent = Math.min(1, (latest - overlayStart) / (overlayEnd - overlayStart));
+        opacityVal = overlayPercent * 0.25; // max 25% opacity
+      }
+      setOverlayOpacity(opacityVal);
+    });
   });
 
   // Helper to format frame number to 3-digit string (e.g. 1 -> "001", 42 -> "042")

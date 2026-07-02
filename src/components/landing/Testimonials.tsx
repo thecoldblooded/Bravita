@@ -92,11 +92,11 @@ function TestimonialCard({
 
 function VantaBackground() {
   const vantaRef = useRef<HTMLDivElement>(null);
-  const vantaEffect = useRef<any>(null);
+  const vantaEffect = useRef<{ destroy: () => void } | null>(null);
 
   useEffect(() => {
     let active = true;
-    let effectInstance: any = null;
+    let effectInstance: { destroy: () => void } | null = null;
 
     const initVanta = async () => {
       if (window.innerWidth < 1025 || !vantaRef.current) return;
@@ -105,7 +105,7 @@ function VantaBackground() {
         // Dynamic import to prevent loading 600KB+ Three.js on mobile
         const THREE = await import("three");
         const vantaModule = await import("vanta/dist/vanta.fog.min");
-        const FOG = (vantaModule.default || vantaModule) as any;
+        const FOG = (vantaModule.default || vantaModule) as (config: Record<string, unknown>) => { destroy: () => void };
 
         if (!active || !vantaRef.current || effectInstance) return;
 
