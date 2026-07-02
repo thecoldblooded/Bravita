@@ -496,7 +496,7 @@ function IndividualSignupContent({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>{t("auth.phone")} *</FormLabel>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <FormControl className="flex-1">
                     <PhoneInput
                       international
@@ -514,7 +514,7 @@ function IndividualSignupContent({
                     variant="outline"
                     onClick={onSendOtp}
                     disabled={isLoading || isSendingOtp || phoneVerified || !field.value || countdown > 0}
-                    className="h-10 text-xs px-3 border-orange-200 text-orange-700 hover:bg-orange-50 shrink-0"
+                    className="h-10 text-xs px-3 border-orange-200 text-orange-700 hover:bg-orange-50 w-full sm:w-auto shrink-0"
                   >
                     {isSendingOtp ? (
                       <Loader size="1rem" noMargin />
@@ -535,7 +535,7 @@ function IndividualSignupContent({
           {otpSent && !phoneVerified && (
             <div className="bg-orange-50/50 p-4 rounded-xl border border-orange-100/50 space-y-3">
               <FormLabel className="text-sm font-medium text-gray-700">Doğrulama Kodu</FormLabel>
-              <div className="flex gap-2">
+               <div className="flex flex-col sm:flex-row gap-2">
                 <Input
                   type="text"
                   maxLength={6}
@@ -549,7 +549,7 @@ function IndividualSignupContent({
                   type="button"
                   onClick={onVerifyOtp}
                   disabled={isLoading || isVerifyingOtp || otpCode.length !== 6}
-                  className="bg-orange-500 hover:bg-orange-600 text-white shrink-0"
+                  className="bg-orange-500 hover:bg-orange-600 text-white w-full sm:w-auto shrink-0"
                 >
                   {isVerifyingOtp ? <Loader size="1rem" noMargin /> : "Doğrula"}
                 </Button>
