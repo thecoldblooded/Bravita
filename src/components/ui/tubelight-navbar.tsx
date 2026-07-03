@@ -100,11 +100,12 @@ export function NavBar({ items, className, activeTab: externalActiveTab, layoutI
         if (wrapper) {
             jumpTo(wrapper, offset)
 
-            if (item.id) {
+            const itemId = item.id
+            if (itemId) {
                 let attempts = 0
                 const poll = setInterval(() => {
                     attempts++
-                    const el = document.getElementById(item.id)
+                    const el = document.getElementById(itemId)
                     // Once the real section mounts (and is distinct from the wrapper), settle.
                     if (el && el !== wrapper) {
                         // Use 'auto' (instant) for the final correction to avoid competing animations.
