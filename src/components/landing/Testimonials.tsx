@@ -207,9 +207,11 @@ const Testimonials = () => {
     [testimonials.length],
   );
 
+  // Progress only after the pinned stage is seated at viewport top — so the
+  // heading/first card settle before advancing to cards 2, 3...
   const { scrollYProgress } = useScroll({
     target: stageRef,
-    offset: ["start center", "end end"],
+    offset: ["start start", "end end"],
   });
 
   useMotionValueEvent(scrollYProgress, "change", (latest) => {
@@ -221,9 +223,16 @@ const Testimonials = () => {
       return;
     }
 
+    // Delay card progression: first card stays visible for the initial 30% of
+    // the scroll range, then cards 1..(N-1) are distributed across the remaining 70%.
+    // This ensures the first review is already on-screen when the section enters
+    // the viewport, and cards start advancing only after the user scrolls further.
+    const holdFirstFraction = 0.30;
+    const remainingFraction = 1 - holdFirstFraction;
+    const effectiveProgress = Math.max(0, (latest - holdFirstFraction) / remainingFraction);
     const nextIndex = Math.min(
       testimonials.length - 1,
-      Math.floor(Math.max(0, latest) * testimonials.length),
+      Math.floor(effectiveProgress * (testimonials.length - 1)),
     );
 
     setActiveCardIndex((current) =>
@@ -236,7 +245,7 @@ const Testimonials = () => {
   }
 
   return (
-    <section id="testimonials" className="relative overflow-hidden min-[1025px]:overflow-x-clip min-[1025px]:overflow-y-visible">
+    <section id="testimonials" className="relative overflow-hidden scroll-mt-25 min-[1025px]:overflow-x-clip min-[1025px]:overflow-y-visible">
       <div
         aria-hidden="true"
         className="absolute inset-0 z-0 min-[1025px]:hidden bg-[radial-gradient(circle_at_50%_20%,rgba(236,119,44,0.24),transparent_32%),radial-gradient(circle_at_50%_58%,rgba(236,119,44,0.18),transparent_38%),linear-gradient(180deg,#230a05_0%,#431306_28%,#2f0d04_56%,#170805_100%)]"
@@ -380,7 +389,7 @@ const Testimonials = () => {
                       >
                         <TestimonialCard
                           item={testimonial}
-                          active={isActive}
+                          {...(isActive ? { active: true } : {})}
                         />
                       </CardTransformed>
                     );

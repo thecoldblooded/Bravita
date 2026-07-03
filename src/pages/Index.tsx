@@ -7,6 +7,7 @@ import LazySection from "@/components/ui/lazy-section";
 
 // Lazy load below-the-fold components for better initial load
 const Benefits = lazy(() => import("@/components/landing/Benefits"));
+const ScrollFeatureGallery = lazy(() => import("@/components/landing/ScrollFeatureGallery"));
 const ProductShowcase = lazy(() => import("@/components/landing/ProductShowcase"));
 const Ingredients = lazy(() => import("@/components/landing/Ingredients"));
 const Usage = lazy(() => import("@/components/landing/Usage"));
@@ -47,16 +48,16 @@ const Index = () => {
   const rawFaqItems = t("about.faq.items", { returnObjects: true }) as unknown;
   const faqItems = Array.isArray(rawFaqItems)
     ? rawFaqItems.reduce<{ question: string; answer: string }[]>((accumulator, item) => {
-        if (typeof item === "object" && item !== null && "question" in item && "answer" in item) {
-          const { question, answer } = item;
+      if (typeof item === "object" && item !== null && "question" in item && "answer" in item) {
+        const { question, answer } = item;
 
-          if (typeof question === "string" && typeof answer === "string") {
-            accumulator.push({ question, answer });
-          }
+        if (typeof question === "string" && typeof answer === "string") {
+          accumulator.push({ question, answer });
         }
+      }
 
-        return accumulator;
-      }, [])
+      return accumulator;
+    }, [])
     : [];
 
   const benefitItems = [
@@ -188,18 +189,18 @@ const Index = () => {
 
   const faqPageStructuredData = faqItems.length
     ? {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "@id": `${canonicalUrl}#faq`,
-        mainEntity: faqItems.map((item) => ({
-          "@type": "Question",
-          name: item.question,
-          acceptedAnswer: {
-            "@type": "Answer",
-            text: item.answer,
-          },
-        })),
-      }
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "@id": `${canonicalUrl}#faq`,
+      mainEntity: faqItems.map((item) => ({
+        "@type": "Question",
+        name: item.question,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: item.answer,
+        },
+      })),
+    }
     : null;
 
   useEffect(() => {
@@ -225,23 +226,38 @@ const Index = () => {
     }
 
     let animationFrameId: number | null = null;
-    let retryTimeoutId: ReturnType<typeof setTimeout> | null = null;
+    let pollIntervalId: ReturnType<typeof setInterval> | null = null;
 
-    const scrollToHashTarget = () => {
-      const target = document.querySelector(hash);
-      if (!(target instanceof HTMLElement)) {
-        return false;
-      }
+    const HEADER_OFFSET = 160;
 
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
-      return true;
+    const jumpToHash = (target: HTMLElement, behavior: ScrollBehavior = "smooth") => {
+      const top = target.getBoundingClientRect().top + window.scrollY - HEADER_OFFSET;
+      window.scrollTo({ top: Math.max(0, top), behavior });
     };
 
     animationFrameId = window.requestAnimationFrame(() => {
-      if (!scrollToHashTarget()) {
-        retryTimeoutId = setTimeout(() => {
-          scrollToHashTarget();
-        }, 250);
+      const target = document.querySelector(hash);
+      if (target instanceof HTMLElement) {
+        jumpToHash(target);
+      } else {
+        // Section is lazy-loaded: poll briefly until it mounts, then settle once (no competing scrolls).
+        let attempts = 0;
+        pollIntervalId = setInterval(() => {
+          attempts++;
+          const el = document.querySelector(hash);
+          if (el instanceof HTMLElement) {
+            jumpToHash(el, "auto"); // instant correction to avoid competing smooth animations
+            if (pollIntervalId) {
+              clearInterval(pollIntervalId);
+              pollIntervalId = null;
+            }
+            return;
+          }
+          if (attempts >= 20 && pollIntervalId) {
+            clearInterval(pollIntervalId);
+            pollIntervalId = null;
+          }
+        }, 100);
       }
     });
 
@@ -249,8 +265,8 @@ const Index = () => {
       if (animationFrameId !== null) {
         window.cancelAnimationFrame(animationFrameId);
       }
-      if (retryTimeoutId) {
-        clearTimeout(retryTimeoutId);
+      if (pollIntervalId) {
+        clearInterval(pollIntervalId);
       }
     };
   }, [location.hash]);
@@ -306,6 +322,12 @@ const Index = () => {
           </Suspense>
         </LazySection>
 
+        <LazySection id="visual-story" className="hidden md:block w-full" placeholder={<SectionFallback minHeight="100vh" />} rootMargin="600px 0px">
+          <Suspense fallback={<SectionFallback minHeight="100vh" />}>
+            <ScrollFeatureGallery />
+          </Suspense>
+        </LazySection>
+
         <LazySection id="showcase" className="scroll-mt-25 w-full" placeholder={<SectionFallback minHeight="70vh" />} rootMargin="450px 0px">
           <Suspense fallback={<SectionFallback minHeight="70vh" />}>
             <ScrollReveal delay={0.2}>
@@ -338,7 +360,7 @@ const Index = () => {
           </Suspense>
         </LazySection>
 
-        <LazySection placeholder={<SectionFallback minHeight="110vh" />} rootMargin="200px 0px">
+        <LazySection id="testimonials-wrapper" className="scroll-mt-25 w-full" placeholder={<SectionFallback minHeight="110vh" />} rootMargin="200px 0px">
           <Suspense fallback={<SectionFallback minHeight="110vh" />}>
             <Testimonials />
           </Suspense>

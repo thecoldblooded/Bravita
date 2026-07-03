@@ -46,10 +46,13 @@ export function NavBar({ items, className, activeTab: externalActiveTab, layoutI
     }, [])
 
     const resolveTargetElement = (item: NavItem): Element | null => {
-        // Prefer item.id (matches LazySection wrapper), then fall back to url hash
         if (item.id) {
+            // Prefer the real section, fall back to the lazy wrapper (id="xxx-wrapper")
             const el = document.getElementById(item.id)
             if (el) return el
+
+            const wrapper = document.getElementById(`${item.id}-wrapper`)
+            if (wrapper) return wrapper
         }
 
         if (item.url?.startsWith("#")) {
@@ -61,20 +64,13 @@ export function NavBar({ items, className, activeTab: externalActiveTab, layoutI
     }
 
     const HEADER_OFFSET = 160 // header height + breathing room so badge+heading are fully visible
+    const getOffset = (item: NavItem) => (item.id === "about" ? 80 : HEADER_OFFSET)
 
-    const getOffset = (item: NavItem) => item.id === "about" ? 80 : HEADER_OFFSET
-
-    const scrollToSectionHeading = (container: Element, offset: number, behavior: ScrollBehavior = "smooth"): boolean => {
-        // Find the badge span (uppercase label above h2), fall back to h2
-        const badge = container.querySelector<HTMLElement>('[class*="tracking-wider"], [class*="uppercase"]')
-        const heading = container.querySelector<HTMLElement>('h2')
-        const target = badge ?? heading
-        if (target) {
-            const targetTop = target.getBoundingClientRect().top + window.scrollY
-            window.scrollTo({ top: targetTop - offset, behavior })
-            return true
-        }
-        return false
+    // Single deterministic jump. No competing smooth scrolls.
+    const jumpTo = (target: Element, offset: number, behavior: ScrollBehavior = "smooth") => {
+        const top = target.getBoundingClientRect().top + window.scrollY - offset
+        // Clamp so we never scroll into negative territory
+        window.scrollTo({ top: Math.max(0, top), behavior })
     }
 
     const handleClick = (e: React.MouseEvent<HTMLAnchorElement>, item: NavItem) => {
@@ -86,41 +82,45 @@ export function NavBar({ items, className, activeTab: externalActiveTab, layoutI
             return
         }
 
-        const element = resolveTargetElement(item)
-        if (!element) return
-
         const offset = getOffset(item)
 
-        // For "about", use stable offsetTop (avoids scroll-animated layout shifts)
-        if (item.id === "about") {
-            const el = element as HTMLElement
-            let absoluteTop = el.offsetTop
-            let parent = el.offsetParent as HTMLElement | null
-            while (parent) {
-                absoluteTop += parent.offsetTop
-                parent = parent.offsetParent as HTMLElement | null
-            }
-            window.scrollTo({ top: absoluteTop - offset, behavior: "smooth" })
+        // Is the real section already mounted? (non-wrapper id match)
+        const realSection = item.id ? document.getElementById(item.id) : null
+        const wrapper = item.id ? document.getElementById(`${item.id}-wrapper`) : null
+        const isActiveSectionLoaded = realSection !== null && wrapper !== realSection
+
+        if (isActiveSectionLoaded) {
+            // Stable single scroll — final destination reached in one move.
+            jumpTo(realSection!, offset)
             return
         }
 
-        // Try scrolling to heading immediately
-        if (scrollToSectionHeading(element, offset)) return
+        // Lazy section not yet loaded: scroll toward the wrapper so its IntersectionObserver fires.
+        // Then perform ONE final precise scroll once the content mounts.
+        if (wrapper) {
+            jumpTo(wrapper, offset)
 
-        // Content not loaded yet (lazy section) — scroll near wrapper to trigger IntersectionObserver
-        const elementTop = element.getBoundingClientRect().top + window.scrollY
-        window.scrollTo({ top: elementTop - offset, behavior: "smooth" })
-
-        // Watch for lazy content to appear, then re-scroll precisely
-        const observer = new MutationObserver(() => {
-            if (scrollToSectionHeading(element, offset)) {
-                observer.disconnect()
+            if (item.id) {
+                let attempts = 0
+                const poll = setInterval(() => {
+                    attempts++
+                    const el = document.getElementById(item.id)
+                    // Once the real section mounts (and is distinct from the wrapper), settle.
+                    if (el && el !== wrapper) {
+                        // Use 'auto' (instant) for the final correction to avoid competing animations.
+                        jumpTo(el, offset, "auto")
+                        clearInterval(poll)
+                        return
+                    }
+                    if (attempts >= 20) clearInterval(poll) // ~2s safety cap
+                }, 100)
             }
-        })
-        observer.observe(element, { childList: true, subtree: true })
+            return
+        }
 
-        // Safety cleanup
-        setTimeout(() => observer.disconnect(), 4000)
+        // Fallback: url hash selector
+        const fallback = resolveTargetElement(item)
+        if (fallback) jumpTo(fallback, offset)
     }
 
     return (

@@ -5,6 +5,8 @@
         "ingredients": "İçindekiler",
         "usage": "Kullanım",
         "about": "Hakkında",
+        "testimonials": "Yorumlar",
+        "faq": "S.S.S.",
         "buy": "Satın Al"
     },
     "hero": {
@@ -201,6 +203,36 @@
                     "name": "Selin Y.",
                     "comment": "Komşumun tavsiyesiyle aldım ve gerçekten çok memnun kaldım. Lezzeti güzel, çocuklar hiç zorlanmadan içiyor. Kullanım kolaylığı da cabası; sabah koşturmacasında iki dakikada halloluyor. En önemlisi, düzenli kullanım alışkanlığı oluşturmak artık bir mücadele değil. Kızım kendisi hatırlatıyor bile! Ailece güvenle kullandığımız, içimiz rahat bir ürün. Çevremde soran herkese tereddütsüz öneriyorum.",
                     "date": "02 Mart 2026",
+                    "rating": 5
+                },
+                {
+                    "name": "Ceren S.",
+                    "comment": "Çocuğuma sıvı takviye içirmek bizim için her sabah büyük bir mücadeleydi. Ancak Bravita'nın benzersiz Tutti Frutti ve vanilya aroması bu direnci tamamen kırdı. Artık sabahları kendisi isteyerek şişeyi getiriyor, tadını o kadar çok sevdi ki hiç zorluk çıkarmıyor. Bizim için sabah rutini bir savaştan keyifli bir alışkanlığa dönüştü.",
+                    "date": "14 Mayıs 2026",
+                    "rating": 5
+                },
+                {
+                    "name": "Kaan B.",
+                    "comment": "Eşimin ısrarıyla aldık ve inanılmaz pratik bulduk. Sabahları Tutti Frutti & Vanilya tadıyla kızım severek içiyor, ölçekli kapakla hızlıca verip evden çıkıyoruz.",
+                    "date": "22 Mayıs 2026",
+                    "rating": 5
+                },
+                {
+                    "name": "Aylin Y.",
+                    "comment": "İçeriğinde katkı maddesi olmaması ve temiz formülü bir anne olarak içimi çok rahatlatıyor. Sıvı formu sayesinde yutma derdi olmadan Tutti Frutti ve vanilya lezzetiyle keyifle tüketiyoruz. Tablet takviyelerle yaşadığımız yutma kavgalarından sonra Bravita bizim kurtarıcımız oldu.",
+                    "date": "08 Haziran 2026",
+                    "rating": 5
+                },
+                {
+                    "name": "Hakan G.",
+                    "comment": "Bravita sayesinde her gün vitaminini aldı mı endişesinden kurtulduk. Kızım Tutti Frutti & Vanilya tadına bayılıyor, günlük düzenimizi kurmamızda çok yardımcı oldu.",
+                    "date": "19 Haziran 2026",
+                    "rating": 5
+                },
+                {
+                    "name": "Melis A.",
+                    "comment": "Kreşe başlayan oğlumuz için ebeveyn tavsiyesiyle aldık. Tutti Frutti ve hafif vanilya kokusu tam çocukların seveceği cinsten, hiç yapaylık hissi vermiyor. Her sabah kahvaltıdan sonra keyifle içiyor, ölçekli kapağı sayesinde dozunu ayarlamak da son derece kolay. Düzenli kullanım alışkanlığı kazanması açısından harika bir ürün.",
+                    "date": "26 Haziran 2026",
                     "rating": 5
                 }
             ]

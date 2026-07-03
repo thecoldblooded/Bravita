@@ -5,6 +5,8 @@
         "ingredients": "Ingredients",
         "usage": "Usage",
         "about": "About",
+        "testimonials": "Reviews",
+        "faq": "FAQ",
         "buy": "Buy Now"
     },
     "hero": {
@@ -201,6 +203,36 @@
                     "name": "Selin Y.",
                     "comment": "I bought it on my neighbor's recommendation and have been very satisfied. It tastes good, and the children drink it easily. It is also very practical during the morning rush. Most importantly, regular use no longer feels like a struggle. My daughter even reminds me herself. It is a product our family uses with confidence, and I recommend it without hesitation.",
                     "date": "March 2, 2026",
+                    "rating": 5
+                },
+                {
+                    "name": "Ceren S.",
+                    "comment": "Giving liquid supplements to my child used to be a major struggle every morning. However, Bravita's unique Tutti Frutti & Vanilla flavor completely broke that resistance. Now he willingly brings the bottle himself every morning and loves the taste so much. For us, the morning routine turned from a battle into a pleasant habit.",
+                    "date": "May 14, 2026",
+                    "rating": 5
+                },
+                {
+                    "name": "Kaan B.",
+                    "comment": "We bought it on my wife's recommendation and found it incredibly practical. My daughter loves the Tutti Frutti & Vanilla taste, and we dose it quickly with the measuring cap before leaving.",
+                    "date": "May 22, 2026",
+                    "rating": 5
+                },
+                {
+                    "name": "Aylin Y.",
+                    "comment": "The clean formula with no additives gives me great peace of mind as a mother. Thanks to its liquid form, she consumes it with joy with the delicious Tutti Frutti and vanilla flavor, without any swallowing issues. After the swallowing struggles we had with tablets, Bravita became our lifesaver.",
+                    "date": "June 8, 2026",
+                    "rating": 5
+                },
+                {
+                    "name": "Hakan G.",
+                    "comment": "Thanks to Bravita, we no longer worry if our child took her vitamins today. My daughter loves the Tutti Frutti & Vanilla taste, and it has been a huge help in establishing our daily routine.",
+                    "date": "June 19, 2026",
+                    "rating": 5
+                },
+                {
+                    "name": "Melis A.",
+                    "comment": "We bought it for our son who just started daycare, on a parent's recommendation. The Tutti Frutti and soft vanilla scent is exactly what kids love, and it doesn't feel artificial at all. He drinks it happily after breakfast, and the measuring cap makes dosing extremely easy. Great product for building a regular supplement habit.",
+                    "date": "June 26, 2026",
                     "rating": 5
                 }
             ]

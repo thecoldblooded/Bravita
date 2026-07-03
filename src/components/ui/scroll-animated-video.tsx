@@ -543,6 +543,15 @@ const HeroScrollVideo: React.FC<HeroScrollVideoProps> = ({
                             autoPlay={autoPlay}
                         />
 
+                        {/* Bottom fade overlay to blend the video smoothly with the incoming white/cream content */}
+                        <div
+                            className="absolute bottom-0 left-0 right-0 pointer-events-none z-10"
+                            style={{
+                                height: "25%",
+                                background: "linear-gradient(to bottom, transparent 0%, rgba(255, 253, 250, 0.3) 30%, rgba(255, 253, 250, 0.75) 65%, rgb(255, 253, 250) 100%)",
+                            }}
+                        />
+
                         {/* overlay that reveals */}
                         <div className="hsv-overlay" ref={overlayRef}>
                             {overlay?.caption ? (

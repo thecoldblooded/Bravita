@@ -301,6 +301,21 @@
 }
 
 @layer base {
+
+  /* Consistent scroll offset for anchor-targeted landing sections so the fixed
+     header never overlaps the section heading — works for both the LazySection
+     wrapper and the inner real section once mounted. */
+  #benefits,
+  #showcase,
+  #ingredients,
+  #usage,
+  #about,
+  #testimonials,
+  #testimonials-wrapper,
+  #faq {
+    scroll-margin-top: 6.25rem;
+  }
+
   * {
     border-color: var(--color-border);
   }

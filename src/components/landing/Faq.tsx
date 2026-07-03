@@ -32,7 +32,7 @@ const Faq = () => {
     return (
         <section
             id="faq"
-            className="relative overflow-hidden bg-[linear-gradient(180deg,#fff8ef_0%,#ffffff_48%,#fffaf3_100%)] py-20 md:py-28"
+            className="relative overflow-hidden scroll-mt-25 bg-[linear-gradient(180deg,#fff8ef_0%,#ffffff_48%,#fffaf3_100%)] py-20 md:py-28"
         >
             <div
                 aria-hidden="true"

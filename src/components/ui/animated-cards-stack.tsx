@@ -37,7 +37,7 @@ interface ReviewStarsProps extends React.HTMLAttributes<HTMLDivElement> {
 
 interface CardStickyProps
   extends HTMLMotionProps<"div">,
-    VariantProps<typeof cardVariants> {
+  VariantProps<typeof cardVariants> {
   arrayLength: number;
   index: number;
   activeIndex?: number;
@@ -73,9 +73,12 @@ export const ContainerScroll: React.FC<React.HTMLAttributes<HTMLDivElement>> = (
   ...props
 }) => {
   const scrollRef = React.useRef<HTMLDivElement>(null);
+  // Start progress only once the container's top reaches viewport top (section is
+  // seated/pinned) — so cards stay fully stacked while the section scrolls into
+  // view, then advance one-by-one through the pinned region.
   const { scrollYProgress } = useScroll({
     target: scrollRef,
-    offset: ["start center", "end end"],
+    offset: ["start start", "end end"],
   });
 
   return (
@@ -191,20 +194,20 @@ export const CardTransformed = React.forwardRef<HTMLDivElement, CardStickyProps>
 
     const cardStyle = prefersReducedMotion
       ? {
-          top: safeIndex * incrementY,
-          zIndex: computedZIndex,
-          backfaceVisibility: "hidden" as const,
-          ...style,
-        }
+        top: safeIndex * incrementY,
+        zIndex: computedZIndex,
+        backfaceVisibility: "hidden" as const,
+        ...style,
+      }
       : {
-          top: safeIndex * incrementY,
-          transform,
-          opacity: depthOpacity,
-          zIndex: computedZIndex,
-          backfaceVisibility: "hidden" as const,
-          filter,
-          ...style,
-        };
+        top: safeIndex * incrementY,
+        transform,
+        opacity: depthOpacity,
+        zIndex: computedZIndex,
+        backfaceVisibility: "hidden" as const,
+        filter,
+        ...style,
+      };
 
     return (
       <motion.div

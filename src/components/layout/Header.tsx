@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, lazy, Suspense, useCallback, memo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { NavBar } from "@/components/ui/tubelight-navbar";
-import { Home, Heart, List, HelpCircle, Info, ChevronUp, type LucideIcon } from "lucide-react";
+import { Home, Heart, List, HelpCircle, Info, ChevronUp, MessageSquare, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { m, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
@@ -685,6 +685,8 @@ const Header = () => {
       { name: t("nav.ingredients"), id: "ingredients", url: "#ingredients", icon: List },
       { name: t("nav.usage"), id: "usage", url: "#usage", icon: HelpCircle },
       { name: t("nav.about"), id: "about", url: "#about", icon: Info },
+      { name: t("nav.testimonials"), id: "testimonials", url: "#testimonials", icon: MessageSquare },
+      { name: t("nav.faq"), id: "faq", url: "#faq", icon: HelpCircle },
     ],
     [t],
   );
