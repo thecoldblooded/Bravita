@@ -129,7 +129,7 @@ export default function ScrollFeatureGallery() {
 
                     {/* BUTON GÜNCELLEMESİ: Padding (px-10 py-4) ve yazı boyutu (text-base md:text-lg) büyütüldü */}
                     <div className="group relative inline-flex items-center justify-center gap-3 rounded-full bg-[#CC5500] px-10 py-4 text-base font-semibold text-white shadow-lg cursor-default md:text-lg">
-                        Keşfetmeye devam edin
+                        keşfetmeye devam edin
                         {/* İkon boyutu büyütüldü (h-5 w-5) */}
                         <motion.svg
                             animate={{ y: [0, 4, 0] }}
