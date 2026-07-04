@@ -1,11 +1,25 @@
-import React, { useRef } from "react";
-import { motion, useScroll, useTransform, useReducedMotion, useSpring } from "framer-motion";
+import React, { useRef, useState, useEffect } from "react";
+import { motion, useScroll, useTransform, useReducedMotion, useSpring, AnimatePresence } from "framer-motion";
 
 const infographicImage = new URL("@/assets/bravita-infographic.webp", import.meta.url).href;
+
+const rotatingWords = [
+    { text: "Sağlık", className: "text-[#4ADE80] drop-shadow-[0_0_15px_rgba(74,222,128,0.4)]" }, // Canlı yeşil (sağlık ve doğallık)
+    { text: "Güç", className: "text-[#FB7185] drop-shadow-[0_0_15px_rgba(251,113,133,0.4)]" },   // Canlı gül/kırmızı (güç ve enerji)
+    { text: "Gelecek", className: "text-[#38BDF8] drop-shadow-[0_0_15px_rgba(56,189,248,0.4)]" }   // Gökyüzü mavisi (gelecek ve vizyon)
+];
 
 export default function ScrollFeatureGallery() {
     const sectionRef = useRef(null);
     const reduceMotion = Boolean(useReducedMotion());
+    const [wordIndex, setWordIndex] = useState(0);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setWordIndex((prev) => (prev + 1) % rotatingWords.length);
+        }, 2500);
+        return () => clearInterval(interval);
+    }, []);
 
     const { scrollYProgress } = useScroll({
         target: sectionRef,
@@ -120,8 +134,25 @@ export default function ScrollFeatureGallery() {
                         willChange: "transform, opacity"
                     }}
                 >
-                    <h2 className="mb-4 text-5xl font-extrabold tracking-tight text-white md:text-7xl drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)]">
-                        Her Damlasında <br className="hidden md:block" /> Sağlık Var!
+                    <h2 className="mb-4 flex flex-col items-center justify-center text-5xl font-extrabold tracking-tight text-white md:text-7xl drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] leading-tight">
+                        <span>Her Damlasında</span>
+                        <span className="mt-2 inline-flex items-baseline justify-center">
+                            <span className="inline-flex h-[1.2em] w-[6ch] items-center justify-center overflow-hidden">
+                                <AnimatePresence mode="wait">
+                                    <motion.span
+                                        key={wordIndex}
+                                        initial={{ y: "100%", opacity: 0 }}
+                                        animate={{ y: 0, opacity: 1 }}
+                                        exit={{ y: "-100%", opacity: 0 }}
+                                        transition={{ type: "spring", stiffness: 120, damping: 15 }}
+                                        className={`inline-block ${rotatingWords[wordIndex].className}`}
+                                    >
+                                        {rotatingWords[wordIndex].text}
+                                    </motion.span>
+                                </AnimatePresence>
+                            </span>
+                            <span className="ml-3">Var!</span>
+                        </span>
                     </h2>
                     <p className="mb-8 max-w-2xl text-lg font-medium text-neutral-300 md:text-xl drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
                         Çocuğunuzun fiziksel ve zihinsel gelişimini destekleyen, uzmanlarca hazırlanmış özel formül. Bravita dünyasını ve zengin içeriğimizi
