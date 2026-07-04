@@ -13,6 +13,7 @@ export default function ScrollFeatureGallery() {
     const sectionRef = useRef(null);
     const reduceMotion = Boolean(useReducedMotion());
     const [wordIndex, setWordIndex] = useState(0);
+    const activeWord = rotatingWords[wordIndex] ?? rotatingWords[0]!;
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -145,9 +146,9 @@ export default function ScrollFeatureGallery() {
                                         animate={{ y: 0, opacity: 1 }}
                                         exit={{ y: "-100%", opacity: 0 }}
                                         transition={{ type: "spring", stiffness: 120, damping: 15 }}
-                                        className={`inline-block ${rotatingWords[wordIndex].className}`}
+                                        className={`inline-block ${activeWord.className}`}
                                     >
-                                        {rotatingWords[wordIndex].text}
+                                        {activeWord.text}
                                     </motion.span>
                                 </AnimatePresence>
                             </span>
