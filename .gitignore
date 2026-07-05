@@ -69,7 +69,7 @@ docs/PLAN-*.md
 performance-optimization.md
 
 # Sensitive local secrets
-client_secrets.json
+client_secret.json
 mcp_settings.json
 remote_dump.sql
 
