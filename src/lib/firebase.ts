@@ -13,9 +13,16 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-const auth = getAuth(app);
+let authInstance: ReturnType<typeof getAuth> | null = null;
 
-// Configure language to Turkish for SMS OTPs
-auth.languageCode = "tr";
+export const getFirebaseAuth = (): ReturnType<typeof getAuth> => {
+  if (!authInstance) {
+    authInstance = getAuth(app);
+    // Configure language to Turkish for SMS OTPs.
+    authInstance.languageCode = "tr";
+  }
 
-export { app, auth };
+  return authInstance;
+};
+
+export { app };

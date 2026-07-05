@@ -1,5 +1,5 @@
 import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult, User } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { getFirebaseAuth } from "@/lib/firebase";
 import { isLocalhostHostname } from "@/lib/captcha";
 
 let recaptchaVerifier: RecaptchaVerifier | null = null;
@@ -26,6 +26,8 @@ function createLocalhostPhoneAuthError(): Error {
 }
 
 const getVerifier = (containerId: string = "recaptcha-container"): RecaptchaVerifier => {
+    const auth = getFirebaseAuth();
+
     if (recaptchaVerifier) {
         try {
             recaptchaVerifier.clear();
@@ -96,6 +98,7 @@ export type VerifyOtpResult = {
 
 export const sendOtp = async (rawPhone: string, containerId: string = "recaptcha-container"): Promise<SendOtpResult> => {
     const phone = normalizePhone(rawPhone);
+    const auth = getFirebaseAuth();
 
     if (typeof window !== "undefined" && isLocalhostHostname(window.location.hostname) && !shouldUseFirebasePhoneTestMode()) {
         throw createLocalhostPhoneAuthError();
@@ -142,6 +145,7 @@ export const resetRecaptcha = (): void => {
 
 export const signOutFirebase = async (): Promise<void> => {
     try {
+        const auth = getFirebaseAuth();
         const { signOut } = await import("firebase/auth");
         await signOut(auth);
     } catch {
