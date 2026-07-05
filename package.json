@@ -11,7 +11,7 @@
     "lint": "eslint .",
     "typecheck": "tsc -b --noEmit",
     "typecheck:strict": "tsc -p tsconfig.strict.json --noEmit",
-    "test": "vitest run",
+    "test": "vitest run --reporter=verbose --pool=forks --maxWorkers=1",
     "react-doctor": "npx react-doctor@latest . --scope full --offline --blocking warning",
     "preview": "vite preview",
     "bff:auth": "node scripts/bff/bff-auth-server.mjs",

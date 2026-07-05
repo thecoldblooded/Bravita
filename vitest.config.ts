@@ -17,5 +17,6 @@ export default defineConfig({
         environment: "jsdom",
         globals: true,
         passWithNoTests: false,
+        maxConcurrency: 1,
     },
 });
