@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { classifyLinkedDrift } from "./classify-linked-drift.mjs";
 
@@ -12,6 +13,7 @@ const REMOTE_DUMP_STDOUT_PATH = path.resolve(ROOT, "_reports", "sql", "remote_pu
 const REMOTE_DUMP_STDERR_PATH = path.resolve(ROOT, "_reports", "sql", "remote_public_ci_dump.err");
 const DRIFT_CLASSIFICATION_REPORT_PATH = path.resolve(ROOT, "_reports", "sql", "drift_classification_report.txt");
 const DRIFT_STDERR_DROP_REPORT_PATH = path.resolve(ROOT, "_reports", "sql", "drift_stderr_drop_report.txt");
+const SANDBOX_HOME = path.join(os.tmpdir(), "bravita-supabase-home");
 
 function parsePositiveInt(value, fallback) {
     const parsed = Number.parseInt(String(value ?? ""), 10);
@@ -55,6 +57,16 @@ function ensureDbPassword() {
         console.error("SUPABASE_DB_PASSWORD is required in environment for non-interactive drift check.");
         process.exit(1);
     }
+}
+
+function buildSandboxFriendlyEnv() {
+    fs.mkdirSync(SANDBOX_HOME, { recursive: true });
+    return {
+        ...process.env,
+        HOME: SANDBOX_HOME,
+        XDG_CONFIG_HOME: path.join(SANDBOX_HOME, ".config"),
+        SUPABASE_DB_PASSWORD: process.env.SUPABASE_DB_PASSWORD
+    };
 }
 
 function buildNpxCommand(args) {
@@ -103,10 +115,7 @@ function runSupabaseDiff() {
 
         const child = spawn(command, commandArgs, {
             stdio: ["ignore", "pipe", "pipe"],
-            env: {
-                ...process.env,
-                SUPABASE_DB_PASSWORD: process.env.SUPABASE_DB_PASSWORD
-            }
+            env: buildSandboxFriendlyEnv()
         });
 
         const stdoutChunks = [];
@@ -187,10 +196,7 @@ function runSupabaseDump() {
         const { command, commandArgs } = buildDumpCommand();
         const child = spawn(command, commandArgs, {
             stdio: ["ignore", "pipe", "pipe"],
-            env: {
-                ...process.env,
-                SUPABASE_DB_PASSWORD: process.env.SUPABASE_DB_PASSWORD
-            }
+            env: buildSandboxFriendlyEnv()
         });
 
         const stdoutChunks = [];

@@ -401,6 +401,7 @@ type IndividualSignupContentProps = {
   form: UseFormReturn<IndividualSignupForm>;
   isLoading: boolean;
   shouldBypassCaptcha: boolean;
+  showSignupCaptcha: boolean;
   onSubmit: (data: IndividualSignupForm) => Promise<void>;
   onGoogleSignup: () => Promise<void>;
   onSwitchToLogin: () => void;
@@ -423,6 +424,7 @@ function IndividualSignupContent({
   form,
   isLoading,
   shouldBypassCaptcha,
+  showSignupCaptcha,
   onSubmit,
   onGoogleSignup,
   onSwitchToLogin,
@@ -1092,6 +1094,7 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
       isSendingOtp={isSendingOtp}
       isVerifyingOtp={isVerifyingOtp}
       shouldBypassCaptcha={shouldBypassCaptcha}
+      showSignupCaptcha={showSignupCaptcha}
       onSendOtp={handleSendOtp}
       onVerifyOtp={handleVerifyOtp}
     />

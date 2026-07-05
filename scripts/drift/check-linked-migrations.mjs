@@ -3,6 +3,7 @@ import { spawn } from "node:child_process";
 const supabaseArgs = ["supabase", "migration", "list", "--linked"];
 
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 
 try {
@@ -26,6 +27,9 @@ if (needsPasswordPrompt) {
   process.exit(1);
 }
 
+const sandboxHome = path.join(os.tmpdir(), "bravita-supabase-home");
+fs.mkdirSync(sandboxHome, { recursive: true });
+
 let command = "npx";
 let commandArgs = supabaseArgs;
 
@@ -39,6 +43,8 @@ const child = spawn(command, commandArgs, {
   stdio: "inherit",
   env: {
     ...process.env,
+    HOME: sandboxHome,
+    XDG_CONFIG_HOME: path.join(sandboxHome, ".config"),
     SUPABASE_DB_PASSWORD: process.env.SUPABASE_DB_PASSWORD,
   },
 });

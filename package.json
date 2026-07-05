@@ -12,7 +12,7 @@
     "typecheck": "tsc -b --noEmit",
     "typecheck:strict": "tsc -p tsconfig.strict.json --noEmit",
     "test": "vitest run --reporter=verbose --pool=forks --maxWorkers=1",
-    "react-doctor": "npx react-doctor@latest . --scope full --offline --blocking warning",
+    "react-doctor": "node scripts/test/run-react-doctor.mjs",
     "preview": "vite preview",
     "bff:auth": "node scripts/bff/bff-auth-server.mjs",
     "checklist": "node scripts/test/run-security-checklist.mjs",
