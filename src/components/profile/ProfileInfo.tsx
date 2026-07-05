@@ -6,15 +6,13 @@ import { m } from "framer-motion";
 import { Save, Lock } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { supabase } from "@/lib/supabase";
 import { updateProfileWithBff } from "@/lib/auth/bffAuth";
 import Loader from "@/components/ui/Loader";
 import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
-import { auth } from "@/lib/firebase";
-import { RecaptchaVerifier, signInWithPhoneNumber, type ConfirmationResult } from "firebase/auth";
+import { arePhoneNumbersEquivalent, changePhoneWithOtp, verifyOtp } from "@/lib/auth/phoneOtp";
+import type { ConfirmationResult } from "firebase/auth";
 
 export function ProfileInfo() {
     const { t } = useTranslation();
@@ -36,36 +34,9 @@ export function ProfileInfo() {
     const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
     const [countdown, setCountdown] = useState(0);
     const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+    const verifiedPhoneRef = useRef("");
 
-    const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null);
-
-    const getOrCreateRecaptchaVerifier = (): RecaptchaVerifier => {
-        if (recaptchaVerifierRef.current) {
-            return recaptchaVerifierRef.current;
-        }
-
-        let container = document.getElementById("recaptcha-container");
-        if (!container) {
-            container = document.createElement("div");
-            container.id = "recaptcha-container";
-            document.body.appendChild(container);
-        }
-
-        const verifier = new RecaptchaVerifier(auth, "recaptcha-container", {
-            size: "invisible",
-            callback: () => {
-                // reCAPTCHA solved
-            },
-            "expired-callback": () => {
-                toast.error("reCAPTCHA süresi doldu. Lütfen tekrar deneyin.");
-            },
-        });
-
-        recaptchaVerifierRef.current = verifier;
-        return verifier;
-    };
-
-    const isPhoneChanged = formData.phone !== (user?.phone || "");
+    const isPhoneChanged = !arePhoneNumbersEquivalent(formData.phone, user?.phone || "");
 
     useEffect(() => {
         if (countdown <= 0) return;
@@ -75,6 +46,28 @@ export function ProfileInfo() {
         return () => clearInterval(timer);
     }, [countdown]);
 
+    useEffect(() => {
+        if (!verifiedPhoneRef.current) {
+            return;
+        }
+
+        const shouldResetOtpState =
+            (otpSent || phoneVerified || Boolean(confirmationResult)) &&
+            !arePhoneNumbersEquivalent(verifiedPhoneRef.current, formData.phone);
+
+        if (!shouldResetOtpState) {
+            return;
+        }
+
+        setOtpSent(false);
+        setPhoneVerified(false);
+        setOtpCode("");
+        setVerificationToken("");
+        setConfirmationResult(null);
+        setCountdown(0);
+        verifiedPhoneRef.current = "";
+    }, [confirmationResult, formData.phone, otpSent, phoneVerified]);
+
     const handleSendOtp = async () => {
         if (!formData.phone || !isValidPhoneNumber(formData.phone)) {
             toast.error(t("auth.validation.phone_invalid"));
@@ -83,9 +76,9 @@ export function ProfileInfo() {
 
         setIsSendingOtp(true);
         try {
-            const verifier = getOrCreateRecaptchaVerifier();
-            const confirmation = await signInWithPhoneNumber(auth, formData.phone, verifier);
-            setConfirmationResult(confirmation);
+            const { confirmationResult } = await changePhoneWithOtp(formData.phone);
+            setConfirmationResult(confirmationResult);
+            verifiedPhoneRef.current = formData.phone;
 
             setOtpSent(true);
             setCountdown(180);
@@ -93,16 +86,7 @@ export function ProfileInfo() {
         } catch (err) {
             const message = err instanceof Error ? err.message : "Bir hata oluştu.";
             toast.error(message);
-            
-            // Clear reCAPTCHA on failure to allow retry
-            if (recaptchaVerifierRef.current) {
-                try {
-                    recaptchaVerifierRef.current.clear();
-                    recaptchaVerifierRef.current = null;
-                } catch {
-                    // ignore
-                }
-            }
+
         } finally {
             setIsSendingOtp(false);
         }
@@ -121,22 +105,9 @@ export function ProfileInfo() {
 
         setIsVerifyingOtp(true);
         try {
-            const credential = await confirmationResult.confirm(otpCode);
-            const firebaseToken = await credential.user.getIdToken();
-
-            const response = await fetch("/api/auth/verify-firebase-token", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ phone: formData.phone, firebaseToken }),
-            });
-
-            const data = await response.json();
-            if (!response.ok) {
-                throw new Error(data.error || "Kod doğrulanamadı.");
-            }
-
+            const { idToken } = await verifyOtp(confirmationResult, otpCode);
             setPhoneVerified(true);
-            setVerificationToken(data.token);
+            setVerificationToken(idToken);
             toast.success("Telefon numaranız başarıyla doğrulandı.");
         } catch (err) {
             const message = err instanceof Error ? err.message : "Bir hata oluştu.";
@@ -210,11 +181,11 @@ export function ProfileInfo() {
         }
 
         if (isPhoneChanged && !phoneVerified) {
-            toast.error("Lütfen önce yeni telefon numaranızı WhatsApp ile doğrulayın.");
+            toast.error("Lütfen önce yeni telefon numaranızı SMS ile doğrulayın.");
             return;
         }
 
-        setIsSaving(true);
+            setIsSaving(true);
         try {
             const updatePayload = {
                 full_name: formData.full_name,
@@ -229,12 +200,15 @@ export function ProfileInfo() {
 
             await refreshUserProfile();
             toast.success(t("profile.info.save_success"));
-            
+
             // Reset verification state on success
             setOtpSent(false);
             setPhoneVerified(false);
             setOtpCode("");
             setVerificationToken("");
+            setConfirmationResult(null);
+            setCountdown(0);
+            verifiedPhoneRef.current = "";
         } catch (error) {
             toast.error(t("profile.info.save_error"));
         } finally {

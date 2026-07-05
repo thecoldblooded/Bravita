@@ -810,8 +810,9 @@
     }
   </style>
 
+
   <meta http-equiv="Content-Security-Policy"
-    content="default-src 'self'; script-src 'self' 'unsafe-inline' blob: 'wasm-unsafe-eval' https://*.contentsquare.net https://js.hcaptcha.com https://*.hcaptcha.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.contentsquare.net https://*.hcaptcha.com; img-src 'self' data: https: blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cdn.lordicon.com https://*.contentsquare.net https://*.hcaptcha.com https://hcaptcha.com; frame-src 'self' https://*.hcaptcha.com https://hcaptcha.com; worker-src 'self' blob:; object-src 'none'; form-action 'self'; base-uri 'self'; upgrade-insecure-requests; block-all-mixed-content;">
+    content="default-src 'self'; script-src 'self' 'unsafe-inline' blob: 'wasm-unsafe-eval' https://*.contentsquare.net https://js.hcaptcha.com https://*.hcaptcha.com https://www.google.com https://www.gstatic.com https://www.recaptcha.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.contentsquare.net https://*.hcaptcha.com; img-src 'self' data: https: blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cdn.lordicon.com https://*.contentsquare.net https://*.hcaptcha.com https://hcaptcha.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://www.google.com https://www.gstatic.com https://www.recaptcha.net; frame-src 'self' https://*.hcaptcha.com https://hcaptcha.com https://www.google.com https://www.recaptcha.net; worker-src 'self' blob:; object-src 'none'; form-action 'self'; base-uri 'self'; upgrade-insecure-requests; block-all-mixed-content;">
 
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <meta name="referrer" content="strict-origin-when-cross-origin">
@@ -868,46 +869,30 @@
   <div class="seo-shell-loader" aria-hidden="true">
     <div class="seo-shell-loader__panel" role="status" aria-live="polite" aria-label="Yükleniyor">
       <div class="seo-shell-loader__media">
-        <video
-          id="seo-loader-video"
-          autoplay
-          loop
-          muted
-          playsinline
-          webkit-playsinline
-          preload="auto"
-          width="128"
-          height="128"
-        >
-          <source src="/bravita-optimized.mp4" type="video/mp4" onerror="var video = document.getElementById('seo-loader-video'); if (video) video.style.display='none'; var fallback = document.getElementById('seo-loader-fallback'); if (fallback) fallback.style.display='block';" />
+        <video id="seo-loader-video" autoplay loop muted playsinline webkit-playsinline preload="auto" width="128"
+          height="128">
+          <source src="/bravita-optimized.mp4" type="video/mp4"
+            onerror="var video = document.getElementById('seo-loader-video'); if (video) video.style.display='none'; var fallback = document.getElementById('seo-loader-fallback'); if (fallback) fallback.style.display='block';" />
         </video>
-        <img
-          id="seo-loader-fallback"
-          src="/bravita.webp"
-          alt="Bravita yükleniyor animasyonu"
-          style="display: none;"
-          loading="lazy"
-          decoding="async"
-          width="128"
-          height="128"
-        />
+        <img id="seo-loader-fallback" src="/bravita.webp" alt="Bravita yükleniyor animasyonu" style="display: none;"
+          loading="lazy" decoding="async" width="128" height="128" />
         <script>
-          (function() {
+          (function () {
             var video = document.getElementById('seo-loader-video');
             var fallback = document.getElementById('seo-loader-fallback');
             if (video && fallback) {
-              video.addEventListener('error', function() {
+              video.addEventListener('error', function () {
                 video.style.display = 'none';
                 fallback.style.display = 'block';
               });
               var playPromise = video.play();
               if (playPromise !== undefined) {
-                playPromise.catch(function() {
+                playPromise.catch(function () {
                   video.style.display = 'none';
                   fallback.style.display = 'block';
                 });
               }
-              setTimeout(function() {
+              setTimeout(function () {
                 if (video.paused || video.currentTime === 0) {
                   video.style.display = 'none';
                   fallback.style.display = 'block';
@@ -982,8 +967,7 @@
             <div class="seo-bottle-meta">150ml</div>
             <img src="/src/assets/bravita-bottle1.webp"
               srcset="/src/assets/bravita-bottle1-sm.webp 320w, /src/assets/bravita-bottle1-md.webp 640w, /src/assets/bravita-bottle1.webp 800w"
-              sizes="(max-width: 768px) 100px, 320px"
-              alt="Bravita Sıvı Takviye" class="seo-bottle" loading="eager"
+              sizes="(max-width: 768px) 100px, 320px" alt="Bravita Sıvı Takviye" class="seo-bottle" loading="eager"
               fetchpriority="high" decoding="async" width="320" height="566" />
             <div class="seo-flavor-card">
               <span>Tutti Frutti & Vanilya</span>
@@ -1045,12 +1029,17 @@
             <h2 id="marka-bilgi-baslik">Bravita ve kurumsal bilgiler</h2>
             <p>
               Bravita, ürün ve marka iletişimini tek bir çatı altında sunarak kullanıcıların resmi bilgilere hızlı
-              şekilde ulaşmasını amaçlar. Çocukların sağlıklı gelişim yolculuğuna modern, sade ve güven veren bir dijital
+              şekilde ulaşmasını amaçlar. Çocukların sağlıklı gelişim yolculuğuna modern, sade ve güven veren bir
+              dijital
               deneyimle eşlik eder. Formülümüzdeki tüm bileşenler gıda kodeksine ve resmi standartlara tam uyumludur.
             </p>
             <p>
-              Ürünümüz T.C. Tarım ve Orman Bakanlığı onaylı ve ruhsatlı tesislerde en yüksek hijyen standartlarında üretilmektedir.
-              Detaylı bilgi almak ve gıda takviyeleri standartlarını incelemek için <a href="https://www.tarimorman.gov.tr" target="_blank" rel="noopener noreferrer">Tarım ve Orman Bakanlığı</a> resmi web sitesini ziyaret edebilirsiniz. Güncel duyurularımız ve sağlıklı yaşam paylaşımlarımız için bizi sosyal mecralarda takip edebilirsiniz.
+              Ürünümüz T.C. Tarım ve Orman Bakanlığı onaylı ve ruhsatlı tesislerde en yüksek hijyen standartlarında
+              üretilmektedir.
+              Detaylı bilgi almak ve gıda takviyeleri standartlarını incelemek için <a
+                href="https://www.tarimorman.gov.tr" target="_blank" rel="noopener noreferrer">Tarım ve Orman
+                Bakanlığı</a> resmi web sitesini ziyaret edebilirsiniz. Güncel duyurularımız ve sağlıklı yaşam
+              paylaşımlarımız için bizi sosyal mecralarda takip edebilirsiniz.
             </p>
             <div class="seo-legal-links">
               <a href="/gizlilik-politikasi">Gizlilik Politikası</a>

@@ -1,4 +1,4 @@
-import { parseRequestBody, sendJson, sendInternalServerError, readRefreshTokenFromRequest, refreshSessionFromToken, verifyPhoneToken, buildRefreshCookie } from "./_shared.js";
+import { parseRequestBody, sendJson, sendInternalServerError, readRefreshTokenFromRequest, refreshSessionFromToken, verifyFirebasePhoneToken, buildRefreshCookie } from "./_shared.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -20,7 +20,7 @@ export default async function handler(req, res) {
 
     const user = sessionData.user;
     const body = parseRequestBody(req);
-    
+
     const fullName = typeof body.full_name === "string" ? body.full_name.trim() : "";
     const phone = typeof body.phone === "string" ? body.phone.trim() : "";
     const phoneVerificationToken = typeof body.phoneVerificationToken === "string" ? body.phoneVerificationToken.trim() : "";
@@ -68,10 +68,10 @@ export default async function handler(req, res) {
         return sendJson(res, 400, { error: "Geçersiz telefon numarası formatı." });
       }
 
-      // Verify the phone token
-      const verifiedPayload = verifyPhoneToken(phoneVerificationToken, supabaseAnonKey);
+      // Verify the Firebase phone token
+      const verifiedPayload = await verifyFirebasePhoneToken(phoneVerificationToken, phone);
       if (!verifiedPayload || verifiedPayload.phone !== phone) {
-        return sendJson(res, 400, { error: "Lütfen yeni telefon numaranızı önce WhatsApp ile doğrulayın." });
+        return sendJson(res, 400, { error: "Lütfen yeni telefon numaranızı önce SMS ile doğrulayın." });
       }
 
       updatePayload.phone = phone;

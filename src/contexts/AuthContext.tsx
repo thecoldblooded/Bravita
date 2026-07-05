@@ -251,7 +251,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [bffAuthEnabled, initialSession, setUserDebug]);
 
-  const syncPendingProfile = useCallback(async (userId: string, profileData: { full_name?: string; phone?: string; street?: string; city?: string; postal_code?: string }) => {
+  const syncPendingProfile = useCallback(async (userId: string, profileData: { full_name?: string; phone?: string; phone_verified?: boolean; phone_verified_at?: string | null; street?: string; city?: string; postal_code?: string }) => {
     // Singleton guard to prevent duplicate syncs
     if (Object.prototype.hasOwnProperty.call(window, '__isSyncingProfile')) return;
     window.__isSyncingProfile = true;
@@ -266,7 +266,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         id: userId,
         full_name: profileData.full_name,
         phone: profileData.phone,
-        phone_verified: false,
+        phone_verified: profileData.phone_verified === true,
+        phone_verified_at: profileData.phone_verified === true ? (profileData.phone_verified_at ?? new Date().toISOString()) : null,
         profile_complete: false,
         updated_at: new Date().toISOString(),
       };

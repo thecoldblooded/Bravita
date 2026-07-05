@@ -1083,6 +1083,43 @@ function verifyPhoneToken(token, secret) {
   return null;
 }
 
+async function verifyFirebasePhoneToken(idToken, expectedPhone) {
+  const firebaseApiKey = process.env.FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY;
+  if (!firebaseApiKey) {
+    throw new Error("Missing Firebase API key");
+  }
+
+  if (!idToken || typeof idToken !== "string") {
+    return null;
+  }
+
+  const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${firebaseApiKey}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ idToken }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    return null;
+  }
+
+  const user = Array.isArray(data?.users) ? data.users[0] : null;
+  if (!user?.phoneNumber) {
+    return null;
+  }
+
+  if (expectedPhone && user.phoneNumber !== expectedPhone) {
+    return null;
+  }
+
+  return {
+    phone: user.phoneNumber,
+    firebaseUid: user.localId,
+    verified: true,
+  };
+}
+
 async function getOpenwaSessionId(name = "bravita-new") {
   const openwaUrl = process.env.OPENWA_API_URL;
   const openwaKey = process.env.OPENWA_API_KEY;
@@ -1144,4 +1181,5 @@ export {
   detectSuspiciousValue,
   signPhoneToken,
   verifyPhoneToken,
+  verifyFirebasePhoneToken,
 };

@@ -8,7 +8,7 @@ import {
   sendJson,
   sendInternalServerError,
   shouldBypassCaptchaForRequest,
-  verifyPhoneToken,
+  verifyFirebasePhoneToken,
 } from "./_shared.js";
 
 function normalizeOptionalString(value, maxLength) {
@@ -83,9 +83,9 @@ export default async function handler(req, res) {
       return sendJson(res, 400, { error: "Telefon numarası gereklidir." });
     }
 
-    const verifiedPayload = verifyPhoneToken(phoneVerificationToken, supabaseAnonKey);
+    const verifiedPayload = await verifyFirebasePhoneToken(phoneVerificationToken, profileData.phone);
     if (!verifiedPayload || verifiedPayload.phone !== profileData.phone) {
-      return sendJson(res, 400, { error: "Lütfen önce telefon numaranızı WhatsApp ile doğrulayın." });
+      return sendJson(res, 400, { error: "Lütfen önce telefon numaranızı SMS ile doğrulayın." });
     }
 
     // Set verified flags in user profile metadata

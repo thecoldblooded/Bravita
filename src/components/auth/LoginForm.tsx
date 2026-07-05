@@ -19,7 +19,7 @@ import { toast } from "sonner";
 import { useAuthOperations } from "@/hooks/useAuth";
 import Loader from "@/components/ui/Loader";
 import { translateError } from "@/lib/errorTranslator";
-
+import { shouldBypassCaptchaForLocalDev } from "@/lib/captcha";
 interface LoginFormProps {
   onSuccess?: () => void;
   onSwitchToSignup?: () => void;
@@ -37,30 +37,6 @@ type CaptchaSectionProps = {
   captchaRef: RefObject<HCaptcha>;
   onTokenChange: (token: string | null) => void;
 };
-
-function isLocalhostHostname(value: string): boolean {
-  const hostname = value.trim().toLowerCase();
-  if (!hostname) return false;
-
-  return hostname === "localhost"
-    || hostname === "127.0.0.1"
-    || hostname === "::1"
-    || hostname === "[::1]"
-    || hostname.endsWith(".localhost");
-}
-
-function shouldBypassCaptchaForLocalDev(): boolean {
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  if (import.meta.env.PROD) {
-    return false;
-  }
-
-  const skipCaptchaFlag = String(import.meta.env.VITE_SKIP_CAPTCHA ?? "").toLowerCase() === "true";
-  return skipCaptchaFlag && isLocalhostHostname(window.location.hostname);
-}
 
 function CaptchaSection({ siteKey, captchaRef, onTokenChange }: CaptchaSectionProps) {
   if (!siteKey) {
@@ -161,6 +137,8 @@ type IndividualLoginTabProps = {
   hcaptchaSiteKey: string;
   captchaRef: RefObject<HCaptcha>;
   onTokenChange: (token: string | null) => void;
+  shouldBypassCaptcha: boolean;
+  showLoginCaptcha: boolean;
 };
 
 function IndividualLoginTab({
@@ -174,6 +152,8 @@ function IndividualLoginTab({
   hcaptchaSiteKey,
   captchaRef,
   onTokenChange,
+  shouldBypassCaptcha,
+  showLoginCaptcha,
 }: IndividualLoginTabProps) {
   return (
     <div className="space-y-4">
@@ -229,11 +209,21 @@ function IndividualLoginTab({
             )}
           />
 
-          <CaptchaSection
-            siteKey={hcaptchaSiteKey}
-            captchaRef={captchaRef}
-            onTokenChange={onTokenChange}
-          />
+          {shouldBypassCaptcha ? (
+            <div className="rounded-lg border border-dashed border-green-100 bg-green-50/40 px-3 py-3 text-xs text-gray-500">
+              Güvenlik doğrulaması geliştirme modunda kapalı.
+            </div>
+          ) : showLoginCaptcha ? (
+            <CaptchaSection
+              siteKey={hcaptchaSiteKey}
+              captchaRef={captchaRef}
+              onTokenChange={onTokenChange}
+            />
+          ) : (
+            <div className="rounded-lg border border-dashed border-orange-100 bg-orange-50/40 px-3 py-3 text-xs text-gray-500">
+              Giriş yapmadan önce güvenlik doğrulaması gerektiğinde burada görünecek.
+            </div>
+          )}
 
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? <Loader size="1.25rem" noMargin /> : t("auth.login")}
@@ -267,6 +257,7 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
   const { loginWithEmail, signupWithGoogle, resetPassword, isLoading } =
     useAuthOperations();
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [showLoginCaptcha, setShowLoginCaptcha] = useState(false);
   const captchaRef = useRef<HCaptcha>(null!);
 
   const HCAPTCHA_SITE_KEY = String(import.meta.env.VITE_HCAPTCHA_SITE_KEY ?? "").trim();
@@ -288,6 +279,7 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
   const handleIndividualLogin = async (data: IndividualLoginForm) => {
     try {
       if (!captchaToken && !shouldBypassCaptcha) {
+        setShowLoginCaptcha(true);
         toast.error(t("auth.captcha_required"));
         return;
       }
@@ -336,6 +328,7 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
 
     try {
       if (!captchaToken && !shouldBypassCaptcha) {
+        setShowLoginCaptcha(true);
         toast.error(t("auth.captcha_required"));
         return;
       }
@@ -364,6 +357,8 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
       hcaptchaSiteKey={HCAPTCHA_SITE_KEY}
       captchaRef={captchaRef}
       onTokenChange={setCaptchaToken}
+      shouldBypassCaptcha={shouldBypassCaptcha}
+      showLoginCaptcha={showLoginCaptcha}
     />
   );
 }

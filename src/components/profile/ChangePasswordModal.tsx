@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import HCaptcha from "@hcaptcha/react-hcaptcha";
 import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthIndicator";
+import { shouldBypassCaptchaForLocalDev } from "@/lib/captcha";
 
 interface ChangePasswordModalProps {
     children?: React.ReactNode;
@@ -34,6 +35,7 @@ export function ChangePasswordModal({ children, open, onOpenChange }: ChangePass
     const [captchaToken, setCaptchaToken] = useState<string | null>(null);
     const captchaRef = useRef<HCaptcha>(null);
     const HCAPTCHA_SITE_KEY = String(import.meta.env.VITE_HCAPTCHA_SITE_KEY ?? "").trim();
+    const shouldBypassCaptcha = shouldBypassCaptchaForLocalDev();
 
     const hasConfirmInput = confirmPassword.length > 0;
     const isMatch = hasConfirmInput && newPassword === confirmPassword;
@@ -163,7 +165,11 @@ export function ChangePasswordModal({ children, open, onOpenChange }: ChangePass
                     </div>
 
                     <div className="flex justify-center py-4">
-                        {HCAPTCHA_SITE_KEY ? (
+                        {shouldBypassCaptcha ? (
+                            <div className="w-full rounded-md border border-dashed border-green-200 bg-green-50 px-3 py-2 text-xs text-green-700">
+                                Güvenlik doğrulaması geliştirme modunda kapalı.
+                            </div>
+                        ) : HCAPTCHA_SITE_KEY ? (
                             <HCaptcha
                                 sitekey={HCAPTCHA_SITE_KEY}
                                 onVerify={(token) => setCaptchaToken(token)}

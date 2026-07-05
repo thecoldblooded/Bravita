@@ -50,6 +50,8 @@ export function useAuthOperations() {
         phone: data.phone,
         full_name: data.fullName || null,
         user_type: "individual",
+        phone_verified: Boolean(data.phoneVerificationToken),
+        phone_verified_at: data.phoneVerificationToken ? new Date().toISOString() : null,
       };
 
       if (isBffAuthEnabled()) {
@@ -168,14 +170,14 @@ export function useAuthOperations() {
 
       const { data: authData, error: authError } = data.captchaToken
         ? await supabase.auth.signInWithPassword({
-            email: data.email,
-            password: data.password,
-            options: { captchaToken: data.captchaToken },
-          })
+          email: data.email,
+          password: data.password,
+          options: { captchaToken: data.captchaToken },
+        })
         : await supabase.auth.signInWithPassword({
-            email: data.email,
-            password: data.password,
-          });
+          email: data.email,
+          password: data.password,
+        });
 
       if (authError) throw authError;
 
@@ -234,14 +236,14 @@ export function useAuthOperations() {
 
       const { error } = captchaToken
         ? await supabase.auth.resend({
-            type: 'signup',
-            email,
-            options: { captchaToken },
-          })
+          type: 'signup',
+          email,
+          options: { captchaToken },
+        })
         : await supabase.auth.resend({
-            type: 'signup',
-            email,
-          });
+          type: 'signup',
+          email,
+        });
 
       if (error) throw error;
       return { success: true };
@@ -275,14 +277,14 @@ export function useAuthOperations() {
         // Verify old password by attempting a sign in
         const { error: verifyError } = captchaToken
           ? await supabase.auth.signInWithPassword({
-              email: user.email,
-              password: oldPassword,
-              options: { captchaToken },
-            })
+            email: user.email,
+            password: oldPassword,
+            options: { captchaToken },
+          })
           : await supabase.auth.signInWithPassword({
-              email: user.email,
-              password: oldPassword,
-            });
+            email: user.email,
+            password: oldPassword,
+          });
 
         if (verifyError) {
           throw new Error("Mevcut şifreniz hatalı. Lütfen tekrar deneyin.");
@@ -329,12 +331,12 @@ export function useAuthOperations() {
 
       const { error } = captchaToken
         ? await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: `${window.location.origin}/update-password`,
-            captchaToken,
-          })
+          redirectTo: `${window.location.origin}/update-password`,
+          captchaToken,
+        })
         : await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: `${window.location.origin}/update-password`,
-          });
+          redirectTo: `${window.location.origin}/update-password`,
+        });
 
       if (error) throw error;
       return { success: true };

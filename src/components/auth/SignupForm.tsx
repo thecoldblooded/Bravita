@@ -23,9 +23,10 @@ import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import { Mail, RefreshCw } from "lucide-react";
 import { translateError } from "@/lib/errorTranslator";
+import { shouldBypassCaptchaForLocalDev } from "@/lib/captcha";
 import { PasswordStrengthIndicator } from "./PasswordStrengthIndicator";
-import { auth } from "@/lib/firebase";
-import { RecaptchaVerifier, signInWithPhoneNumber, type ConfirmationResult } from "firebase/auth";
+import { arePhoneNumbersEquivalent, sendOtp, verifyOtp } from "@/lib/auth/phoneOtp";
+import type { ConfirmationResult } from "firebase/auth";
 
 interface SignupFormProps {
   onSuccess?: () => void;
@@ -42,32 +43,6 @@ const isCaptchaDebugEnabled = (): boolean => {
   const params = new URLSearchParams(window.location.search);
   return params.get("captchaDebug") === "1" || window.localStorage.getItem("bravita_captcha_debug") === "1";
 };
-
-function isLocalhostHostname(value: string): boolean {
-  const hostname = value.trim().toLowerCase();
-  if (!hostname) {
-    return false;
-  }
-
-  return hostname === "localhost"
-    || hostname === "127.0.0.1"
-    || hostname === "::1"
-    || hostname === "[::1]"
-    || hostname.endsWith(".localhost");
-}
-
-function shouldBypassCaptchaForLocalDev(): boolean {
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  if (import.meta.env.PROD) {
-    return false;
-  }
-
-  const skipCaptchaFlag = String(import.meta.env.VITE_SKIP_CAPTCHA ?? "").toLowerCase() === "true";
-  return skipCaptchaFlag && isLocalhostHostname(window.location.hostname);
-}
 
 type CaptchaTelemetryPayload = Record<string, unknown>;
 
@@ -192,6 +167,24 @@ const initialSignupUiState: SignupUiState = {
   isResending: false,
   captchaToken: null,
 };
+
+function shouldResetPhoneOtpState(
+  verifiedPhone: string,
+  currentPhone: string,
+  currentOtpSent: boolean,
+  currentPhoneVerified: boolean,
+  currentConfirmationResult: ConfirmationResult | null,
+): boolean {
+  if (!verifiedPhone) {
+    return false;
+  }
+
+  if (!currentOtpSent && !currentPhoneVerified && !currentConfirmationResult) {
+    return false;
+  }
+
+  return !arePhoneNumbersEquivalent(verifiedPhone, currentPhone);
+}
 
 function signupUiReducer(state: SignupUiState, action: SignupUiAction): SignupUiState {
   switch (action.type) {
@@ -407,6 +400,7 @@ type IndividualSignupContentProps = {
   t: TranslateFn;
   form: UseFormReturn<IndividualSignupForm>;
   isLoading: boolean;
+  shouldBypassCaptcha: boolean;
   onSubmit: (data: IndividualSignupForm) => Promise<void>;
   onGoogleSignup: () => Promise<void>;
   onSwitchToLogin: () => void;
@@ -428,6 +422,7 @@ function IndividualSignupContent({
   t,
   form,
   isLoading,
+  shouldBypassCaptcha,
   onSubmit,
   onGoogleSignup,
   onSwitchToLogin,
@@ -512,7 +507,11 @@ function IndividualSignupContent({
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={onSendOtp}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      void onSendOtp();
+                    }}
                     disabled={isLoading || isSendingOtp || phoneVerified || !field.value || countdown > 0}
                     className="h-10 text-xs px-3 border-orange-200 text-orange-700 hover:bg-orange-50 w-full sm:w-auto shrink-0"
                   >
@@ -535,7 +534,7 @@ function IndividualSignupContent({
           {otpSent && !phoneVerified && (
             <div className="bg-orange-50/50 p-4 rounded-xl border border-orange-100/50 space-y-3">
               <FormLabel className="text-sm font-medium text-gray-700">Doğrulama Kodu</FormLabel>
-               <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Input
                   type="text"
                   maxLength={6}
@@ -547,7 +546,11 @@ function IndividualSignupContent({
                 />
                 <Button
                   type="button"
-                  onClick={onVerifyOtp}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    void onVerifyOtp();
+                  }}
                   disabled={isLoading || isVerifyingOtp || otpCode.length !== 6}
                   className="bg-orange-500 hover:bg-orange-600 text-white w-full sm:w-auto shrink-0"
                 >
@@ -555,7 +558,7 @@ function IndividualSignupContent({
                 </Button>
               </div>
               <p className="text-[11px] text-gray-500">
-                Telefonunuza Whatsapp üzerinden gönderdiğimiz 6 haneli kodu giriniz.
+                Telefonunuza SMS ile gönderdiğimiz 6 haneli kodu giriniz.
               </p>
             </div>
           )}
@@ -715,11 +718,27 @@ function IndividualSignupContent({
             />
           </div>
 
-          <CaptchaSection
-            siteKey={hcaptchaSiteKey}
-            captchaRef={captchaRef}
-            onTokenChange={onTokenChange}
-          />
+          {phoneVerified ? (
+            shouldBypassCaptcha ? (
+              <div className="rounded-lg border border-dashed border-green-100 bg-green-50/40 px-3 py-3 text-xs text-gray-500">
+                Güvenlik doğrulaması geliştirme modunda kapalı.
+              </div>
+            ) : showSignupCaptcha ? (
+              <CaptchaSection
+                siteKey={hcaptchaSiteKey}
+                captchaRef={captchaRef}
+                onTokenChange={onTokenChange}
+              />
+            ) : (
+              <div className="rounded-lg border border-dashed border-orange-100 bg-orange-50/40 px-3 py-3 text-xs text-gray-500">
+                Telefon numaranızı doğruladıktan sonra kayıt butonuna bastığınızda güvenlik doğrulaması açılacak.
+              </div>
+            )
+          ) : (
+            <div className="rounded-lg border border-dashed border-orange-100 bg-orange-50/40 px-3 py-3 text-xs text-gray-500">
+              Telefon numaranızı önce SMS ile doğrulamanız gerekiyor.
+            </div>
+          )}
 
           <Button type="submit" className="w-full" disabled={isLoading || !phoneVerified}>
             {isLoading ? <Loader size="1.25rem" noMargin /> : t("auth.signup")}
@@ -786,7 +805,7 @@ function IndividualSignupContent({
   );
 }
 
-export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
+export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
   const { t } = useTranslation();
 
   const passwordSchema = z
@@ -837,144 +856,8 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
-
-  const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null);
-
-  const getOrCreateRecaptchaVerifier = (): RecaptchaVerifier => {
-    // Always clear previous verifier to avoid stale state
-    if (recaptchaVerifierRef.current) {
-      try {
-        recaptchaVerifierRef.current.clear();
-      } catch {
-        // ignore clear errors
-      }
-      recaptchaVerifierRef.current = null;
-    }
-
-    // Remove old container if it exists
-    const oldContainer = document.getElementById("recaptcha-container");
-    if (oldContainer) {
-      oldContainer.remove();
-    }
-
-    // Create a fresh container
-    const container = document.createElement("div");
-    container.id = "recaptcha-container";
-    document.body.appendChild(container);
-
-    const verifier = new RecaptchaVerifier(auth, "recaptcha-container", {
-      size: "invisible",
-      callback: () => {
-        // reCAPTCHA solved
-      },
-      "expired-callback": () => {
-        toast.error("reCAPTCHA süresi doldu. Lütfen tekrar deneyin.");
-        recaptchaVerifierRef.current = null;
-      },
-    });
-
-    recaptchaVerifierRef.current = verifier;
-    return verifier;
-  };
-
-  useEffect(() => {
-    if (countdown <= 0) return;
-    const timer = setInterval(() => {
-      setCountdown((prev) => prev - 1);
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [countdown]);
-
-  const handleSendOtp = async () => {
-    const phone = individualForm.getValues("phone");
-    if (!phone || !isValidPhoneNumber(phone)) {
-      toast.error(t("auth.validation.phone_invalid"));
-      return;
-    }
-
-    setIsSendingOtp(true);
-    try {
-      const verifier = getOrCreateRecaptchaVerifier();
-      const confirmation = await signInWithPhoneNumber(auth, phone, verifier);
-      setConfirmationResult(confirmation);
-
-      setOtpSent(true);
-      setCountdown(180); // 3 mins
-      toast.success("Doğrulama kodu SMS ile gönderildi.");
-    } catch (err: unknown) {
-      // Provide more specific error messages based on Firebase error codes
-      const firebaseError = err as { code?: string; message?: string };
-      let message = "SMS gönderilemedi. Lütfen tekrar deneyin.";
-      
-      if (firebaseError.code === "auth/network-request-failed") {
-        message = "Ağ bağlantısı hatası. İnternet bağlantınızı kontrol edip tekrar deneyin.";
-      } else if (firebaseError.code === "auth/too-many-requests") {
-        message = "Çok fazla istek gönderildi. Lütfen biraz bekleyip tekrar deneyin.";
-      } else if (firebaseError.code === "auth/invalid-phone-number") {
-        message = "Geçersiz telefon numarası. Lütfen kontrol edip tekrar deneyin.";
-      } else if (firebaseError.code === "auth/quota-exceeded") {
-        message = "SMS kotası doldu. Lütfen daha sonra tekrar deneyin.";
-      } else if (firebaseError.code === "auth/captcha-check-failed") {
-        message = "reCAPTCHA doğrulaması başarısız. Sayfayı yenileyip tekrar deneyin.";
-      } else if (err instanceof Error) {
-        message = err.message;
-      }
-      
-      console.error("Firebase Phone Auth Error:", firebaseError.code, err);
-      toast.error(message);
-      
-      // Clear reCAPTCHA on failure to allow retry
-      if (recaptchaVerifierRef.current) {
-        try {
-          recaptchaVerifierRef.current.clear();
-          recaptchaVerifierRef.current = null;
-        } catch {
-          // ignore
-        }
-      }
-    } finally {
-      setIsSendingOtp(false);
-    }
-  };
-
-  const handleVerifyOtp = async () => {
-    const phone = individualForm.getValues("phone");
-    if (!otpCode || otpCode.length !== 6) {
-      toast.error("Lütfen 6 haneli doğrulama kodunu girin.");
-      return;
-    }
-
-    if (!confirmationResult) {
-      toast.error("Lütfen önce doğrulama kodu isteyin.");
-      return;
-    }
-
-    setIsVerifyingOtp(true);
-    try {
-      const credential = await confirmationResult.confirm(otpCode);
-      const firebaseToken = await credential.user.getIdToken();
-
-      const response = await fetch("/api/auth/verify-firebase-token", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, firebaseToken }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "Kod doğrulanamadı.");
-      }
-
-      setPhoneVerified(true);
-      setVerificationToken(data.token);
-      toast.success("Telefon numaranız başarıyla doğrulandı.");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Bir hata oluştu.";
-      toast.error(message);
-    } finally {
-      setIsVerifyingOtp(false);
-    }
-  };
+  const verifiedPhoneRef = useRef("");
+  const [showSignupCaptcha, setShowSignupCaptcha] = useState(false);
 
   const HCAPTCHA_SITE_KEY = String(import.meta.env.VITE_HCAPTCHA_SITE_KEY ?? "").trim();
   const shouldBypassCaptcha = shouldBypassCaptchaForLocalDev();
@@ -992,16 +875,111 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
       agreeKvkk: false,
     },
   });
+  const watchedPhone = individualForm.watch("phone");
+
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const timer = setInterval(() => {
+      setCountdown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [countdown]);
+
+  useEffect(() => {
+    if (!shouldResetPhoneOtpState(verifiedPhoneRef.current, watchedPhone, otpSent, phoneVerified, confirmationResult)) {
+      return;
+    }
+
+    setOtpSent(false);
+    setPhoneVerified(false);
+    setOtpCode("");
+    setVerificationToken("");
+    setConfirmationResult(null);
+    setCountdown(0);
+    verifiedPhoneRef.current = "";
+    setShowSignupCaptcha(false);
+    captchaRef.current?.resetCaptcha();
+    dispatch({ type: "SET_CAPTCHA_TOKEN", token: null });
+  }, [confirmationResult, otpSent, phoneVerified, watchedPhone]);
+
+  const handleSendOtp = async () => {
+    const phone = individualForm.getValues("phone");
+    if (!phone || !isValidPhoneNumber(phone)) {
+      toast.error(t("auth.validation.phone_invalid"));
+      return;
+    }
+
+    setIsSendingOtp(true);
+    try {
+      const { confirmationResult } = await sendOtp(phone);
+      setConfirmationResult(confirmationResult);
+      verifiedPhoneRef.current = phone;
+
+      setOtpSent(true);
+      setCountdown(180); // 3 mins
+      toast.success("Doğrulama kodu SMS ile gönderildi.");
+    } catch (err: unknown) {
+      // Provide more specific error messages based on Firebase error codes
+      const firebaseError = err as { code?: string; message?: string };
+      let message = "SMS gönderilemedi. Lütfen tekrar deneyin.";
+
+      if (firebaseError.code === "auth/network-request-failed") {
+        message = "Ağ bağlantısı hatası. İnternet bağlantınızı kontrol edip tekrar deneyin.";
+      } else if (firebaseError.code === "auth/too-many-requests") {
+        message = "Çok fazla istek gönderildi. Lütfen biraz bekleyip tekrar deneyin.";
+      } else if (firebaseError.code === "auth/invalid-phone-number") {
+        message = "Geçersiz telefon numarası. Lütfen kontrol edip tekrar deneyin.";
+      } else if (firebaseError.code === "auth/quota-exceeded") {
+        message = "SMS kotası doldu. Lütfen daha sonra tekrar deneyin.";
+      } else if (firebaseError.code === "auth/captcha-check-failed") {
+        message = "reCAPTCHA doğrulaması başarısız. Sayfayı yenileyip tekrar deneyin.";
+      } else if (err instanceof Error) {
+        message = err.message;
+      }
+
+      console.error("Firebase Phone Auth Error:", firebaseError.code, err);
+      toast.error(message);
+
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otpCode || otpCode.length !== 6) {
+      toast.error("Lütfen 6 haneli doğrulama kodunu girin.");
+      return;
+    }
+
+    if (!confirmationResult) {
+      toast.error("Lütfen önce doğrulama kodu isteyin.");
+      return;
+    }
+
+    setIsVerifyingOtp(true);
+    try {
+      const { idToken } = await verifyOtp(confirmationResult, otpCode);
+      setPhoneVerified(true);
+      setVerificationToken(idToken);
+      toast.success("Telefon numaranız başarıyla doğrulandı.");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Bir hata oluştu.";
+      toast.error(message);
+    } finally {
+      setIsVerifyingOtp(false);
+    }
+  };
 
   const handleIndividualSignupSubmit = async (data: IndividualSignupForm) => {
     try {
-      if (!captchaToken && !shouldBypassCaptcha) {
-        toast.error(t("auth.captcha_required"));
+      if (!phoneVerified) {
+        toast.error("Lütfen önce telefon numaranızı SMS ile doğrulayın.");
         return;
       }
 
-      if (!phoneVerified) {
-        toast.error("Lütfen önce telefon numaranızı WhatsApp ile doğrulayın.");
+      if (!shouldBypassCaptcha && !captchaToken) {
+        setShowSignupCaptcha(true);
+        toast.error(t("auth.captcha_required"));
         return;
       }
 
@@ -1034,6 +1012,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
 
       captchaRef.current?.resetCaptcha();
       dispatch({ type: "SET_CAPTCHA_TOKEN", token: null });
+      setShowSignupCaptcha(false);
     } catch (err) {
       toast.error(translateError(err, t));
     }
@@ -1112,6 +1091,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
       countdown={countdown}
       isSendingOtp={isSendingOtp}
       isVerifyingOtp={isVerifyingOtp}
+      shouldBypassCaptcha={shouldBypassCaptcha}
       onSendOtp={handleSendOtp}
       onVerifyOtp={handleVerifyOtp}
     />

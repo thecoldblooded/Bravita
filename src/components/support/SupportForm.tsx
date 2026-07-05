@@ -31,6 +31,7 @@ import type HCaptcha from "@hcaptcha/react-hcaptcha";
 import Loader from "@/components/ui/Loader";
 import { Mail, User, MessageSquare, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { shouldBypassCaptchaForLocalDev } from "@/lib/captcha";
 
 const HCaptchaComponent = lazy(() => import("@hcaptcha/react-hcaptcha"));
 
@@ -57,6 +58,7 @@ export function SupportForm({ onSuccess }: SupportFormProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [captchaToken, setCaptchaToken] = useState<string | null>(null);
     const captchaRef = useRef<HCaptcha>(null);
+    const shouldBypassCaptcha = shouldBypassCaptchaForLocalDev();
 
     const form = useForm<SupportFormValues>({
         resolver: zodResolver(supportFormSchema),
@@ -281,7 +283,11 @@ export function SupportForm({ onSuccess }: SupportFormProps) {
 
                 <div className="flex flex-col items-center space-y-3 pt-1">
                     <div className="scale-[0.6] origin-center -my-4 min-h-11.5">
-                        {HCAPTCHA_SITE_KEY ? (
+                        {shouldBypassCaptcha ? (
+                            <div className="w-full rounded-md border border-dashed border-green-200 bg-green-50 px-3 py-2 text-xs text-green-700">
+                                Güvenlik doğrulaması geliştirme modunda kapalı.
+                            </div>
+                        ) : HCAPTCHA_SITE_KEY ? (
                             <Suspense fallback={<div className="h-19.5 w-75 bg-gray-50 animate-pulse rounded-lg border border-gray-100 flex items-center justify-center text-[10px] text-gray-400">Captcha Yükleniyor...</div>}>
                                 <HCaptchaComponent
                                     sitekey={HCAPTCHA_SITE_KEY}
