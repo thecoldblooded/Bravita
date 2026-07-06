@@ -341,7 +341,7 @@ const server = http.createServer(async (req, res) => {
     req.path = requestUrl.pathname;
     req.query = toExpressLikeQuery(requestUrl.searchParams);
 
-    if (requestUrl.pathname === "/healthz") {
+    if (requestUrl.pathname === "/healthz" || requestUrl.pathname === "/api/auth/healthz") {
         return response.status(200).json({ ok: true, service: "bff-auth" });
     }
 

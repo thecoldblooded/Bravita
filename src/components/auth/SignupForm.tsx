@@ -25,7 +25,7 @@ import { Mail, RefreshCw } from "lucide-react";
 import { translateError } from "@/lib/errorTranslator";
 import { shouldBypassCaptchaForLocalDev } from "@/lib/captcha";
 import { PasswordStrengthIndicator } from "./PasswordStrengthIndicator";
-import { arePhoneNumbersEquivalent, getFirebaseOtpVerificationErrorKey, getFirebasePhoneAuthErrorMessage, sendOtp, verifyOtp } from "@/lib/auth/phoneOtp";
+import { arePhoneNumbersEquivalent, exchangeFirebasePhoneToken, getFirebaseOtpVerificationErrorKey, getFirebasePhoneAuthErrorMessage, sendOtp, verifyOtp } from "@/lib/auth/phoneOtp";
 import type { ConfirmationResult } from "firebase/auth";
 
 interface SignupFormProps {
@@ -943,8 +943,9 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
     setIsVerifyingOtp(true);
     try {
       const { idToken } = await verifyOtp(confirmationResult, otpCode);
+      const signedVerificationToken = await exchangeFirebasePhoneToken(idToken, individualForm.getValues("phone"));
       setPhoneVerified(true);
-      setVerificationToken(idToken);
+      setVerificationToken(signedVerificationToken);
       toast.success(t("auth.phone_verification_successful"));
     } catch (err) {
       console.error("Firebase OTP Verification Error:", (err as { code?: string })?.code, err);

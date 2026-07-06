@@ -8,6 +8,7 @@ import {
   sendJson,
   sendInternalServerError,
   shouldBypassCaptchaForRequest,
+  verifyPhoneToken,
   verifyFirebasePhoneToken,
 } from "./_shared.js";
 
@@ -20,9 +21,20 @@ function normalizeOptionalString(value, maxLength) {
 
 function normalizePhone(value) {
   if (typeof value !== "string") return null;
-  const normalized = value.trim();
-  if (!normalized || normalized.length > 32) return null;
-  if (!/^[0-9+()\-\s]+$/.test(normalized)) return null;
+  const trimmed = value.trim();
+  if (!trimmed || trimmed.length > 64) return null;
+
+  const digits = trimmed.replace(/[^\d+]/g, "");
+  if (!digits || digits === "+") return null;
+
+  let normalized;
+  if (digits.startsWith("+")) normalized = digits;
+  else if (digits.startsWith("00")) normalized = `+${digits.slice(2)}`;
+  else if (digits.startsWith("90")) normalized = `+${digits}`;
+  else if (digits.startsWith("0")) normalized = `+90${digits.slice(1)}`;
+  else normalized = `+90${digits}`;
+
+  if (!/^\+\d{10,15}$/.test(normalized)) return null;
   return normalized;
 }
 
@@ -46,6 +58,22 @@ function normalizeSignupProfileData(input) {
   }
 
   return payload;
+}
+
+function normalizePhoneDigits(value) {
+  if (typeof value !== "string") return "";
+  return value.replace(/\D/g, "");
+}
+
+function arePhonesEquivalent(left, right) {
+  const normalizedLeft = normalizePhoneDigits(normalizePhone(left) || left);
+  const normalizedRight = normalizePhoneDigits(normalizePhone(right) || right);
+
+  if (!normalizedLeft || !normalizedRight) {
+    return false;
+  }
+
+  return normalizedLeft === normalizedRight;
 }
 
 export default async function handler(req, res) {
@@ -83,8 +111,17 @@ export default async function handler(req, res) {
       return sendJson(res, 400, { error: "Telefon numarası gereklidir." });
     }
 
-    const verifiedPayload = await verifyFirebasePhoneToken(phoneVerificationToken, profileData.phone);
-    if (!verifiedPayload || verifiedPayload.phone !== profileData.phone) {
+    let verifiedPayload = null;
+
+    if (supabaseAnonKey && phoneVerificationToken) {
+      verifiedPayload = verifyPhoneToken(phoneVerificationToken, supabaseAnonKey);
+    }
+
+    if (!verifiedPayload) {
+      verifiedPayload = await verifyFirebasePhoneToken(phoneVerificationToken, profileData.phone);
+    }
+
+    if (!verifiedPayload || !arePhonesEquivalent(verifiedPayload.phone, profileData.phone)) {
       return sendJson(res, 400, { error: "Lütfen önce telefon numaranızı SMS ile doğrulayın." });
     }
 

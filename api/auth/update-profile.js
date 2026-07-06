@@ -1,4 +1,20 @@
-import { parseRequestBody, sendJson, sendInternalServerError, readRefreshTokenFromRequest, refreshSessionFromToken, verifyFirebasePhoneToken, buildRefreshCookie } from "./_shared.js";
+import { parseRequestBody, sendJson, sendInternalServerError, readRefreshTokenFromRequest, refreshSessionFromToken, verifyFirebasePhoneToken, verifyPhoneToken, buildRefreshCookie } from "./_shared.js";
+
+function normalizePhoneDigits(value) {
+  if (typeof value !== "string") return "";
+  return value.replace(/\D/g, "");
+}
+
+function arePhonesEquivalent(left, right) {
+  const normalizedLeft = normalizePhoneDigits(left);
+  const normalizedRight = normalizePhoneDigits(right);
+
+  if (!normalizedLeft || !normalizedRight) {
+    return false;
+  }
+
+  return normalizedLeft === normalizedRight;
+}
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -68,9 +84,17 @@ export default async function handler(req, res) {
         return sendJson(res, 400, { error: "Geçersiz telefon numarası formatı." });
       }
 
-      // Verify the Firebase phone token
-      const verifiedPayload = await verifyFirebasePhoneToken(phoneVerificationToken, phone);
-      if (!verifiedPayload || verifiedPayload.phone !== phone) {
+      let verifiedPayload = null;
+
+      if (phoneVerificationToken) {
+        verifiedPayload = verifyPhoneToken(phoneVerificationToken, supabaseAnonKey);
+      }
+
+      if (!verifiedPayload) {
+        verifiedPayload = await verifyFirebasePhoneToken(phoneVerificationToken, phone);
+      }
+
+      if (!verifiedPayload || !arePhonesEquivalent(verifiedPayload.phone, phone)) {
         return sendJson(res, 400, { error: "Lütfen yeni telefon numaranızı önce SMS ile doğrulayın." });
       }
 

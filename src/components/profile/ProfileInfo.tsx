@@ -11,7 +11,7 @@ import { updateProfileWithBff } from "@/lib/auth/bffAuth";
 import Loader from "@/components/ui/Loader";
 import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
-import { arePhoneNumbersEquivalent, changePhoneWithOtp, verifyOtp } from "@/lib/auth/phoneOtp";
+import { arePhoneNumbersEquivalent, changePhoneWithOtp, exchangeFirebasePhoneToken, verifyOtp } from "@/lib/auth/phoneOtp";
 import type { ConfirmationResult } from "firebase/auth";
 
 export function ProfileInfo() {
@@ -106,8 +106,9 @@ export function ProfileInfo() {
         setIsVerifyingOtp(true);
         try {
             const { idToken } = await verifyOtp(confirmationResult, otpCode);
+            const signedVerificationToken = await exchangeFirebasePhoneToken(idToken, formData.phone);
             setPhoneVerified(true);
-            setVerificationToken(idToken);
+            setVerificationToken(signedVerificationToken);
             toast.success("Telefon numaranız başarıyla doğrulandı.");
         } catch (err) {
             const message = err instanceof Error ? err.message : "Bir hata oluştu.";

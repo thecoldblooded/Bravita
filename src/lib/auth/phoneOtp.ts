@@ -96,6 +96,11 @@ export type VerifyOtpResult = {
     phone: string;
 };
 
+type VerifyFirebaseTokenApiResponse = {
+    token?: string;
+    error?: string;
+};
+
 const FIREBASE_PHONE_AUTH_ERROR_MESSAGES: Record<string, string> = {
     "auth/network-request-failed": "Ağ bağlantısı hatası. İnternet bağlantınızı kontrol edip tekrar deneyin.",
     "auth/too-many-requests": "Çok fazla istek gönderildi. Lütfen biraz bekleyip tekrar deneyin.",
@@ -169,6 +174,34 @@ export const verifyOtp = async (confirmationResult: ConfirmationResult, code: st
     const result = await confirmationResult.confirm(code);
     const idToken = await result.user.getIdToken();
     return { user: result.user, idToken, phone: result.user.phoneNumber ?? "" };
+};
+
+export const exchangeFirebasePhoneToken = async (firebaseToken: string, rawPhone: string): Promise<string> => {
+    const phone = normalizePhone(rawPhone);
+
+    const response = await fetch("/api/auth/verify-firebase-token", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        credentials: "same-origin",
+        body: JSON.stringify({
+            firebaseToken,
+            phone,
+        }),
+    });
+
+    const payload = await response.json().catch(() => null) as VerifyFirebaseTokenApiResponse | null;
+    const token = typeof payload?.token === "string" ? payload.token.trim() : "";
+
+    if (!response.ok || !token) {
+        const message = typeof payload?.error === "string" && payload.error.trim().length > 0
+            ? payload.error.trim()
+            : "Telefon doğrulaması tamamlanamadı. Lütfen tekrar deneyin.";
+        throw new Error(message);
+    }
+
+    return token;
 };
 
 export const changePhoneWithOtp = async (newRawPhone: string): Promise<SendOtpResult> => {
