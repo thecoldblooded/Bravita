@@ -14,14 +14,16 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 let authInstance: ReturnType<typeof getAuth> | null = null;
+const FIREBASE_AUTH_LANGUAGE_CODE = "tr";
 
 export const getFirebaseAuth = (): ReturnType<typeof getAuth> => {
   if (!authInstance) {
     authInstance = getAuth(app);
-    // Configure language to Turkish for SMS OTPs.
-    authInstance.languageCode = "tr";
   }
 
+  // Re-apply before every caller creates reCAPTCHA or sends an OTP. Firebase
+  // can otherwise keep the locale from an earlier auth consumer.
+  authInstance.languageCode = FIREBASE_AUTH_LANGUAGE_CODE;
   return authInstance;
 };
 
