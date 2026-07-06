@@ -219,11 +219,7 @@ function IndividualLoginTab({
               captchaRef={captchaRef}
               onTokenChange={onTokenChange}
             />
-          ) : (
-            <div className="rounded-lg border border-dashed border-orange-100 bg-orange-50/40 px-3 py-3 text-xs text-gray-500">
-              Giriş yapmadan önce güvenlik doğrulaması gerektiğinde burada görünecek.
-            </div>
-          )}
+          ) : null}
 
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? <Loader size="1.25rem" noMargin /> : t("auth.login")}
