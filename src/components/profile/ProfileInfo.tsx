@@ -258,7 +258,15 @@ export function ProfileInfo() {
                 </div>
 
                 <div className="space-y-2">
-                    <Label htmlFor="phone">{t("profile.info.phone_label")}</Label>
+                    <div className="flex items-center justify-between">
+                        <Label htmlFor="phone">{t("profile.info.phone_label")}</Label>
+                        {!isPhoneChanged && user?.phone_verified && (
+                            <span className="text-xs text-green-600 font-medium flex items-center gap-1 bg-green-50 px-2 py-0.5 rounded-full border border-green-200">
+                                <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                                Doğrulanmış Numara
+                            </span>
+                        )}
+                    </div>
                     <div className="flex gap-2">
                         <PhoneInput
                             id="phone"
