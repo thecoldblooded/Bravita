@@ -25,7 +25,7 @@ import { Mail, RefreshCw } from "lucide-react";
 import { translateError } from "@/lib/errorTranslator";
 import { shouldBypassCaptchaForLocalDev } from "@/lib/captcha";
 import { PasswordStrengthIndicator } from "./PasswordStrengthIndicator";
-import { arePhoneNumbersEquivalent, sendOtp, verifyOtp } from "@/lib/auth/phoneOtp";
+import { arePhoneNumbersEquivalent, getFirebasePhoneAuthErrorMessage, sendOtp, verifyOtp } from "@/lib/auth/phoneOtp";
 import type { ConfirmationResult } from "firebase/auth";
 
 interface SignupFormProps {
@@ -919,28 +919,10 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
 
       setOtpSent(true);
       setCountdown(180); // 3 mins
-      toast.success("Doğrulama kodu SMS ile gönderildi.");
+      toast.success("Kod isteği gönderildi. SMS birkaç dakika içinde gelmezse tekrar deneyin.");
     } catch (err: unknown) {
-      // Provide more specific error messages based on Firebase error codes
-      const firebaseError = err as { code?: string; message?: string };
-      let message = "SMS gönderilemedi. Lütfen tekrar deneyin.";
-
-      if (firebaseError.code === "auth/network-request-failed") {
-        message = "Ağ bağlantısı hatası. İnternet bağlantınızı kontrol edip tekrar deneyin.";
-      } else if (firebaseError.code === "auth/too-many-requests") {
-        message = "Çok fazla istek gönderildi. Lütfen biraz bekleyip tekrar deneyin.";
-      } else if (firebaseError.code === "auth/invalid-phone-number") {
-        message = "Geçersiz telefon numarası. Lütfen kontrol edip tekrar deneyin.";
-      } else if (firebaseError.code === "auth/quota-exceeded") {
-        message = "SMS kotası doldu. Lütfen daha sonra tekrar deneyin.";
-      } else if (firebaseError.code === "auth/captcha-check-failed") {
-        message = "reCAPTCHA doğrulaması başarısız. Sayfayı yenileyip tekrar deneyin.";
-      } else if (err instanceof Error) {
-        message = err.message;
-      }
-
-      console.error("Firebase Phone Auth Error:", firebaseError.code, err);
-      toast.error(message);
+      console.error("Firebase Phone Auth Error:", (err as { code?: string })?.code, err);
+      toast.error(getFirebasePhoneAuthErrorMessage(err));
 
     } finally {
       setIsSendingOtp(false);

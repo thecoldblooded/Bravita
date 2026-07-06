@@ -96,6 +96,37 @@ export type VerifyOtpResult = {
     phone: string;
 };
 
+const FIREBASE_PHONE_AUTH_ERROR_MESSAGES: Record<string, string> = {
+    "auth/network-request-failed": "Ağ bağlantısı hatası. İnternet bağlantınızı kontrol edip tekrar deneyin.",
+    "auth/too-many-requests": "Çok fazla istek gönderildi. Lütfen biraz bekleyip tekrar deneyin.",
+    "auth/invalid-phone-number": "Geçersiz telefon numarası. Lütfen kontrol edip tekrar deneyin.",
+    "auth/quota-exceeded": "SMS kotası doldu. Lütfen daha sonra tekrar deneyin.",
+    "auth/captcha-check-failed": "reCAPTCHA doğrulaması başarısız. Sayfayı yenileyip tekrar deneyin.",
+    "auth/app-not-authorized": "Telefon doğrulaması bu alan adı için yetkili değil. Lütfen site yöneticisiyle iletişime geçin.",
+    "auth/unauthorized-domain": "Telefon doğrulaması bu alan adı için yetkili değil. Lütfen site yöneticisiyle iletişime geçin.",
+    "auth/missing-app-credential": "Telefon doğrulaması başlatılamadı. Sayfayı yenileyip tekrar deneyin.",
+    "auth/invalid-app-credential": "Telefon doğrulaması başlatılamadı. Sayfayı yenileyip tekrar deneyin.",
+    "auth/missing-client-identifier": "Telefon doğrulaması başlatılamadı. Sayfayı yenileyip tekrar deneyin.",
+    "auth/operation-not-allowed": "Telefon ile doğrulama şu anda kapalı görünüyor. Lütfen site yöneticisiyle iletişime geçin.",
+    "auth/billing-not-enabled": "SMS gönderimi için Firebase faturalandırması etkin değil. Lütfen site yöneticisiyle iletişime geçin.",
+    "auth/web-storage-unsupported": "Tarayıcınız telefon doğrulaması için gerekli depolamayı desteklemiyor veya engelliyor.",
+};
+
+export const getFirebasePhoneAuthErrorMessage = (error: unknown): string => {
+    const firebaseError = error as { code?: string; message?: string };
+    const code = typeof firebaseError?.code === "string" ? firebaseError.code : "";
+
+    if (code && FIREBASE_PHONE_AUTH_ERROR_MESSAGES[code]) {
+        return FIREBASE_PHONE_AUTH_ERROR_MESSAGES[code];
+    }
+
+    if (error instanceof Error && error.message.trim().length > 0) {
+        return error.message;
+    }
+
+    return "SMS gönderilemedi. Lütfen tekrar deneyin.";
+};
+
 export const sendOtp = async (rawPhone: string, containerId: string = "recaptcha-container"): Promise<SendOtpResult> => {
     const phone = normalizePhone(rawPhone);
     const auth = getFirebaseAuth();
@@ -105,7 +136,7 @@ export const sendOtp = async (rawPhone: string, containerId: string = "recaptcha
     }
 
     if (shouldUseFirebasePhoneTestMode()) {
-        auth.settings.appVerificationDisabledForTesting = true;
+        auth.settings.appVerificationDisabledForTesting = false;
     }
 
     const verifier = getVerifier(containerId);
