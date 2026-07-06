@@ -1,31 +1,40 @@
-import { createVerify } from "node:crypto";
-import { sendJson, sendInternalServerError, signPhoneToken, parseRequestBody } from "./_shared.js";
+import {
+  sendJson,
+  sendInternalServerError,
+  signPhoneToken,
+  parseRequestBody,
+} from "./_shared.js";
 
-// In-memory cache for Google public keys
-let cachedKeys = null;
-let keysExpiresAt = 0;
-
-async function fetchGooglePublicKeys() {
-  const now = Date.now();
-  if (cachedKeys && now < keysExpiresAt) {
-    return cachedKeys;
+async function verifyFirebasePhoneToken(idToken, expectedPhone) {
+  const firebaseApiKey = process.env.FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY;
+  if (!firebaseApiKey) {
+    throw new Error("Missing Firebase API key");
   }
 
-  const url = "https://www.googleapis.com/robot/v1/metadata/x509/securetoken-system%40system.gserviceaccount.com";
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`Failed to fetch Google public keys: ${res.statusText}`);
+  const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${firebaseApiKey}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ idToken }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    return null;
   }
 
-  // Parse Cache-Control header to determine expiration
-  const cacheControl = res.headers.get("cache-control") || "";
-  const maxAgeMatch = cacheControl.match(/max-age=(\d+)/);
-  const maxAge = maxAgeMatch ? parseInt(maxAgeMatch[1], 10) * 1000 : 3600 * 1000;
+  const user = Array.isArray(data?.users) ? data.users[0] : null;
+  const tokenPhone = typeof user?.phoneNumber === "string" ? user.phoneNumber.trim() : "";
+  const inputPhone = typeof expectedPhone === "string" ? expectedPhone.trim() : "";
 
-  const data = await res.json();
-  cachedKeys = data;
-  keysExpiresAt = now + maxAge;
-  return cachedKeys;
+  if (!tokenPhone || (inputPhone && tokenPhone !== inputPhone)) {
+    return null;
+  }
+
+  return {
+    phone: tokenPhone,
+    firebaseUid: user.localId,
+    verified: true,
+  };
 }
 
 export default async function handler(req, res) {
@@ -46,68 +55,9 @@ export default async function handler(req, res) {
       return sendJson(res, 400, { error: "Telefon numarası gereklidir." });
     }
 
-    // Split JWT
-    const parts = firebaseToken.split(".");
-    if (parts.length !== 3) {
-      return sendJson(res, 400, { error: "Geçersiz token formatı." });
-    }
-
-    const [headerB64, payloadB64, signatureB64] = parts;
-
-    // Decode header
-    const headerJson = Buffer.from(headerB64, "base64url").toString("utf8");
-    const header = JSON.parse(headerJson);
-
-    if (header.alg !== "RS256" || !header.kid) {
-      return sendJson(res, 400, { error: "Uyumsuz token algoritması." });
-    }
-
-    // Fetch Google certificates
-    const keys = await fetchGooglePublicKeys();
-    const cert = keys[header.kid];
-
-    if (!cert) {
-      return sendJson(res, 400, { error: "Geçersiz key kimliği (kid)." });
-    }
-
-    // Verify RS256 signature
-    const verify = createVerify("RSA-SHA256");
-    verify.update(`${headerB64}.${payloadB64}`);
-    const isSignatureValid = verify.verify(cert, signatureB64, "base64url");
-
-    if (!isSignatureValid) {
-      return sendJson(res, 400, { error: "Token imzası doğrulanamadı." });
-    }
-
-    // Decode and validate payload claims
-    const payloadJson = Buffer.from(payloadB64, "base64url").toString("utf8");
-    const payload = JSON.parse(payloadJson);
-
-    const projectId = process.env.FIREBASE_PROJECT_ID || "bravita-327bf";
-    const expectedIssuer = `https://securetoken.google.com/${projectId}`;
-
-    // Verify exp, iss, aud
-    const now = Math.floor(Date.now() / 1000);
-    if (payload.exp < now) {
-      return sendJson(res, 400, { error: "Token süresi dolmuş." });
-    }
-    if (payload.iss !== expectedIssuer) {
-      return sendJson(res, 400, { error: "Geçersiz token yayıncısı (issuer)." });
-    }
-    if (payload.aud !== projectId) {
-      return sendJson(res, 400, { error: "Geçersiz token hedef kitlesi (audience)." });
-    }
-
-    // Extract and match phone number
-    // Firebase phone number is in E.164 format (e.g. +905321234567)
-    const tokenPhone = typeof payload.phone_number === "string" ? payload.phone_number.trim() : "";
-    
-    // Normalize both phone numbers to raw digits for comparison
-    const normTokenPhone = tokenPhone.replace(/[+\s\-()]/g, "");
-    const normInputPhone = phone.replace(/[+\s\-()]/g, "");
-
-    if (!normTokenPhone || normTokenPhone !== normInputPhone) {
-      return sendJson(res, 400, { error: "Telefon numarası token ile eşleşmiyor." });
+    const verifiedPayload = await verifyFirebasePhoneToken(firebaseToken, phone);
+    if (!verifiedPayload?.verified) {
+      return sendJson(res, 400, { error: "Firebase telefon doğrulaması tamamlanamadı." });
     }
 
     // Phone verified! Sign the verification token

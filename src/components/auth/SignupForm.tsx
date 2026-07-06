@@ -720,27 +720,21 @@ function IndividualSignupContent({
             />
           </div>
 
-          {phoneVerified ? (
-            shouldBypassCaptcha ? (
-              <div className="rounded-lg border border-dashed border-green-100 bg-green-50/40 px-3 py-3 text-xs text-gray-500">
-                Güvenlik doğrulaması geliştirme modunda kapalı.
-              </div>
-            ) : showSignupCaptcha ? (
-              <CaptchaSection
-                siteKey={hcaptchaSiteKey}
-                captchaRef={captchaRef}
-                onTokenChange={onTokenChange}
-              />
-            ) : (
-              <div className="rounded-lg border border-dashed border-orange-100 bg-orange-50/40 px-3 py-3 text-xs text-gray-500">
-                Telefon numaranızı doğruladıktan sonra kayıt butonuna bastığınızda güvenlik doğrulaması açılacak.
-              </div>
-            )
-          ) : (
+          {!phoneVerified ? (
             <div className="rounded-lg border border-dashed border-orange-100 bg-orange-50/40 px-3 py-3 text-xs text-gray-500">
               Telefon numaranızı önce SMS ile doğrulamanız gerekiyor.
             </div>
-          )}
+          ) : shouldBypassCaptcha ? (
+            <div className="rounded-lg border border-dashed border-green-100 bg-green-50/40 px-3 py-3 text-xs text-gray-500">
+              Güvenlik doğrulaması geliştirme modunda kapalı.
+            </div>
+          ) : showSignupCaptcha ? (
+            <CaptchaSection
+              siteKey={hcaptchaSiteKey}
+              captchaRef={captchaRef}
+              onTokenChange={onTokenChange}
+            />
+          ) : null}
 
           <Button type="submit" className="w-full" disabled={isLoading || !phoneVerified}>
             {isLoading ? <Loader size="1.25rem" noMargin /> : t("auth.signup")}
@@ -962,7 +956,7 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
         return;
       }
 
-      if (!shouldBypassCaptcha && !captchaToken) {
+      if (!captchaToken && !shouldBypassCaptcha) {
         setShowSignupCaptcha(true);
         toast.error(t("auth.captcha_required"));
         return;
@@ -983,7 +977,7 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
         phoneVerificationToken?: string;
       };
 
-      if (!shouldBypassCaptcha && captchaToken) {
+      if (captchaToken && !shouldBypassCaptcha) {
         signupPayload.captchaToken = captchaToken;
       }
 
