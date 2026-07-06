@@ -25,7 +25,7 @@ import { Mail, RefreshCw } from "lucide-react";
 import { translateError } from "@/lib/errorTranslator";
 import { shouldBypassCaptchaForLocalDev } from "@/lib/captcha";
 import { PasswordStrengthIndicator } from "./PasswordStrengthIndicator";
-import { arePhoneNumbersEquivalent, getFirebasePhoneAuthErrorMessage, sendOtp, verifyOtp } from "@/lib/auth/phoneOtp";
+import { arePhoneNumbersEquivalent, getFirebaseOtpVerificationErrorKey, getFirebasePhoneAuthErrorMessage, sendOtp, verifyOtp } from "@/lib/auth/phoneOtp";
 import type { ConfirmationResult } from "firebase/auth";
 
 interface SignupFormProps {
@@ -931,12 +931,12 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
 
   const handleVerifyOtp = async () => {
     if (!otpCode || otpCode.length !== 6) {
-      toast.error("Lütfen 6 haneli doğrulama kodunu girin.");
+      toast.error(t("auth.invalid_otp_length"));
       return;
     }
 
     if (!confirmationResult) {
-      toast.error("Lütfen önce doğrulama kodu isteyin.");
+      toast.error(t("auth.request_code_first"));
       return;
     }
 
@@ -945,10 +945,10 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
       const { idToken } = await verifyOtp(confirmationResult, otpCode);
       setPhoneVerified(true);
       setVerificationToken(idToken);
-      toast.success("Telefon numaranız başarıyla doğrulandı.");
+      toast.success(t("auth.phone_verification_successful"));
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Bir hata oluştu.";
-      toast.error(message);
+      console.error("Firebase OTP Verification Error:", (err as { code?: string })?.code, err);
+      toast.error(t(getFirebaseOtpVerificationErrorKey(err)));
     } finally {
       setIsVerifyingOtp(false);
     }

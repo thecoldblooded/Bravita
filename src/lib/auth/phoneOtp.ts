@@ -127,6 +127,25 @@ export const getFirebasePhoneAuthErrorMessage = (error: unknown): string => {
     return "SMS gönderilemedi. Lütfen tekrar deneyin.";
 };
 
+export const getFirebaseOtpVerificationErrorKey = (error: unknown): string => {
+    const firebaseError = error as { code?: string };
+    const code = typeof firebaseError?.code === "string" ? firebaseError.code : "";
+
+    if (code === "auth/invalid-verification-code") {
+        return "auth.invalid_otp";
+    }
+
+    if (code === "auth/code-expired" || code === "auth/session-expired") {
+        return "auth.code_expired";
+    }
+
+    if (code === "auth/too-many-requests") {
+        return "auth.otp_too_many_attempts";
+    }
+
+    return "auth.verification_failed";
+};
+
 export const sendOtp = async (rawPhone: string, containerId: string = "recaptcha-container"): Promise<SendOtpResult> => {
     const phone = normalizePhone(rawPhone);
     const auth = getFirebaseAuth();
