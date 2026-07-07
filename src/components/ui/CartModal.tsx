@@ -252,7 +252,7 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
                     </div>
                 </DialogHeader>
 
-                <div className="px-8 pb-8 pt-4 space-y-6 min-h-100">
+                <div className="px-8 pb-8 pt-4 space-y-6 min-h-100 overflow-y-auto max-h-[calc(100vh-140px)] custom-scrollbar">
                     <LazyMotion features={domAnimation}>
                         {isPriceLoading ? (
                             <div className="flex flex-col items-center justify-center h-full pt-20 pb-10 space-y-4">
