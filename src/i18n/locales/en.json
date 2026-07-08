@@ -365,6 +365,8 @@
         "invalid_otp": "The verification code is incorrect. Please check the 6-digit code in the SMS.",
         "request_code_first": "Please request a verification code first.",
         "otp_too_many_attempts": "Too many incorrect attempts. Please wait a moment and try again.",
+        "sms_rate_limit_exceeded": "You have reached the maximum SMS limit (2) for this phone number within 1 hour. Please try again later.",
+        "sms_global_rate_limit_exceeded": "Too many SMS requests sent from this device. Please try again in 1 hour.",
         "phone_verification_successful": "Your phone number has been verified.",
         "verification_successful": "Verification successful",
         "verification_failed": "Verification failed",

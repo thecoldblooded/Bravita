@@ -916,7 +916,7 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
       toast.success("Kod isteği gönderildi. SMS birkaç dakika içinde gelmezse tekrar deneyin.");
     } catch (err: unknown) {
       console.error("Firebase Phone Auth Error:", (err as { code?: string })?.code, err);
-      toast.error(getFirebasePhoneAuthErrorMessage(err));
+      toast.error(getFirebasePhoneAuthErrorMessage(err, t));
 
     } finally {
       setIsSendingOtp(false);

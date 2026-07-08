@@ -365,6 +365,8 @@
         "invalid_otp": "Girdiğiniz doğrulama kodu hatalı. Lütfen SMS'teki 6 haneli kodu kontrol edin.",
         "request_code_first": "Lütfen önce doğrulama kodu isteyin.",
         "otp_too_many_attempts": "Çok fazla hatalı deneme yaptınız. Lütfen biraz bekleyip tekrar deneyin.",
+        "sms_rate_limit_exceeded": "Bu telefon numarası için 1 saat içinde maksimum SMS limitine (2) ulaştınız. Lütfen daha sonra tekrar deneyin.",
+        "sms_global_rate_limit_exceeded": "Bu cihazdan çok fazla SMS isteği gönderildi. Lütfen 1 saat sonra tekrar deneyin.",
         "phone_verification_successful": "Telefon numaranız başarıyla doğrulandı.",
         "verification_successful": "Doğrulama başarılı",
         "verification_failed": "Doğrulama başarısız",

@@ -19,7 +19,7 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 if (typeof window !== "undefined") {
   // Geliştirme (development) ortamında test edebilmeniz için debug token desteği
   if (import.meta.env.DEV) {
-    (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+    (self as unknown as { FIREBASE_APPCHECK_DEBUG_TOKEN: boolean | string }).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
   }
 
   initializeAppCheck(app, {

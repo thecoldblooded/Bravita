@@ -115,11 +115,21 @@ const FIREBASE_PHONE_AUTH_ERROR_MESSAGES: Record<string, string> = {
     "auth/operation-not-allowed": "Telefon ile doğrulama şu anda kapalı görünüyor. Lütfen site yöneticisiyle iletişime geçin.",
     "auth/billing-not-enabled": "SMS gönderimi için Firebase faturalandırması etkin değil. Lütfen site yöneticisiyle iletişime geçin.",
     "auth/web-storage-unsupported": "Tarayıcınız telefon doğrulaması için gerekli depolamayı desteklemiyor veya engelliyor.",
+    "auth/custom-rate-limited": "Bu telefon numarası için 1 saat içinde maksimum SMS limitine (2) ulaştınız. Lütfen daha sonra tekrar deneyin.",
+    "auth/custom-global-rate-limited": "Bu cihazdan çok fazla SMS isteği gönderildi. Lütfen 1 saat sonra tekrar deneyin.",
 };
 
-export const getFirebasePhoneAuthErrorMessage = (error: unknown): string => {
+export const getFirebasePhoneAuthErrorMessage = (error: unknown, t?: (key: string) => string): string => {
     const firebaseError = error as { code?: string; message?: string };
     const code = typeof firebaseError?.code === "string" ? firebaseError.code : "";
+
+    if (code === "auth/custom-rate-limited") {
+        return t ? t("auth.sms_rate_limit_exceeded") : FIREBASE_PHONE_AUTH_ERROR_MESSAGES[code];
+    }
+
+    if (code === "auth/custom-global-rate-limited") {
+        return t ? t("auth.sms_global_rate_limit_exceeded") : FIREBASE_PHONE_AUTH_ERROR_MESSAGES[code];
+    }
 
     if (code && FIREBASE_PHONE_AUTH_ERROR_MESSAGES[code]) {
         return FIREBASE_PHONE_AUTH_ERROR_MESSAGES[code];
@@ -129,7 +139,7 @@ export const getFirebasePhoneAuthErrorMessage = (error: unknown): string => {
         return error.message;
     }
 
-    return "SMS gönderilemedi. Lütfen tekrar deneyin.";
+    return t ? t("auth.verification_failed") : "SMS gönderilemedi. Lütfen tekrar deneyin.";
 };
 
 export const getFirebaseOtpVerificationErrorKey = (error: unknown): string => {
@@ -159,12 +169,63 @@ export const sendOtp = async (rawPhone: string, containerId: string = "recaptcha
         throw createLocalhostPhoneAuthError();
     }
 
+    // 1 saatlik (3600000 ms) zaman dilimi içinde SMS sınırlandırması kontrolü
+    if (typeof window !== "undefined") {
+        const now = Date.now();
+        const oneHourAgo = now - 60 * 60 * 1000;
+
+        // A. Telefon numarası bazlı limit (1 saatte en fazla 2 SMS)
+        const storageKey = `otp_ts_${phone}`;
+        const storedTimestampsStr = localStorage.getItem(storageKey);
+        let timestamps: number[] = storedTimestampsStr ? JSON.parse(storedTimestampsStr) : [];
+        
+        // 1 saatten eski zaman damgalarını temizle
+        timestamps = timestamps.filter(t => t > oneHourAgo);
+
+        if (timestamps.length >= 2) {
+            const error = new Error("Bu telefon numarası için 1 saat içinde maksimum SMS limitine (2) ulaştınız. Lütfen daha sonra tekrar deneyin.") as Error & { code?: string };
+            error.code = "auth/custom-rate-limited";
+            throw error;
+        }
+
+        // B. Cihaz bazlı genel limit (farklı numaralarla spam yapmayı engellemek için, 1 saatte en fazla 4 SMS)
+        const globalStorageKey = `otp_global_ts`;
+        const globalStoredTimestampsStr = localStorage.getItem(globalStorageKey);
+        let globalTimestamps: number[] = globalStoredTimestampsStr ? JSON.parse(globalStoredTimestampsStr) : [];
+        
+        globalTimestamps = globalTimestamps.filter(t => t > oneHourAgo);
+
+        if (globalTimestamps.length >= 4) {
+            const error = new Error("Bu cihazdan çok fazla SMS isteği gönderildi. Lütfen 1 saat sonra tekrar deneyin.") as Error & { code?: string };
+            error.code = "auth/custom-global-rate-limited";
+            throw error;
+        }
+
+        if (shouldUseFirebasePhoneTestMode()) {
+            auth.settings.appVerificationDisabledForTesting = false;
+        }
+
+        const verifier = getVerifier(containerId);
+        await verifier.render().catch(() => { });
+
+        const confirmationResult = await signInWithPhoneNumber(auth, phone, verifier);
+
+        // SMS başarıyla gönderildiyse zaman damgalarını kaydet
+        timestamps.push(now);
+        localStorage.setItem(storageKey, JSON.stringify(timestamps));
+
+        globalTimestamps.push(now);
+        localStorage.setItem(globalStorageKey, JSON.stringify(globalTimestamps));
+
+        return { confirmationResult, phone };
+    }
+
     if (shouldUseFirebasePhoneTestMode()) {
         auth.settings.appVerificationDisabledForTesting = false;
     }
 
     const verifier = getVerifier(containerId);
-    verifier.render().catch(() => { });
+    await verifier.render().catch(() => { });
 
     const confirmationResult = await signInWithPhoneNumber(auth, phone, verifier);
     return { confirmationResult, phone };
