@@ -124,11 +124,11 @@ export const getFirebasePhoneAuthErrorMessage = (error: unknown, t?: (key: strin
     const code = typeof firebaseError?.code === "string" ? firebaseError.code : "";
 
     if (code === "auth/custom-rate-limited") {
-        return t ? t("auth.sms_rate_limit_exceeded") : FIREBASE_PHONE_AUTH_ERROR_MESSAGES[code];
+        return t ? t("auth.sms_rate_limit_exceeded") : (FIREBASE_PHONE_AUTH_ERROR_MESSAGES[code] ?? "");
     }
 
     if (code === "auth/custom-global-rate-limited") {
-        return t ? t("auth.sms_global_rate_limit_exceeded") : FIREBASE_PHONE_AUTH_ERROR_MESSAGES[code];
+        return t ? t("auth.sms_global_rate_limit_exceeded") : (FIREBASE_PHONE_AUTH_ERROR_MESSAGES[code] ?? "");
     }
 
     if (code && FIREBASE_PHONE_AUTH_ERROR_MESSAGES[code]) {
