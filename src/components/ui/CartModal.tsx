@@ -239,8 +239,8 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-105 p-0 overflow-hidden bg-white rounded-4xl border-none shadow-[0_20px_50px_rgba(0,0,0,0.1)]">
-                <DialogHeader className="p-8 pb-4">
+            <DialogContent className="max-h-[85dvh] sm:max-h-[85vh] flex flex-col sm:max-w-105 p-0 bg-white rounded-t-3xl sm:rounded-4xl border-none shadow-[0_20px_50px_rgba(0,0,0,0.1)] bottom-0 top-auto translate-y-0 sm:top-[50%] sm:translate-y-[-50%]">
+                <DialogHeader className="p-6 sm:p-8 pb-2 sm:pb-4 shrink-0">
                     <DialogTitle className="text-2xl font-black text-neutral-900 flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center">
                             <ShoppingCart className="w-5 h-5 text-orange-600" />
@@ -252,7 +252,7 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
                     </div>
                 </DialogHeader>
 
-                <div className="px-8 pb-8 pt-4 space-y-6 min-h-100 overflow-y-auto max-h-[calc(100vh-140px)] custom-scrollbar">
+                <div className="px-6 sm:px-8 pb-6 sm:pb-8 pt-2 sm:pt-4 space-y-4 sm:space-y-6 overflow-y-auto flex-1 custom-scrollbar">
                     <LazyMotion features={domAnimation}>
                         {isPriceLoading ? (
                             <div className="flex flex-col items-center justify-center h-full pt-20 pb-10 space-y-4">

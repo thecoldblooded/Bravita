@@ -72,7 +72,7 @@ export default function FloatingSupport({ className }: FloatingSupportProps) {
                 align="end"
                 sideOffset={15}
                 collisionPadding={{ top: 20, bottom: 120, left: 16, right: 16 }}
-                className="w-[calc(100vw-2rem)] sm:w-96 p-0 overflow-hidden rounded-3xl border-none shadow-2xl bg-[#FFFBF7] z-10001 animate-in slide-in-from-bottom-2 duration-300 flex flex-col max-h-[72dvh] sm:max-h-[85vh]"
+                className="w-[calc(100vw-2rem)] sm:w-96 p-0 overflow-hidden rounded-3xl border-none shadow-2xl bg-[#FFFBF7] z-10001 animate-in slide-in-from-bottom-2 duration-300 flex flex-col max-h-[58dvh] sm:max-h-[80vh]"
                 onPointerDownOutside={(event) => {
                     if (isHCaptchaElement(event.target)) {
                         event.preventDefault();

@@ -160,7 +160,7 @@ export function SupportForm({ onSuccess }: SupportFormProps) {
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2 sm:space-y-3">
                 <FormField
                     control={form.control}
                     name="name"
@@ -281,8 +281,8 @@ export function SupportForm({ onSuccess }: SupportFormProps) {
                     )}
                 />
 
-                <div className="flex flex-col items-center space-y-3 pt-1">
-                    <div className="scale-[0.6] origin-center -my-4 min-h-11.5">
+                <div className="flex flex-col items-center space-y-2 sm:space-y-3 pt-1">
+                    <div className="scale-[0.6] origin-center -my-5 min-h-11.5">
                         {shouldBypassCaptcha ? (
                             <div className="w-full rounded-md border border-dashed border-green-200 bg-green-50 px-3 py-2 text-xs text-green-700">
                                 Güvenlik doğrulaması geliştirme modunda kapalı.
