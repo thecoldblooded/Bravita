@@ -2,6 +2,7 @@
 /// <reference lib="deno.ns" />
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { fetchWithProxy } from "../_shared/bakiyem-client.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -457,7 +458,7 @@ serve(async (req: Request) => {
       detailRequestPayload.VirtualPosOrderId = gatewayTrxCode;
     }
 
-    const detailInquiry = await fetch(`${BAKIYEM_BASE_URL}/PaymentDealer/GetDealerPaymentTrxDetailList`, {
+    const detailInquiry = await fetchWithProxy(`${BAKIYEM_BASE_URL}/PaymentDealer/GetDealerPaymentTrxDetailList`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -480,7 +481,7 @@ serve(async (req: Request) => {
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     const fmtDate = (d: Date) => d.toISOString().slice(0, 16).replace("T", " ");
 
-    const inquiry = await fetch(`${BAKIYEM_BASE_URL}/PaymentDealer/GetPaymentList`, {
+    const inquiry = await fetchWithProxy(`${BAKIYEM_BASE_URL}/PaymentDealer/GetPaymentList`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

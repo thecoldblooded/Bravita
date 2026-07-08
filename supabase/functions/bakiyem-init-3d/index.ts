@@ -2,6 +2,7 @@
 /// <reference path="../send-test-email/types.d.ts" />
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { fetchWithProxy } from "../_shared/bakiyem-client.ts";
 function normalizePayloadProfile(value) {
   const normalized = asText(value).toLowerCase();
   if (normalized === "minimal" || normalized === "extended") return normalized;
@@ -564,7 +565,7 @@ serve(async (req) => {
       ...maskedGatewayRequest,
       _diag: requestDiagnostics
     };
-    const gatewayResponseRaw = await fetch(`${BAKIYEM_BASE_URL}/PaymentDealer/DoDirectPaymentThreeD`, {
+    const gatewayResponseRaw = await fetchWithProxy(`${BAKIYEM_BASE_URL}/PaymentDealer/DoDirectPaymentThreeD`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"

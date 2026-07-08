@@ -2,6 +2,7 @@
 /// <reference path="../send-test-email/types.d.ts" />
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { fetchWithProxy } from "../_shared/bakiyem-client.ts";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -144,7 +145,7 @@ serve(async (req: Request) => {
       },
     };
 
-    const captureRaw = await fetch(`${BAKIYEM_BASE_URL}/PaymentDealer/DoCapture`, {
+    const captureRaw = await fetchWithProxy(`${BAKIYEM_BASE_URL}/PaymentDealer/DoCapture`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(captureRequest),

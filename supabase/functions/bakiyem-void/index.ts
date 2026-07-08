@@ -2,6 +2,7 @@
 /// <reference path="../send-test-email/types.d.ts" />
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { fetchWithProxy } from "../_shared/bakiyem-client.ts";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -267,7 +268,7 @@ serve(async (req: Request) => {
       detailRequestPayload.VirtualPosOrderId = gatewayTrxCodeFromIntent;
     }
 
-    const detailRaw = await fetch(`${BAKIYEM_BASE_URL}/PaymentDealer/GetDealerPaymentTrxDetailList`, {
+    const detailRaw = await fetchWithProxy(`${BAKIYEM_BASE_URL}/PaymentDealer/GetDealerPaymentTrxDetailList`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -417,7 +418,7 @@ serve(async (req: Request) => {
         },
       };
 
-      const currentVoidRaw = await fetch(`${BAKIYEM_BASE_URL}/PaymentDealer/DoVoid`, {
+      const currentVoidRaw = await fetchWithProxy(`${BAKIYEM_BASE_URL}/PaymentDealer/DoVoid`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(currentVoidRequest),

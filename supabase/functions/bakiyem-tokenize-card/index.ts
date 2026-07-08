@@ -2,6 +2,7 @@
 /// <reference path="../send-test-email/types.d.ts" />
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { fetchWithProxy } from "../_shared/bakiyem-client.ts";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const BAKIYEM_BASE_URL = Deno.env.get("BAKIYEM_BASE_URL") ?? "https://service.refmokaunited.com";
@@ -109,7 +110,7 @@ serve(async (req) => {
         ...customerRequest
       }
     };
-    const addCardRaw = await fetch(`${BAKIYEM_BASE_URL}/DealerCustomer/AddCard`, {
+    const addCardRaw = await fetchWithProxy(`${BAKIYEM_BASE_URL}/DealerCustomer/AddCard`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -131,7 +132,7 @@ serve(async (req) => {
         CustomerEmail: authData.user.email ?? ""
       }
     };
-    const addCustomerRaw = await fetch(`${BAKIYEM_BASE_URL}/DealerCustomer/AddCustomerWithCard`, {
+    const addCustomerRaw = await fetchWithProxy(`${BAKIYEM_BASE_URL}/DealerCustomer/AddCustomerWithCard`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
