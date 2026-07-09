@@ -1,5 +1,6 @@
 import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult, User } from "firebase/auth";
-import { getFirebaseAuth } from "@/lib/firebase";
+import { getToken } from "firebase/app-check";
+import { getFirebaseAuth, appCheck } from "@/lib/firebase";
 import { isLocalhostHostname } from "@/lib/captcha";
 
 let recaptchaVerifier: RecaptchaVerifier | null = null;
@@ -240,10 +241,23 @@ export const verifyOtp = async (confirmationResult: ConfirmationResult, code: st
 export const exchangeFirebasePhoneToken = async (firebaseToken: string, rawPhone: string): Promise<string> => {
     const phone = normalizePhone(rawPhone);
 
+    let appCheckToken = "";
+    try {
+        if (appCheck) {
+            const tokenResult = await getToken(appCheck, false);
+            appCheckToken = tokenResult.token;
+        } else {
+            console.warn("[phoneOtp] appCheck is not initialized yet");
+        }
+    } catch (e) {
+        console.warn("[phoneOtp] Failed to retrieve App Check token:", e);
+    }
+
     const response = await fetch("/api/auth/verify-firebase-token", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
+            ...(appCheckToken ? { "X-Firebase-AppCheck": appCheckToken } : {}),
         },
         credentials: "same-origin",
         body: JSON.stringify({

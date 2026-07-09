@@ -15,6 +15,8 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
+export let appCheck: any = null;
+
 // 2. App Check'i sadece tarayıcı ortamında (client-side) başlatın
 if (typeof window !== "undefined") {
   // Geliştirme (development) ortamında test edebilmeniz için debug token desteği
@@ -22,7 +24,7 @@ if (typeof window !== "undefined") {
     (self as unknown as { FIREBASE_APPCHECK_DEBUG_TOKEN: boolean | string }).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
   }
 
-  initializeAppCheck(app, {
+  appCheck = initializeAppCheck(app, {
     provider: new ReCaptchaV3Provider(
       import.meta.env.VITE_RECAPTCHA_SITE_KEY || "YOUR_RECAPTCHA_SITE_KEY"
     ),

@@ -5,7 +5,7 @@ import {
   parseRequestBody,
 } from "./_shared.js";
 
-async function verifyFirebasePhoneToken(idToken, expectedPhone) {
+async function verifyFirebasePhoneToken(idToken, expectedPhone, appCheckToken) {
   const firebaseApiKey = process.env.FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY;
   if (!firebaseApiKey) {
     console.error("[verifyFirebasePhoneToken] Missing Firebase API key");
@@ -14,10 +14,16 @@ async function verifyFirebasePhoneToken(idToken, expectedPhone) {
 
   console.log("[verifyFirebasePhoneToken] Input phone:", expectedPhone);
   console.log("[verifyFirebasePhoneToken] API Key:", firebaseApiKey.substring(0, 8) + "...");
+  console.log("[verifyFirebasePhoneToken] App Check Token Present:", !!appCheckToken);
+
+  const headers = { "Content-Type": "application/json" };
+  if (appCheckToken) {
+    headers["X-Firebase-AppCheck"] = appCheckToken;
+  }
 
   const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${firebaseApiKey}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify({ idToken }),
   });
 
@@ -56,6 +62,7 @@ export default async function handler(req, res) {
     const body = parseRequestBody(req);
     const firebaseToken = typeof body.firebaseToken === "string" ? body.firebaseToken.trim() : "";
     const phone = typeof body.phone === "string" ? body.phone.trim() : "";
+    const appCheckToken = req.headers["x-firebase-appcheck"] || "";
 
     if (!firebaseToken) {
       return sendJson(res, 400, { error: "Firebase token gereklidir." });
@@ -64,7 +71,7 @@ export default async function handler(req, res) {
       return sendJson(res, 400, { error: "Telefon numarası gereklidir." });
     }
 
-    const verifiedPayload = await verifyFirebasePhoneToken(firebaseToken, phone);
+    const verifiedPayload = await verifyFirebasePhoneToken(firebaseToken, phone, appCheckToken);
     if (!verifiedPayload?.verified) {
       return sendJson(res, 400, { error: "Firebase telefon doğrulaması tamamlanamadı." });
     }
