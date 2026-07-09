@@ -239,7 +239,7 @@ export function CartModal({ open, onOpenChange }: CartModalProps) {
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-h-[85dvh] sm:max-h-[85vh] flex flex-col sm:max-w-105 p-0 bg-white rounded-t-3xl sm:rounded-4xl border-none shadow-[0_20px_50px_rgba(0,0,0,0.1)] bottom-0 top-auto translate-y-0 sm:top-[50%] sm:translate-y-[-50%]">
+            <DialogContent className="max-h-[85dvh] sm:max-h-[90vh] sm:h-[680px] flex flex-col sm:max-w-md p-0 bg-white rounded-t-3xl sm:rounded-4xl border-none shadow-[0_20px_50px_rgba(0,0,0,0.1)] bottom-0 top-auto translate-y-0 sm:top-[50%] sm:translate-y-[-50%]">
                 <DialogHeader className="p-6 sm:p-8 pb-2 sm:pb-4 shrink-0">
                     <DialogTitle className="text-2xl font-black text-neutral-900 flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center">
