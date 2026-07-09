@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check"; // 1. App Check modüllerini ekleyin
+import { initializeAppCheck, ReCaptchaV3Provider, AppCheck } from "firebase/app-check"; // 1. App Check modüllerini ekleyin
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -15,7 +15,7 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-export let appCheck: any = null;
+export let appCheck: AppCheck | null = null;
 
 // 2. App Check'i sadece tarayıcı ortamında (client-side) başlatın
 if (typeof window !== "undefined") {
