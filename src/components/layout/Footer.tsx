@@ -225,7 +225,7 @@ function Footer() {
 
   // Social media icons
   const socialLinks = [
-    { icon: <Instagram size={20} />, label: "Instagram", href: "https://www.instagram.com/valcoilac" },
+    { icon: <Instagram size={20} />, label: "Instagram", href: "https://www.instagram.com/bravitatr/" },
     { icon: <Twitter size={20} />, label: "X", href: "https://x.com/valcoilac" },
     { icon: <Linkedin size={20} />, label: "LinkedIn", href: "https://www.linkedin.com/company/valco-ilaç/" },
   ];
