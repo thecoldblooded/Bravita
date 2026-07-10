@@ -916,5 +916,14 @@
             "retry": "Retry",
             "back_to_cart": "Back to Cart"
         }
+    },
+    "gallery": {
+        "title_prefix": "",
+        "title_suffix": "in Every Drop!",
+        "word_health": "Health",
+        "word_power": "Power",
+        "word_future": "Future",
+        "description": "Specially formulated by experts to support your child's physical and mental development. Discover the world of Bravita and our rich content.",
+        "cta_button": "keep exploring"
     }
 }

@@ -1,18 +1,21 @@
 import React, { useRef, useState, useEffect } from "react";
 import { motion, useScroll, useTransform, useReducedMotion, useSpring, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 const infographicImage = new URL("@/assets/bravita-infographic.webp", import.meta.url).href;
 
-const rotatingWords = [
-    { text: "Sağlık", className: "text-[#4ADE80] drop-shadow-[0_0_15px_rgba(74,222,128,0.4)]" }, // Canlı yeşil (sağlık ve doğallık)
-    { text: "Güç", className: "text-[#FB7185] drop-shadow-[0_0_15px_rgba(251,113,133,0.4)]" },   // Canlı gül/kırmızı (güç ve enerji)
-    { text: "Gelecek", className: "text-[#38BDF8] drop-shadow-[0_0_15px_rgba(56,189,248,0.4)]" }   // Gökyüzü mavisi (gelecek ve vizyon)
-];
-
 export default function ScrollFeatureGallery() {
+    const { t, i18n } = useTranslation();
     const sectionRef = useRef(null);
     const reduceMotion = Boolean(useReducedMotion());
     const [wordIndex, setWordIndex] = useState(0);
+
+    const rotatingWords = [
+        { text: t("gallery.word_health"), className: "text-[#4ADE80] drop-shadow-[0_0_15px_rgba(74,222,128,0.4)]" }, // Canlı yeşil (sağlık ve doğallık)
+        { text: t("gallery.word_power"), className: "text-[#FB7185] drop-shadow-[0_0_15px_rgba(251,113,133,0.4)]" },   // Canlı gül/kırmızı (güç ve enerji)
+        { text: t("gallery.word_future"), className: "text-[#38BDF8] drop-shadow-[0_0_15px_rgba(56,189,248,0.4)]" }   // Gökyüzü mavisi (gelecek ve vizyon)
+    ];
+
     const activeWord = rotatingWords[wordIndex] ?? rotatingWords[0]!;
 
     useEffect(() => {
@@ -20,7 +23,7 @@ export default function ScrollFeatureGallery() {
             setWordIndex((prev) => (prev + 1) % rotatingWords.length);
         }, 2500);
         return () => clearInterval(interval);
-    }, []);
+    }, [rotatingWords.length]);
 
     const { scrollYProgress } = useScroll({
         target: sectionRef,
@@ -87,6 +90,8 @@ export default function ScrollFeatureGallery() {
 
     const textScale = useTransform(smoothProgress, [0.7, 0.85], [0.85, 1]);
 
+    const isEn = i18n.language === "en";
+
     return (
         <section
             ref={sectionRef}
@@ -136,33 +141,54 @@ export default function ScrollFeatureGallery() {
                     }}
                 >
                     <h2 className="mb-4 flex flex-col items-center justify-center text-5xl font-extrabold tracking-tight text-white md:text-7xl drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] leading-tight">
-                        <span>Her Damlasında</span>
-                        <span className="mt-2 inline-flex items-baseline justify-center">
-                            <span className="inline-flex h-[1.2em] w-[6ch] items-center justify-center overflow-hidden">
-                                <AnimatePresence mode="wait">
-                                    <motion.span
-                                        key={wordIndex}
-                                        initial={{ y: "100%", opacity: 0 }}
-                                        animate={{ y: 0, opacity: 1 }}
-                                        exit={{ y: "-100%", opacity: 0 }}
-                                        transition={{ type: "spring", stiffness: 120, damping: 15 }}
-                                        className={`inline-block ${activeWord.className}`}
-                                    >
-                                        {activeWord.text}
-                                    </motion.span>
-                                </AnimatePresence>
+                        {isEn ? (
+                            <span className="mt-2 inline-flex items-baseline justify-center">
+                                <span className="inline-flex h-[1.2em] w-[6ch] items-center justify-center overflow-hidden">
+                                    <AnimatePresence mode="wait">
+                                        <motion.span
+                                            key={wordIndex}
+                                            initial={{ y: "100%", opacity: 0 }}
+                                            animate={{ y: 0, opacity: 1 }}
+                                            exit={{ y: "-100%", opacity: 0 }}
+                                            transition={{ type: "spring", stiffness: 120, damping: 15 }}
+                                            className={`inline-block ${activeWord.className}`}
+                                        >
+                                            {activeWord.text}
+                                        </motion.span>
+                                    </AnimatePresence>
+                                </span>
+                                <span className="ml-3">{t("gallery.title_suffix")}</span>
                             </span>
-                            <span className="ml-3">Var!</span>
-                        </span>
+                        ) : (
+                            <>
+                                <span>{t("gallery.title_prefix")}</span>
+                                <span className="mt-2 inline-flex items-baseline justify-center">
+                                    <span className="inline-flex h-[1.2em] w-[6ch] items-center justify-center overflow-hidden">
+                                        <AnimatePresence mode="wait">
+                                            <motion.span
+                                                key={wordIndex}
+                                                initial={{ y: "100%", opacity: 0 }}
+                                                animate={{ y: 0, opacity: 1 }}
+                                                exit={{ y: "-100%", opacity: 0 }}
+                                                transition={{ type: "spring", stiffness: 120, damping: 15 }}
+                                                className={`inline-block ${activeWord.className}`}
+                                            >
+                                                {activeWord.text}
+                                            </motion.span>
+                                        </AnimatePresence>
+                                    </span>
+                                    <span className="ml-3">{t("gallery.title_suffix")}</span>
+                                </span>
+                            </>
+                        )}
                     </h2>
                     <p className="mb-8 max-w-2xl text-lg font-medium text-neutral-300 md:text-xl drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
-                        Çocuğunuzun fiziksel ve zihinsel gelişimini destekleyen, uzmanlarca hazırlanmış özel formül. Bravita dünyasını ve zengin içeriğimizi
+                        {t("gallery.description")}
                     </p>
 
-                    {/* BUTON GÜNCELLEMESİ: Padding (px-10 py-4) ve yazı boyutu (text-base md:text-lg) büyütüldü */}
+                    {/* BUTON GÜNCELLEMESİ */}
                     <div className="group relative inline-flex items-center justify-center gap-3 rounded-full bg-[#CC5500] px-10 py-4 text-base font-semibold text-white shadow-lg cursor-default md:text-lg">
-                        keşfetmeye devam edin
-                        {/* İkon boyutu büyütüldü (h-5 w-5) */}
+                        {t("gallery.cta_button")}
                         <motion.svg
                             animate={{ y: [0, 4, 0] }}
                             transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}

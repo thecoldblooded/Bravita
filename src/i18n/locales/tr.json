@@ -914,5 +914,14 @@
             "retry": "Tekrar Dene",
             "back_to_cart": "Sepete Dön"
         }
+    },
+    "gallery": {
+        "title_prefix": "Her Damlasında",
+        "title_suffix": "Var!",
+        "word_health": "Sağlık",
+        "word_power": "Güç",
+        "word_future": "Gelecek",
+        "description": "Çocuğunuzun fiziksel ve zihinsel gelişimini destekleyen, uzmanlarca hazırlanmış özel formül. Bravita dünyasını ve zengin içeriğimizi",
+        "cta_button": "keşfetmeye devam edin"
     }
 }
