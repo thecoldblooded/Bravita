@@ -144,6 +144,12 @@ jobs:
       - name: Run Security Checklist (Static)
         run: npm run checklist
 
+      - name: Run Bearer Security Scan (SAST)
+        uses: bearer/bearer-action@v2
+        with:
+          diff: ${{ github.event_name == 'pull_request' }}
+          severity: 'high,critical'
+
 
       - name: Lint
         run: npm run lint
