@@ -1,6 +1,7 @@
 // Supabase and common error message translations
 // Maps English error messages to i18n keys
 
+// bearer:disable javascript_lang_hardcoded_secret
 const ERROR_MAP: Record<string, string> = {
     // Supabase Auth errors
     "Invalid login credentials": "errors.invalid_login_credentials",
