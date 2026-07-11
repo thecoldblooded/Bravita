@@ -144,7 +144,7 @@ jobs:
       - name: Run Security Checklist (Static)
         run: npm run checklist
 
-      - name: Run Bearer Security Scan (SAST)
+      - name: Run SAST scan
         uses: bearer/bearer-action@v2
         with:
           diff: ${{ github.event_name == 'pull_request' }}
