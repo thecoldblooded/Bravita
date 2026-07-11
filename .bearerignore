@@ -1,0 +1,12 @@
+# Ignore agent/skills internal scripts
+.agent/
+
+# Ignore local scripts, build configurations, and frame optimizers
+scripts/
+
+# Ignore Supabase edge functions with manual sanitization
+supabase/
+
+# Ignore build artifacts and dependencies
+dist/
+node_modules/
