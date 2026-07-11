@@ -781,8 +781,8 @@ li[data-sonner-toast] {
 }
 
 ::view-transition-new(root) {
-  mask: url('./assets/bravita-optimized-ezgif.com-video-to-gif-converter.gif') center / 0 no-repeat;
-  -webkit-mask: url('./assets/bravita-optimized-ezgif.com-video-to-gif-converter.gif') center / 0 no-repeat;
+  mask: url('./assets/Untitled design.gif') center / 0 no-repeat;
+  -webkit-mask: url('./assets/Untitled design.gif') center / 0 no-repeat;
   animation: scale-gif-mask 1.2s both;
 }
 
