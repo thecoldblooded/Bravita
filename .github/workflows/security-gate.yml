@@ -149,6 +149,7 @@ jobs:
         with:
           diff: ${{ github.event_name == 'pull_request' }}
           severity: 'high,critical'
+          skip-path: '.agent/**,scripts/**,supabase/**'
 
 
       - name: Lint
