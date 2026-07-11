@@ -773,3 +773,39 @@ ol[data-sonner-toaster],
 li[data-sonner-toast] {
   z-index: 2147483647 !important;
 }
+
+/* View Transition Theme Toggle with GIF Mask */
+::view-transition-group(root) {
+  animation-duration: 1.2s;
+  animation-timing-function: cubic-bezier(0.85, 0, 0.15, 1);
+}
+
+::view-transition-new(root) {
+  mask: url('./assets/bravita-optimized-ezgif.com-video-to-gif-converter.gif') center / 0 no-repeat;
+  -webkit-mask: url('./assets/bravita-optimized-ezgif.com-video-to-gif-converter.gif') center / 0 no-repeat;
+  animation: scale-gif-mask 1.2s both;
+}
+
+::view-transition-old(root) {
+  animation: none;
+  z-index: -1;
+}
+
+@keyframes scale-gif-mask {
+  0% {
+    mask-size: 0;
+    -webkit-mask-size: 0;
+  }
+  15% {
+    mask-size: 55vmax;
+    -webkit-mask-size: 55vmax;
+  }
+  85% {
+    mask-size: 55vmax;
+    -webkit-mask-size: 55vmax;
+  }
+  100% {
+    mask-size: 300vmax;
+    -webkit-mask-size: 300vmax;
+  }
+}

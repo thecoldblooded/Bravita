@@ -33,7 +33,13 @@ export function AdminThemeProvider({ children }: { children: ReactNode }) {
     }, [theme]);
 
     const toggleTheme = () => {
-        setThemeState(prev => prev === "light" ? "dark" : "light");
+        if (!document.startViewTransition) {
+            setThemeState(prev => prev === "light" ? "dark" : "light");
+            return;
+        }
+        document.startViewTransition(() => {
+            setThemeState(prev => prev === "light" ? "dark" : "light");
+        });
     };
 
     const setTheme = (newTheme: Theme) => {
