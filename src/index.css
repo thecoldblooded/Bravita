@@ -801,8 +801,8 @@ li[data-sonner-toast] {
 }
 
 ::view-transition-new(root) {
-  mask: url('./assets/Untitled design.gif') center / 0 no-repeat;
-  -webkit-mask: url('./assets/Untitled design.gif') center / 0 no-repeat;
+  mask: url('./assets/untitled-design.gif') center / 0 no-repeat;
+  -webkit-mask: url('./assets/untitled-design.gif') center / 0 no-repeat;
   animation: scale 2s;
   animation-fill-mode: both;
 }
