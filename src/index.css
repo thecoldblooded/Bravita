@@ -774,26 +774,50 @@ li[data-sonner-toast] {
   z-index: 2147483647 !important;
 }
 
-/* View Transition Theme Toggle with circular SVG wipe */
+/* View Transition Theme Toggle using transparent GIF Mask */
+:root {
+  --expo-in: linear(
+    0 0%, 0.0085 31.26%, 0.0167 40.94%,
+    0.0289 48.86%, 0.0471 55.92%,
+    0.0717 61.99%, 0.1038 67.32%,
+    0.1443 72.07%, 0.1989 76.7%,
+    0.2659 80.89%, 0.3465 84.71%,
+    0.4419 88.22%, 0.554 91.48%,
+    0.6835 94.51%, 0.8316 97.34%, 1 100%
+  );
+}
+
 ::view-transition-group(root) {
-  animation-duration: 0.8s;
-  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  animation-duration: 2.2s;
+  animation-timing-function: var(--expo-in);
 }
 
 ::view-transition-new(root) {
-  mask: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="white"/></svg>') center / 0 no-repeat;
-  -webkit-mask: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="white"/></svg>') center / 0 no-repeat;
-  animation: scale-circle 0.8s both;
+  mask: url('./assets/Untitled design.gif') center / 0 no-repeat;
+  -webkit-mask: url('./assets/Untitled design.gif') center / 0 no-repeat;
+  animation: scale-gif-mask 2.2s both;
 }
 
-::view-transition-old(root) {
-  animation: none;
-  z-index: -1;
+::view-transition-old(root),
+.dark::view-transition-old(root) {
+  animation: scale-gif-mask 2.2s both;
 }
 
-@keyframes scale-circle {
-  to {
-    mask-size: 250vmax;
-    -webkit-mask-size: 250vmax;
+@keyframes scale-gif-mask {
+  0% {
+    mask-size: 0;
+    -webkit-mask-size: 0;
+  }
+  12% {
+    mask-size: 55vmax;
+    -webkit-mask-size: 55vmax;
+  }
+  88% {
+    mask-size: 55vmax;
+    -webkit-mask-size: 55vmax;
+  }
+  100% {
+    mask-size: 2000vmax;
+    -webkit-mask-size: 2000vmax;
   }
 }
