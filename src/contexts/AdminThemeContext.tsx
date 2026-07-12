@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import transitionGif from "@/assets/Untitled design.gif";
 
 type Theme = "light" | "dark";
 
@@ -22,6 +23,7 @@ export function AdminThemeProvider({ children }: { children: ReactNode }) {
         // Default to light
         return "light";
     });
+    const [isTransitioning, setIsTransitioning] = useState(false);
 
     useEffect(() => {
         // Save to localStorage
@@ -37,8 +39,16 @@ export function AdminThemeProvider({ children }: { children: ReactNode }) {
             setThemeState(prev => prev === "light" ? "dark" : "light");
             return;
         }
-        document.startViewTransition(() => {
+
+        setIsTransitioning(true);
+        const transition = document.startViewTransition(() => {
             setThemeState(prev => prev === "light" ? "dark" : "light");
+        });
+
+        transition.finished.then(() => {
+            setIsTransitioning(false);
+        }).catch(() => {
+            setIsTransitioning(false);
         });
     };
 
@@ -49,6 +59,15 @@ export function AdminThemeProvider({ children }: { children: ReactNode }) {
     return (
         <AdminThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>
             {children}
+            {isTransitioning && (
+                <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/10 backdrop-blur-[2px] pointer-events-none animate-fade-in">
+                    <img 
+                        src={transitionGif} 
+                        className="w-56 h-56 object-contain" 
+                        alt="Theme Transition" 
+                    />
+                </div>
+            )}
         </AdminThemeContext.Provider>
     );
 }
