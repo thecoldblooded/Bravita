@@ -135,6 +135,16 @@ export default defineConfig(({ mode }) => {
         output: {
           manualChunks(id) {
             if (id.includes("node_modules")) {
+              // Exclude large dynamic libraries to keep them as separate lazy-loaded chunks
+              if (
+                id.includes("three") ||
+                id.includes("vanta") ||
+                id.includes("firebase") ||
+                id.includes("recharts") ||
+                id.includes("supabase")
+              ) {
+                return;
+              }
               return "vendor";
             }
           },
