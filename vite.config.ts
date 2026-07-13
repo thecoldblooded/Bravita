@@ -135,12 +135,7 @@ export default defineConfig(({ mode }) => {
         output: {
           manualChunks(id) {
             if (id.includes("node_modules")) {
-              const parts = id.toString().split("node_modules/");
-              const pathParts = parts[parts.length - 1].split("/");
-              if (pathParts[0].startsWith("@")) {
-                return `${pathParts[0].replace("@", "")}-${pathParts[1]}`;
-              }
-              return pathParts[0];
+              return "vendor";
             }
           },
         },
