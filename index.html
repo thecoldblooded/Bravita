@@ -106,6 +106,12 @@
       color-scheme: light;
     }
 
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
     html,
     body {
       min-height: 100%;
@@ -123,13 +129,6 @@
       position: relative;
       z-index: 1;
       min-height: 100vh;
-    }
-
-    html.app-ready [data-app-root] {
-      opacity: 1;
-      visibility: visible;
-      transform: none;
-      transition-delay: 70ms, 70ms, 0s;
     }
 
     .skip-link {
@@ -169,31 +168,27 @@
       isolation: isolate;
     }
 
-    #seo-shell::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      background:
-        radial-gradient(circle at 15% 20%, rgba(255, 255, 255, 0.92), transparent 30%),
-        radial-gradient(circle at 85% 18%, rgba(251, 191, 36, 0.18), transparent 20%),
-        radial-gradient(circle at 72% 72%, rgba(249, 115, 22, 0.08), transparent 24%);
-    }
-
     .seo-shell__inner {
       position: relative;
-      max-width: 1440px;
-      margin: 0 auto;
       min-height: 100vh;
-      padding: 24px clamp(20px, 4vw, 48px) 72px;
     }
 
     .seo-header {
-      display: grid;
-      grid-template-columns: auto 1fr auto;
+      position: fixed;
+      inset: 0 0 auto;
+      z-index: 50;
+      padding: 16px 0;
+    }
+
+    .seo-header__inner {
+      position: relative;
+      width: 100%;
+      max-width: 100%;
+      margin: 0 auto;
+      padding: 0 16px;
+      display: flex;
       align-items: center;
-      gap: 24px;
-      margin-bottom: 28px;
+      justify-content: space-between;
     }
 
     .seo-logo {
@@ -206,7 +201,7 @@
     .seo-logo__letter {
       display: inline-block;
       font-family: "Baloo 2", system-ui, sans-serif;
-      font-size: clamp(2.75rem, 4vw, 4.25rem);
+      font-size: 36px;
       font-weight: 800;
       line-height: 0.9;
       -webkit-text-stroke: 2px #000;
@@ -216,209 +211,267 @@
     }
 
     .seo-nav {
-      justify-self: center;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      padding: 8px;
+      gap: 4px;
+      padding: 6px;
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.88);
-      border: 1px solid rgba(255, 255, 255, 0.7);
-      box-shadow: 0 20px 40px rgba(45, 51, 74, 0.12);
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 10px 24px rgba(45, 51, 74, 0.12);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
     }
 
-    .seo-nav a,
-    .seo-actions a,
-    .seo-actions span {
+    .seo-nav a {
+      position: relative;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-height: 44px;
-      padding: 0 18px;
+      min-height: 36px;
+      padding: 0 16px;
       border-radius: 999px;
       color: #4b5563;
-      font-weight: 800;
+      font-size: 14px;
+      font-weight: 700;
       text-decoration: none;
       white-space: nowrap;
     }
 
     .seo-nav a.is-active {
-      background: linear-gradient(180deg, #fff8ed 0%, #fee7c3 100%);
+      background: rgba(255, 237, 213, 0.8);
       color: #f97316;
-      box-shadow: 0 10px 24px rgba(249, 115, 22, 0.16);
     }
 
-    .seo-actions {
+    .seo-header__actions {
       display: inline-flex;
       align-items: center;
-      gap: 10px;
-      justify-self: end;
+      gap: 8px;
     }
 
-    .seo-lang-pill {
-      min-width: 56px;
-      background: rgba(255, 255, 255, 0.9);
-      border: 1px solid rgba(255, 255, 255, 0.8);
-      box-shadow: 0 12px 30px rgba(45, 51, 74, 0.1);
-      color: #ef4444;
+    .seo-language-button {
+      width: 44px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      box-shadow: 0 4px 12px rgba(45, 51, 74, 0.08);
     }
 
-    .seo-action-pill {
-      background: rgba(255, 255, 255, 0.9);
-      border: 1px solid rgba(255, 255, 255, 0.8);
-      box-shadow: 0 12px 30px rgba(45, 51, 74, 0.1);
+    .seo-language-flag {
+      position: relative;
+      width: 28px;
+      height: 20px;
+      overflow: hidden;
+      border-radius: 3px;
+      background: #e30a17;
+      box-shadow: 0 1px 3px rgba(45, 51, 74, 0.2);
     }
 
-    .seo-action-pill--primary {
-      color: #ea580c !important;
+    .seo-language-flag::before {
+      content: "";
+      position: absolute;
+      top: 5px;
+      left: 7px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #fff;
+    }
+
+    .seo-language-flag::after {
+      content: "";
+      position: absolute;
+      top: 6px;
+      left: 10px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #e30a17;
+    }
+
+    .seo-auth-placeholder {
+      width: 96px;
+      height: 40px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.55);
     }
 
     .seo-hero {
+      width: 100%;
+      max-width: 100%;
+      margin: 0 auto;
       display: grid;
-      grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
-      gap: clamp(28px, 5vw, 56px);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 32px;
       align-items: center;
-      min-height: calc(100vh - 132px);
-      padding: 20px 0 40px;
+      min-height: 100vh;
+      padding: 48px 48px 64px;
     }
 
     .seo-hero__copy {
-      max-width: 680px;
-      padding-top: 20px;
+      max-width: 640px;
+      padding-top: 120px;
     }
 
     .seo-badge {
       display: inline-flex;
       align-items: center;
-      gap: 10px;
-      margin: 0 0 28px;
-      padding: 10px 18px;
+      gap: 8px;
+      margin: 0 0 32px;
+      padding: 6px 12px;
       border-radius: 999px;
       background: rgba(255, 255, 255, 0.9);
-      border: 1px solid #fed7aa;
+      border: 1px solid #ffedd5;
       color: #6b7280;
-      font-size: 0.8rem;
-      font-weight: 800;
-      letter-spacing: 0.04em;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
       text-transform: uppercase;
-      box-shadow: 0 18px 40px rgba(45, 51, 74, 0.08);
+      box-shadow: 0 1px 3px rgba(45, 51, 74, 0.08);
     }
 
     .seo-badge__spark {
       color: #f97316;
-      font-size: 0.95rem;
+      font-size: 16px;
     }
 
     .seo-title {
-      margin: 0 0 28px;
+      min-height: 180px;
+      margin: 0 0 32px;
       font-family: "Baloo 2", system-ui, sans-serif;
-      font-size: clamp(3.4rem, 7vw, 7rem);
-      line-height: 0.97;
-      letter-spacing: -0.04em;
+      font-size: 84px;
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -0.025em;
       color: #2d334a;
     }
 
+    .seo-title__part1 {
+      display: inline-block;
+      margin-right: 16px;
+    }
+
+    .seo-title__desktop-break {
+      display: block;
+    }
+
     .seo-title__accent {
-      background: linear-gradient(90deg, #f97316 0%, #fbbf24 42%, #84cc16 100%);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
+      display: inline-flex;
+    }
+
+    .seo-title__accent span:nth-child(1) { color: #e86e25; }
+    .seo-title__accent span:nth-child(2) { color: #dcb036; }
+    .seo-title__accent span:nth-child(3) { color: #c8c641; }
+    .seo-title__accent span:nth-child(4) { color: #a9d256; }
+    .seo-title__accent span:nth-child(n+5) { color: #88d969; }
+
+    .seo-title__part3 {
+      display: inline-block;
+      color: #2d334a;
     }
 
     .seo-lead {
-      max-width: 38rem;
-      margin: 0 0 32px;
-      color: rgba(71, 85, 105, 0.92);
-      font-size: clamp(1.05rem, 2vw, 1.5rem);
-      line-height: 1.7;
+      max-width: 512px;
+      margin: 0 0 40px;
+      color: rgba(107, 114, 128, 0.8);
+      font-size: 18px;
+      line-height: 1.625;
     }
 
     .seo-ingredients {
       display: flex;
       flex-wrap: wrap;
-      gap: 12px;
-      margin: 0 0 32px;
+      gap: 10px;
+      margin: 0 0 48px;
     }
 
     .seo-ingredients span {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 12px 18px;
+      padding: 8px 16px;
       border-radius: 999px;
       background: #ff8a4c;
       color: #fff;
-      font-size: 0.95rem;
-      font-weight: 800;
-      box-shadow: 0 10px 22px rgba(249, 115, 22, 0.2);
+      font-size: 12px;
+      font-weight: 700;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
 
     .seo-cta {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-height: 62px;
-      padding: 0 30px;
+      min-height: 56px;
+      padding: 0 32px;
       border-radius: 999px;
       background: #f97316;
       color: #fff;
       text-decoration: none;
-      font-weight: 900;
-      font-size: 1.05rem;
-      box-shadow: 0 22px 50px rgba(249, 115, 22, 0.28);
+      font-weight: 700;
+      font-size: 16px;
+      box-shadow: 0 20px 25px -5px rgba(254, 215, 170, 0.5);
     }
 
     .seo-hero__visual {
       position: relative;
       display: flex;
       align-items: center;
-      justify-content: center;
-      min-height: 620px;
-      padding: 20px 12px 0;
+      justify-content: flex-end;
+      padding-right: 48px;
+    }
+
+    .seo-bottle-stage {
+      position: relative;
+      width: max-content;
     }
 
     .seo-hero__glow {
       position: absolute;
-      inset: 12% 6% 10%;
+      inset: -5%;
       border-radius: 999px;
-      background: radial-gradient(circle at center, rgba(255, 255, 255, 0.95) 0%, rgba(255, 241, 230, 0.8) 46%, rgba(254, 243, 199, 0.36) 70%, rgba(254, 243, 199, 0) 100%);
-      filter: blur(18px);
+      background: radial-gradient(circle, rgba(255, 237, 213, 0.24), rgba(255, 237, 213, 0));
     }
 
     .seo-bottle {
       position: relative;
       z-index: 2;
-      width: min(100%, 420px);
+      width: 320px;
+      max-height: 75vh;
       height: auto;
       object-fit: contain;
-      filter: drop-shadow(0 28px 60px rgba(45, 51, 74, 0.22));
+      filter: drop-shadow(0 25px 25px rgba(45, 51, 74, 0.15));
     }
 
     .seo-bottle-meta,
     .seo-flavor-card {
       position: absolute;
       z-index: 3;
-      box-shadow: 0 18px 40px rgba(45, 51, 74, 0.12);
+      box-shadow: 0 10px 22px rgba(45, 51, 74, 0.14);
     }
 
     .seo-bottle-meta {
-      top: 90px;
-      right: 32px;
-      padding: 10px 16px;
+      top: 48px;
+      right: -8px;
+      padding: 4px 12px;
       border-radius: 999px;
       background: #ffc529;
       color: #2d334a;
       font-weight: 900;
-      font-size: 0.95rem;
+      font-size: 12px;
     }
 
     .seo-flavor-card {
-      bottom: 48px;
-      left: 18px;
-      padding: 14px 18px;
-      border-radius: 24px;
+      bottom: -8px;
+      left: -16px;
+      padding: 12px 16px;
+      border-radius: 16px;
       background: rgba(255, 255, 255, 0.95);
       border: 1px solid rgba(255, 255, 255, 0.8);
       backdrop-filter: blur(10px);
@@ -427,16 +480,16 @@
 
     .seo-flavor-card span {
       display: block;
-      margin-bottom: 6px;
+      margin-bottom: 2px;
       color: #94a3b8;
-      font-size: 0.75rem;
+      font-size: 10px;
       font-weight: 800;
     }
 
     .seo-flavor-card strong {
       display: block;
       color: #ea580c;
-      font-size: 1.35rem;
+      font-size: 14px;
       font-weight: 900;
       line-height: 1.1;
     }
@@ -444,7 +497,9 @@
     .seo-content-shell {
       display: grid;
       gap: 22px;
-      margin-top: 20px;
+      width: min(100%, 1440px);
+      margin: 20px auto 0;
+      padding: 0 clamp(20px, 4vw, 48px) 72px;
     }
 
     .seo-section {
@@ -539,97 +594,69 @@
       overflow: hidden;
       pointer-events: none;
       z-index: 30;
-      transition:
-        opacity 280ms ease,
-        transform 620ms cubic-bezier(0.22, 1, 0.36, 1),
-        filter 320ms ease,
-        visibility 0s linear 320ms;
-      transform-origin: center top;
-      will-change: opacity, transform, filter;
     }
 
-    html.app-ready #seo-shell {
-      opacity: 0;
-      visibility: hidden;
-      transform: scale(1.01);
-      filter: blur(16px);
-    }
-
-    @media (max-width: 1120px) {
-      .seo-header {
-        grid-template-columns: 1fr;
-        justify-items: start;
-      }
-
-      .seo-nav,
-      .seo-actions {
-        justify-self: start;
+    @media (max-width: 1023px) {
+      .seo-nav {
+        display: none;
       }
 
       .seo-hero {
         grid-template-columns: 1fr;
-        min-height: auto;
+        gap: 32px;
+        padding: 48px 16px 64px;
       }
 
       .seo-hero__copy {
-        max-width: none;
+        order: 2;
+        max-width: 640px;
+        margin: 0 auto;
+        padding-top: 160px;
+        text-align: center;
       }
 
       .seo-hero__visual {
-        order: -1;
-        min-height: 480px;
-      }
-    }
-
-    @media (max-width: 768px) {
-      .seo-shell__inner {
-        padding-top: 20px;
-      }
-
-      .seo-nav {
-        width: 100%;
-        overflow-x: auto;
-        scrollbar-width: none;
-      }
-
-      .seo-nav::-webkit-scrollbar {
-        display: none;
-      }
-
-      .seo-actions {
-        flex-wrap: wrap;
-      }
-
-      .seo-title {
-        font-size: clamp(3rem, 15vw, 5.2rem);
-      }
-
-      .seo-lead {
-        font-size: 1rem;
-      }
-
-      .seo-ingredients span {
-        font-size: 0.85rem;
-        padding: 10px 15px;
-      }
-
-      .seo-hero__visual {
-        min-height: 420px;
-        padding-top: 0;
+        order: 1;
+        justify-content: center;
+        padding-right: 0;
+        transform: translateY(15%);
       }
 
       .seo-bottle {
-        width: min(100%, 300px);
+        width: 260px;
       }
 
-      .seo-bottle-meta {
-        top: 54px;
-        right: 8px;
+      .seo-lead {
+        margin-right: auto;
+        margin-left: auto;
       }
 
-      .seo-flavor-card {
-        left: 0;
-        bottom: 24px;
+      .seo-ingredients {
+        justify-content: center;
+      }
+    }
+
+    @media (max-width: 767px) {
+      .seo-hero__copy {
+        padding-top: 128px;
+      }
+
+      .seo-title {
+        min-height: 140px;
+        font-size: 36px;
+        line-height: 1.05;
+      }
+
+      .seo-title__desktop-break {
+        display: none;
+      }
+
+      .seo-lead {
+        font-size: 16px;
+      }
+
+      .seo-bottle {
+        width: 180px;
       }
 
       .seo-usage-grid {
@@ -637,10 +664,58 @@
       }
     }
 
+    @media (max-width: 639px) {
+      .seo-cta {
+        width: 100%;
+      }
+    }
+
+    @media (min-width: 640px) {
+      .seo-header__inner,
+      .seo-hero {
+        max-width: 640px;
+      }
+    }
+
+    @media (min-width: 768px) {
+      .seo-header__inner,
+      .seo-hero {
+        max-width: 768px;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .seo-header__inner,
+      .seo-hero {
+        max-width: 1024px;
+      }
+
+      .seo-logo__letter {
+        font-size: 48px;
+      }
+    }
+
+    @media (min-width: 1280px) {
+      .seo-header__inner,
+      .seo-hero {
+        max-width: 1280px;
+      }
+
+      .seo-logo__letter {
+        font-size: 56px;
+      }
+    }
+
+    @media (min-width: 1536px) {
+      .seo-header__inner,
+      .seo-hero {
+        max-width: 1536px;
+      }
+    }
+
     @media (prefers-reduced-motion: reduce) {
 
-      .skip-link,
-      html.seo-shell-overlay #seo-shell {
+      .skip-link {
         transition: none !important;
       }
     }
@@ -702,35 +777,38 @@
   <div id="seo-shell">
     <div class="seo-shell__inner">
       <header class="seo-header">
-        <div class="seo-logo" aria-label="Bravita">
-          <span class="seo-logo__letter"
-            style="color:#EE4036; transform: rotate(-3deg) scaleX(0.76); margin-left:0;">B</span>
-          <span class="seo-logo__letter"
-            style="color:#F68B28; transform: rotate(-1deg) scaleX(0.76); margin-left:-0.15em;">R</span>
-          <span class="seo-logo__letter"
-            style="color:#FDB813; transform: rotate(1deg) scaleX(0.76); margin-left:-0.13em;">A</span>
-          <span class="seo-logo__letter"
-            style="color:#CDDC39; transform: rotate(-2deg) scaleX(0.76); margin-left:-0.155em;">V</span>
-          <span class="seo-logo__letter"
-            style="color:#4CAF50; transform: rotate(2deg) scaleX(0.76); margin-left:-0.12em;">i</span>
-          <span class="seo-logo__letter"
-            style="color:#00ADEF; transform: rotate(1deg) scaleX(0.76); margin-left:-0.06em;">T</span>
-          <span class="seo-logo__letter"
-            style="color:#9E499B; transform: rotate(3deg) scaleX(0.76); margin-left:-0.17em;">A</span>
-        </div>
+        <div class="seo-header__inner">
+          <div class="seo-logo" aria-label="Bravita">
+            <span class="seo-logo__letter"
+              style="color:#EE4036; transform: rotate(-3deg) scaleX(0.76); margin-left:0;">B</span>
+            <span class="seo-logo__letter"
+              style="color:#F68B28; transform: rotate(-1deg) scaleX(0.76); margin-left:-0.15em;">R</span>
+            <span class="seo-logo__letter"
+              style="color:#FDB813; transform: rotate(1deg) scaleX(0.76); margin-left:-0.13em;">A</span>
+            <span class="seo-logo__letter"
+              style="color:#CDDC39; transform: rotate(-2deg) scaleX(0.76); margin-left:-0.155em;">V</span>
+            <span class="seo-logo__letter"
+              style="color:#4CAF50; transform: rotate(2deg) scaleX(0.76); margin-left:-0.12em;">i</span>
+            <span class="seo-logo__letter"
+              style="color:#00ADEF; transform: rotate(1deg) scaleX(0.76); margin-left:-0.06em;">T</span>
+            <span class="seo-logo__letter"
+              style="color:#9E499B; transform: rotate(3deg) scaleX(0.76); margin-left:-0.17em;">A</span>
+          </div>
 
-        <nav class="seo-nav" aria-label="Hızlı gezinme">
-          <a href="#hero-shell" class="is-active">Merhaba</a>
-          <a href="#one-cikanlar">Açıklama</a>
-          <a href="#icerik-bilgisi">İçindekiler</a>
-          <a href="#kullanim-bilgisi">Kullanım</a>
-          <a href="#hakkinda-bilgisi">Hakkında</a>
-        </nav>
+          <nav class="seo-nav" aria-label="Hızlı gezinme">
+            <a href="#hero-shell" class="is-active">Merhaba</a>
+            <a href="#one-cikanlar">Açıklama</a>
+            <a href="#icerik-bilgisi">İçindekiler</a>
+            <a href="#kullanim-bilgisi">Kullanım</a>
+            <a href="#hakkinda-bilgisi">Hakkında</a>
+            <a href="#seo-shell-more">Yorumlar</a>
+            <a href="#seo-shell-more">S.S.S.</a>
+          </nav>
 
-        <div class="seo-actions" aria-label="Kısa işlemler">
-          <span class="seo-lang-pill">TR</span>
-          <a href="#seo-shell-more" class="seo-action-pill seo-action-pill--primary">Satın Al</a>
-          <a href="#seo-shell-more" class="seo-action-pill">Giriş Yap</a>
+          <div class="seo-header__actions" aria-hidden="true">
+            <span class="seo-language-button"><span class="seo-language-flag"></span></span>
+            <span class="seo-auth-placeholder"></span>
+          </div>
         </div>
       </header>
 
@@ -738,7 +816,10 @@
         <section id="hero-shell" class="seo-hero" aria-labelledby="seo-hero-title">
           <div class="seo-hero__copy">
             <p class="seo-badge"><span class="seo-badge__spark" aria-hidden="true">✦</span> SIVI TAKVİYE EDİCİ GIDA</p>
-            <h1 id="seo-hero-title" class="seo-title">Büyümenin <span class="seo-title__accent">Formülü</span> Burada!
+            <h1 id="seo-hero-title" class="seo-title">
+              <span class="seo-title__part1">Büyümenin</span><br class="seo-title__desktop-break" />
+              <span class="seo-title__accent"><span>F</span><span>o</span><span>r</span><span>m</span><span>ü</span><span>l</span><span>ü</span></span><br />
+              <span class="seo-title__part3">Burada!</span>
             </h1>
             <p class="seo-lead">
               Aminoasitlerle birlikte zengin multivitamin ve mineral kompleksi içeren lezzetli sıvı takviye edici gıda.
@@ -756,15 +837,17 @@
           </div>
 
           <div class="seo-hero__visual" aria-hidden="true">
-            <div class="seo-hero__glow"></div>
-            <div class="seo-bottle-meta">150ml</div>
-            <img src="/src/assets/bravita-bottle1.webp"
-              srcset="/src/assets/bravita-bottle1-sm.webp 320w, /src/assets/bravita-bottle1-md.webp 640w, /src/assets/bravita-bottle1.webp 800w"
-              sizes="(max-width: 768px) 100px, 320px" alt="Bravita Sıvı Takviye" class="seo-bottle" loading="eager"
-              fetchpriority="high" decoding="async" width="320" height="566" />
-            <div class="seo-flavor-card">
-              <span>Tutti Frutti & Vanilya</span>
-              <strong>Tadı Harika!</strong>
+            <div class="seo-bottle-stage">
+              <div class="seo-hero__glow"></div>
+              <img src="/src/assets/bravita-bottle1.webp"
+                srcset="/src/assets/bravita-bottle1-sm.webp 320w, /src/assets/bravita-bottle1-md.webp 640w, /src/assets/bravita-bottle1.webp 800w"
+                sizes="(max-width: 768px) 100px, 320px" alt="Bravita Sıvı Takviye" class="seo-bottle" loading="eager"
+                fetchpriority="high" decoding="async" width="320" height="566" />
+              <div class="seo-bottle-meta">150ml</div>
+              <div class="seo-flavor-card">
+                <span>Tutti Frutti & Vanilya</span>
+                <strong>Tadı Harika!</strong>
+              </div>
             </div>
           </div>
         </section>

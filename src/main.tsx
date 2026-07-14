@@ -21,16 +21,8 @@ const markAppReady = () => {
   const documentRoot = document.documentElement;
   const seoShell = document.getElementById("seo-shell");
 
+  seoShell?.remove();
   documentRoot.classList.remove("seo-shell-overlay");
-
-  if (seoShell) {
-    seoShell.setAttribute("aria-hidden", "true");
-    seoShell.style.opacity = "0";
-    seoShell.style.visibility = "hidden";
-    seoShell.style.display = "none";
-    seoShell.remove();
-  }
-
   documentRoot.classList.add("app-ready");
 };
 

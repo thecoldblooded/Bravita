@@ -265,14 +265,13 @@ function HeroMainContent({ t, containerRef, bottleRef, accentChars, ingredients,
     <div className="container mx-auto px-4 lg:px-12 relative z-20 w-full">
       <div className="grid lg:grid-cols-2 gap-8 items-center">
         <div className="order-2 lg:order-1 text-center lg:text-left pt-32 md:pt-40 lg:pt-30">
-          <div className="inline-flex items-center gap-2 bg-white/90 px-3 py-1.5 rounded-full border border-orange-100 shadow-sm mb-8 animate-fade-in-up">
+          <div className="inline-flex items-center gap-2 bg-white/90 px-3 py-1.5 rounded-full border border-orange-100 shadow-sm mb-8">
             <Sparkles className="w-4 h-4 text-orange-500" />
             <span className="text-[11px] font-bold text-gray-500 uppercase tracking-tight">{t("hero.badge")}</span>
           </div>
 
           <h1
-            className="text-4xl md:text-[84px] font-black text-[#2D334A] mb-8 leading-[1.05] tracking-tight animate-fade-in-up min-h-35 md:min-h-45"
-            style={{ animationDelay: "0.2s" }}
+            className="text-4xl md:text-[84px] font-black text-[#2D334A] mb-8 leading-[1.05] tracking-tight min-h-35 md:min-h-45"
           >
             {isLG ? (
               <span className="inline-block mr-4 text-[#2D334A]">{t("hero.title_part1")}</span>
@@ -333,15 +332,13 @@ function HeroMainContent({ t, containerRef, bottleRef, accentChars, ingredients,
           </h1>
 
           <p
-            className="text-base md:text-lg text-gray-500/80 mb-10 max-w-lg mx-auto lg:mx-0 leading-relaxed animate-fade-in-up"
-            style={{ animationDelay: "0.4s" }}
+            className="text-base md:text-lg text-gray-500/80 mb-10 max-w-lg mx-auto lg:mx-0 leading-relaxed"
           >
             {t("hero.description")}
           </p>
 
           <div
-            className="flex flex-wrap justify-center lg:justify-start gap-2.5 mb-12 animate-fade-in-up"
-            style={{ animationDelay: "0.6s" }}
+            className="flex flex-wrap justify-center lg:justify-start gap-2.5 mb-12"
           >
             {ingredients.map((item, index) => (
               <span key={item} className="ingredient-badge shadow-sm" style={{ animationDelay: `${0.1 * index}s` }}>
@@ -351,8 +348,7 @@ function HeroMainContent({ t, containerRef, bottleRef, accentChars, ingredients,
           </div>
 
           <div
-            className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start w-full sm:w-auto animate-fade-in-up"
-            style={{ animationDelay: "0.8s" }}
+            className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start w-full sm:w-auto"
           >
             <button
               type="button"
