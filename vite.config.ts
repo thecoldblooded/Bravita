@@ -135,17 +135,16 @@ export default defineConfig(({ mode }) => {
         output: {
           manualChunks(id) {
             if (id.includes("node_modules")) {
-              // Exclude large dynamic libraries to keep them as separate lazy-loaded chunks
-              if (
-                id.includes("three") ||
-                id.includes("vanta") ||
-                id.includes("firebase") ||
-                id.includes("recharts") ||
-                id.includes("supabase")
-              ) {
-                return;
+              // Group only core framework dependencies into the vendor chunk
+              const coreDeps = [
+                "react",
+                "react-dom",
+                "react-router"
+              ];
+              if (coreDeps.some(dep => id.includes(dep))) {
+                return "vendor";
               }
-              return "vendor";
+              // Let Vite handle other dependencies (like dynamic imports) automatically
             }
           },
         },
