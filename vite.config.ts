@@ -134,17 +134,17 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         output: {
           manualChunks(id) {
-            if (id.includes("node_modules")) {
-              // Group only core framework dependencies into the vendor chunk
-              const coreDeps = [
-                "react",
-                "react-dom",
-                "react-router"
-              ];
-              if (coreDeps.some(dep => id.includes(dep))) {
-                return "vendor";
-              }
-              // Let Vite handle other dependencies (like dynamic imports) automatically
+            const normalizedId = id.replaceAll("\\", "/");
+            const corePackages = [
+              "react",
+              "react-dom",
+              "react-router",
+              "react-router-dom",
+              "scheduler",
+            ];
+
+            if (corePackages.some((packageName) => normalizedId.includes(`/node_modules/${packageName}/`))) {
+              return "react-core";
             }
           },
         },

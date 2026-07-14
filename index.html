@@ -73,21 +73,35 @@
     }
   </script>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-
   <!-- Remove incorrect preload; use Vite's asset handling -->
   <!-- <link rel="preload" as="image" href="/src/assets/bravita-bottle1.webp" fetchpriority="high" /> -->
   <!-- Remove GIF preload – non‑critical -->
   <!-- <link rel="preload" as="image" href="/bravita.gif" fetchpriority="high" /> -->
-  <!-- Google Fonts – loaded directly to prevent FOUT on production -->
-  <link rel="stylesheet"
-    href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" />
+  <link rel="preload" href="/fonts/baloo-2-latin.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/fonts/baloo-2-latin-ext.woff2" as="font" type="font/woff2" crossorigin />
 
   <link rel="icon" type="image/x-icon" href="/favicon.ico" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
   <style>
+    @font-face {
+      font-family: "Baloo 2";
+      font-style: normal;
+      font-weight: 400 800;
+      font-display: swap;
+      src: url("/fonts/baloo-2-latin.woff2") format("woff2");
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+
+    @font-face {
+      font-family: "Baloo 2";
+      font-style: normal;
+      font-weight: 400 800;
+      font-display: swap;
+      src: url("/fonts/baloo-2-latin-ext.woff2") format("woff2");
+      unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+    }
+
     :root {
       color-scheme: light;
     }
@@ -109,17 +123,6 @@
       position: relative;
       z-index: 1;
       min-height: 100vh;
-    }
-
-    html.seo-shell-pending [data-app-root] {
-      opacity: 0;
-      visibility: hidden;
-      transform: translateY(10px) scale(0.995);
-      transition:
-        opacity 320ms ease,
-        transform 620ms cubic-bezier(0.22, 1, 0.36, 1),
-        visibility 0s linear 320ms;
-      will-change: opacity, transform;
     }
 
     html.app-ready [data-app-root] {
@@ -175,67 +178,6 @@
         radial-gradient(circle at 15% 20%, rgba(255, 255, 255, 0.92), transparent 30%),
         radial-gradient(circle at 85% 18%, rgba(251, 191, 36, 0.18), transparent 20%),
         radial-gradient(circle at 72% 72%, rgba(249, 115, 22, 0.08), transparent 24%);
-    }
-
-    .seo-shell-loader {
-      position: fixed;
-      inset: 0;
-      z-index: 60;
-      display: grid;
-      place-items: center;
-      padding: 24px;
-      pointer-events: none;
-      opacity: 0;
-      visibility: hidden;
-      background: #fffbf7;
-      transition:
-        opacity 220ms ease,
-        visibility 0s linear 220ms;
-    }
-
-    .seo-shell-loader::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background:
-        radial-gradient(circle at 50% 45%, rgba(249, 115, 22, 0.08), transparent 22%),
-        linear-gradient(135deg, #fff9f0 0%, #fff1e6 52%, #fef3c7 100%);
-    }
-
-    .seo-shell-loader__panel {
-      position: relative;
-      z-index: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: clamp(144px, 16vw, 196px);
-      height: clamp(144px, 16vw, 196px);
-      padding: 0;
-      background: transparent;
-      border: 0;
-      box-shadow: none;
-      backdrop-filter: none;
-      -webkit-backdrop-filter: none;
-    }
-
-    .seo-shell-loader__media {
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .seo-shell-loader__media img,
-    .seo-shell-loader__media video {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      filter: drop-shadow(0 24px 44px rgba(249, 115, 22, 0.14));
-    }
-
-    .seo-shell-loader__label {
-      display: none;
     }
 
     .seo-shell__inner {
@@ -606,99 +548,6 @@
       will-change: opacity, transform, filter;
     }
 
-    html.seo-shell-pending .seo-shell-loader {
-      opacity: 1;
-      visibility: visible;
-      transition-delay: 0s, 0s;
-    }
-
-    html.app-ready .seo-shell-loader {
-      opacity: 0;
-      visibility: hidden;
-    }
-
-    html.seo-shell-pending #seo-shell {
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-      transition: none;
-    }
-
-    html.seo-shell-pending #seo-shell .seo-header,
-    html.seo-shell-pending #seo-shell .seo-content-shell {
-      display: none;
-    }
-
-    html.seo-shell-pending #seo-shell .seo-hero {
-      min-height: 100vh;
-      padding: 0;
-      gap: clamp(20px, 4vw, 48px);
-    }
-
-    html.seo-shell-pending #seo-shell .seo-hero__copy {
-      padding-top: 0;
-      max-width: 36rem;
-    }
-
-    html.seo-shell-pending #seo-shell .seo-title,
-    html.seo-shell-pending #seo-shell .seo-lead,
-    html.seo-shell-pending #seo-shell .seo-badge,
-    html.seo-shell-pending #seo-shell .seo-ingredients,
-    html.seo-shell-pending #seo-shell .seo-cta,
-    html.seo-shell-pending #seo-shell .seo-bottle-meta,
-    html.seo-shell-pending #seo-shell .seo-flavor-card {
-      transition: opacity 220ms ease, transform 420ms cubic-bezier(0.22, 1, 0.36, 1), filter 220ms ease;
-      will-change: opacity, transform, filter;
-    }
-
-    html.seo-shell-pending #seo-shell .seo-title {
-      margin-bottom: 0;
-      opacity: 0;
-      transform: translateY(18px);
-      filter: blur(16px);
-    }
-
-    html.seo-shell-pending #seo-shell .seo-lead {
-      margin-bottom: 0;
-      max-width: 34rem;
-      opacity: 0;
-      transform: translateY(18px);
-      filter: blur(16px);
-    }
-
-    html.seo-shell-pending #seo-shell .seo-badge,
-    html.seo-shell-pending #seo-shell .seo-ingredients,
-    html.seo-shell-pending #seo-shell .seo-cta {
-      opacity: 0;
-      transform: translateY(12px);
-      filter: blur(10px);
-    }
-
-    html.seo-shell-pending #seo-shell .seo-hero__visual {
-      min-height: clamp(420px, 72vh, 640px);
-      opacity: 0.32;
-      transform: translateY(6px) scale(0.995);
-      filter: saturate(0.92) blur(3px);
-      transition: opacity 240ms ease, transform 420ms cubic-bezier(0.22, 1, 0.36, 1), filter 240ms ease;
-    }
-
-    html.seo-shell-pending #seo-shell .seo-hero__glow {
-      opacity: 0.88;
-      filter: blur(28px);
-    }
-
-    html.seo-shell-pending #seo-shell .seo-bottle-meta {
-      opacity: 0.16;
-      transform: translateY(8px) scale(0.98);
-      filter: blur(6px);
-    }
-
-    html.seo-shell-pending #seo-shell .seo-flavor-card {
-      opacity: 0.1;
-      transform: translateY(12px) scale(0.985);
-      filter: blur(10px);
-    }
-
     html.app-ready #seo-shell {
       opacity: 0;
       visibility: hidden;
@@ -836,26 +685,10 @@
         search.indexOf("type=signup") !== -1 ||
         search.indexOf("type=recovery") !== -1;
 
-      var ua = (window.navigator.userAgent || "").toLowerCase();
-      var isLighthouse = ua.indexOf("lighthouse") !== -1 || ua.indexOf("chrome-lighthouse") !== -1;
-      var isCI = search.indexOf("ci=true") !== -1 || search.indexOf("lighthouse=true") !== -1;
-      var isBotOrSpeedTest =
-        ua.indexOf("speed") !== -1 ||
-        ua.indexOf("crawler") !== -1 ||
-        ua.indexOf("bot") !== -1 ||
-        ua.indexOf("headless") !== -1 ||
-        ua.indexOf("waf-checker") !== -1 ||
-        ua.indexOf("check") !== -1 ||
-        ua.indexOf("audit") !== -1 ||
-        ua.indexOf("performance") !== -1 ||
-        ua.indexOf("playwright") !== -1 ||
-        ua.indexOf("puppeteer") !== -1;
-
       root.classList.add("seo-shell-js");
 
-      if (isHome && !isAuthCallback && !isLighthouse && !isCI && !isBotOrSpeedTest) {
-        root.dataset.seoShellStartedAt = String(Date.now());
-        root.classList.add("seo-shell-overlay", "seo-shell-pending");
+      if (isHome && !isAuthCallback) {
+        root.classList.add("seo-shell-overlay");
       } else {
         root.classList.add("seo-shell-skip");
       }
@@ -865,46 +698,6 @@
 
 <body>
   <a href="#main-content" class="skip-link">Ana içeriğe geç</a>
-
-  <div class="seo-shell-loader" aria-hidden="true">
-    <div class="seo-shell-loader__panel" role="status" aria-live="polite" aria-label="Yükleniyor">
-      <div class="seo-shell-loader__media">
-        <video id="seo-loader-video" autoplay loop muted playsinline webkit-playsinline preload="auto" width="128"
-          height="128">
-          <source src="/bravita-optimized.mp4" type="video/mp4"
-            onerror="var video = document.getElementById('seo-loader-video'); if (video) video.style.display='none'; var fallback = document.getElementById('seo-loader-fallback'); if (fallback) fallback.style.display='block';" />
-        </video>
-        <img id="seo-loader-fallback" src="/bravita.webp" alt="Bravita yükleniyor animasyonu" style="display: none;"
-          loading="lazy" decoding="async" width="128" height="128" />
-        <script>
-          (function () {
-            var video = document.getElementById('seo-loader-video');
-            var fallback = document.getElementById('seo-loader-fallback');
-            if (video && fallback) {
-              video.addEventListener('error', function () {
-                video.style.display = 'none';
-                fallback.style.display = 'block';
-              });
-              var playPromise = video.play();
-              if (playPromise !== undefined) {
-                playPromise.catch(function () {
-                  video.style.display = 'none';
-                  fallback.style.display = 'block';
-                });
-              }
-              setTimeout(function () {
-                if (video.paused || video.currentTime === 0) {
-                  video.style.display = 'none';
-                  fallback.style.display = 'block';
-                }
-              }, 3000);
-            }
-          })();
-        </script>
-      </div>
-      <span class="seo-shell-loader__label">Yükleniyor</span>
-    </div>
-  </div>
 
   <div id="seo-shell">
     <div class="seo-shell__inner">
@@ -1056,7 +849,7 @@
   <div id="root" data-app-root></div>
 
   <script src="/console-noise-filter.js" defer></script>
-  <script type="module" src="/src/main.tsx"></script>
+  <script type="module" src="/src/bootstrap.ts"></script>
 </body>
 
 </html>

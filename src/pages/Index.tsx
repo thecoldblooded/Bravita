@@ -16,17 +16,9 @@ const Faq = lazy(() => import("@/components/landing/Faq"));
 const Testimonials = lazy(() => import("@/components/landing/Testimonials"));
 const Footer = lazy(() => import("@/components/layout/Footer"));
 
-const bravitaWebp = "/bravita.webp";
-
 const SectionFallback = ({ minHeight }: { minHeight: string }) => (
   <div className="w-full bg-[#FFFBF7]/50 flex items-center justify-center overflow-hidden" style={{ minHeight }} aria-hidden="true">
-    <div className="relative w-24 h-24 opacity-40">
-      <img
-        src={bravitaWebp}
-        alt="Loading"
-        className="w-full h-full object-contain"
-      />
-    </div>
+    <div className="h-10 w-10 animate-spin rounded-full border-4 border-orange-100 border-t-orange-400 opacity-60" />
   </div>
 );
 

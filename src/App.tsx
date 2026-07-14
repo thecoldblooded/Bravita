@@ -151,8 +151,20 @@ const AppContent = () => {
   );
 };
 
-const App = () => {
+interface AppProps {
+  onReady?: () => void;
+}
+
+const App = ({ onReady }: AppProps) => {
   const { isSplashScreenActive, isPasswordRecovery, session } = useAuth();
+  const isPublicLandingRoute =
+    typeof window !== "undefined" && ["/", "/index.html"].includes(window.location.pathname);
+  const shouldShowAuthSplash =
+    isSplashScreenActive && !isPublicLandingRoute;
+
+  useEffect(() => {
+    onReady?.();
+  }, [onReady]);
 
   const [showWelcome, setShowWelcome] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -237,7 +249,7 @@ const App = () => {
 
               {showWelcome ? (
                 <WelcomeAnimation onComplete={() => setShowWelcome(false)} />
-              ) : isSplashScreenActive ? (
+              ) : shouldShowAuthSplash ? (
                 <div className="fixed inset-0 bg-[#FFFBF7] z-50 flex flex-col items-center justify-center">
                   <div className="relative w-32 h-32 mb-4 flex items-center justify-center">
                     <ImageWithFallback />

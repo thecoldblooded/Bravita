@@ -661,9 +661,11 @@ function HeaderModals({
 }: HeaderModalsProps) {
   return (
     <Suspense fallback={null}>
-      {!isAuthPending && !isAuthenticated && <AuthModal open={authModalOpen} onOpenChange={onAuthModalChange} defaultTab="login" />}
+      {authModalOpen && !isAuthPending && !isAuthenticated && (
+        <AuthModal open onOpenChange={onAuthModalChange} defaultTab="login" />
+      )}
 
-      <CartModal open={isCartOpen} onOpenChange={onCartModalChange} />
+      {isCartOpen && <CartModal open onOpenChange={onCartModalChange} />}
     </Suspense>
   );
 }

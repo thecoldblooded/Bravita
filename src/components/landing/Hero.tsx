@@ -417,10 +417,10 @@ const Hero = () => {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLElement>(null);
   const bottleRef = useRef<HTMLDivElement>(null);
-  const [layoutState, setLayoutState] = useState({
-    isLG: false,
+  const [layoutState, setLayoutState] = useState(() => ({
+    isLG: typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches,
     targetPos: [820, 530] as [number, number],
-  });
+  }));
   const { isLG, targetPos } = layoutState;
 
   useEffect(() => {

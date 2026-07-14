@@ -207,8 +207,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
 
 
-    // Fetch settings on mount and periodically
+    // Cart pricing settings are only needed once the cart is used. Keeping the
+    // subscription dormant on an empty, closed cart avoids landing-page fetches
+    // and leaves the page eligible for the browser's back/forward cache.
     useEffect(() => {
+        if (!isCartOpen && cartItems.length === 0) {
+            return;
+        }
+
         const fetchSettings = async () => {
             const { data, error } = await supabase
                 .from('site_settings')
@@ -242,7 +248,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, []);
+    }, [cartItems.length, isCartOpen]);
 
     const rawSubtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const vatOnFullPrice = rawSubtotal * settings.vat_rate;
