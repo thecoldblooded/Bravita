@@ -48,19 +48,22 @@ export const getInitialUserFromSession = (session: Session | null): UserProfile 
   const stubPhone = metadataPhone || authUserPhone || null;
   const timestamp = new Date().toISOString();
 
+  const isPhoneVerified = session.user.user_metadata?.phone_verified === true || !!session.user.phone;
+  const phoneVerifiedAt = isPhoneVerified ? (session.user.user_metadata?.phone_verified_at || timestamp) : null;
+
   return {
     id: session.user.id,
     email: session.user.email || "",
     full_name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || null,
     phone: stubPhone,
     profile_complete: false,
-    phone_verified: false,
+    phone_verified: isPhoneVerified,
     user_type: "individual",
     isStub: true,
     is_admin: isAdminFromMetadata,
     is_superadmin: isSuperAdminFromMetadata,
     company_name: null,
-    phone_verified_at: null,
+    phone_verified_at: phoneVerifiedAt,
     oauth_provider: null,
     created_at: timestamp,
     updated_at: timestamp,

@@ -64,7 +64,7 @@ describe("getInitialUserFromSession", () => {
   it("signed metadata yetkilerini ve telefon bilgisini stub kullanıcıya taşır", () => {
     const session = buildSession({
       app_metadata: { is_admin: true, is_superadmin: true },
-      user_metadata: { full_name: "Bravita Admin", phone: "+90 555 111 22 33" },
+      user_metadata: { full_name: "Bravita Admin", phone: "+90 555 111 22 33", phone_verified: true, phone_verified_at: "2026-07-14T22:40:07+03:00" },
       phone: "+90 555 999 88 77",
     });
 
@@ -75,6 +75,8 @@ describe("getInitialUserFromSession", () => {
     expect(user?.is_superadmin).toBe(true);
     expect(user?.phone).toBe("+905551112233");
     expect(user?.full_name).toBe("Bravita Admin");
+    expect(user?.phone_verified).toBe(true);
+    expect(user?.phone_verified_at).toBe("2026-07-14T22:40:07+03:00");
     expect(user?.isStub).toBe(true);
   });
 

@@ -632,6 +632,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               const metadataPhone = normalizeSessionPhone(metadata.phone);
               const authUserPhone = normalizeSessionPhone(newSession.user.phone);
 
+              const isPhoneVerified = metadata.phone_verified === true || !!newSession.user.phone;
+              const phoneVerifiedAt = isPhoneVerified ? (metadata.phone_verified_at || new Date().toISOString()) : null;
+
               const newProfile: UserProfile = {
                 id: newSession.user.id,
                 email: newSession.user.email || "",
@@ -640,12 +643,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 user_type: metadata.user_type || "individual",
                 company_name: metadata.company_name || null,
                 profile_complete: false,
-                phone_verified: false,
+                phone_verified: isPhoneVerified,
                 is_admin: false,
                 oauth_provider: newSession.user.app_metadata?.provider || null,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
-                phone_verified_at: null
+                phone_verified_at: phoneVerifiedAt
               };
               const { error: insertError } = await supabase.from("profiles").insert(newProfile);
 
