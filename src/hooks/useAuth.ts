@@ -51,6 +51,7 @@ export function useAuthOperations() {
         full_name: data.fullName || null,
         user_type: "individual",
         phone_verified: Boolean(data.phoneVerificationToken),
+        phone_verified_custom: Boolean(data.phoneVerificationToken),
         phone_verified_at: data.phoneVerificationToken ? new Date().toISOString() : null,
       };
 

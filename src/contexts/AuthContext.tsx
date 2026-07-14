@@ -632,7 +632,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               const metadataPhone = normalizeSessionPhone(metadata.phone);
               const authUserPhone = normalizeSessionPhone(newSession.user.phone);
 
-              const isPhoneVerified = metadata.phone_verified === true || !!newSession.user.phone;
+              const isPhoneVerified = metadata.phone_verified === true || metadata.phone_verified_custom === true || !!newSession.user.phone;
               const phoneVerifiedAt = isPhoneVerified ? (metadata.phone_verified_at || new Date().toISOString()) : null;
 
               const newProfile: UserProfile = {

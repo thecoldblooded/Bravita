@@ -127,6 +127,7 @@ export default async function handler(req, res) {
 
     // Set verified flags in user profile metadata
     profileData.phone_verified = true;
+    profileData.phone_verified_custom = true;
     profileData.phone_verified_at = new Date().toISOString();
 
     const signupPayload = {

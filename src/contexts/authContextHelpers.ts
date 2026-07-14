@@ -48,7 +48,7 @@ export const getInitialUserFromSession = (session: Session | null): UserProfile 
   const stubPhone = metadataPhone || authUserPhone || null;
   const timestamp = new Date().toISOString();
 
-  const isPhoneVerified = session.user.user_metadata?.phone_verified === true || !!session.user.phone;
+  const isPhoneVerified = session.user.user_metadata?.phone_verified === true || session.user.user_metadata?.phone_verified_custom === true || !!session.user.phone;
   const phoneVerifiedAt = isPhoneVerified ? (session.user.user_metadata?.phone_verified_at || timestamp) : null;
 
   return {
